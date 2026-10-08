@@ -783,6 +783,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
                                   : -1;
   const qreal zoom = theme.zoomPercent() / 100.0;
   style.layout.scaleLengths(zoom);
+  style.box = used;
   std::vector<const MarkdownNode*> nodes;
   std::vector<CssFormattingItem> items;
   for (const auto& child : node.children()) {
@@ -799,7 +800,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
     const auto allocation = formatted.items[i].translated(x + inset.left(), y + inset.top());
     children.push_back(buildAllocated(*nodes[i], theme, allocation, formatted.containingWidths[i], depth + 1, formatted.inheritedGrids[i]));
   }
-  const QRectF rect(x, y, width, LayoutBox::borderHeight(used, formatted.size.height()));
+  const QRectF rect(x, y, width, formatted.size.height() + inset.top() + inset.bottom());
   result->setRect(rect);
   result->setCssBoxGeometry(LayoutBox::place(key, style, used, rect, theme.textFontForElement(key, &node)));
   result->setChildren(std::move(children));

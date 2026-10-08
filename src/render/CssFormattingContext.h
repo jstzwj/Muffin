@@ -37,6 +37,7 @@ struct CssFormattingItem {
   // Present for a grid whose adapter exposes its formatting children. A leaf
   // still uses measure(), even when its CSS display happens to be grid.
   std::optional<std::vector<CssFormattingItem>> children;
+  std::optional<QSizeF> naturalSize;  // replaced content, in layout pixels
 };
 struct CssGridContribution {
   int start = 0, span = 1;

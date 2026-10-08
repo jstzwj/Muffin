@@ -2,6 +2,762 @@
   "browser": "153.0.8010.54",
   "cases": [
     {
+      "id": "image-small-auto-min",
+      "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 210,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-small-zero-min",
+      "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 90,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-grow",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-explicit-stretch",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;height:140px;align-items:stretch;justify-items:stretch;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 140
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 280,
+          "height": 140
+        },
+        "b": {
+          "x": 290,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 140
+      }
+    },
+    {
+      "id": "image-transferred-size",
+      "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 90,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-percent-padding-image",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;padding:5%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 64
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 104,
+          "height": 64
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-percent-height-image",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;height:200px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 200
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-auto-ratio-border",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box;aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 62
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 62
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 76,
+        "height": 38
+      }
+    },
+    {
+      "id": "image-natural",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-width",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-height",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-max-width",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-min-width",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:230px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 115
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 230,
+          "height": 115
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 230,
+        "height": 115
+      }
+    },
+    {
+      "id": "image-max-height",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-min-height",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:140px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 140
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 280,
+          "height": 140
+        },
+        "b": {
+          "x": 290,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 280,
+        "height": 140
+      }
+    },
+    {
+      "id": "image-ratio",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 200
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 200
+      }
+    },
+    {
+      "id": "image-auto-ratio",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-percent",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 60
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 60
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 60
+      }
+    },
+    {
+      "id": "image-constraints",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px;min-height:70px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 70
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 70
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 70
+      }
+    },
+    {
+      "id": "image-box-content",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 74
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 124,
+          "height": 74
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 100,
+        "height": 50
+      }
+    },
+    {
+      "id": "image-box-border",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 62
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 62
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 76,
+        "height": 38
+      }
+    },
+    {
+      "id": "image-ratio-border",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;aspect-ratio:1;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 76,
+        "height": 76
+      }
+    },
+    {
+      "id": "ratio-box",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:100px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 50
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 50
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "ratio-stretch",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 120
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 120
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "ratio-cross-size",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"height:40px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "ratio-min",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:80px;aspect-ratio:2;min-height:70px\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 70
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 70
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      }
+    },
+    {
       "id": "fit-content-cap",
       "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:fit-content(90px) 1fr;gap:10px\"><div id=\"a\" style=\"\">alpha beta gamma delta</div><div id=\"b\" style=\"height:30px\"></div></div>",
       "expected": {
@@ -1492,6 +2248,1086 @@
           "y": 40,
           "width": 210,
           "height": 50
+        }
+      }
+    },
+    {
+      "id": "cyclic-rows",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:50% 50%\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "b": {
+          "x": 0,
+          "y": 40,
+          "width": 300,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "cyclic-calc-rows",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:calc(50% + 10px) auto\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 50
+        },
+        "b": {
+          "x": 0,
+          "y": 50,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "cyclic-row-gap",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:20px 40px;row-gap:20%\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 60
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 32,
+          "width": 300,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "cyclic-calc-gap",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:auto auto;row-gap:calc(20% + 10px)\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 90
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 48,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "cyclic-percent-fr",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:50% 1fr\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "b": {
+          "x": 0,
+          "y": 40,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "cyclic-row-padding",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;padding:10px;border:2px solid black\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 324,
+          "height": 104
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 300,
+          "height": 40
+        },
+        "b": {
+          "x": 12,
+          "y": 52,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "cyclic-min-height",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;min-height:150px\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 150
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 75
+        },
+        "b": {
+          "x": 0,
+          "y": 75,
+          "width": 300,
+          "height": 75
+        }
+      }
+    },
+    {
+      "id": "cyclic-max-height",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;max-height:40px\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 20,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "cyclic-implicit-rows",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-auto-rows:50%\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "b": {
+          "x": 0,
+          "y": 40,
+          "width": 300,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "definite-percent-height-min",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;height:100px;min-height:150px;grid-template-rows:50% 50%\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 150
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 75
+        },
+        "b": {
+          "x": 0,
+          "y": 75,
+          "width": 300,
+          "height": 75
+        }
+      }
+    },
+    {
+      "id": "definite-percent-height-max",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;height:150px;max-height:100px;grid-template-rows:50% 50%\"><div id=\"a\" style=\"\">A</div><div id=\"b\" style=\"\">A<br>B<br>C</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 50
+        },
+        "b": {
+          "x": 0,
+          "y": 50,
+          "width": 300,
+          "height": 50
+        }
+      }
+    },
+    {
+      "id": "cyclic-nested-columns",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:50% auto\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 85.40625,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 42.703125,
+          "height": 40
+        },
+        "d": {
+          "x": 42.703125,
+          "y": 0,
+          "width": 42.703125,
+          "height": 40
+        },
+        "b": {
+          "x": 85.40625,
+          "y": 0,
+          "width": 214.59375,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "cyclic-nested-calc",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:calc(50% + 10px) auto\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 85.40625,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 52.703125,
+          "height": 40
+        },
+        "d": {
+          "x": 52.703125,
+          "y": 0,
+          "width": 32.703125,
+          "height": 40
+        },
+        "b": {
+          "x": 85.40625,
+          "y": 0,
+          "width": 214.59375,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "cyclic-nested-gap",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:auto auto;column-gap:20%\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 85.40625,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 57.65625,
+          "height": 40
+        },
+        "d": {
+          "x": 74.734375,
+          "y": 0,
+          "width": 10.671875,
+          "height": 40
+        },
+        "b": {
+          "x": 85.40625,
+          "y": 0,
+          "width": 214.59375,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "cyclic-nested-calc-gap",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:auto auto;column-gap:calc(20% + 10px)\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 95.40625,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 55.65625,
+          "height": 40
+        },
+        "d": {
+          "x": 84.734375,
+          "y": 0,
+          "width": 10.671875,
+          "height": 40
+        },
+        "b": {
+          "x": 95.40625,
+          "y": 0,
+          "width": 204.59375,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-minimum-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 320
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-minimum-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 250
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-maximum-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;max-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 210
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-maximum-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;max-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 210
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-both-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px;max-height:350px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 320
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-both-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px;max-height:350px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 250
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-conflict-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:350px;max-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 350
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-conflict-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:350px;max-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 350
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-padding-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 344
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 276,
+          "height": 20
+        },
+        "b": {
+          "x": 12,
+          "y": 122,
+          "width": 276,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-rows-padding-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 250
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 276,
+          "height": 20
+        },
+        "b": {
+          "x": 12,
+          "y": 122,
+          "width": 276,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-minimum-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-minimum-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 250,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-maximum-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;max-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 210,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-maximum-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;max-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 210,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-both-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px;max-width:350px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-both-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px;max-width:350px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 250,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-conflict-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:350px;max-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 350,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-conflict-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:350px;max-width:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 350,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-padding-auto-fill",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 344,
+          "height": 54
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 122,
+          "y": 12,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-columns-padding-auto-fit",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 250,
+          "height": 54
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 100,
+          "height": 20
+        },
+        "b": {
+          "x": 122,
+          "y": 12,
+          "width": 100,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "percent-height-auto-rows",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">B</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 10
+        },
+        "b": {
+          "x": 0,
+          "y": 20,
+          "width": 300,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "percent-padding-auto-rows",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;\"><div id=\"a\" style=\"padding:10%\">A</div><div id=\"b\" style=\"padding:calc(10% + 5px)\">B</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 170
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "b": {
+          "x": 0,
+          "y": 80,
+          "width": 300,
+          "height": 90
+        }
+      }
+    },
+    {
+      "id": "percent-row-minmax",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:1fr;grid-template-rows:minmax(50%,1fr) auto;\"><div id=\"a\" style=\"height:20px\">A</div><div id=\"b\" style=\"height:60px\">B</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 40,
+          "width": 300,
+          "height": 60
+        }
+      }
+    },
+    {
+      "id": "repeat-minimum-calc",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:calc(100px + 150px)\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 320
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-max-percent",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;max-height:50%\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 140
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-min-percent",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:50%\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 140
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-minimum-pattern",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,60px 80px);gap:10px;min-height:250px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 310
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 70,
+          "width": 300,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "repeat-minimum-exact",
+      "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:210px\"><div id=\"a\" style=\"height:20px\"></div><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 210
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 110,
+          "width": 300,
+          "height": 30
         }
       }
     },
@@ -3373,6 +5209,336 @@
           "width": 50,
           "height": 40
         }
+      }
+    },
+    {
+      "id": "image-width-attribute",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-width-attribute-css-auto",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\" style=\"width:auto\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 100
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 100
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 100
+      }
+    },
+    {
+      "id": "image-ratio-degenerate",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-ratio-zero-denominator",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:2/0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 40
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-max-height-padding",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 64
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 104,
+          "height": 64
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-min-height-padding",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:120px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 144
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 264,
+          "height": 144
+        },
+        "b": {
+          "x": 274,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 240,
+        "height": 120
+      }
+    },
+    {
+      "id": "image-max-height-border-box",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:64px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 64
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 104,
+          "height": 64
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 12,
+        "y": 12,
+        "width": 80,
+        "height": 40
+      }
+    },
+    {
+      "id": "image-stretch-fixed-row",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:80px;gap:10px;\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"align-self:stretch\"><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 160,
+          "height": 80
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 160,
+        "height": 80
+      }
+    },
+    {
+      "id": "image-stretch-row-span",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:40px 70px;gap:10px;\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"align-self:stretch;grid-row:span 2\"><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 120
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 120
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 120
+      }
+    },
+    {
+      "id": "image-stretch-fr-rows",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:1fr 2fr;gap:10px;height:150px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"align-self:stretch;grid-row:span 2\"><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 150
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 150
+        },
+        "b": {
+          "x": 310,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 300,
+        "height": 150
+      }
+    },
+    {
+      "id": "image-stretch-row-max-width",
+      "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:80px;gap:10px;\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"align-self:stretch;max-width:120px\"><div id=\"b\" style=\"height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 80
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      },
+      "imageContent": {
+        "x": 0,
+        "y": 0,
+        "width": 120,
+        "height": 80
       }
     }
   ]

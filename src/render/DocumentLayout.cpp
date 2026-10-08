@@ -328,6 +328,7 @@ void DocumentLayout::rebuild(
     for (const auto& child : children) items.push_back(builder_.formattingItem(*child, theme, pageWidth_));
     const auto usedRoot = theme.elementBoxStyle(QStringLiteral("#write"), nullptr, pageOuterWidth_);
     const auto rootInset = LayoutBox::insets(usedRoot);
+    container.box = usedRoot;
     const qreal rootHeight =
         usedRoot.heightLength.status == CssLengthStatus::Valid && !usedRoot.heightLength.hasPercentage
             ? qMax<qreal>(0, usedRoot.heightLength.px - (usedRoot.borderBox ? rootInset.top() + rootInset.bottom() : 0))

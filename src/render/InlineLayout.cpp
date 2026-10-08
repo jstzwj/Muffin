@@ -1,5 +1,6 @@
 #include "render/InlineLayout.h"
 #include "render/CssFormattingContext.h"
+#include "render/CssSizing.h"
 #include "render/RenderMetrics.h"
 
 #include "document/ImageSyntaxOps.h"
@@ -33,7 +34,6 @@ constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math pl
 constexpr QChar kLinkBeforePlaceholder(0xe000);  // PUA: flow-reserved slot for a::before icons
 constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
-constexpr qreal kMaxImageDisplayHeight = 200.0;
 
 QRectF mathUsedBounds(const math::MathLayoutResult& layout) {
   if (!layout.root) return {};
@@ -101,20 +101,6 @@ bool isImageSourceRevealed(const QVector<InlineProjectionSpan>& spans, const Inl
     }
   }
   return false;
-}
-
-QSizeF scaledImageDisplaySize(const QImage& image, qreal zoom) {
-  if (image.isNull()) {
-    return QSizeF();
-  }
-  // Apply the image's own zoom (style="zoom:N%") to its natural size, then enforce the
-  // layout height cap so a zoomed-up or naturally tall image cannot blow out the line.
-  QSizeF size(image.width() * zoom, image.height() * zoom);
-  if (size.height() > kMaxImageDisplayHeight) {
-    const qreal scale = kMaxImageDisplayHeight / size.height();
-    return QSizeF(size.width() * scale, kMaxImageDisplayHeight);
-  }
-  return size;
 }
 
 // Linear RGB-A blend of two opaque theme colours, used to animate a `:hover { color }`
@@ -231,7 +217,7 @@ void InlineLayout::build(
   styleSourceBase_ = qMax<qsizetype>(0, options.sourceBase);
   if (options.styleNode) {
     for (const auto& span : projection_.spans()) {
-      if (span.kind != InlineSpanKind::Text) continue;
+      if (span.kind != InlineSpanKind::Text && span.type != InlineType::Image) continue;
       const auto style = theme.inlineStyleForNode(*options.styleNode, span.contentSourceStart + qMax<qsizetype>(0, options.sourceBase));
       const QFont fallback = span.type == InlineType::Code ? codeStyle_->font : baseFont;
       spanStyles_.insert(span.displayStart, sharedSnapshot(style, theme.fontForStyle(style, fallback)));
@@ -1154,9 +1140,6 @@ QString InlineLayout::texForInlineMathSpan(const QVector<InlineNode>& inlines, c
 
 void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath) {
   Q_UNUSED(inlines);
-  Q_UNUSED(theme);
-  Q_UNUSED(width);
-
   // Quick check: are there any image Atom spans at all?
   bool hasImageAtom = false;
   for (const InlineProjectionSpan& span : projection_.spans()) {
@@ -1270,9 +1253,23 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
     const QString imgSource = projection_.sourceText().mid(span.sourceStart, span.sourceEnd - span.sourceStart);
     const qreal zoom = image_syntax::zoomFactor(imgSource);
 
+    const auto imageBox = [&] {
+      const auto snapshot = spanStyles_.value(span.displayStart);
+      CssFormattingItem item;
+      item.style = snapshot ? snapshot->style : ThemeElementStyle{};
+      item.style.box = theme.usedBoxForStyle(item.style, width);
+      // usedBoxForStyle has resolved padding against this line's containing
+      // width. Freeze it so image sizing uses the same values as its snapshot.
+      item.style.box.paddingLengths = {};
+      item.style.box.marginLengths = {};
+      item.naturalSize = QSizeF(image.size()) * zoom * theme.zoomPercent() / 100.0;
+      const auto size = cssReplacedSize(item, width);
+      return std::make_shared<const LayoutBox>(LayoutBox::place("img", item.style, item.style.box, QRectF({}, size)));
+    }();
+    const auto imageDisplaySize = imageBox->borderBox.size();
     if (collapsed) {
       // Inactive: replace alt text with placeholder, render image inline.
-      const QSizeF displaySize = scaledImageDisplaySize(image, zoom);
+      const QSizeF displaySize = imageDisplaySize;
 
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += kImagePlaceholder;
@@ -1286,6 +1283,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       atom.visibleEnd = span.visibleEnd;
       atom.srcUrl = srcUrl;
       atom.displaySize = displaySize;
+      atom.cssBox = imageBox;
       atom.image = image;
       atom.loaded = true;
 
@@ -1302,7 +1300,8 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
       ImageAtom preview;
       preview.srcUrl = srcUrl;
-      preview.displaySize = scaledImageDisplaySize(image, zoom);
+      preview.displaySize = imageDisplaySize;
+      preview.cssBox = imageBox;
       preview.image = image;
       preview.loaded = true;
       previewAtoms_.push_back(std::move(preview));
@@ -1565,7 +1564,9 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
       const qreal minLineHeight = qMax(line.height(), atom.displaySize.height());
       const qreal y = origin.y() + line.y() + (minLineHeight - atom.displaySize.height()) * 0.5;
       const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
-      painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
+      if (atom.cssBox) paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
+      painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
+                        QRectF(atom.image.rect()));
       break;
     }
   }
@@ -1584,7 +1585,9 @@ void InlineLayout::paintImagePreview(QPainter& painter, QPointF origin) const {
       continue;
     }
     const QRectF targetRect(origin.x(), y, atom.displaySize.width(), atom.displaySize.height());
-    painter.drawImage(targetRect, atom.image, QRectF(atom.image.rect()));
+    if (atom.cssBox) paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
+    painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
+                      QRectF(atom.image.rect()));
     y += atom.displaySize.height() + kPreviewSpacing;
   }
 }

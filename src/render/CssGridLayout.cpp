@@ -1,5 +1,6 @@
 #include "render/CssFormattingContext.h"
 #include "render/LayoutBox.h"
+#include "render/CssSizing.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -13,9 +14,15 @@ struct ExpandedTemplate {
   int automaticStart = 0, automaticCount = 0;
   bool fit = false;
 };
-ExpandedTemplate expandTemplate(const CssGridTrackList& source, qreal reference, qreal gap, qreal scale) {
+ExpandedTemplate expandTemplate(const CssGridTrackList& source, qreal reference, qreal gap, qreal scale,
+                                CssAxisConstraints constraints = {}) {
   if (!source.automatic) return {source};
   const auto& repeat = *source.automatic;
+  const bool minimumOnly = reference < 0 && constraints.maximum == std::numeric_limits<qreal>::max() && constraints.minimum > 0;
+  if (reference < 0 && constraints.maximum < std::numeric_limits<qreal>::max())
+    reference = qMax(constraints.minimum, constraints.maximum);
+  else if (minimumOnly)
+    reference = constraints.minimum;
   const auto fixedSize = [&](const CssGridTrack& track) {
     const auto used = [&](const CssGridBreadth& breadth) {
       return breadth.length.px * scale + breadth.length.fraction * qMax<qreal>(0, reference);
@@ -28,10 +35,11 @@ ExpandedTemplate expandTemplate(const CssGridTrackList& source, qreal reference,
   for (const auto& track : source) outside += fixedSize(track);
   for (const auto& track : repeat.tracks) pattern += fixedSize(track);
   int count = 1;
-  if (reference >= 0)
-    count = int(qBound<qreal>(
-        1, std::floor((reference - outside - gap * (qreal(source.size()) - 1) + .0001) / (pattern + gap * repeat.tracks.size())),
-        kMaxGridTracks));
+  if (reference >= 0) {
+    const qreal fitting =
+        (reference - outside - gap * (qreal(source.size()) - 1) + (minimumOnly ? -.0001 : .0001)) / (pattern + gap * repeat.tracks.size());
+    count = int(qBound<qreal>(1, minimumOnly ? std::ceil(fitting) : std::floor(fitting), kMaxGridTracks));
+  }
   count = qMin(count, int((kMaxGridTracks - source.size()) / repeat.tracks.size()));
   count = qMax(1, count);
   ExpandedTemplate result;
@@ -642,21 +650,23 @@ CssGridInheritance contentGridInheritance(CssGridInheritance inherited, QMargins
 }
 static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items,
                                                qreal contentWidth, qreal contentHeight, qreal scale, const CssGridInheritance& inherited,
-                                               bool intrinsicOnly);
+                                               bool intrinsicOnly, const std::vector<qreal>& transferredHeights = {});
 CssIntrinsicMetrics intrinsicGridWidths(const ThemeElementStyle& style, const std::vector<CssFormattingItem>& items) {
   return layoutGridItemsImpl(style, items, -1, -1, 1, {}, true).intrinsic;
 }
 static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items,
                                                qreal contentWidth, qreal contentHeight, qreal scale, const CssGridInheritance& inherited,
-                                               bool intrinsicOnly) {
+                                               bool intrinsicOnly, const std::vector<qreal>& transferredHeights) {
   auto style = container.layout;
+  const auto heightConstraints = cssContentConstraints(container.box, 1, -1, scale);
+  if (contentHeight >= 0) contentHeight = heightConstraints.clamp(contentHeight);
   CssFormattingResult result;
   auto sharedColumns = style.gridColumns.subgrid ? inherited.columns : std::nullopt;
   auto sharedRows = style.gridRows.subgrid ? inherited.rows : std::nullopt;
   if (style.gridColumns.subgrid && !sharedColumns) style.gridColumns = {};
   if (style.gridRows.subgrid && !sharedRows) style.gridRows = {};
   const auto gap = [scale](const CssLengthPercentage& length, qreal reference) {
-    return length.status == CssLengthStatus::Valid ? qMax<qreal>(0, length.px * scale + length.fraction * qMax<qreal>(0, reference)) : 0;
+    return cssGap(length, reference, scale);
   };
   const qreal columnGap =
       sharedColumns && style.columnGap.status != CssLengthStatus::Valid ? sharedColumns->gap : gap(style.columnGap, contentWidth);
@@ -669,8 +679,11 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
     style.gridRows = sharedTemplate(style.gridRows, *sharedRows);
     sharedRows = sharedGap(*sharedRows, rowGap);
   }
-  const auto expandedColumns = expandTemplate(style.gridColumns, contentWidth, columnGap, scale);
-  const auto expandedRows = expandTemplate(style.gridRows, contentHeight, rowGap, scale);
+  const auto widthConstraints = cssContentConstraints(container.box, 0, -1, scale);
+  const bool intrinsicWidth = style.sizes[0] == CssIntrinsicSize::MinContent || style.sizes[0] == CssIntrinsicSize::MaxContent ||
+                              style.sizes[0] == CssIntrinsicSize::FitContent;
+  const auto expandedColumns = expandTemplate(style.gridColumns, intrinsicWidth ? -1 : contentWidth, columnGap, scale, widthConstraints);
+  const auto expandedRows = expandTemplate(style.gridRows, contentHeight, rowGap, scale, heightConstraints);
   style.gridColumns = expandedColumns.list;
   style.gridRows = expandedRows.list;
   addAreaLines(style.gridColumns, style.gridAutoColumns, style.gridAreas, false);
@@ -699,6 +712,12 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
       continue;
     }
     qreal minimum = item.intrinsic.minContent, maximum = item.intrinsic.maxContent;
+    const qreal transferredHeight = transferredHeights.empty() ? -1 : transferredHeights[i];
+    if (item.naturalSize || transferredHeight >= 0 ||
+        (cssPreferredRatio(item) > 0 && item.style.box.heightLength.status == CssLengthStatus::Valid &&
+         !item.style.box.heightLength.hasPercentage)) {
+      minimum = maximum = qMax<qreal>(0, cssReplacedSize(item, -1, contentHeight, -1, transferredHeight).width() - box.horizontal);
+    }
     if (item.style.layout.sizes[0] == CssIntrinsicSize::Length && !item.style.box.widthLength.hasPercentage)
       minimum = maximum = qMax<qreal>(0, item.style.box.widthLength.px * scale - (item.style.box.borderBox ? box.horizontal : 0));
     qreal autoMinimum = minimum;
@@ -721,10 +740,10 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
     result.columnContributions.push_back({p.start, p.span, minimum + extra, maximum + extra, autoMinimum + extra});
   }
   applyContributions(columns, result.columnContributions, columnGap);
-  result.intrinsic.minContent = tracksExtent(columns, columnGap);
+  result.intrinsic.minContent = widthConstraints.clamp(tracksExtent(columns, columnGap));
   sizeTracks(columns, contentWidth, columnGap, style.justifyContent);
   if (contentWidth < 0) indefiniteFractions(columns, result.columnContributions, columnGap);
-  result.intrinsic.maxContent = tracksExtent(columns, columnGap);
+  result.intrinsic.maxContent = widthConstraints.clamp(tracksExtent(columns, columnGap));
   if (intrinsicOnly) return result;
   if (sharedColumns) useSharedTracks(columns, *sharedColumns);
   const auto columnStarts = sharedColumns ? sharedColumns->starts : trackPositions(columns, columnGap, contentWidth, style.justifyContent);
@@ -751,6 +770,15 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
                          box.margin.left() + box.margin.right(), scale);
     if (hasGridChildren(item) && item.style.layout.gridColumns.subgrid)
       widths[i] = qMax(box.horizontal, areaWidth - box.margin.left() - box.margin.right());
+    const qreal transferredHeight = transferredHeights.empty() ? -1 : transferredHeights[i];
+    if (item.naturalSize || transferredHeight >= 0 ||
+        (cssPreferredRatio(item) > 0 && item.style.box.heightLength.status == CssLengthStatus::Valid &&
+         !item.style.box.heightLength.hasPercentage)) {
+      widths[i] = cssReplacedSize(item, areaWidth, contentHeight, -1, transferredHeight).width();
+      if (justify == "stretch" && item.style.layout.sizes[0] == CssIntrinsicSize::Auto)
+        widths[i] = usedSize(item, 0, areaWidth, item.intrinsic.maxContent, item.intrinsic.minContent, item.intrinsic.maxContent,
+                             box.horizontal, true, box.margin.left() + box.margin.right(), scale);
+    }
     CssGridInheritance child;
     if (hasGridChildren(item) && item.style.layout.gridColumns.subgrid)
       child.columns =
@@ -774,6 +802,11 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
       }
     } else
       heights[i] = item.measure(qMax<qreal>(0, widths[i] - box.horizontal), areaWidth, child).size.height();
+    if (item.naturalSize || cssPreferredRatio(item) > 0) {
+      const auto preferred = cssReplacedSize(item, areaWidth, contentHeight, widths[i]);
+      heights[i] =
+          item.naturalSize ? qMax<qreal>(0, preferred.height() - box.vertical) : qMax(heights[i], preferred.height() - box.vertical);
+    }
     qreal height = heights[i] + box.vertical;
     if (item.style.box.heightLength.status == CssLengthStatus::Valid && !item.style.box.heightLength.hasPercentage)
       height = item.style.box.heightLength.px * scale + (item.style.box.borderBox ? 0 : box.vertical);
@@ -798,9 +831,51 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
   if (sharedRows) useSharedTracks(rows, *sharedRows);
   qreal naturalHeight = rowGap * qMax(0, activeTrackCount(rows) - 1);
   for (const auto& row : rows) naturalHeight += row.base;
-  if (contentHeight < 0 && !sharedRows) rowGap = gap(style.rowGap, naturalHeight);
-  const auto rowStarts = sharedRows ? sharedRows->starts : trackPositions(rows, rowGap, contentHeight, style.alignContent);
-  result.size = {contentWidth < 0 ? result.intrinsic.maxContent : contentWidth, contentHeight < 0 ? naturalHeight : contentHeight};
+  const qreal finalHeight = contentHeight < 0 ? heightConstraints.clamp(naturalHeight) : contentHeight;
+  if (contentHeight < 0 && !sharedRows) {
+    rowGap = gap(style.rowGap, finalHeight);
+    const auto percentageTracks = [](const CssGridTrackList& list) {
+      return std::any_of(list.begin(), list.end(),
+                         [](const auto& track) { return track.minimum.length.hasPercentage || track.maximum.length.hasPercentage; });
+    };
+    if (finalHeight != naturalHeight || percentageTracks(style.gridRows) || percentageTracks(style.gridAutoRows)) {
+      // The intrinsic height is frozen. Resolve cyclic tracks against it exactly
+      // once; any resulting overflow must not feed back into container height.
+      rows = createTracks(style.gridRows.tracks, style.gridAutoRows.tracks, rowCount, rowOrigin, finalHeight, scale);
+      collapseEmptyTracks(rows, expandedRows, rowOrigin, positions, items, true);
+      applyContributions(rows, result.rowContributions, rowGap);
+      sizeTracks(rows, finalHeight, rowGap, style.alignContent);
+    }
+  }
+  const auto rowStarts =
+      sharedRows ? sharedRows->starts
+                 : trackPositions(rows, rowGap, contentHeight < 0 && finalHeight == naturalHeight ? -1 : finalHeight, style.alignContent);
+  if (transferredHeights.empty() && !intrinsicOnly) {
+    // CSS Grid sizes columns before rows, then revisits columns whose aspect
+    // ratio depends on a definite cross-axis allocation. This is a bounded
+    // dependency pass, not an iterative search for a larger container height.
+    std::vector<qreal> cross(items.size(), -1);
+    bool revisit = false;
+    for (size_t i = 0; i < items.size(); ++i) {
+      const auto& item = items[i];
+      if (item.style.layout.display == "none" || cssPreferredRatio(item) <= 0 || item.style.layout.sizes[1] != CssIntrinsicSize::Auto)
+        continue;
+      const auto align = item.style.layout.alignSelf == "auto" ? style.alignItems : item.style.layout.alignSelf;
+      if (align != "stretch") continue;
+      const auto p = positions[i].row;
+      bool definite = contentHeight >= 0 || sharedRows.has_value();
+      if (!definite) {
+        definite = true;
+        for (int r = p.start; r < p.start + p.span; ++r)
+          definite = definite && rows[r].definition.minimum.kind == Kind::Length && rows[r].definition.maximum.kind == Kind::Length;
+      }
+      if (!definite) continue;
+      cross[i] = qMax<qreal>(boxes[i].vertical, areaSize(rows, rowStarts, p) - boxes[i].margin.top() - boxes[i].margin.bottom());
+      revisit = true;
+    }
+    if (revisit) return layoutGridItemsImpl(container, items, contentWidth, contentHeight, scale, inherited, false, cross);
+  }
+  result.size = {contentWidth < 0 ? result.intrinsic.maxContent : contentWidth, finalHeight};
   result.items.resize(items.size());
   result.containingWidths.resize(items.size());
   result.inheritedGrids.resize(items.size());
@@ -821,7 +896,8 @@ static CssFormattingResult layoutGridItemsImpl(const ThemeElementStyle& containe
     const qreal height = hasGridChildren(item) && item.style.layout.gridRows.subgrid
                              ? qMax(box.vertical, areaHeight - box.margin.top() - box.margin.bottom())
                              : usedSize(item, 1, areaHeight, heights[i], heights[i], heights[i], box.vertical,
-                                        (align == "normal" || align == "stretch") && !automatic[0] && !automatic[2],
+                                        (align == "stretch" || (align == "normal" && !item.naturalSize && cssPreferredRatio(item) <= 0)) &&
+                                            !automatic[0] && !automatic[2],
                                         box.margin.top() + box.margin.bottom(), scale);
     const qreal x = columnStarts[p.column.start] +
                     itemOffset(areaWidth, widths[i], box.margin.left(), box.margin.right(), automatic[3], automatic[1], justify);

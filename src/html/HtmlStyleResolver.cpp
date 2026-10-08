@@ -50,6 +50,13 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         target.borderWidth = {};
         target.backgroundColor = {};
       }
+      target.cssScale = zoom;
+      // Image width/height attributes enter in CSS pixels. Normalize these
+      // presentational hints before author CSS overrides them below.
+      if (box.tag() == HtmlTag::Image) {
+        if (target.width >= 0) target.width *= zoom;
+        if (target.height >= 0) target.height *= zoom;
+      }
       if (box.tag() == HtmlTag::TextRun && parent) {
         target.computed = parent->computed;
         target.computed.layout = {};

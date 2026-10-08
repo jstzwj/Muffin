@@ -13,11 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Grid containers use the same Markdown/HTML measurement and box geometry, with fixed, intrinsic and fractional tracks, numeric line placement and spans, implicit tracks, row/column auto-placement, dense packing, item alignment, `minmax()` and integer `repeat()`.
 - Grid supports one- and two-axis `subgrid`, inherited/local line names, shared gap and edge geometry, and descendant contributions to parent tracks. Nested intrinsic sizing uses the shared Grid algorithm, including `fit-content()` and indefinite fractional tracks.
 - Grid supports responsive `auto-fill`/`auto-fit`, case-sensitive named lines and repeated occurrences/spans, and rectangular `grid-template-areas`; resize, painting and editing retain shared allocated geometry.
+- Flex/Grid sizing separates intrinsic measurement from final percentage resolution. Cyclic Grid tracks and gaps resolve against the frozen content size, and automatic repetition accounts for definite min/max-only size constraints.
+- Images share natural-size, `aspect-ratio`, box-sizing and min/max calculations across Markdown, HTML, Flex and Grid. Allocated content boxes also determine image painting, including padding and borders.
 - Document themes use one computed-style pipeline and shared box snapshots for paragraphs, headings, inline code/keyboard boxes, code fences and table cells. The mapper's separate cascade and the replaced component geometry fallbacks have been removed; legacy theme fields are converted to CSS at the input boundary.
 - Native theme fonts are generated from the original WOFF/WOFF2 files in the build directory. Source and release builds no longer require duplicate committed TTF files.
 
 ### Fixed
 
+- Percentage gaps in auto-height Flex containers no longer acquire a circular height dependency; mixed `calc()` gaps retain their absolute component. HTML line breaks contribute separate lines during intrinsic measurement, and formatted containers no longer count padding twice.
+- Grid intrinsic sizing applies zoomed constraints once and revisits image ratio contributions after definite row allocation. HTML image dimension attributes follow document zoom, and Markdown image sizing no longer imposes a hardcoded height limit outside the theme's CSS constraints.
 - Tall inline formulas reserve their actual content height beyond KaTeX's outer strut, keeping math painting and selection inside the measured paragraph.
 - Structural CSS changes after an edit invalidate affected materialized blocks, keeping incremental and lazy layouts consistent with a fresh layout. Mixed Markdown/HTML ancestry and local keyboard styles now participate in the document cascade.
 - CSS values distinguish invalid declarations from valid zeros, reset omitted shorthand components, and preserve case-sensitive custom properties computed in their defining parent scope. Percentage and mixed `calc()` box lengths resolve against layout containers; HTML borders and box sizing participate in layout.

@@ -9,6 +9,11 @@ namespace muffin {
 class CssComputedStyle;
 
 enum class CssIntrinsicSize { Auto, Length, MinContent, MaxContent, FitContent, None };
+struct CssAspectRatio {
+  qreal value = 0;
+  bool automatic = true;
+};
+std::optional<CssAspectRatio> parseCssAspectRatio(const QString& value);
 
 // Formatting properties are computed once, independently of the source tree.
 // Both native Markdown and HTML adapters consume this same layout input.
@@ -33,6 +38,7 @@ struct CssLayoutStyle {
   QString wordBreak = QStringLiteral("normal");
   qreal grow = 0;
   qreal shrink = 1;
+  CssAspectRatio aspectRatio;
   int order = 0;
   CssLengthPercentage basis, rowGap, columnGap;
   QString basisKeyword = QStringLiteral("auto");

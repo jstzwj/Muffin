@@ -45,6 +45,26 @@ void browserFixtures() {
       QHash<QString, QRectF> rects;
       collect(*result.root(), {}, rects);
       const auto origin = rects.value("case").topLeft();
+      if (c.contains("imageContent")) {
+        const auto ink = c["imageContent"].toObject();
+        QImage image(1800, 1500, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::white);
+        {
+          QPainter painter(&image);
+          result.paint(painter, {});
+        }
+        QRect red;
+        for (int y = 0; y < image.height(); ++y)
+          for (int x = 0; x < image.width(); ++x) {
+            const auto color = image.pixelColor(x, y);
+            if (color.red() > 200 && color.green() < 40 && color.blue() < 40) red = red.united(QRect(x, y, 1, 1));
+          }
+        const auto label = c["id"].toString() + " painted image @" + QString::number(scale);
+        near(red.x() - origin.x(), ink["x"].toDouble() * scale, label + " x");
+        near(red.y() - origin.y(), ink["y"].toDouble() * scale, label + " y");
+        near(red.width(), ink["width"].toDouble() * scale, label + " width");
+        near(red.height(), ink["height"].toDouble() * scale, label + " height");
+      }
       const auto expected = c["expected"].toObject();
       for (auto it = expected.begin(); it != expected.end(); ++it) {
         require(rects.contains(it.key()), "Grid contains " + it.key());
@@ -508,6 +528,122 @@ void intrinsicMeasurementBoundary() {
   require(measured == 2, "Leaves retain adapter text measurement when CSS display is grid");
   near(result.size.height(), 20, "Grid-styled text leaves retain their content height");
 }
+void nativeSizingDependencies() {
+  DocumentSession session;
+  session.setMarkdownText("first\n\nsecond\n\nthird\n", false);
+  for (const int zoom : {100, 200}) {
+    for (const bool repeat : {false, true}) {
+      auto theme = RenderTheme::fromDefinition(
+          CssThemeMapper::fromCss("#write{display:grid;max-width:none;margin:0;padding:0;grid-template-columns:1fr;" +
+                                      QString(repeat ? "grid-template-rows:repeat(auto-fill,100px);min-height:250px;row-gap:10px"
+                                                     : "grid-template-rows:50% auto auto;min-height:180px;row-gap:calc(10% + 5px)") +
+                                      "}p{font:16px Arial;line-height:20px;margin:0;height:20px}",
+                                  "sizing-native", {}));
+      theme.setZoomPercent(zoom);
+      const qreal scale = zoom / 100.0;
+      for (const qreal width : {300, 160, 300}) {
+        DocumentLayout eager, lazy;
+        eager.rebuild(session.document(), theme, width * scale, {}, {}, DocumentLayout::BuildPolicy::Eager);
+        lazy.rebuild(session.document(), theme, width * scale, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+        lazy.buildAll(theme);
+        const auto& nodes = session.document().root().children();
+        for (const auto& node : nodes)
+          require(eager.block(node->id())->rect() == lazy.block(node->id())->rect(), "Sizing dependency eager/lazy geometry");
+        near(eager.block(nodes[1]->id())->rect().top() - eager.block(nodes[0]->id())->rect().top(), (repeat ? 110 : 113) * scale,
+             "Native percentage or constrained repeat placement");
+        near(eager.totalHeight(), lazy.totalHeight(), "Sizing dependency full/lazy height");
+        const auto* block = eager.block(nodes[1]->id());
+        const auto caret = block->inlineLayout()->cursorRect(3).translated(block->inlineTextOrigin());
+        const auto hit = eager.hitTest(caret.center(), theme);
+        require(hit.textNodeId == nodes[1]->id() && hit.textOffset == 3, "Sizing dependency caret/hit consistency");
+      }
+    }
+  }
+}
+void markdownImageSizing() {
+  const QByteArray svg(
+      "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='100'>"
+      "<rect width='200' height='100' fill='red'/></svg>");
+  const QString uri = "data:image/svg+xml;base64," + QString::fromLatin1(svg.toBase64());
+  DocumentSession session;
+  session.setMarkdownText("![x](" + uri + ") after\n", false);
+  for (const int zoom : {100, 200}) {
+    auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+        "#write{max-width:none;margin:0;padding:0}p{margin:0;font:16px Arial}img{max-width:50%;aspect-ratio:1}", "image-sizing", {}));
+    theme.setZoomPercent(zoom);
+    const qreal scale = zoom / 100.0;
+    for (const int width : {300, 160, 300}) {
+      DocumentLayout eager, lazy;
+      eager.rebuild(session.document(), theme, width * scale, {}, {}, DocumentLayout::BuildPolicy::Eager);
+      lazy.rebuild(session.document(), theme, width * scale, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+      lazy.buildAll(theme);
+      const auto id = session.document().root().children()[0]->id();
+      const auto* a = eager.block(id);
+      const auto* b = lazy.block(id);
+      require(a && b && a->rect() == b->rect(), "Image percentage eager/lazy layout");
+      if (!a || !b) continue;
+      QImage image(qCeil(width * scale), qCeil(a->height() + 8), QImage::Format_ARGB32_Premultiplied);
+      image.fill(Qt::white);
+      {
+        QPainter painter(&image);
+        painter.translate(-a->rect().topLeft());
+        a->paint(painter, theme, 0, nullptr);
+      }
+      QRect red;
+      for (int y = 0; y < image.height(); ++y)
+        for (int x = 0; x < image.width(); ++x) {
+          const auto c = image.pixelColor(x, y);
+          if (c.red() > 200 && c.green() < 40 && c.blue() < 40) red = red.united(QRect(x, y, 1, 1));
+        }
+      require(red.isValid(), "Image CSS paints decoded image");
+      near(red.width(), width * scale / 2, "Markdown image percentage width");
+      near(red.height(), width * scale / 2, "Markdown image authored aspect ratio");
+      const auto local = QPointF(red.center()) + a->rect().topLeft() - a->inlineTextOrigin();
+      require(a->inlineLayout()->imageSrcAtLocalPos(local) == uri, "Image hit uses the painted CSS size");
+      const auto caret = a->inlineLayout()->cursorRect(5).translated(a->inlineTextOrigin());
+      const auto hit = eager.hitTest(caret.center(), theme);
+      require(hit.textNodeId == id && hit.textOffset == 5, "Caret following resized image round trips");
+    }
+  }
+  auto boxed = RenderTheme::fromDefinition(
+      CssThemeMapper::fromCss("#write{max-width:none;margin:0;padding:0}p{margin:0}img{width:100px;aspect-ratio:1;box-sizing:border-box;"
+                              "padding:10px;border:2px solid green}",
+                              "image-box", {}));
+  DocumentLayout boxedLayout;
+  boxedLayout.rebuild(session.document(), boxed, 300, {}, {}, DocumentLayout::BuildPolicy::Eager);
+  const auto* block = boxedLayout.block(session.document().root().children()[0]->id());
+  QImage painted(400, qCeil(block->height() + 8), QImage::Format_ARGB32_Premultiplied);
+  painted.fill(Qt::white);
+  {
+    QPainter painter(&painted);
+    painter.translate(-block->rect().topLeft());
+    block->paint(painter, boxed, 0, nullptr);
+  }
+  QRect red;
+  for (int y = 0; y < painted.height(); ++y)
+    for (int x = 0; x < painted.width(); ++x) {
+      const auto c = painted.pixelColor(x, y);
+      if (c.red() > 200 && c.green() < 40 && c.blue() < 40) red = red.united(QRect(x, y, 1, 1));
+    }
+  near(red.width(), 76, "Native image excludes horizontal padding and borders from painted content");
+  near(red.height(), 76, "Native image border-box authored ratio");
+  require(painted.pixelColor(red.left() - 11, red.center().y()) == QColor("green"), "Native image paints shared CSS border");
+  require(!parseCssAspectRatio("1 auto / 2") && !parseCssAspectRatio("-2") && !parseCssAspectRatio("auto auto") &&
+              !parseCssAspectRatio("1/2/3") && !parseCssAspectRatio("1e300/1e-300"),
+          "Invalid aspect-ratio declarations rejected");
+  const CssComputedStyleEngine engine(
+      CssThemeParser::parse("div{aspect-ratio:2;aspect-ratio:-1}p{aspect-ratio:inherit}span{aspect-ratio:initial}", {}));
+  CssElement div;
+  div.tag = "div";
+  CssElement p;
+  p.tag = "p";
+  p.parent = &div;
+  CssElement span;
+  span.tag = "span";
+  span.parent = &div;
+  near(CssLayoutStyle::fromComputed(engine.styleFor(p)).aspectRatio.value, 2, "Computed aspect-ratio explicit inheritance");
+  require(CssLayoutStyle::fromComputed(engine.styleFor(span)).aspectRatio.automatic, "Aspect ratio resets to automatic");
+}
 }  // namespace
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
@@ -517,6 +653,8 @@ int main(int argc, char** argv) {
   markdownSubgrid();
   markdownRowSubgrid();
   intrinsicMeasurementBoundary();
+  nativeSizingDependencies();
+  markdownImageSizing();
   markdownGrid();
   overlappingPaintAndHit();
   responsiveComputedValues();

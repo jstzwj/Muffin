@@ -1,9 +1,36 @@
 #include "theme/CssLayoutStyle.h"
 #include "theme/CssComputedStyleEngine.h"
+#include <QRegularExpression>
+#include <cmath>
 
 namespace muffin {
+std::optional<CssAspectRatio> parseCssAspectRatio(const QString& raw) {
+  QString text = raw.trimmed().toLower();
+  CssAspectRatio result;
+  const auto parts = text.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+  if (parts.count("auto") > 1) return {};
+  result.automatic = parts.contains("auto");
+  if (result.automatic) {
+    if (parts.front() != "auto" && parts.back() != "auto") return {};
+    text.remove(QRegularExpression("\\bauto\\b"));
+  }
+  text = text.trimmed();
+  if (text.isEmpty()) return result.automatic ? std::optional{result} : std::nullopt;
+  const auto ratio = text.split('/');
+  if (ratio.size() > 2) return {};
+  bool numeratorOk = false, denominatorOk = true;
+  const qreal numerator = ratio[0].trimmed().toDouble(&numeratorOk);
+  const qreal denominator = ratio.size() == 2 ? ratio[1].trimmed().toDouble(&denominatorOk) : 1;
+  if (!numeratorOk || !denominatorOk || !std::isfinite(numerator) || !std::isfinite(denominator) || numerator < 0 || denominator < 0)
+    return {};
+  result.value = denominator > 0 ? numerator / denominator : 0;
+  if (!std::isfinite(result.value)) return {};
+  if (result.value == 0) result.automatic = true;  // Degenerate ratios behave as auto, retaining a natural image ratio.
+  return result;
+}
 CssLayoutStyle CssLayoutStyle::fromComputed(const CssComputedStyle& style) {
   CssLayoutStyle result;
+  if (auto ratio = parseCssAspectRatio(style.resolvedValue("aspect-ratio"))) result.aspectRatio = *ratio;
   const auto keyword = [&](const char* property, QString& target) {
     const auto value = style.resolvedValue(QString::fromLatin1(property)).trimmed().toLower();
     if (!value.isEmpty()) target = value;

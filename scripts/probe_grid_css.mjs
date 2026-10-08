@@ -8,6 +8,34 @@ const {chromium} = await import(moduleName ? pathToFileURL(path.resolve(moduleNa
 const browser = await chromium.launch({headless: true, ...(process.env.CHROME_EXECUTABLE ? {executablePath: process.env.CHROME_EXECUTABLE} : {})});
 const attribute = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
 const cases = [
+  {"id": "image-small-auto-min", "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-small-zero-min", "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-grow", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-explicit-stretch", "html": "<div id=\"case\" style=\"display:grid;width:300px;height:140px;align-items:stretch;justify-items:stretch;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-transferred-size", "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-percent-padding-image", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;padding:5%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-percent-height-image", "html": "<div id=\"case\" style=\"display:grid;width:300px;height:200px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-auto-ratio-border", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box;aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+
+  {"id": "image-natural", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-width", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-height", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-max-width", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-min-width", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:230px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-max-height", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-min-height", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:140px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-ratio", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-auto-ratio", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-percent", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-constraints", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px;min-height:70px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-box-content", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-box-border", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "image-ratio-border", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;aspect-ratio:1;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "ratio-box", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:100px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "ratio-stretch", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "ratio-cross-size", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"height:40px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+  {"id": "ratio-min", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:80px;aspect-ratio:2;min-height:70px\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
+
   {id:'fit-content-cap', container:'width:300px;grid-template-columns:fit-content(90px) 1fr;gap:10px',children:['','height:30px'],texts:['alpha beta gamma delta','']},
   {id:'fit-content-minimum', container:'width:180px;grid-template-columns:fit-content(20px) 1fr;gap:10px',children:['','height:30px'],texts:['WWWWWWWWWW','']},
   {id:'fit-content-percent', container:'width:300px;grid-template-columns:fit-content(25%) 1fr;gap:10px',children:['','height:30px'],texts:['alpha beta gamma delta','']},
@@ -57,6 +85,49 @@ const cases = [
   {"id": "subgrid-local-areas", "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:80px 1fr;gap:10px;\"><div id=\"a\" style=\"display:grid;grid-column:1/-1;grid-template-columns:subgrid;grid-template-areas:'Left Right'\"><div id=\"c\" style=\"grid-area:Right;height:20px\"></div><div id=\"d\" style=\"grid-area:Left;height:30px\"></div></div></div>"},
   {"id": "subgrid-inherited-areas", "html": "<div id=\"case\" style=\"display:grid;font:16px Arial;line-height:20px;width:300px;grid-template-columns:80px 1fr;gap:10px;grid-template-areas:'Left Right'\"><div id=\"a\" style=\"display:grid;grid-column:1/-1;grid-template-columns:subgrid;\"><div id=\"c\" style=\"grid-area:Right;height:20px\"></div><div id=\"d\" style=\"grid-area:Left;height:30px\"></div></div></div>"},
   {"id": "subgrid-column-flow", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:80px 1fr;grid-template-rows:30px 50px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-area:1/1/3/3;grid-template-columns:subgrid;grid-template-rows:subgrid;grid-auto-flow:column\"><div id=\"c\"></div><div id=\"d\"></div><div id=\"e\"></div><div id=\"f\"></div></div></div>"},
+  {id:'cyclic-rows',container:'width:300px;grid-template-columns:1fr;grid-template-rows:50% 50%',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-calc-rows',container:'width:300px;grid-template-columns:1fr;grid-template-rows:calc(50% + 10px) auto',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-row-gap',container:'width:300px;grid-template-columns:1fr;grid-template-rows:20px 40px;row-gap:20%',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-calc-gap',container:'width:300px;grid-template-columns:1fr;grid-template-rows:auto auto;row-gap:calc(20% + 10px)',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-percent-fr',container:'width:300px;grid-template-columns:1fr;grid-template-rows:50% 1fr',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-row-padding',container:'width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;padding:10px;border:2px solid black',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-min-height',container:'width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;min-height:150px',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-max-height',container:'width:300px;grid-template-columns:1fr;grid-template-rows:50% auto;max-height:40px',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'cyclic-implicit-rows',container:'width:300px;grid-template-columns:1fr;grid-auto-rows:50%',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'definite-percent-height-min',container:'width:300px;grid-template-columns:1fr;height:100px;min-height:150px;grid-template-rows:50% 50%',children:['',''],texts:['A','A<br>B<br>C']},
+  {id:'definite-percent-height-max',container:'width:300px;grid-template-columns:1fr;height:150px;max-height:100px;grid-template-rows:50% 50%',children:['',''],texts:['A','A<br>B<br>C']},
+  {"id": "cyclic-nested-columns", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:50% auto\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>"},
+  {"id": "cyclic-nested-calc", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:calc(50% + 10px) auto\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>"},
+  {"id": "cyclic-nested-gap", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:auto auto;column-gap:20%\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>"},
+  {"id": "cyclic-nested-calc-gap", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:max-content 1fr;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:grid;grid-template-columns:auto auto;column-gap:calc(20% + 10px)\"><div id=\"c\">alpha beta</div><div id=\"d\">B</div></div><div id=\"b\" style=\"height:20px\"></div></div>"},
+  {"id": "repeat-rows-minimum-auto-fill", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-minimum-auto-fit", "container": "width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-maximum-auto-fill", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;max-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-maximum-auto-fit", "container": "width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;max-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-both-auto-fill", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px;max-height:350px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-both-auto-fit", "container": "width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px;max-height:350px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-conflict-auto-fill", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:350px;max-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-conflict-auto-fit", "container": "width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:350px;max-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-padding-auto-fill", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:250px;padding:10px;border:2px solid black;box-sizing:border-box", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-rows-padding-auto-fit", "container": "width:300px;grid-template-rows:repeat(auto-fit,100px);gap:10px;min-height:250px;padding:10px;border:2px solid black;box-sizing:border-box", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-minimum-auto-fill", "container": "width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-minimum-auto-fit", "container": "width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-maximum-auto-fill", "container": "width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;max-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-maximum-auto-fit", "container": "width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;max-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-both-auto-fill", "container": "width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px;max-width:350px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-both-auto-fit", "container": "width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px;max-width:350px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-conflict-auto-fill", "container": "width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:350px;max-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-conflict-auto-fit", "container": "width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:350px;max-width:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-padding-auto-fill", "container": "width:max-content;grid-template-columns:repeat(auto-fill,100px);gap:10px;min-width:250px;padding:10px;border:2px solid black;box-sizing:border-box", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-columns-padding-auto-fit", "container": "width:max-content;grid-template-columns:repeat(auto-fit,100px);gap:10px;min-width:250px;padding:10px;border:2px solid black;box-sizing:border-box", "children": ["height:20px", "height:30px"]},
+  {"id": "percent-height-auto-rows", "container": "width:300px;grid-template-columns:1fr;", "children": ["height:50%", "height:calc(50% + 10px)"], "texts": ["A", "B"]},
+  {"id": "percent-padding-auto-rows", "container": "width:300px;grid-template-columns:1fr;", "children": ["padding:10%", "padding:calc(10% + 5px)"], "texts": ["A", "B"]},
+  {"id": "percent-row-minmax", "container": "width:300px;grid-template-columns:1fr;grid-template-rows:minmax(50%,1fr) auto;", "children": ["height:20px", "height:60px"], "texts": ["A", "B"]},
+  {"id": "repeat-minimum-calc", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:calc(100px + 150px)", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-max-percent", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;max-height:50%", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-min-percent", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:50%", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-minimum-pattern", "container": "width:300px;grid-template-rows:repeat(auto-fill,60px 80px);gap:10px;min-height:250px", "children": ["height:20px", "height:30px"]},
+  {"id": "repeat-minimum-exact", "container": "width:300px;grid-template-rows:repeat(auto-fill,100px);gap:10px;min-height:210px", "children": ["height:20px", "height:30px"]},
   {id:'auto-fill', container:'width:500px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px', children:['height:20px','height:30px']},
   {id:'auto-fit', container:'width:500px;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px', children:['height:20px','height:30px']},
   {id:'auto-fit-empty', container:'width:500px;grid-template-columns:repeat(auto-fit,100px);gap:10px', children:[]},
@@ -130,6 +201,24 @@ const cases = [
   {id:'display-none-order', container:'width:200px;grid-template-columns:1fr 1fr;gap:10px', children:['height:20px;order:2','display:none','height:30px;order:-1']},
   {id:'nested', html:'<div id="case" style="display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px"><div id="a" style="display:grid;grid-template-columns:1fr 2fr;gap:5px;min-width:0"><div id="c" style="height:20px"></div><div id="d" style="height:30px"></div></div><div id="b" style="height:40px"></div></div>'},
 ];
+const imageSource = /src="([^"]+)"/.exec(cases[0].html)[1];
+for (const [id, attributes] of [
+  ['image-width-attribute', 'width="80"'],
+  ['image-width-attribute-css-auto', 'width="80" style="width:auto"'],
+]) cases.push({id, html:cases.find(c => c.id === 'image-natural').html.replace('style=""', attributes)});
+for (const [id, image] of [
+  ['image-ratio-degenerate', 'width:80px;aspect-ratio:0'],
+  ['image-ratio-zero-denominator', 'width:80px;aspect-ratio:2/0'],
+  ['image-max-height-padding', 'max-height:40px;padding:10px;border:2px solid black'],
+  ['image-min-height-padding', 'min-height:120px;padding:10px;border:2px solid black'],
+  ['image-max-height-border-box', 'max-height:64px;padding:10px;border:2px solid black;box-sizing:border-box'],
+]) cases.push({id, html:cases.find(c => c.id === 'image-natural').html.replace('style=""', `style="${image}"`)});
+for (const [id, rows, image, extra] of [
+  ['image-stretch-fixed-row', '80px', 'align-self:stretch', ''],
+  ['image-stretch-row-span', '40px 70px', 'align-self:stretch;grid-row:span 2', ''],
+  ['image-stretch-fr-rows', '1fr 2fr', 'align-self:stretch;grid-row:span 2', 'height:150px'],
+  ['image-stretch-row-max-width', '80px', 'align-self:stretch;max-width:120px', ''],
+]) cases.push({id, html:`<div id="case" style="display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:${rows};gap:10px;${extra}"><img id="a" src="${imageSource}" style="${image}"><div id="b" style="height:30px"></div></div>`});
 try {
   const page = await browser.newPage({viewport:{width:800,height:700}});
   const base = fs.readFileSync(path.join(root,'resources/themes/document-base.css'),'utf8');
@@ -137,7 +226,7 @@ try {
     const viewportWidth = c.viewportWidth ?? 800;
     await page.setViewportSize({width:viewportWidth,height:700});
     c.html ??= `<div id="case" style="${attribute(`display:grid;font:16px Arial;line-height:20px;${c.container}`)}">${c.children.map((style,i)=>`<div id="${'abcd'[i]}" style="${attribute(style)}">${c.texts?.[i] ?? ''}</div>`).join('')}</div>`;
-    await page.setContent(`<style>${base}</style><div id="write" style="padding:0;width:${viewportWidth}px">${c.html}</div>`);
+    await page.setContent(`<!doctype html><style>${base}</style><div id="write" style="padding:0;width:${viewportWidth}px">${c.html}</div>`);
     const parsed = await page.evaluate(() => {
       const el = document.querySelector('#case');
       return {display:getComputedStyle(el).display, areas:el.style.gridTemplateAreas, columns:el.style.gridTemplateColumns};
@@ -146,11 +235,20 @@ try {
         (c.container?.includes('grid-template-columns') && !parsed.columns)) {
       throw new Error(`${c.id}: browser did not parse the intended Grid declarations`);
     }
+    if (await page.evaluate(() => document.compatMode) !== "CSS1Compat") throw new Error("Browser oracle must use standards mode");
     c.expected = await page.evaluate(()=>{
       const outer = document.querySelector('#case').getBoundingClientRect();
       return Object.fromEntries([...document.querySelectorAll('#case,#case [id]')].map(el=>{
         const r=el.getBoundingClientRect();return [el.id,{x:r.left-outer.left,y:r.top-outer.top,width:r.width,height:r.height}];
       }));
+    });
+    if (c.html.includes('<img')) c.imageContent = await page.evaluate(() => {
+      const image = document.querySelector('#case img');
+      const rect = image.getBoundingClientRect(), outer = document.querySelector('#case').getBoundingClientRect();
+      const style = getComputedStyle(image);
+      const inset = side => parseFloat(style['padding' + side]) + parseFloat(style['border' + side + 'Width']);
+      return {x:rect.left - outer.left + inset('Left'), y:rect.top - outer.top + inset('Top'),
+              width:rect.width - inset('Left') - inset('Right'), height:rect.height - inset('Top') - inset('Bottom')};
     });
     delete c.container; delete c.children; delete c.texts;
   }

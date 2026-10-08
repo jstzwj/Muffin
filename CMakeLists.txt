@@ -1260,6 +1260,7 @@ set(MUFFIN_UI_SOURCES
   src/render/CssFormattingContext.cpp
   src/render/CssFormattingContext.h
   src/render/CssGridLayout.cpp
+  src/render/CssSizing.h
   src/render/CodeHighlight.h
   src/render/BlockLayoutBuilder.cpp
   src/render/BlockLayoutBuilder.h

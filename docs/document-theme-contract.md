@@ -124,8 +124,8 @@ vertical documents keep sparse promotion and suffix shifts. Visible-block querie
 and clicking use actual rectangles because visual order may differ from source order.
 `overflow` controls clipping and automatic minimums; embedded containers do not
 yet provide their own interactive scrollbars. General inline formatting around an
-`inline-flex` atom, orthogonal writing modes, replaced-element aspect-ratio minimums,
-and full WPT compatibility remain follow-up work.
+`inline-flex` atom, orthogonal writing modes and full WPT compatibility remain
+follow-up work.
 
 `CssFlexLayoutTest` consumes `tests/fixtures/theme/flex-layout-browser.json`,
 generated with `node scripts/probe_flex_css.mjs`. It compares Chrome box geometry
@@ -152,8 +152,12 @@ Track counts and authored line magnitudes are bounded at 1000 to keep malformed
 or adversarial CSS from allocating an unbounded grid.
 
 Automatic repetition (`auto-fill`/`auto-fit`) stays symbolic in computed styles.
-The shared layout resolves its count against the definite content axis and gap,
-with one repetition for an indefinite axis. `auto-fit` collapses only unoccupied
+The shared layout resolves its count against the definite content axis and gap.
+For an indefinite preferred size, a definite maximum supplies the largest fitting
+count; a minimum-only constraint supplies the smallest count satisfying it. The
+border-box constraints first exclude padding and borders, and conflicting minimums
+win over maximums. One repetition is used only when all these sizes are indefinite.
+`auto-fit` collapses only unoccupied
 repeated tracks and their gutters after placement, retaining the original explicit
 line numbering. Fixed siblings, repeated track patterns and percentage/calc fixed
 minimums participate in counting. Resizing re-expands the computed template rather
@@ -188,10 +192,43 @@ minimum. Explicit `min-content`/`max-content` minima may exceed a smaller maximu
 in `minmax()`. Shared geometry is used by both adapters and native caret/selection;
 a descendant edit invalidates its owning formatting context and parent tracks.
 
+### Size dependencies and replaced content
+
+Intrinsic measurement and final allocation use explicit definite/indefinite size
+references. Percentage tracks in an indefinite axis behave as intrinsic tracks
+while measuring; cyclic gap percentages contribute zero and `calc()` retains its
+absolute part. Grid then freezes its intrinsic content height, applies min/max
+constraints, and resolves percentage tracks and gaps once against that height.
+Overflow from this pass does not increase the frozen height. In auto-height Flex
+containers a percentage row gap stays zero, including when only a min/max height
+is specified; its absolute `calc()` component still contributes.
+
+`CssSizing` supplies common content constraints and replaced-element sizing.
+Adapters carry natural image dimensions separately from computed CSS, project
+lengths to layout pixels once, and pass definite allocations into the same ratio
+calculation. HTML image dimension attributes also follow document zoom and remain
+overridable by authored CSS. `aspect-ratio: auto <ratio>` retains an available natural image ratio;
+an authored ratio follows `box-sizing`, while natural ratios use the content box.
+Min/max constraints may transfer to the automatic opposite axis or break the ratio
+when required. Flex automatic minimums and Grid track contributions use these
+sizes. A bounded dependency pass revisits columns after a definite row allocation
+changes a stretched item's ratio contribution; column Flex likewise transfers its
+allocated main size back to an automatic cross size.
+
+Markdown and HTML image painting consumes the allocated content rectangle. Padding
+and borders reserve space outside that rectangle, and image upscaling or an authored
+ratio is not undone by a second painting-time natural-size cap. Images use the CSS
+default `object-fit: fill`; additional `object-fit` modes are not yet implemented.
+
+Browser fixtures run in standards mode with an explicit doctype. They cover cyclic
+percentage/calc dependencies, min/max-only automatic repeats, natural and authored
+image ratios, transferred constraints and both box-sizing modes at 100%/200% zoom.
+Image cases additionally compare painted content rectangles. Native tests exercise
+Markdown image hit testing and caret coordinates, resizing and full/lazy convergence.
+
 Masonry, orthogonal writing modes, Grid baseline groups and complete CSS Grid
-intrinsic sizing/WPT coverage remain future work, including cyclic percentage
-tracks/gaps in indefinite axes, automatic repetition under min/max-only containing
-sizes, and transferred aspect-ratio contributions from complex replaced content.
+intrinsic sizing/WPT coverage remain future work. The bounded size-dependency passes
+do not establish full browser compatibility for arbitrary nested cyclic constraints.
 General inline formatting of `inline-grid` has the same limitation as `inline-flex`; parsing these values does not promise browser-complete behavior.
 Escaped CSS custom identifiers and escaped area strings, and the full `grid` /
 `grid-template` shorthands are not yet supported.

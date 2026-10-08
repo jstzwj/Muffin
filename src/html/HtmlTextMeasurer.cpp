@@ -396,7 +396,7 @@ void HtmlTextMeasurer::collectInlineText(const HtmlBox& box, QString& outText, s
       outLinks.push_back(HtmlTextLayout::LinkSpan{start, offset - start, href});
     }
   } else if (box.tag() == HtmlTag::Break) {
-    outText += QLatin1Char('\n');
+    outText += QChar::LineSeparator;
     offset += 1;
   } else {
     // Recurse into inline children

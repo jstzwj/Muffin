@@ -180,6 +180,7 @@ private:
     qsizetype visibleEnd = 0;
     QString srcUrl;
     QSizeF displaySize;
+    std::shared_ptr<const LayoutBox> cssBox;
     QImage image;
     bool loaded = false;
   };

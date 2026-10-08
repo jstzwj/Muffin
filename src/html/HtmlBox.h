@@ -162,6 +162,7 @@ struct HtmlComputedStyle {
   qreal width = -1;   // -1 = auto
   qreal height = -1;  // -1 = auto
   qreal zoom = 1.0;   // scale factor from style="zoom:N%"; 1.0 = natural size
+  qreal cssScale = 1.0;
   qreal lineHeight = -1;
   qreal letterSpacing = 0;
   bool visible = true;

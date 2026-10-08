@@ -305,8 +305,8 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
   if (box.src().isEmpty()) {
     // No src — draw placeholder with icon
     const auto& geo = box.geometry();
-    const qreal w = geo.width > 0 ? geo.width : 100;
-    const qreal h = geo.height > 0 ? geo.height : 80;
+    const qreal w = box.layoutBox.valid ? box.layoutBox.contentBox.width() : geo.width;
+    const qreal h = box.layoutBox.valid ? box.layoutBox.contentBox.height() : geo.height;
     painter.save();
     painter.setPen(palette_.codeBorder);
     painter.setBrush(palette_.codeBackground);
@@ -331,8 +331,8 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
   if (image.isNull()) {
     // Failed to load — draw broken-image icon inside the box
     const auto& geo = box.geometry();
-    const qreal w = geo.width > 0 ? geo.width : 100;
-    const qreal h = geo.height > 0 ? geo.height : 80;
+    const qreal w = box.layoutBox.valid ? box.layoutBox.contentBox.width() : geo.width;
+    const qreal h = box.layoutBox.valid ? box.layoutBox.contentBox.height() : geo.height;
     painter.save();
     painter.setPen(palette_.codeBorder);
     painter.setBrush(palette_.codeBackground);
@@ -352,19 +352,10 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
     return;
   }
 
-  const auto& geo = box.geometry();
-  const qreal maxW = geo.width > 0 ? geo.width : image.width();
-  const qreal maxH = geo.height > 0 ? geo.height : image.height();
-
-  // Scale to fit
-  qreal scale = qMin(maxW / image.width(), maxH / image.height());
-  if (scale > 1.0) scale = 1.0;
-  const qreal drawW = image.width() * scale;
-  const qreal drawH = image.height() * scale;
-
-  painter.save();
-  painter.drawImage(QRectF(origin, QSizeF(drawW, drawH)), image);
-  painter.restore();
+  // Layout has already resolved natural size, ratio and constraints. The
+  // default CSS object fitting fills that content box, including enlargement.
+  const QSizeF size = box.layoutBox.valid ? box.layoutBox.contentBox.size() : QSizeF(box.geometry().width, box.geometry().height);
+  painter.drawImage(QRectF(origin, size), image);
 }
 
 const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {

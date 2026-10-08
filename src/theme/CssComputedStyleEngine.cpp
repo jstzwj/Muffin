@@ -1,5 +1,6 @@
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssGridStyle.h"
+#include "theme/CssLayoutStyle.h"
 
 #include "theme/CssThemeParser.h"
 #include "theme/CssSelectorUtils.h"
@@ -823,6 +824,7 @@ bool validDeclarationValue(const QString& property, const QString& raw, const QH
   const auto oneOf = [&](std::initializer_list<const char*> values) {
     return std::any_of(values.begin(), values.end(), [&](const char* v) { return lower == QLatin1String(v); });
   };
+  if (property == "aspect-ratio") return parseCssAspectRatio(value).has_value();
   if (property == "display")
     return oneOf({"none", "block", "inline", "inline-block", "flex", "inline-flex", "grid", "inline-grid", "flow-root", "table",
                   "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-cell", "list-item"});
@@ -1075,6 +1077,7 @@ void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssCom
                                                      {QStringLiteral("visibility"), QStringLiteral("visible")},
                                                      {"box-sizing", "content-box"},
                                                      {"display", "inline"},
+                                                     {"aspect-ratio", "auto"},
                                                      {"grid-template-columns", "none"},
                                                      {"grid-template-rows", "none"},
                                                      {"grid-template-areas", "none"},

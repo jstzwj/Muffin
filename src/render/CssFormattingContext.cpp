@@ -1,5 +1,6 @@
 #include "render/CssFormattingContext.h"
 #include "render/LayoutBox.h"
+#include "render/CssSizing.h"
 #include <yoga/Yoga.h>
 #include <algorithm>
 #include <cmath>
@@ -41,7 +42,21 @@ struct MeasureContext {
 };
 YGSize measureItem(YGNodeConstRef node, float width, YGMeasureMode widthMode, float, YGMeasureMode) {
   auto& context = *static_cast<MeasureContext*>(YGNodeGetContext(node));
-  const auto result = context.item->measure(widthMode == YGMeasureModeUndefined ? -1 : qMax<qreal>(0, width), context.containingWidth, {});
+  auto result = context.item->measure(widthMode == YGMeasureModeUndefined ? -1 : qMax<qreal>(0, width), context.containingWidth, {});
+  if (context.item->naturalSize || cssPreferredRatio(*context.item) > 0) {
+    const auto& b = context.item->style.box;
+    const auto padding = b.paddingLengths.used(b.padding, context.containingWidth, true);
+    const qreal horizontal = padding.left() + padding.right() + b.borderLeftWidth + b.borderRightWidth;
+    const qreal vertical = padding.top() + padding.bottom() + b.borderTopWidth + b.borderBottomWidth;
+    const auto preferred = cssReplacedSize(
+        *context.item, context.containingWidth, -1,
+        widthMode == YGMeasureModeUndefined
+            ? -1
+            : (widthMode == YGMeasureModeExactly ? width : qMin<qreal>(width, context.item->intrinsic.maxContent)) + horizontal);
+    result.size.setWidth(qMax<qreal>(0, preferred.width() - horizontal));
+    result.size.setHeight(context.item->naturalSize ? qMax<qreal>(0, preferred.height() - vertical)
+                                                    : qMax(result.size.height(), preferred.height() - vertical));
+  }
   context.baseline = result.baseline;
   return {static_cast<float>(widthMode == YGMeasureModeExactly  ? width
                              : widthMode == YGMeasureModeAtMost ? qMin<qreal>(width, result.size.width())
@@ -124,13 +139,17 @@ void applyCssFormattingStyle(YGNode* node, const CssLayoutStyle& style, qreal sc
 }
 CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items, qreal contentWidth,
                                     qreal contentHeight, qreal scale) {
+  const auto heightConstraints = cssContentConstraints(container.box, 1, -1, scale);
+  if (contentHeight >= 0) contentHeight = heightConstraints.clamp(contentHeight);
   auto* root = createCssLayoutNode();
   applyCssFormattingStyle(root, container.layout, scale);
   for (const auto& [gutter, length, reference] : {std::tuple{YGGutterColumn, container.layout.columnGap, contentWidth},
                                                   std::tuple{YGGutterRow, container.layout.rowGap, contentHeight}}) {
-    if (length.status == CssLengthStatus::Valid && length.hasPercentage && length.px != 0 && reference >= 0)
-      YGNodeStyleSetGap(root, gutter, static_cast<float>(qMax<qreal>(0, length.px * scale + length.fraction * reference)));
+    if (length.status == CssLengthStatus::Valid) YGNodeStyleSetGap(root, gutter, static_cast<float>(cssGap(length, reference, scale)));
   }
+  YGNodeStyleSetMinHeight(root, static_cast<float>(heightConstraints.minimum));
+  if (heightConstraints.maximum < std::numeric_limits<qreal>::max())
+    YGNodeStyleSetMaxHeight(root, static_cast<float>(heightConstraints.maximum));
   YGNodeStyleSetWidth(root, static_cast<float>(contentWidth));
   if (contentHeight >= 0) YGNodeStyleSetHeight(root, static_cast<float>(contentHeight));
   std::vector<YGNode*> nodes(items.size());
@@ -218,6 +237,33 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
     if (style.layout.basis.hasPercentage && style.layout.basis.px != 0 && (row || contentHeight >= 0))
       YGNodeStyleSetFlexBasis(
           node, static_cast<float>(style.layout.basis.px * scale + style.layout.basis.fraction * (row ? contentWidth : contentHeight)));
+    if (item.naturalSize || cssPreferredRatio(item) > 0) {
+      const qreal horizontal = (pads[1] + pads[3] + borders[1] + borders[3]) * scale;
+      const qreal vertical = (pads[0] + pads[2] + borders[0] + borders[2]) * scale;
+      const auto align = style.layout.alignSelf == "auto" ? container.layout.alignItems : style.layout.alignSelf;
+      const bool stretched = align == "normal" || align == "stretch";
+      const qreal stretchedWidth = !row && stretched && style.layout.sizes[0] == CssIntrinsicSize::Auto && !style.layout.autoMargins[1] &&
+                                           !style.layout.autoMargins[3]
+                                       ? qMax(horizontal, contentWidth - (margins[1] + margins[3]) * scale)
+                                       : -1;
+      const qreal stretchedHeight = row && stretched && container.layout.wrap == "nowrap" && contentHeight >= 0 &&
+                                            style.layout.sizes[1] == CssIntrinsicSize::Auto && !style.layout.autoMargins[0] &&
+                                            !style.layout.autoMargins[2]
+                                        ? qMax(vertical, contentHeight - (margins[0] + margins[2]) * scale)
+                                        : -1;
+      const auto preferred = cssReplacedSize(item, contentWidth, contentHeight, stretchedWidth, stretchedHeight);
+      const bool crossSpecified = b.heightLength.status == CssLengthStatus::Valid && (!b.heightLength.hasPercentage || contentHeight >= 0);
+      if (item.naturalSize || crossSpecified || b.widthLength.status == CssLengthStatus::Valid)
+        YGNodeStyleSetWidth(node, static_cast<float>(preferred.width() - (b.borderBox ? 0 : horizontal)));
+      if (!row) YGNodeStyleSetHeight(node, static_cast<float>(preferred.height() - (b.borderBox ? 0 : vertical)));
+      if (row && style.layout.sizes[2] == CssIntrinsicSize::Auto &&
+          (style.layout.overflowX == "visible" || style.layout.overflowX == "clip"))
+        minimumWidths[i] = stretchedHeight >= 0 ? preferred.width() - (b.borderBox ? 0 : horizontal)
+                                                : qMin(minimumWidths[i], preferred.width() - (b.borderBox ? 0 : horizontal));
+      if (!row && style.layout.sizes[4] == CssIntrinsicSize::Auto &&
+          (style.layout.overflowY == "visible" || style.layout.overflowY == "clip"))
+        minimumHeights[i] = qMin(minimumHeights[i], preferred.height() - (b.borderBox ? 0 : vertical));
+    }
     contexts[i] = {&item, contentWidth};
     YGNodeSetContext(node, &contexts[i]);
     YGNodeSetMeasureFunc(node, measureItem);
@@ -266,6 +312,24 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
     }
     if (!changed) break;
     calculate();
+  }
+  if (!row) {
+    // A column's main-axis flexing can change an image's automatic width. Carry
+    // that allocation through the shared ratio solver before cross alignment.
+    bool changed = false;
+    for (size_t i = 0; i < items.size(); ++i) {
+      const auto& item = items[i];
+      const auto align = item.style.layout.alignSelf == "auto" ? container.layout.alignItems : item.style.layout.alignSelf;
+      if ((!item.naturalSize && cssPreferredRatio(item) <= 0) || item.style.layout.sizes[0] != CssIntrinsicSize::Auto ||
+          align == "normal" || align == "stretch")
+        continue;
+      const auto preferred = cssReplacedSize(item, contentWidth, contentHeight, -1, YGNodeLayoutGetHeight(nodes[i]));
+      const qreal horizontal = YGNodeLayoutGetPadding(nodes[i], YGEdgeLeft) + YGNodeLayoutGetPadding(nodes[i], YGEdgeRight) +
+                               YGNodeLayoutGetBorder(nodes[i], YGEdgeLeft) + YGNodeLayoutGetBorder(nodes[i], YGEdgeRight);
+      YGNodeStyleSetWidth(nodes[i], static_cast<float>(preferred.width() - (item.style.box.borderBox ? 0 : horizontal)));
+      changed = true;
+    }
+    if (changed) calculate();
   }
   CssFormattingResult result;
   result.containingWidths.assign(items.size(), contentWidth);

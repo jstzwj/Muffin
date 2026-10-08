@@ -2,6 +2,7 @@
 #include "html/HtmlTextMeasurer.h"
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
+#include "render/CssSizing.h"
 
 #include <yoga/Yoga.h>
 
@@ -64,6 +65,42 @@ qreal horizontalBoxExtent(const HtmlComputedStyle& style) {
 
 qreal verticalBoxExtent(const HtmlComputedStyle& style) {
   return style.padding.top() + style.padding.bottom() + style.borderWidth.top() + style.borderWidth.bottom();
+}
+
+ThemeElementStyle formattingStyle(const HtmlBox& box, qreal containingWidth) {
+  auto computed = box.style().computed;
+  const auto& childStyle = box.style();
+  computed.box.padding = childStyle.paddingLengths.used(childStyle.padding, containingWidth, true);
+  computed.box.margin = childStyle.marginLengths.used(childStyle.margin, containingWidth);
+  computed.box.paddingLengths = childStyle.paddingLengths;
+  computed.box.marginLengths = childStyle.marginLengths;
+  computed.box.widthLength = childStyle.widthLength;
+  computed.box.heightLength = childStyle.heightLength;
+  computed.box.minWidthLength = childStyle.minWidthLength;
+  computed.box.maxWidthLength = childStyle.maxWidthLength;
+  if (childStyle.width >= 0 && computed.box.widthLength.status != CssLengthStatus::Valid)
+    computed.box.widthLength = {CssLengthStatus::Valid, childStyle.width};
+  if (childStyle.height >= 0 && computed.box.heightLength.status != CssLengthStatus::Valid)
+    computed.box.heightLength = {CssLengthStatus::Valid, childStyle.height};
+  computed.box.borderBox = childStyle.borderBox;
+  computed.box.borderLeftWidth = childStyle.borderWidth.left();
+  computed.box.borderRightWidth = childStyle.borderWidth.right();
+  computed.box.borderTopWidth = childStyle.borderWidth.top();
+  computed.box.borderBottomWidth = childStyle.borderWidth.bottom();
+  return computed;
+}
+
+QSizeF naturalImageSize(const HtmlBox& box) {
+  QSize natural;
+  const auto& src = box.src();
+  if (src.startsWith("data:", Qt::CaseInsensitive))
+    natural = image_decoder::decodeDataUri(src).size();
+  else if (src.startsWith("http://") || src.startsWith("https://"))
+    natural = ImageLoader::instance().cached(src).size();
+  else
+    natural = image_decoder::detectSize(src);
+  return QSizeF(natural.width() > 0 ? natural.width() : kDefaultImageWidth, natural.height() > 0 ? natural.height() : kDefaultImageHeight) *
+         box.style().cssScale * box.style().zoom;
 }
 
 bool isTableCellBox(const HtmlBox& box) {
@@ -224,6 +261,7 @@ YGNode* HtmlLayoutEngine::createYogaNode(
   // Determine if this box contains only inline children (text content)
   if ((style.display == HtmlDisplay::Flex || style.display == HtmlDisplay::Grid)) {
     layoutFormattingBox(box, availableWidth, textLayouts);
+    YGNodeStyleSetBoxSizing(node, YGBoxSizingBorderBox);
     YGNodeStyleSetWidth(node, static_cast<float>(box.geometry().width));
     YGNodeStyleSetHeight(node, static_cast<float>(box.geometry().height));
     return node;
@@ -250,51 +288,13 @@ YGNode* HtmlLayoutEngine::createYogaNode(
   }
 
   if (box.tag() == HtmlTag::Image) {
-    QSize naturalSize;
-    if (!box.src().isEmpty()) {
-      const QString& src = box.src();
-      if (src.startsWith(QLatin1String("http://")) ||
-          src.startsWith(QLatin1String("https://"))) {
-        // Remote: use cached rasterized image dimensions (async download
-        // is triggered by the paint path in HtmlLayoutResult::cachedImage)
-        QImage cached = ImageLoader::instance().cached(src);
-        if (!cached.isNull()) {
-          naturalSize = cached.size();
-        }
-      } else if (src.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
-        // Inline data: URI — decode to read its real dimensions.
-        const QImage decoded = image_decoder::decodeDataUri(src);
-        if (!decoded.isNull()) {
-          naturalSize = decoded.size();
-        }
-      } else {
-        // Local: detectSize handles SVG via QSvgRenderer
-        naturalSize = image_decoder::detectSize(src);
-      }
-    }
-    qreal imageWidth = style.width >= 0 ? style.width : (naturalSize.width() > 0 ? naturalSize.width() : kDefaultImageWidth);
-    qreal imageHeight = style.height >= 0 ? style.height : (naturalSize.height() > 0 ? naturalSize.height() : kDefaultImageHeight);
-    if (style.width >= 0 && style.height < 0 && naturalSize.width() > 0 && naturalSize.height() > 0) {
-      imageHeight = imageWidth * naturalSize.height() / naturalSize.width();
-    } else if (style.height >= 0 && style.width < 0 && naturalSize.width() > 0 && naturalSize.height() > 0) {
-      imageWidth = imageHeight * naturalSize.width() / naturalSize.height();
-    }
-    // Apply the element's own zoom (style="zoom:N%") before the available-width cap so a
-    // zoomed-up image still honors the column width.
-    if (style.zoom > 0 && style.zoom != 1.0) {
-      imageWidth *= style.zoom;
-      imageHeight *= style.zoom;
-    }
-    const qreal maxWidth = qMax<qreal>(1.0, availableWidth - style.margin.left() - style.margin.right());
-    if (imageWidth > maxWidth) {
-      const qreal scale = maxWidth / imageWidth;
-      imageWidth *= scale;
-      imageHeight *= scale;
-    }
-    YGNodeStyleSetWidth(node, static_cast<float>(imageWidth));
-    YGNodeStyleSetHeight(node, static_cast<float>(imageHeight));
-    box.geometry().width = imageWidth;
-    box.geometry().height = imageHeight;
+    const auto item = formattingItem(box, availableWidth);
+    const auto imageSize = cssReplacedSize(item, availableWidth);
+    YGNodeStyleSetBoxSizing(node, YGBoxSizingBorderBox);
+    YGNodeStyleSetWidth(node, static_cast<float>(imageSize.width()));
+    YGNodeStyleSetHeight(node, static_cast<float>(imageSize.height()));
+    box.geometry().width = imageSize.width();
+    box.geometry().height = imageSize.height();
   } else if (box.tag() == HtmlTag::Pre && hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
     auto textLayout = measurer_.buildPreLayout(
         box, style.fontSize, qMax<qreal>(1.0, availableWidth - horizontalBoxExtent(style)));
@@ -454,7 +454,7 @@ CssIntrinsicMetrics HtmlLayoutEngine::intrinsicMetrics(HtmlBox& box) {
       if (isRenderableChildFor(box, *child) && !(child->isTextRun() && child->text().trimmed().isEmpty()))
         items.push_back(formattingItem(*child, 0));
     }
-    return intrinsicGridWidths(box.style().computed, items);
+    return intrinsicGridWidths(formattingStyle(box, 0), items);
   }
   bool blockChildren = false;
   for (const auto& child : box.children())
@@ -482,9 +482,8 @@ CssIntrinsicMetrics HtmlLayoutEngine::intrinsicMetrics(HtmlBox& box) {
       result.maxContent = qMax(result.maxContent, metrics.maxContent);
   }
   if (box.tag() == HtmlTag::Image) {
-    const auto natural = image_decoder::detectSize(box.src());
-    result = {qreal(natural.width() > 0 ? natural.width() : kDefaultImageWidth),
-              qreal(natural.width() > 0 ? natural.width() : kDefaultImageWidth)};
+    const auto natural = naturalImageSize(box);
+    result = {natural.width(), natural.width()};
   }
   return result;
 }
@@ -529,26 +528,9 @@ qreal HtmlLayoutEngine::layoutAllocatedBox(HtmlBox& box, QSizeF size, std::vecto
 }
 
 CssFormattingItem HtmlLayoutEngine::formattingItem(HtmlBox& box, qreal containingWidth) {
-  auto computed = box.style().computed;
+  auto computed = formattingStyle(box, containingWidth);
   auto& childStyle = box.style();
-  computed.box.padding = childStyle.paddingLengths.used(childStyle.padding, containingWidth, true);
-  computed.box.margin = childStyle.marginLengths.used(childStyle.margin, containingWidth);
   childStyle.padding = computed.box.padding;
-  computed.box.paddingLengths = childStyle.paddingLengths;
-  computed.box.marginLengths = childStyle.marginLengths;
-  computed.box.widthLength = childStyle.widthLength;
-  computed.box.heightLength = childStyle.heightLength;
-  computed.box.minWidthLength = childStyle.minWidthLength;
-  computed.box.maxWidthLength = childStyle.maxWidthLength;
-  if (childStyle.width >= 0 && computed.box.widthLength.status != CssLengthStatus::Valid)
-    computed.box.widthLength = {CssLengthStatus::Valid, childStyle.width};
-  if (childStyle.height >= 0 && computed.box.heightLength.status != CssLengthStatus::Valid)
-    computed.box.heightLength = {CssLengthStatus::Valid, childStyle.height};
-  computed.box.borderBox = childStyle.borderBox;
-  computed.box.borderLeftWidth = childStyle.borderWidth.left();
-  computed.box.borderRightWidth = childStyle.borderWidth.right();
-  computed.box.borderTopWidth = childStyle.borderWidth.top();
-  computed.box.borderBottomWidth = childStyle.borderWidth.bottom();
   auto* childPtr = &box;
   CssFormattingItem item;
   item.style = computed;
@@ -561,6 +543,14 @@ CssFormattingItem HtmlLayoutEngine::formattingItem(HtmlBox& box, qreal containin
     item.intrinsic = intrinsicGridWidths(computed, *item.children);
   } else
     item.intrinsic = intrinsicMetrics(box);
+  if (box.tag() == HtmlTag::Image) item.naturalSize = naturalImageSize(box);
+  if (item.naturalSize || cssPreferredRatio(item) > 0) {
+    const auto preferred = cssReplacedSize(item, -1);
+    const auto inset = childStyle.padding + childStyle.borderWidth;
+    if (item.naturalSize || (computed.box.heightLength.status == CssLengthStatus::Valid && !computed.box.heightLength.hasPercentage))
+      item.intrinsic = {qMax<qreal>(0, preferred.width() - inset.left() - inset.right()),
+                        qMax<qreal>(0, preferred.width() - inset.left() - inset.right())};
+  }
   const auto intrinsic = item.intrinsic;
   item.measure = [this, childPtr, intrinsic](qreal width, qreal reference, const CssGridInheritance& inherited) {
     auto& target = childPtr->style();
@@ -583,8 +573,21 @@ CssFormattingItem HtmlLayoutEngine::formattingItem(HtmlBox& box, qreal containin
 void HtmlLayoutEngine::layoutFormattingBox(HtmlBox& box, qreal availableWidth, std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts) {
   auto& style = box.style();
   const qreal extra = horizontalBoxExtent(style);
-  const qreal outerWidth = style.width >= 0 ? style.width + (style.borderBox ? 0 : extra)
-                                            : qMax<qreal>(0, availableWidth - style.margin.left() - style.margin.right());
+  qreal outerWidth = style.width >= 0 ? style.width + (style.borderBox ? 0 : extra)
+                                      : qMax<qreal>(0, availableWidth - style.margin.left() - style.margin.right());
+  if (style.width < 0) {
+    const auto kind = style.computed.layout.sizes[0];
+    if (kind == CssIntrinsicSize::MinContent || kind == CssIntrinsicSize::MaxContent || kind == CssIntrinsicSize::FitContent) {
+      const auto intrinsic = intrinsicMetrics(box);
+      outerWidth =
+          (kind == CssIntrinsicSize::MinContent   ? intrinsic.minContent
+           : kind == CssIntrinsicSize::MaxContent ? intrinsic.maxContent
+                                                  : qMax(intrinsic.minContent, qMin(intrinsic.maxContent, availableWidth - extra))) +
+          extra;
+    }
+  }
+  auto container = formattingStyle(box, availableWidth);
+  outerWidth = cssContentConstraints(container.box, 0, availableWidth).clamp(qMax<qreal>(0, outerWidth - extra)) + extra;
   const qreal contentWidth = qMax<qreal>(0, outerWidth - extra);
   const qreal contentHeight = style.height < 0 ? -1 : qMax<qreal>(0, style.height - (style.borderBox ? verticalBoxExtent(style) : 0));
   std::vector<HtmlBox*> children;
@@ -594,7 +597,7 @@ void HtmlLayoutEngine::layoutFormattingBox(HtmlBox& box, qreal availableWidth, s
     children.push_back(child.get());
     items.push_back(formattingItem(*child, contentWidth));
   }
-  const auto result = layoutFormattingItems(style.computed, items, contentWidth, contentHeight, 1,
+  const auto result = layoutFormattingItems(container, items, contentWidth, contentHeight, 1,
                                             contentGridInheritance(gridInheritance_.value(&box), style.padding + style.borderWidth));
   for (size_t i = 0; i < children.size(); ++i) {
     auto& child = *children[i];
