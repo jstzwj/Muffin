@@ -7,8 +7,13 @@
 #include <QString>
 
 #include <memory>
+#include <functional>
 #include <vector>
 #include "theme/CssThemeParser.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssCalc.h"
+#include "theme/ThemeDefinition.h"
+#include "render/LayoutBox.h"
 
 namespace muffin::html {
 
@@ -137,6 +142,7 @@ inline bool hasDecoration(HtmlTextDecoration value, HtmlTextDecoration flag) {
 }
 
 struct HtmlComputedStyle {
+  ThemeElementStyle computed;
   HtmlDisplay display = HtmlDisplay::Block;
   QColor color;
   QColor backgroundColor;
@@ -168,6 +174,13 @@ struct HtmlComputedStyle {
   qreal widthPercent = -1;
   QMarginsF marginPercent = QMarginsF(-1, -1, -1, -1);
   QMarginsF paddingPercent = QMarginsF(-1, -1, -1, -1);
+  CssBoxLengths marginLengths;
+  CssBoxLengths paddingLengths;
+  CssLengthPercentage widthLength;
+  CssLengthPercentage heightLength;
+  CssLengthPercentage minWidthLength;
+  CssLengthPercentage maxWidthLength;
+  bool borderBox = false;
 };
 
 struct HtmlLayoutGeometry {
@@ -188,6 +201,8 @@ struct HtmlColorPalette {
   QHash<QString, QString> fontAliases;
   qreal cssZoom = 1.0;
   qreal parentFontPx = 0.0;
+  const CssElement* documentParent = nullptr;
+  std::function<const CssElement*(qsizetype)> documentParentForOffset;
   QColor text;                   // default body text + <kbd>
   QColor background;             // <body> canvas
   QColor muted;                  // secondary text / soft borders (<button> border, placeholder alt)
@@ -217,6 +232,7 @@ struct HtmlColorPalette {
 
 class HtmlBox {
 public:
+ LayoutBox layoutBox;
  QString cssTag;
  QString cssId;
  QStringList cssClasses;

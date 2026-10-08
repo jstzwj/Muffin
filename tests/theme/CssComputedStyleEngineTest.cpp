@@ -51,7 +51,7 @@ void testInheritanceAndCustomProperties() {
           QStringLiteral("font-family should inherit from body"));
   require(s.resolvedValue(QStringLiteral("color")) == QStringLiteral("#ff00ff"),
           QStringLiteral("descendant custom property override should resolve var()"));
-  require(s.resolvedValue(QStringLiteral("border-color")) == QStringLiteral("#ff00ff"),
+  require(s.resolvedValue(QStringLiteral("border-color")) == QStringLiteral("#00f3ff"),
           QStringLiteral("var() fallback should resolve with inherited custom properties"));
 }
 
@@ -221,6 +221,154 @@ void testAttributeSelectorsAndInlineCascade() {
           QStringLiteral("inline !important should beat stylesheet !important"));
 }
 
+void testCssValueValidityAndShorthandReset() {
+  CssElement p;
+  p.tag = QStringLiteral("p");
+  auto check = [&](const QString& css) { return styleFor(css, p); };
+  require(check(QStringLiteral("p{color:red;color:madeup}")).resolvedValue(QStringLiteral("color")) == QStringLiteral("red"),
+          QStringLiteral("invalid later color must not replace a valid declaration"));
+  require(check(QStringLiteral("p{background-color:red;background:blue}")).resolvedValue(QStringLiteral("background-color")) ==
+              QStringLiteral("blue"),
+          QStringLiteral("background shorthand must reset and replace background-color"));
+  require(check(QStringLiteral("p{font-size:0em}")).fontSizePx == 0.0, QStringLiteral("zero font-size is a valid computed value"));
+  require(check(QStringLiteral("p{padding-left:7px;padding-left:-10px}")).resolvedValue(QStringLiteral("padding-left")) ==
+              QStringLiteral("7px"),
+          QStringLiteral("negative padding declaration must be invalid"));
+  require(check("p{background:red;background:wrong}").resolvedValue("background-color") == QStringLiteral("red"),
+          "invalid background shorthand must not erase a valid color");
+  require(check("p{border:2px solid red;border:3px 4px blue}").resolvedValue("border-left-width") == QStringLiteral("2px"),
+          "duplicate shorthand components must invalidate the whole border declaration");
+  require(check("p{background-color:red;background:linear-gradient(blue,green)}").resolvedValue("background-color") ==
+              QStringLiteral("transparent"),
+          "image background shorthand resets the omitted color");
+  require(check("p{font-weight:bold;font:16px serif}").resolvedValue("font-weight") == QStringLiteral("normal"),
+          "font shorthand resets omitted font components");
+  require(!check(QStringLiteral("p{border-left-width:2px}")).hasProperty(QStringLiteral("border-left-style")),
+          QStringLiteral("border width alone must retain the initial none style"));
+}
+
+void testCustomPropertyCaseAndComputedInheritance() {
+  CssElement html;
+  html.tag = QStringLiteral("html");
+  CssElement parent;
+  parent.tag = QStringLiteral("div");
+  parent.parent = &html;
+  CssElement child;
+  child.tag = QStringLiteral("p");
+  child.parent = &parent;
+  const auto sheet =
+      CssThemeParser::parse(QStringLiteral("html{--Tone:red;--Alias:var(--Tone)}div{--Tone:blue}p{--tone:green;color:var(--Alias)}"), {});
+  const CssComputedStyle s = CssComputedStyleEngine(sheet).styleFor(child);
+  require(s.resolvedValue(QStringLiteral("color")) == QStringLiteral("red"),
+          QStringLiteral("inherited custom aliases must keep the parent's computed value"));
+  require(s.rawValue(QStringLiteral("--Tone")) == QStringLiteral("blue") && s.rawValue(QStringLiteral("--tone")) == QStringLiteral("green"),
+          QStringLiteral("custom property names must preserve case"));
+}
+
+void testComputedInvalidityAndCycles() {
+  CssElement html;
+  html.tag = "html";
+  CssElement p;
+  p.tag = "p";
+  p.parent = &html;
+  const auto s = styleFor("html{color:blue}p{color:red;color:var(--missing);margin-left:7px;margin:var(--missing)}", p);
+  require(s.resolvedValue("color") == QStringLiteral("blue"), "invalid at computed time must unset, not resurrect an earlier declaration");
+  require(s.resolvedValue("margin-left") == QStringLiteral("0px"), "invalid variable shorthand must reset every component");
+  require(styleFor("p{--a:var(--b);--b:var(--a,red);color:var(--a,green)}", p).resolvedValue("color") == QStringLiteral("green"),
+          "cyclic variables must invalidate the cycle before applying a consumer fallback");
+  require(styleFor("html{--a:red}p{--a:initial;color:var(--a,blue)}", p).resolvedValue("color") == QStringLiteral("blue"),
+          "custom initial must suppress the inherited custom property");
+  require(CssThemeParser::resolveVars("'var(--x)'", {{"--x", "red"}}) == QStringLiteral("'var(--x)'"),
+          "var tokens inside string literals must remain literal");
+  require(styleFor("p{--a:'var(--a)';content:var(--a)}", p).resolvedValue("content") == QStringLiteral("'var(--a)'"),
+          "quoted var text must not create a custom-property dependency cycle");
+  const auto empty = styleFor("p{--empty:;padding:var(--empty,5px)}", p);
+  require(empty.customProperties().contains("--empty") && empty.resolvedValue("padding-left") == QStringLiteral("0px"),
+          "an empty custom value is valid and must not trigger var fallback");
+}
+
+void testDeferredLengthsAndDimensionalMath() {
+  CssElement p;
+  p.tag = "p";
+  const auto s = styleFor("p{font-size:20px;margin-left:calc(10% + 2em);padding-top:5%;padding-right:calc(2px - 4px)}", p);
+  const auto margin = s.length("margin-left");
+  require(margin.status == CssLengthStatus::Valid && margin.hasPercentage && margin.px == 40 && margin.fraction == .1,
+          "computed length must retain percentage instead of using viewport width");
+  require(margin.used(600) == 100 && margin.used(300) == 70, "same computed value must resolve against different containing blocks");
+  require(s.length("padding-top").used(600) == 30, "vertical padding percentages use containing width");
+  CssElement parent;
+  parent.tag = "div";
+  p.parent = &parent;
+  const auto inherited = styleFor("div{font-size:20px;margin-left:2em;letter-spacing:1em}p{font-size:10px;margin-left:inherit}", p);
+  require(inherited.length("margin-left").px == 40 && inherited.length("letter-spacing").px == 20,
+          "inherited lengths must freeze font-relative units in the defining parent");
+  require(parseCssLengthPercentage(u"0em", {}).status == CssLengthStatus::Valid, "zero is valid in every length unit");
+  require(parseCssLengthPercentage(u"", {}).status == CssLengthStatus::Missing, "missing length has a separate state");
+  for (const auto& value : {u"3", u"4bogus", u"calc(2px * 3px)", u"calc(2px / 0)", u"calc(2px + 1)", u"calc(2px+1px)"})
+    require(parseCssLengthPercentage(value, {}).status == CssLengthStatus::Invalid, "invalid length/dimensional math must be rejected");
+  require(parseCssLengthPercentage(u"calc(0px * 2)", {}).status == CssLengthStatus::Valid,
+          "calc result zero must not be treated as a parse failure");
+  require(styleFor("p{font-size:22px;font-size:wrong;padding:8px;padding:1px -2px}", p).fontSizePx == 22,
+          "invalid font declaration keeps earlier value");
+  require(styleFor("p{padding:8px;padding:1px -2px}", p).resolvedValue("padding-top") == QStringLiteral("8px"),
+          "invalid shorthand is rejected atomically");
+}
+
+void testFunctionalSelectorsAndSpecificity() {
+  CssElement root;
+  root.tag = "div";
+  root.classes = {"scope"};
+  CssElement p;
+  p.tag = "p";
+  p.classes = {"Note"};
+  p.parent = &root;
+  require(styleFor("p{color:red}:where(#x,.Note){color:blue}", p).resolvedValue("color") == QStringLiteral("red"),
+          ":where contributes zero specificity");
+  require(styleFor(".Note{color:red}:is(#absent,div.scope > p){color:blue}", p).resolvedValue("color") == QStringLiteral("blue"),
+          ":is matches complex alternatives and takes the maximum argument specificity");
+  require(styleFor("p{color:red}p:not(.other,.scope > .Note){color:blue}", p).resolvedValue("color") == QStringLiteral("red"),
+          ":not must evaluate selector lists and complex selectors");
+  require(styleFor("p{color:red}p:is(:unsupported,.Note):not(.other){color:blue}", p).resolvedValue("color") == QStringLiteral("blue"),
+          ":is uses a forgiving selector list");
+  require(!styleFor(".note{padding:2px}", p).hasProperty("padding-left"), "class selectors are case sensitive");
+  const auto sheet = CssThemeParser::parse("p:is(:nth-child(2),.x){color:red}", {});
+  require(CssComputedStyleEngine(sheet).selectorFeatures().hasStructuralRules,
+          "structural features inside functional selectors must activate live matching");
+}
+
+void testCacheLifetimeAndGeneration() {
+  const auto sheet = CssThemeParser::parse("p{color:red}h1{color:blue}p:hover{color:green}", {});
+  CssComputedStyleEngine engine(sheet);
+  CssElement element;
+  element.tag = "p";
+  require(engine.styleFor(element).resolvedValue("color") == QStringLiteral("red"), "initial uncached query");
+  element.tag = "h1";
+  require(engine.styleFor(element).resolvedValue("color") == QStringLiteral("blue"), "temporary elements must not be cached by address");
+  element.tag = "p";
+  element.cacheId = 123;
+  require(engine.styleFor(element).resolvedValue("color") == QStringLiteral("red"), "snapshot cache query");
+  CssElementState hover;
+  hover.hover = true;
+  require(engine.styleFor(element, hover).resolvedValue("color") == QStringLiteral("green"), "cache keys distinguish interaction states");
+  const auto generation = engine.generation();
+  element.tag = "h1";
+  engine.clearCache();
+  require(engine.generation() > generation && engine.styleFor(element).resolvedValue("color") == QStringLiteral("blue"),
+          "new generation invalidates previous computed styles");
+}
+
+void testModernMediaConditions() {
+  CssEnvironment env;
+  env.viewportWidth = 800;
+  env.viewportHeight = 800;
+  for (const auto& query :
+       {"screen and (600px <= width < 1000px)", "(width >= 800px)", "(hover:hover) and (pointer:fine)", "(orientation:portrait)",
+        "((width < 600px) or (width >= 800px))", "(prefers-reduced-motion:no-preference)", "not screen and (min-width:1000px)"})
+    require(CssThemeSheet::mediaMatches(query, env), "supported media condition should match desktop environment");
+  for (const auto& query : {"(width > 800px)", "(prefers-reduced-motion:reduce)", "(unknown:yes)", "(min-width:2dpi)"})
+    require(!CssThemeSheet::mediaMatches(query, env), "inactive/unknown/invalid-unit media condition must not leak");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -236,6 +384,13 @@ int main(int argc, char** argv) {
   RUN_TEST(testTyporaEditorOnlyClassDropped);
   RUN_TEST(testRootSelectorAppliesToHtml);
   RUN_TEST(testAttributeSelectorsAndInlineCascade);
+  RUN_TEST(testCssValueValidityAndShorthandReset);
+  RUN_TEST(testCustomPropertyCaseAndComputedInheritance);
+  RUN_TEST(testComputedInvalidityAndCycles);
+  RUN_TEST(testDeferredLengthsAndDimensionalMath);
+  RUN_TEST(testFunctionalSelectorsAndSpecificity);
+  RUN_TEST(testCacheLifetimeAndGeneration);
+  RUN_TEST(testModernMediaConditions);
 #undef RUN_TEST
   return 0;
 }

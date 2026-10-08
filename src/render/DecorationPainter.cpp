@@ -28,11 +28,17 @@ namespace {
 // Process-wide SVG cache keyed by SVG byte data (content-addressed; themes share).
 std::shared_ptr<QSvgRenderer> svgIcon(const QByteArray& data) {
   static QHash<QByteArray, std::shared_ptr<QSvgRenderer>> cache;
-  if (data.isEmpty()) { return nullptr; }
+  if (data.isEmpty()) {
+    return nullptr;
+  }
   const auto it = cache.constFind(data);
-  if (it != cache.constEnd()) { return *it; }
+  if (it != cache.constEnd()) {
+    return *it;
+  }
   auto r = std::make_shared<QSvgRenderer>(data);
-  if (!r->isValid()) { r.reset(); }
+  if (!r->isValid()) {
+    r.reset();
+  }
   cache.insert(data, r);
   return r;
 }
@@ -45,16 +51,20 @@ std::shared_ptr<QSvgRenderer> svgIcon(const QByteArray& data) {
 // texture tiling) — both are the same "alpha mask + tint" recipe at heart.
 QImage renderMaskTile(const QByteArray& svgData, const QColor& tint, QSize size) {
   const auto icon = svgIcon(svgData);
-  if (!icon || !tint.isValid() || size.width() <= 0 || size.height() <= 0) { return QImage(); }
+  if (!icon || !tint.isValid() || size.width() <= 0 || size.height() <= 0) {
+    return QImage();
+  }
   QImage shape(size.width(), size.height(), QImage::Format_ARGB32_Premultiplied);
   shape.fill(Qt::transparent);
-  { QPainter sp(&shape);
+  {
+    QPainter sp(&shape);
     sp.setRenderHint(QPainter::SmoothPixmapTransform, true);
     icon->render(&sp, QRectF(0, 0, size.width(), size.height()));
   }
   QImage out(size.width(), size.height(), QImage::Format_ARGB32_Premultiplied);
   out.fill(Qt::transparent);
-  { QPainter op(&out);
+  {
+    QPainter op(&out);
     op.fillRect(out.rect(), tint);
     op.setCompositionMode(QPainter::CompositionMode_DestinationIn);
     op.drawImage(0, 0, shape);
@@ -64,31 +74,38 @@ QImage renderMaskTile(const QByteArray& svgData, const QColor& tint, QSize size)
 
 const ElementBackground* elementBackground(const RenderTheme& theme, const QString& host) {
   for (const ElementBackground& eb : theme.decorations().backgrounds) {
-    if (eb.host == host) { return &eb; }
+    if (eb.host == host) {
+      return &eb;
+    }
   }
   return nullptr;
 }
 
 const PseudoElementRule* pseudoRule(const RenderTheme& theme, const QString& host, const QString& pseudo) {
   for (const PseudoElementRule& r : theme.decorations().pseudos) {
-    if (r.host == host && r.pseudo == pseudo) { return &r; }
+    if (r.host == host && r.pseudo == pseudo) {
+      return &r;
+    }
   }
   return nullptr;
 }
 
 const HoverEffect* hoverEffectFor(const RenderTheme& theme, const QString& host) {
   for (const HoverEffect& he : theme.decorations().hoverEffects) {
-    if (he.host == host) { return &he; }
+    if (he.host == host) {
+      return &he;
+    }
   }
   return nullptr;
 }
 
 }  // namespace
 
-void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& target,
-               const QColor& tint, bool recolour) {
+void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& target, const QColor& tint, bool recolour) {
   const auto icon = svgIcon(svgData);
-  if (!icon) { return; }
+  if (!icon) {
+    return;
+  }
   if (!recolour || !tint.isValid()) {
     painter.save();
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -100,91 +117,12 @@ void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& targe
   // (phycat's mask icons carry no fill of their own — only shape.)
   const QSize size(qMax(1, int(qCeil(target.width()))), qMax(1, int(qCeil(target.height()))));
   const QImage tile = renderMaskTile(svgData, tint, size);
-  if (tile.isNull()) { return; }
-  painter.save();
-  painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-  painter.drawImage(target, tile);
-  painter.restore();
-}
-
-void paintElementBackground(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect) {
-  const ElementBackground* eb = elementBackground(theme, host);
-  if (!eb) { return; }
-  const qreal r = qBound(0.0, eb->borderRadius, qMin(rect.width(), rect.height()) / 2.0);
-  const ThemeElementStyle* es = theme.elementStyle(host);
-  // CSS `backdrop-filter:` — sample the content painted BEHIND the box (only when
-  // the paint device is a QImage, i.e. tests/export; the live screen editor paints
-  // to the widget and would need a QImage-backed viewport to show this), filter it,
-  // and composite it back so the element's own background sits on the frosted
-  // backdrop. A solid backdrop (no texture) blurs to itself, so this only shows on
-  // textured/gradient page backgrounds.
-  if (es && hasElementBackdrop(es->paint)) {
-    if (auto* devImg = dynamic_cast<QImage*>(painter.device())) {
-      const QRect devRect = painter.transform().mapRect(rect).toAlignedRect().intersected(devImg->rect());
-      if (!devRect.isEmpty()) {
-        QImage backdrop = devImg->copy(devRect);
-        applyElementBackdrop(backdrop, es->paint);
-        painter.save();
-        painter.setWorldTransform(QTransform());
-        painter.setClipRect(devRect);
-        painter.drawImage(devRect.topLeft(), backdrop);
-        painter.restore();
-      }
-    }
-  }
-  // CSS `filter:` on the element: render its background (fill + gradient) to an
-  // offscreen image, apply the filter chain (blur extends OUTSIDE the box — so the
-  // image is padded and drawn unclipped), then the border-top line on top. Skipped
-  // entirely when no filter is declared (the common fast path below).
-  if (es && hasElementFilter(es->paint)) {
-    const int pad = qCeil(es->paint.filterBlur + 2.0);
-    const QRectF imgRect = rect.adjusted(-pad, -pad, pad, pad);
-    QImage img(qCeil(imgRect.width()), qCeil(imgRect.height()), QImage::Format_ARGB32_Premultiplied);
-    img.fill(Qt::transparent);
-    {
-      QPainter ip(&img);
-      ip.setRenderHint(QPainter::Antialiasing, true);
-      ip.translate(-imgRect.topLeft());
-      if (r > 0.5) { QPainterPath pill; pill.addRoundedRect(rect, r, r); ip.setClipPath(pill); }
-      else { ip.setClipRect(rect); }
-      if (eb->color.isValid()) { ip.fillRect(rect, eb->color); }
-      if (eb->gradient.kind != GradientSpec::Kind::None) {
-        ip.setOpacity(eb->opacity);
-        ip.fillRect(rect, GradientPainter::makeBrush(eb->gradient, rect));
-      }
-    }
-    applyElementFilter(img, es->paint);
-    painter.save();
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    painter.drawImage(imgRect.topLeft(), img);
-    if (eb->borderTopColor.isValid() && eb->borderTopWidth > 0.0) {
-      painter.setOpacity(1.0);
-      painter.setPen(QPen(eb->borderTopColor, eb->borderTopWidth));
-      const qreal y = rect.top() + eb->borderTopWidth / 2.0;
-      painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
-    }
-    painter.restore();
+  if (tile.isNull()) {
     return;
   }
   painter.save();
-  if (r > 0.5) {
-    QPainterPath pill;
-    pill.addRoundedRect(rect, r, r);
-    painter.setClipPath(pill);
-  } else {
-    painter.setClipRect(rect);
-  }
-  if (eb->color.isValid()) { painter.fillRect(rect, eb->color); }
-  if (eb->gradient.kind != GradientSpec::Kind::None) {
-    painter.setOpacity(eb->opacity);
-    painter.fillRect(rect, GradientPainter::makeBrush(eb->gradient, rect));
-  }
-  if (eb->borderTopColor.isValid() && eb->borderTopWidth > 0.0) {
-    painter.setOpacity(1.0);
-    painter.setPen(QPen(eb->borderTopColor, eb->borderTopWidth));
-    const qreal y = rect.top() + eb->borderTopWidth / 2.0;
-    painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y));
-  }
+  painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+  painter.drawImage(target, tile);
   painter.restore();
 }
 
@@ -195,7 +133,9 @@ bool hasElementBackground(const RenderTheme& theme, const QString& host) {
 
 void paintHrGradient(QPainter& painter, const RenderTheme& theme, const QRectF& rect) {
   const ElementBackground* eb = elementBackground(theme, QStringLiteral("hr"));
-  if (!eb) { return; }
+  if (!eb) {
+    return;
+  }
   const qreal h = qMax<qreal>(2.0, rect.height() * 0.08);
   const QRectF bar(rect.left(), rect.center().y() - h / 2.0, rect.width(), h);
   painter.save();
@@ -204,7 +144,9 @@ void paintHrGradient(QPainter& painter, const RenderTheme& theme, const QRectF& 
 }
 
 void paintShapeBox(QPainter& painter, const PseudoElementRule& rule, QRectF box) {
-  if (box.width() <= 0.0 || box.height() <= 0.0) { return; }
+  if (box.width() <= 0.0 || box.height() <= 0.0) {
+    return;
+  }
   // border-radius % is relative to the box (50% → circle), not em; clamp to half
   // the smaller side so a declared 50% rounds into a disc regardless of emPx.
   const qreal r = qBound(0.0, rule.borderRadius, qMin(box.width(), box.height()) / 2.0);
@@ -223,8 +165,7 @@ void paintShapeBox(QPainter& painter, const PseudoElementRule& rule, QRectF box)
   painter.restore();
 }
 
-void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const QString& host,
-                            const QRectF& rect, const PaintContext& ctx) {
+void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect, const PaintContext& ctx) {
   const bool isHeading = ctx.headingLevel >= 1 && ctx.headingLevel <= 6;
   const QFontMetricsF fm(ctx.font);
   const qreal em = fm.height();
@@ -238,18 +179,16 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         // height against the HOST rect when the CSS used a `%` (phycat's `height:
         // 61%` is 61% of the rendered heading, not 0.61em — the map-time value in
         // `size` is em-relative and made the bar too short).
-        const qreal w = !before->sizeRawWidth.isEmpty()
-            ? CssThemeMapper::resolveLengthPx(before->sizeRawWidth, {}, em, rect.width())
-            : (before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25));
-        const qreal h = !before->sizeRawHeight.isEmpty()
-            ? CssThemeMapper::resolveLengthPx(before->sizeRawHeight, {}, em, rect.height())
-            : (before->size.height() > 0.0 ? before->size.height() : em);
+        const qreal w = !before->sizeRawWidth.isEmpty() ? CssThemeMapper::resolveLengthPx(before->sizeRawWidth, {}, em, rect.width())
+                                                        : (before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25));
+        const qreal h = !before->sizeRawHeight.isEmpty() ? CssThemeMapper::resolveLengthPx(before->sizeRawHeight, {}, em, rect.height())
+                                                         : (before->size.height() > 0.0 ? before->size.height() : em);
         paintShapeBox(painter, *before, QRectF(rect.left() + before->insets.left(), vCenter - h / 2.0, w, h));
       } else if (!before->svgData.isEmpty()) {
         // Legacy: an inline SVG ::before painted into the left margin (no advance).
         const QPointF anchor = ctx.textStart.x() >= 0 ? ctx.textStart : rect.topLeft();
         const qreal s = (before->size.width() > 0 ? before->size.width() : em);
-        const QColor tint = before->color.isValid() ? before->color : before->backgroundColor;
+        const QColor tint = before->svgFromMask ? before->maskTint : before->color;
         paintIcon(painter, before->svgData, QRectF(anchor.x() - s - 2.0, anchor.y(), s, s), tint, before->svgFromMask);
       } else {
         // Inline marker (h4 disc / h5 ring / h6 dash): occupies the reserved zone
@@ -279,7 +218,9 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       // Falls back to the legacy inset (left+4, baseline+2, host font) when the
       // theme declared no positioning, preserving prior behaviour.
       QFont f = ctx.font;
-      if (before->fontSizePx > 0.0) { f.setPointSizeF(before->fontSizePx * 72.0 / 96.0); }
+      if (before->fontSizePx > 0.0) {
+        f.setPointSizeF(before->fontSizePx * 72.0 / 96.0);
+      }
       const QFontMetricsF m(f);
       const qreal x = rect.left() + (before->absolute ? before->insets.left() : 4.0);
       const qreal y = rect.top() + (before->insetsTop >= 0.0 ? before->insetsTop : m.ascent() + 2.0);
@@ -299,13 +240,14 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       const qreal w = after->size.width() > 0.0 ? after->size.width() : em;
       const qreal h = after->size.height() > 0.0 ? after->size.height() : em;
       const qreal top = ctx.textBounds.isValid() ? ctx.textBounds.top() : anchor.y();
-      const QColor tint = after->color.isValid() ? after->color : after->backgroundColor;
+      const QColor tint = after->svgFromMask ? after->maskTint : after->color;
       painter.save();
       painter.setOpacity(after->opacity);
       paintIcon(painter, after->svgData, QRectF(anchor.x() + after->marginLeft, top, w, h), tint, after->svgFromMask);
       painter.restore();
     } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
-                (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) && isHeading) {
+                (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) &&
+               isHeading) {
       // ::after underline bar. Width/height come from the rule (e.g. Whitey's
       // h2::after border-bottom: 100px centred; phycat's h1::after gradient bar).
       const qreal borderW = after->borderBottomWidth > 0.0 ? after->borderBottomWidth : 0.0;
@@ -324,10 +266,10 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         barW = barW + (qBound(0.0, focusW, rect.width()) - barW) * ctx.focusPhase;
       }
       barW = qMin(barW, rect.width());
-      const qreal textMid = ctx.textBounds.isValid() ? ctx.textBounds.center().x()
-                            : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0
-                                   ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0
-                                   : rect.center().x());
+      const qreal textMid =
+          ctx.textBounds.isValid()
+              ? ctx.textBounds.center().x()
+              : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0 ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0 : rect.center().x());
       const QRectF bar(textMid - barW / 2.0, rect.bottom() - barH, barW, barH);
       painter.save();
       painter.setOpacity(after->opacity);
@@ -347,7 +289,9 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
 
 void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF& pageRect) {
   const PseudoElementRule* rule = pseudoRule(theme, QStringLiteral("#write"), QStringLiteral("before"));
-  if (!rule) { return; }
+  if (!rule) {
+    return;
+  }
   // A #write::before texture is a MASK — either a gradient mask (maskPattern) or
   // an SVG url() mask (svgData). Both supply shape; the ::before background-colour
   // (maskTint) supplies the visible colour, painted at the rule's opacity. The old
@@ -355,7 +299,9 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
   // (phycat's diamond/cross grid), leaving the page blank.
   const bool hasGradientMask = rule->maskPattern.kind != GradientSpec::Kind::None;
   const bool hasSvgMask = !rule->svgData.isEmpty();
-  if (!hasGradientMask && !hasSvgMask) { return; }
+  if (!hasGradientMask && !hasSvgMask) {
+    return;
+  }
   const QColor tint = rule->maskTint.isValid() ? rule->maskTint : theme.textColor();
   const qreal tileW = qBound(2.0, rule->maskTile.width(), 256.0);
   const qreal tileH = qBound(2.0, rule->maskTile.height(), 256.0);
@@ -364,17 +310,22 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
     // Recolour the mask gradient stops to the tint (a mask is colour-agnostic).
     GradientSpec tinted = rule->maskPattern;
     for (GradientStop& s : tinted.stops) {
-      if (s.color != QColor(Qt::transparent)) { s.color = tint; }
+      if (s.color != QColor(Qt::transparent)) {
+        s.color = tint;
+      }
     }
     tile = QImage(int(qCeil(tileW)), int(qCeil(tileH)), QImage::Format_ARGB32_Premultiplied);
     tile.fill(Qt::transparent);
-    { QPainter tp(&tile);
+    {
+      QPainter tp(&tile);
       tp.fillRect(tile.rect(), GradientPainter::makeBrush(tinted, QRectF(0, 0, tileW, tileH)));
     }
   } else {
     tile = renderMaskTile(rule->svgData, tint, QSize(int(qCeil(tileW)), int(qCeil(tileH))));
   }
-  if (tile.isNull()) { return; }
+  if (tile.isNull()) {
+    return;
+  }
   QBrush pattern(QPixmap::fromImage(tile));  // QBrush(QPixmap) → TexturePattern, tiles
   painter.save();
   painter.setOpacity(rule->opacity);
@@ -383,7 +334,9 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
 }
 
 void paintGlow(QPainter& painter, const QRectF& rect, const QColor& color, qreal blur, qreal alpha) {
-  if (!color.isValid() || blur <= 0.0 || alpha <= 0.0) { return; }
+  if (!color.isValid() || blur <= 0.0 || alpha <= 0.0) {
+    return;
+  }
   painter.save();
   painter.setPen(Qt::NoPen);
   QColor base = color;
@@ -399,18 +352,19 @@ void paintGlow(QPainter& painter, const QRectF& rect, const QColor& color, qreal
   painter.restore();
 }
 
-void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius,
-                    const QColor& color, qreal offsetX, qreal offsetY,
+void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius, const QColor& color, qreal offsetX, qreal offsetY,
                     qreal blur, qreal spread) {
-  if (!color.isValid()) { return; }
-  if (qFuzzyIsNull(offsetX) && qFuzzyIsNull(offsetY) &&
-      qFuzzyIsNull(blur) && qFuzzyIsNull(spread)) {
+  if (!color.isValid()) {
+    return;
+  }
+  if (qFuzzyIsNull(offsetX) && qFuzzyIsNull(offsetY) && qFuzzyIsNull(blur) && qFuzzyIsNull(spread)) {
     return;
   }
 
-  const QRectF core = rect.translated(offsetX, offsetY)
-                          .adjusted(-spread, -spread, spread, spread);
-  if (core.isEmpty()) { return; }
+  const QRectF core = rect.translated(offsetX, offsetY).adjusted(-spread, -spread, spread, spread);
+  if (core.isEmpty()) {
+    return;
+  }
 
   const qreal clampedBlur = qMax<qreal>(0.0, blur);
   const qreal coreRadius = qMax<qreal>(0.0, borderRadius + spread);
@@ -431,11 +385,12 @@ void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius,
   const qreal blurExtent = blurRadius * 3.0 + 2.0;
   QRectF paintBounds = core.adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent);
   if (painter.hasClipping()) {
-    paintBounds = paintBounds.intersected(
-        painter.clipBoundingRect().adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent));
+    paintBounds = paintBounds.intersected(painter.clipBoundingRect().adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent));
   }
   const QRect imageBounds = paintBounds.toAlignedRect();
-  if (imageBounds.isEmpty()) { return; }
+  if (imageBounds.isEmpty()) {
+    return;
+  }
 
   QImage shadow(imageBounds.size(), QImage::Format_ARGB32_Premultiplied);
   shadow.fill(Qt::transparent);
@@ -454,10 +409,11 @@ void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius,
   painter.restore();
 }
 
-void paintBlockHoverGlow(QPainter& painter, const RenderTheme& theme, const QString& host,
-                         const QRectF& rect, qreal phase) {
+void paintBlockHoverGlow(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect, qreal phase) {
   const HoverEffect* he = hoverEffectFor(theme, host);
-  if (!he) { return; }
+  if (!he) {
+    return;
+  }
   paintGlow(painter, rect, he->glowColor, he->glowBlur, phase);
 }
 

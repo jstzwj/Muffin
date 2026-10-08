@@ -11,57 +11,6 @@
 #include <utility>
 
 namespace muffin::html {
-namespace {
-
-void paintKeyboardSpanRects(
-    QPainter& painter,
-    const QTextLayout& layout,
-    const std::vector<TextFormatSpan>& spans,
-    QPointF origin,
-    const HtmlColorPalette& palette) {
-  painter.save();
-  painter.setRenderHint(QPainter::Antialiasing, true);
-
-  for (const TextFormatSpan& span : spans) {
-    if (!span.keyboard || span.length <= 0) {
-      continue;
-    }
-
-    for (int i = 0; i < layout.lineCount(); ++i) {
-      const QTextLine line = layout.lineAt(i);
-      if (!line.isValid()) {
-        continue;
-      }
-      const int lineStart = line.textStart();
-      const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(lineStart, span.start);
-      const int rangeEnd = qMin(lineEnd, span.start + span.length);
-      if (rangeStart >= rangeEnd) {
-        continue;
-      }
-
-      const qreal x1 = line.cursorToX(rangeStart);
-      const qreal x2 = line.cursorToX(rangeEnd);
-      const QRectF rect(
-          origin.x() + qMin(x1, x2) - 4.0,
-          origin.y() + line.y() + 1.0,
-          qAbs(x2 - x1) + 8.0,
-          qMax<qreal>(1.0, line.height() - 3.0));
-
-      painter.setPen(QPen(palette.codeBorder, 1.0));
-      painter.setBrush(palette.codeBackground);
-      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 2.0, 2.0);
-
-      painter.setPen(QPen(palette.codeBorder, 1.0));
-      painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
-    }
-  }
-
-  painter.restore();
-}
-
-}  // namespace
-
 HtmlLayoutResult::HtmlLayoutResult() = default;
 HtmlLayoutResult::~HtmlLayoutResult() = default;
 
@@ -177,7 +126,7 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPo
   }
 
   if (box.ownsTextLayout()) {
-    const QRectF contentRect = boxRect.marginsRemoved(box.style().borderWidth + box.style().padding);
+    const QRectF contentRect = box.layoutBox.contentBox.translated(origin);
     const QString href = linkHrefAtTextLayout(box, localPos - contentRect.topLeft());
     if (!href.isEmpty()) {
       return HitResult{href, QString()};
@@ -238,73 +187,13 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
   }
 
   const auto& geo = box.geometry();
-  const auto& style = box.style();
   const QPointF boxOrigin = origin + QPointF(geo.left, geo.top);
   const QRectF boxRect(boxOrigin, QSizeF(geo.width, geo.height));
 
   // Content area (inside border + padding)
-  const QRectF contentRect = boxRect.marginsRemoved(style.borderWidth + style.padding);
+  const QRectF contentRect = box.layoutBox.contentBox.translated(origin);
 
-  // Determine if we can use rounded-rect path for background + border
-  const bool hasBorder = style.borderWidth.top() > 0 || style.borderWidth.bottom() > 0 ||
-                         style.borderWidth.left() > 0 || style.borderWidth.right() > 0;
-  const bool hasRoundedCorners = style.borderRadius > 0;
-
-  if (hasRoundedCorners && (style.backgroundColor.isValid() || hasBorder)) {
-    // Paint background + border using QPainterPath for rounded corners
-    const QRectF bgRect = boxRect.marginsRemoved(style.borderWidth);
-    const qreal r = style.borderRadius;
-    QPainterPath path;
-    path.addRoundedRect(bgRect, r, r);
-
-    if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
-      painter.fillPath(path, style.backgroundColor);
-    }
-    if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
-      QColor borderColor = style.borderColor.isValid() ? style.borderColor : palette_.tableBorder;
-      Qt::PenStyle penStyle = Qt::SolidLine;
-      if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
-      else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
-      // Use uniform border width for the rounded-rect stroke
-      qreal bw = (style.borderWidth.top() + style.borderWidth.bottom() +
-                  style.borderWidth.left() + style.borderWidth.right()) / 4.0;
-      painter.save();
-      painter.setPen(QPen(borderColor, bw, penStyle));
-      painter.drawPath(path);
-      painter.restore();
-    }
-  } else {
-    // Paint background (no rounded corners)
-    if (style.backgroundColor.isValid() && style.backgroundColor.alpha() > 0) {
-      painter.fillRect(boxRect.marginsRemoved(style.borderWidth), style.backgroundColor);
-    }
-
-    // Paint border (no rounded corners)
-    if (hasBorder && style.borderStyle != HtmlBorderStyle::None) {
-      painter.save();
-      QColor borderColor = style.borderColor.isValid() ? style.borderColor : palette_.tableBorder;
-      Qt::PenStyle penStyle = Qt::SolidLine;
-      if (style.borderStyle == HtmlBorderStyle::Dashed) penStyle = Qt::DashLine;
-      else if (style.borderStyle == HtmlBorderStyle::Dotted) penStyle = Qt::DotLine;
-      if (style.borderWidth.top() > 0) {
-        painter.setPen(QPen(borderColor, style.borderWidth.top(), penStyle));
-        painter.drawLine(boxRect.topLeft(), boxRect.topRight());
-      }
-      if (style.borderWidth.right() > 0) {
-        painter.setPen(QPen(borderColor, style.borderWidth.right(), penStyle));
-        painter.drawLine(boxRect.topRight(), boxRect.bottomRight());
-      }
-      if (style.borderWidth.bottom() > 0) {
-        painter.setPen(QPen(borderColor, style.borderWidth.bottom(), penStyle));
-        painter.drawLine(boxRect.bottomLeft(), boxRect.bottomRight());
-      }
-      if (style.borderWidth.left() > 0) {
-        painter.setPen(QPen(borderColor, style.borderWidth.left(), penStyle));
-        painter.drawLine(boxRect.topLeft(), boxRect.bottomLeft());
-      }
-      painter.restore();
-    }
-  }
+  paintLayoutBox(painter, box.layoutBox, origin);
 
   if (box.tag() == HtmlTag::ListItem && !box.listMarker().isEmpty()) {
     paintListMarker(painter, box, contentRect);
@@ -363,7 +252,7 @@ void HtmlLayoutResult::paintTextRun(QPainter& painter, const HtmlBox& box, QPoin
   }
 
   painter.save();
-  paintKeyboardSpanRects(painter, *textLayout->layout, textLayout->formatSpans, origin, palette_);
+  for (const auto& fragment : textLayout->inlineBoxes) paintLayoutBox(painter, fragment, origin);
   textLayout->layout->draw(&painter, origin);
   painter.restore();
 }

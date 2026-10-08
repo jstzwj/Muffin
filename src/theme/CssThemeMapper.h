@@ -10,11 +10,9 @@ class QString;
 
 namespace muffin {
 
-class CssThemeSheet;  // defined in CssThemeParser.h
+class CssThemeSheet;           // defined in CssThemeParser.h
 class CssComputedStyleEngine;  // defined in CssComputedStyleEngine.h
 class CssComputedStyle;
-class NodeCssElementBuilder;  // defined in NodeCssElement.h
-class MarkdownNode;
 
 // cssColor() is declared in theme/CssValueParser.h (included above) — the shared CSS→QColor
 // chokepoint used by extractColor()/varColor()/JSON parseColor() and HtmlBoxBuilder.
@@ -30,7 +28,7 @@ class MarkdownNode;
 // CSS equivalent (chrome palette, serif body, explicit dark flag, label) ride
 // on `--muffin-*` custom properties layered on top of the standard CSS.
 class CssThemeMapper {
-public:
+ public:
   // Parse `cssText` (already read from cssPath by the caller) and translate it.
   // `baseDir` is used only to resolve relative @import targets. `id` is the
   // machine name (usually the file stem); it overrides any name the CSS declares.
@@ -53,17 +51,7 @@ public:
   // Box-relative variant: a `%` resolves against `containingPx` (the host box's
   // dimension) instead of 1em. For paint-time resolution of pseudo width/height
   // where the % is relative to the rendered host (e.g. `h3::before { height: 61% }`).
-  static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars,
-                               qreal emPx, qreal containingPx);
-  // Real-tree computed style for a node: build a CssElement view of `node` (its
-  // live ancestors/siblings/position), run the cascade through `engine`, and map
-  // the result to a ThemeElementStyle the same way the load-time precompute does.
-  // Used by the structural-selector layout path. Font-relative lengths use the
-  // computed element and root font sizes; bodyPx supplies the user text scale.
-  // `builder` is the caller-owned (persistent) CSS element tree, so the sibling chain is built once
-  // per rebuild instead of per node (the latter was O(n²) on flat block lists).
-  static ThemeElementStyle elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,
-                                               const MarkdownNode& node, const QString& key, qreal bodyPx);
+  static qreal resolveLengthPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx, qreal containingPx);
 };
 
 }  // namespace muffin

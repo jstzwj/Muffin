@@ -1401,7 +1401,9 @@ void EditorView::updateBlockHover(QPointF viewportPos) {
   if (next.isValid()) {
     if (const BlockLayout* blk = layout_->blockIfPromoted(next)) {
       const QString host = hostKeyForBlock(*blk);
-      if (!host.isEmpty() && !blk->cssBorderBox(theme_).contains(documentPos)) { next = NodeId(); }
+      if (!host.isEmpty() && !blk->cssBorderBox().contains(documentPos)) {
+        next = NodeId();
+      }
     }
   }
   if (next == hoveredBlockId_) { return; }
@@ -1421,7 +1423,7 @@ void EditorView::repaintHoverBlock(NodeId blockId) {
   if (!layout_ || !blockId.isValid()) { return; }
   const BlockLayout* blk = layout_->blockIfPromoted(blockId);
   if (!blk) { return; }
-  const QRectF r = blk->visualOverflowRect(theme_).translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
+  const QRectF r = blk->visualOverflowRect().translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
   viewport()->update(r.toAlignedRect());
 }
 
@@ -1463,7 +1465,7 @@ void EditorView::repaintFocusBlock(NodeId blockId) {
   if (!layout_ || !blockId.isValid()) { return; }
   const BlockLayout* blk = layout_->blockIfPromoted(blockId);
   if (!blk) { return; }
-  const QRectF r = blk->visualOverflowRect(theme_).translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
+  const QRectF r = blk->visualOverflowRect().translated(0, -scrollY()).adjusted(-2, -2, 2, 2);
   viewport()->update(r.toAlignedRect());
 }
 

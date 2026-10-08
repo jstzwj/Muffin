@@ -406,7 +406,13 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
   // hairline block above, so the hairline still sees the original (possibly
   // invalid) codeBorder before this fallback fills it in.
   if (!k.codeBorder.isValid()) {
-    const QColor base = k.codeBackground;  // now always valid (filled above)
+    QColor base = k.codeBackground;
+    if (base.alpha() < 255) {
+      const QColor canvas = k.background.isValid() ? k.background : QColor(Qt::white);
+      const qreal alpha = base.alphaF();
+      base = QColor(qRound(base.red() * alpha + canvas.red() * (1 - alpha)), qRound(base.green() * alpha + canvas.green() * (1 - alpha)),
+                    qRound(base.blue() * alpha + canvas.blue() * (1 - alpha)));
+    }
     k.codeBorder = base.lightness() < 128 ? base.lighter(140) : base.darker(112);
   }
   if (!k.hover.isValid()) k.hover = k.codeBackground;
@@ -468,10 +474,7 @@ ThemeDefinition ThemeDefinition::fromCss(const QString& cssPath, const QString& 
   // @import urls resolve relative to the CSS file's directory. Works for both
   // filesystem paths and :/resource paths (QFile/QDir handle both).
   const QString baseDir = QFileInfo(cssPath).absolutePath();
-  CssThemeSheet sheet;
-  QFile base(QStringLiteral(":/themes/document-base.css"));
-  if (base.open(QIODevice::ReadOnly)) sheet = CssThemeParser::parse(QString::fromUtf8(base.readAll()), QStringLiteral(":/themes"));
-  sheet.mergeIn(CssThemeParser::parse(text, baseDir));
+  const auto sheet = CssThemeParser::parse(text, baseDir);
   // Register @font-face fonts before translation so the font-family stacks the
   // mapper reads are backed by registered typefaces by the time anything paints.
   const auto aliases = registerThemeFonts(sheet);

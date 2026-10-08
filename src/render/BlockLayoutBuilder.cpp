@@ -1,4 +1,6 @@
 #include "render/BlockLayoutBuilder.h"
+#include "theme/NodeCssElement.h"
+#include "render/LayoutBox.h"
 #include "render/RenderMetrics.h"
 
 #include "blocks/code/CodeFenceScrollController.h"
@@ -83,26 +85,28 @@ qreal measuredHeadingBeforeAdvance(const RenderTheme& theme, int level,
 // estimate path passes fast=true to resolve load-time PROTOTYPE margins (nullptr node → elementStyle,
 // O(1)) instead of elementStyleForNode (O(sibling chain) on github). estimateContainer/estimateListItem
 // call these once per child, so the cascade was ~8s of the dense-file estimate.
-QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
+QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false, qreal containingWidth = -1) {
   if (!fast && node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
-    const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"), &node);
-    if (quoteParagraph.present && !quoteParagraph.margin.isNull()) { return quoteParagraph.margin; }
+    const ThemeElementBoxStyle quoteParagraph = theme.elementBoxStyle(QStringLiteral("blockquote p"), &node, containingWidth);
+    if (quoteParagraph.marginSpecified) {
+      return quoteParagraph.margin;
+    }
   }
-  return theme.blockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node);
+  return theme.blockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node, containingWidth);
 }
 
-bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
-  return !blockMarginForFlow(node, theme, fast).isNull();
+bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast = false, qreal containingWidth = -1) {
+  return theme.hasBlockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node);
 }
 
-qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
-  const QMarginsF margin = blockMarginForFlow(node, theme, fast);
+qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false, qreal containingWidth = -1) {
+  const QMarginsF margin = blockMarginForFlow(node, theme, fast, containingWidth);
   return !margin.isNull() ? margin.top() : 0.0;
 }
 
-qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
-  const QMarginsF margin = blockMarginForFlow(node, theme, fast);
-  return !margin.isNull() ? margin.bottom() : theme.blockSpacing();
+qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast = false, qreal containingWidth = -1) {
+  const QMarginsF margin = blockMarginForFlow(node, theme, fast, containingWidth);
+  return !cssTagForNode(node).isEmpty() ? margin.bottom() : theme.blockSpacing();
 }
 
 bool isTightListItemSiblingPair(const MarkdownNode& prev, const MarkdownNode& next) {
@@ -118,11 +122,14 @@ bool isTightListNestedChildPair(const MarkdownNode& prev, const MarkdownNode& ne
   return item && item == prev.parent() && item->type() == BlockType::ListItem && list && list->type() == BlockType::List && list->listTight();
 }
 
-qreal spacingBetweenInFlow(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme, bool fast = false) {
+qreal spacingBetweenInFlow(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme, bool fast = false,
+                           qreal containingWidth = -1) {
   if (isTightListItemSiblingPair(prev, next) || isTightListNestedChildPair(prev, next)) { return 0.0; }
-  const qreal after = spacingAfterInFlow(prev, theme, fast);
-  const qreal before = spacingBeforeInFlow(next, theme, fast);
-  return (hasCssFlowMargin(prev, theme, fast) || hasCssFlowMargin(next, theme, fast)) ? qMax(after, before) : after + before;
+  const qreal after = spacingAfterInFlow(prev, theme, fast, containingWidth);
+  const qreal before = spacingBeforeInFlow(next, theme, fast, containingWidth);
+  return (hasCssFlowMargin(prev, theme, fast, containingWidth) || hasCssFlowMargin(next, theme, fast, containingWidth))
+             ? qMax<qreal>(0, qMax(after, before)) + qMin<qreal>(0, qMin(after, before))
+             : after + before;
 }
 
 bool isVirtualEmptyParagraphNode(const MarkdownNode& node) {
@@ -349,7 +356,6 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
     return widths;
   }
 
-  const QMarginsF padding = theme.tableCellPadding();
   qreal preferredTotal = 0.0;
   for (int column = 0; column < columnCount; ++column) {
     qreal preferred = 0.0;
@@ -359,9 +365,12 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
       }
       const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
       const QFont font = theme.textFontForElement(row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td"), &cell);
-      preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline), font));
+      const auto padding =
+          LayoutBox::insets(theme.elementBoxStyle(row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td"), &cell, width));
+      preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline), font) +
+                                      padding.left() + padding.right());
     }
-    widths[column] = preferred + padding.left() + padding.right();
+    widths[column] = preferred;
     preferredTotal += widths[column];
   }
 
@@ -410,6 +419,7 @@ void BlockLayoutBuilder::setPreedit(QString text, QVector<QTextLayout::FormatRan
 }
 
 void BlockLayoutBuilder::applyPreedit(InlineLayout::BuildOptions& options) const {
+  options.styleCache = &inlineStyleCache_;
   // cursorSourceOffset >= 0 identifies the caret block (and the caret's content-local source offset).
   // Source-offset (not visible-offset) is the splice anchor: a caret inside a revealed-syntax span
   // (e.g. a link's URL) has a granular source offset but a visible offset that collapses to the span
@@ -556,18 +566,19 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QString elementKey = node.type() == BlockType::Heading
       ? QStringLiteral("h%1").arg(node.headingLevel())
       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
+  const qreal containingWidth = width;
+  const auto usedBox = theme.elementBoxStyle(elementKey, &node, containingWidth);
+  const auto* resolvedStyle = theme.elementStyleForNode(node, elementKey);
+  const auto margins = usedBox.margin;
+  x += margins.left();
+  width = qMax<qreal>(1, width - margins.left() - margins.right());
+  const qreal availableWidth = width;
+  width = LayoutBox::borderWidth(usedBox, availableWidth);
   const QFont font = theme.textFontForElement(elementKey, &node);
-  const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
-  // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
-  // it (headingBeforeAdvance); the text wraps within the remaining width. The
-  // block rect stays full width so hit-test/selection geometry is unchanged.
-  const qreal beforeAdvance = node.type() == BlockType::Heading
-      ? measuredHeadingBeforeAdvance(theme, node.headingLevel(), layout->headingBeforeText(), font)
-      : 0.0;
-  // Text width accounts for heading padding (+ before-marker advance) so content
-  // wraps within the padded/marked area. The rect itself stays at the original x
-  // position so hitTest/cursor calculations remain consistent with the paint offset.
-  const qreal textWidth = qMax<qreal>(1.0, width - headingPadding.left() - headingPadding.right() - beforeAdvance);
+  const auto insets = LayoutBox::insets(usedBox);
+  const qreal beforeAdvance =
+      node.type() == BlockType::Heading ? measuredHeadingBeforeAdvance(theme, node.headingLevel(), layout->headingBeforeText(), font) : 0;
+  const qreal textWidth = qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance);
   // A heading projects content-only: its `# ` prefix region [blockStart, contentStart) is never part
   // of the editable projection (it is empty for Setext headings, whose byteStart == contentStart).
   // The level is conveyed by font size and changed via the heading-level commands, so the prefix is
@@ -591,29 +602,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.smartPunct = smartPunctRenderOptions();
   options.breakOnSingleNewline = breakOnSingleNewline_;
   options.renderEmoji = renderEmoji_;
-  // Element-level computed text style: headings keep their legacy heading getter
-  // fallback, while paragraphs can now differ by context (`p` vs `blockquote p`).
-  if (node.type() == BlockType::Heading) {
-    options.baseTextColor = theme.headingColor(node.headingLevel());
-    // CSS `:hover { color }` target — the inline layout recolours only the runs
-    // that inherit the heading colour on hover (links/code keep their own).
-    if (const ThemeElementStyle* hover = theme.elementStyle(QStringLiteral("h%1:hover").arg(node.headingLevel()))) {
-      if (hover->paint.color.isValid()) {
-        options.hoverTextColor = hover->paint.color;
-      }
-    }
-    // CSS `:focus { color }` target — same mechanism, blended on top of hover.
-    if (const ThemeElementStyle* focus = theme.elementStyle(QStringLiteral("h%1:focus").arg(node.headingLevel()))) {
-      if (focus->paint.color.isValid()) {
-        options.focusTextColor = focus->paint.color;
-      }
-    }
-  } else {
-    options.baseTextColor = theme.textColorForElement(elementKey, &node);
-  }
-  options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel(), &node);
+  options.styleNode = &node;
+  options.baseTextColor = theme.textColorForElement(elementKey, &node);
+  if (const auto* hovered = theme.elementStyleForNode(node, elementKey + QStringLiteral(":hover")))
+    options.hoverTextColor = hovered->paint.color;
+  if (const auto* focused = theme.elementStyleForNode(node, elementKey + QStringLiteral(":focus")))
+    options.focusTextColor = focused->paint.color;
+  options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
   options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
-  options.alignment = theme.textAlignmentForElement(elementKey, node.type(), node.headingLevel(), &node);
+  options.alignment = theme.textAlignmentForElement(elementKey, &node);
   options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
   options.textShadow = theme.textShadowForElement(elementKey, &node);
   {
@@ -621,44 +618,24 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
     applyPreedit(options);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
   }
-  const qreal headingBorderBottom = node.type() == BlockType::Heading ? theme.headingBorderBottomWidth(node.headingLevel()) : 0.0;
-  qreal height = inlineLayout->height() + headingPadding.top() + headingPadding.bottom() + headingBorderBottom;
+  if (usedBox.widthFitContent) {
+    width = LayoutBox::borderWidth(usedBox, availableWidth, inlineLayout->visualTextBounds().width() + beforeAdvance);
+    inlineLayout->build(node.inlines(), editableSource, theme, qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance), font,
+                        options);
+  }
+  if (usedBox.marginLeftAuto) x += qMax<qreal>(0, availableWidth - width) / (usedBox.marginRightAuto ? 2 : 1);
+  const qreal height = LayoutBox::borderHeight(usedBox, inlineLayout->height());
   layout->setContentSourceStart(projectionBase);
   const QRectF flowRect(x, y, width, height);
   layout->setRect(flowRect);
-  if (node.type() == BlockType::Heading) {
-    BlockLayout::CssBoxGeometry box;
-    box.hostKey = QStringLiteral("h%1").arg(node.headingLevel());
-    box.flowRect = flowRect;
-    box.borderBox = flowRect;
-    const QRectF visual = inlineLayout->visualTextBounds();
-    if (theme.headingFitContent(node.headingLevel()) && visual.isValid() && inlineLayout->height() > 0.0) {
-      // Pill left edge = block left + the text's intra-content-box left offset.
-      // The headingPadding.left()/beforeAdvance that position the text origin are
-      // symmetric with the pill's own left padding, so they cancel: the pill hugs
-      // the text's left side. (Exact for h1–h3, whose beforeAdvance is 0.)
-      const qreal left = qBound(flowRect.left(), flowRect.left() + visual.left(), flowRect.right());
-      const qreal right = qBound(left, flowRect.left() + headingPadding.left() + beforeAdvance + visual.right() + headingPadding.right(), flowRect.right());
-      box.borderBox = QRectF(left, flowRect.top(), qMax<qreal>(1.0, right - left), height);
-    }
-    box.paddingBox = box.borderBox.adjusted(0, 0, 0, -headingBorderBottom);
-    box.contentBox = box.paddingBox.marginsRemoved(headingPadding);
-    // QTextLayout still lays out against the full heading content width so CSS
-    // text-align:center/right works like a browser block. The fit-content border
-    // box is paint/hover geometry only; tying the text origin to that shrunken box
-    // double-applies the centred visual offset and pushes h1/h3 far right.
-    box.inlineTextOrigin = QPointF(flowRect.left() + headingPadding.left() + beforeAdvance, flowRect.top() + headingPadding.top());
-    qreal overflow = 0.0;
-    if (const ThemeElementStyle* hover = theme.elementStyle(box.hostKey + QStringLiteral(":hover"))) {
-      overflow = qMax(overflow, hover->paint.boxShadowBlur);
-    }
-    for (const HoverEffect& he : theme.decorations().hoverEffects) {
-      if (he.host == box.hostKey) { overflow = qMax(overflow, he.glowBlur); }
-    }
-    box.visualOverflow = box.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
-    box.valid = true;
-    layout->setCssBoxGeometry(box);
-  }
+  auto fragment =
+      LayoutBox::place(elementKey, resolvedStyle ? *resolvedStyle : ThemeElementStyle{}, usedBox, flowRect, font, beforeAdvance);
+  if (const auto* style = theme.elementStyleForNode(node, elementKey + QStringLiteral(":hover"))) fragment.hoverPaint = style->paint;
+  if (const auto* style = theme.elementStyleForNode(node, elementKey + QStringLiteral(":focus"))) fragment.focusPaint = style->paint;
+  const qreal overflow = std::max({fragment.style.paint.boxShadowBlur, fragment.hoverPaint.boxShadowBlur, fragment.focusPaint.boxShadowBlur,
+                                   fragment.style.paint.filterBlur + 2});
+  fragment.visualOverflow = fragment.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
+  layout->setCssBoxGeometry(std::move(fragment));
 
   layout->setInlineLayout(std::move(inlineLayout));
   return layout;
@@ -683,7 +660,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(
   const QString elementKey = QStringLiteral("p");
   const QFont font = theme.textFontForElement(elementKey, &node);
   const QFontMetricsF fm(font);
-  qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, node.type(), node.headingLevel(), &node);
+  qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
   if (multiplier <= 0.0) {
     multiplier = 1.0;
   }
@@ -719,17 +696,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   layout->setDepth(depth);
   layout->setAlertKind(node.alertKind());
 
-  // Phase 4a: a CSS-themed blockquote applies its real box model to container
-  // flow. Padding and border inset the children; margin stays outside this block
-  // and is handled by the parent flow. Non-themed quotes keep the legacy fixed left
-  // indent.
-  const bool quoteBox = node.type() == BlockType::BlockQuote && theme.blockquoteBoxThemed();
-  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote")) : ThemeElementBoxStyle{};
-  const QMarginsF qpad = quoteBox ? qbox.padding : QMarginsF();
-  const QMarginsF qborder = quoteBox ? QMarginsF(qbox.borderLeftWidth, qbox.borderTopWidth, qbox.borderRightWidth, qbox.borderBottomWidth) : QMarginsF();
-  const qreal quoteIndent = (node.type() == BlockType::BlockQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
-  const qreal childX = x + quoteIndent + qborder.left() + qpad.left();
-  const qreal childWidth = qMax<qreal>(1.0, width - quoteIndent - qborder.left() - qborder.right() - qpad.left() - qpad.right());
+  const bool quoteBox = node.type() == BlockType::BlockQuote;
+  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote"), &node, width) : ThemeElementBoxStyle{};
+  if (quoteBox) {
+    x += qbox.margin.left();
+    width = LayoutBox::borderWidth(qbox, qMax<qreal>(1, width - qbox.margin.left() - qbox.margin.right()));
+  }
+  const QMarginsF qpad = qbox.padding;
+  const QMarginsF qborder = LayoutBox::borders(qbox);
+  const qreal childX = x + qborder.left() + qpad.left();
+  const qreal childWidth = qMax<qreal>(1.0, width - qborder.left() - qborder.right() - qpad.left() - qpad.right());
   qreal cursorY = y + qborder.top() + qpad.top();
   std::vector<std::unique_ptr<BlockLayout>> children;
   const MarkdownNode* previousChild = nullptr;
@@ -740,8 +716,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   for (const auto& child : node.children()) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     omittedOnlyRenderChildren = false;
-    if (previousChild) { cursorY += spacingBetweenInFlow(*previousChild, *child, theme); }
-    else if (!firstChildMarginCollapses) { cursorY += spacingBeforeInFlow(*child, theme); }
+    if (previousChild) {
+      cursorY += spacingBetweenInFlow(*previousChild, *child, theme, false, childWidth);
+    } else if (!firstChildMarginCollapses) {
+      cursorY += spacingBeforeInFlow(*child, theme, false, childWidth);
+    }
     auto childLayout = build(*child, theme, childX, cursorY, childWidth, depth + 1);
     cursorY = childLayout->rect().bottom();
     previousChild = child.get();
@@ -754,29 +733,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
                  ? qborder.top() + qpad.top() + qpad.bottom() + qborder.bottom()
                  : qborder.top() + qpad.top() + QFontMetricsF(theme.paragraphFont()).height() + qpad.bottom() + qborder.bottom();
   } else {
-    const qreal trailingChildMargin = lastChildMarginCollapses ? 0.0 : spacingAfterInFlow(*previousChild, theme);
+    const qreal trailingChildMargin = lastChildMarginCollapses ? 0.0 : spacingAfterInFlow(*previousChild, theme, false, childWidth);
     height = cursorY + trailingChildMargin + qpad.bottom() + qborder.bottom() - y;
   }
+  if (quoteBox) height = LayoutBox::borderHeight(qbox, height - qborder.top() - qpad.top() - qpad.bottom() - qborder.bottom());
   const QRectF flowRect(x, y, width, height);
   layout->setRect(flowRect);
   if (quoteBox) {
-    BlockLayout::CssBoxGeometry box;
-    box.hostKey = QStringLiteral("blockquote");
-    box.flowRect = flowRect;
-    box.borderBox = flowRect;
-    box.paddingBox = flowRect.marginsRemoved(qborder);
-    box.contentBox = box.paddingBox.marginsRemoved(qpad);
-    box.inlineTextOrigin = box.contentBox.topLeft();
-    qreal overflow = 0.0;
-    if (const ThemeElementStyle* hover = theme.elementStyle(box.hostKey + QStringLiteral(":hover"))) {
-      overflow = qMax(overflow, hover->paint.boxShadowBlur);
-    }
-    for (const HoverEffect& he : theme.decorations().hoverEffects) {
-      if (he.host == box.hostKey) { overflow = qMax(overflow, he.glowBlur); }
-    }
-    box.visualOverflow = box.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
-    box.valid = true;
-    layout->setCssBoxGeometry(box);
+    const auto* style = theme.elementStyleForNode(node, QStringLiteral("blockquote"));
+    layout->setCssBoxGeometry(LayoutBox::place(QStringLiteral("blockquote"), style ? *style : ThemeElementStyle{}, qbox, flowRect,
+                                               theme.textFontForElement(QStringLiteral("blockquote"), &node)));
   }
   layout->setChildren(std::move(children));
   return layout;
@@ -855,6 +821,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   const QString elementKey = isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("li");
   InlineLayout::BuildOptions options;
   options.documentPath = documentPath_;
+  options.styleNode = primaryParagraph(node) ? primaryParagraph(node) : &node;
   QString listSourceText;
   if (const MarkdownNode* paragraph = primaryParagraph(node)) {
     listSourceText = sourceTextForEditableNode(*paragraph);
@@ -870,9 +837,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     options.baseTextColor = theme.textColorForElement(elementKey, &node);
-    options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, BlockType::Paragraph, 0, &node);
+    options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
     options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
-    options.alignment = theme.textAlignmentForElement(elementKey, BlockType::Paragraph, 0, &node);
+    options.alignment = theme.textAlignmentForElement(elementKey, &node);
     options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
     options.textShadow = theme.textShadowForElement(elementKey, &node);
     applyPreedit(options);
@@ -893,7 +860,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
       previousChild = child.get();
       continue;
     }
-    flowBottom += previousChild ? spacingBetweenInFlow(*previousChild, *child, theme) : theme.blockSpacing();
+    flowBottom += previousChild ? spacingBetweenInFlow(*previousChild, *child, theme, false, contentWidth) : theme.blockSpacing();
     auto childLayout = build(*child, theme, contentX, flowBottom, contentWidth, depth + 1);
     flowBottom = childLayout->rect().bottom();
     previousChild = child.get();
@@ -942,6 +909,18 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
       layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
     }
   }
+  const QString styleKey = QStringLiteral("pre");
+  const auto* resolvedStyle = theme.elementStyleForNode(node, styleKey);
+  const auto usedBox = theme.elementBoxStyle(styleKey, &node, width);
+  const qreal availableWidth = qMax<qreal>(1, width - usedBox.margin.left() - usedBox.margin.right());
+  x += usedBox.margin.left();
+  width = LayoutBox::borderWidth(usedBox, availableWidth);
+  if (usedBox.marginLeftAuto) x += qMax<qreal>(0, availableWidth - width) / (usedBox.marginRightAuto ? 2 : 1);
+  const auto padding = LayoutBox::insets(usedBox);
+  const QFont codeFont = theme.textFontForElement(styleKey, &node);
+  const qreal codeLineHeight = resolvedStyle && resolvedStyle->text.lineHeight > 0
+                                   ? codeFont.pointSizeF() * 96.0 / 72.0 * resolvedStyle->text.lineHeight
+                                   : QFontMetricsF(codeFont).height();
   const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
                               (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
@@ -956,13 +935,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   // the scrollbar thumb ratio. Reserved strip height makes room for the always-on scrollbar.
   qreal reservedStrip = 0.0;
   if (node.type() == BlockType::CodeFence && !codeWrap) {
-    const qreal maxLineW = maxLiteralLineWidth(layout->literal(), theme.codeFont());
+    const qreal maxLineW = maxLiteralLineWidth(layout->literal(), codeFont);
     layout->setCodeMaxLineWidth(maxLineW);
     if (codeFenceScroll_ != nullptr) {
       codeFenceScroll_->setContentWidth(node.id(), maxLineW);
     }
-    const qreal visibleW =
-        qMax<qreal>(1.0, width - lineNumberGutter - theme.codePadding().left() - theme.codePadding().right());
+    const qreal visibleW = qMax<qreal>(1.0, width - lineNumberGutter - padding.left() - padding.right());
     if (maxLineW > visibleW + 0.5) {
       reservedStrip = BlockLayout::scrollBarStripHeight(theme);
     }
@@ -970,13 +948,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   qreal height;
   {
     BuildAccumTimer t(literalTextNs_, perfEnabled_);
-    height = textHeight(
-        layout->literal(),
-        node.type() == BlockType::MathBlock ? theme.mathFont() : theme.codeFont(),
-        node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight(),
-        width - lineNumberGutter,
-        theme.codePadding(),
-        codeWrap);
+    height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : codeFont,
+                        node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : codeLineHeight,
+                        width - lineNumberGutter, padding, codeWrap);
   }
   height += reservedStrip;
   if (node.type() == BlockType::MathBlock) {
@@ -987,14 +961,14 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     }
     if (mathLayout->valid()) {
       if (!editingLiteral) {
-        height = std::ceil(mathLayout->size.height() + theme.codePadding().top() + theme.codePadding().bottom());
+        height = std::ceil(mathLayout->size.height() + padding.top() + padding.bottom());
       } else {
-        const qreal contentWidth = qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right());
-        const qreal markerLine = theme.codeLineHeight();
-        const qreal sourceHeight = textHeight(layout->literal(), theme.codeFont(), theme.codeLineHeight(), contentWidth, QMarginsF());
+        const qreal contentWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
+        const qreal markerLine = codeLineHeight;
+        const qreal sourceHeight = textHeight(layout->literal(), codeFont, codeLineHeight, contentWidth, QMarginsF());
         const qreal previewHeight = mathLayout->size.height();
-        height = std::ceil(theme.codePadding().top() + markerLine + sourceHeight + markerLine +
-                           theme.codePadding().bottom() + theme.codePadding().top() + previewHeight + theme.codePadding().bottom());
+        height = std::ceil(padding.top() + markerLine + sourceHeight + markerLine + padding.bottom() + padding.top() + previewHeight +
+                           padding.bottom());
       }
       layout->setMathLayout(std::move(mathLayout));
     }
@@ -1019,10 +993,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
         entry.scene) {
       layout->setMermaidViewportCullingEnabled(!mermaidSyncMode_);
       layout->setMermaidScene(entry.scene, entry.naturalSize, entry.metadata);
-      const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
+      const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - padding.left() - padding.right()));
       const qreal natW = entry.naturalSize.width();
       const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;
-      height = std::ceil(entry.naturalSize.height() * scale + theme.codePadding().top() + theme.codePadding().bottom());
+      height = std::ceil(entry.naturalSize.height() * scale + padding.top() + padding.bottom());
     } else if (entry.status == MermaidRenderStatus::Error ||
                entry.status == MermaidRenderStatus::Unsupported) {
       layout->setMermaidDiagnostic(entry.diagnostic);
@@ -1035,7 +1009,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
   }
   if (node.type() == BlockType::HtmlBlock && !editingLiteral) {
-    const qreal contentWidth = qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right());
+    const qreal contentWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
     qreal fontSize = theme.paragraphFont().pointSizeF();
     if (fontSize <= 0) {
       fontSize = qMax<qreal>(1.0, theme.paragraphFont().pixelSize());
@@ -1065,7 +1039,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
           htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory, htmlPalette));
     }
     if (htmlResult->valid() && htmlResult->hasVisibleContent()) {
-      height = std::ceil(htmlResult->size().height() + theme.codePadding().top() + theme.codePadding().bottom());
+      height = std::ceil(htmlResult->size().height() + padding.top() + padding.bottom());
       layout->setHtmlLayout(std::move(htmlResult));
     } else {
       // The HTML rendered to nothing readable — invalid, or valid but with no visible content
@@ -1075,7 +1049,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
       layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
     }
   }
+  height = LayoutBox::borderHeight(usedBox, qMax<qreal>(0, height - padding.top() - padding.bottom()));
   layout->setRect(QRectF(x, y, width, height));
+  auto box = LayoutBox::place(styleKey, resolvedStyle ? *resolvedStyle : ThemeElementStyle{}, usedBox, layout->rect(), codeFont);
+  box.lineHeight = codeLineHeight;
+  layout->setCssBoxGeometry(std::move(box));
   return layout;
 }
 
@@ -1090,6 +1068,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
   layout->setType(BlockType::Table);
   layout->setDepth(depth);
 
+  const QString tableKey = QStringLiteral("table");
+  const auto* tableStyle = theme.elementStyleForNode(node, tableKey);
+  const auto tableBox = theme.elementBoxStyle(tableKey, &node, width);
+  const auto tableInsets = LayoutBox::insets(tableBox);
+  const qreal availableWidth = qMax<qreal>(1, width - tableBox.margin.left() - tableBox.margin.right());
+  x += tableBox.margin.left();
+  width = LayoutBox::borderWidth(tableBox, availableWidth);
+  if (tableBox.marginLeftAuto) x += qMax<qreal>(0, availableWidth - width) / (tableBox.marginRightAuto ? 2 : 1);
+  const qreal contentWidth = qMax<qreal>(1, width - tableInsets.left() - tableInsets.right());
+
   const int rowCount = static_cast<int>(node.children().size());
   int columnCount = 0;
   for (const auto& row : node.children()) {
@@ -1101,17 +1089,17 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
     return layout;
   }
 
-  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, width, breakOnSingleNewline_);
-  const QMarginsF padding = theme.tableCellPadding();
+  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, contentWidth, breakOnSingleNewline_);
+
   const QVector<TableAlignment> alignments = node.tableAlignments();
   std::vector<BlockLayout::TableRowLayout> rows;
-  qreal cursorY = y;
+  qreal cursorY = y + tableInsets.top();
   int rowIndex = 0;
 
   for (const auto& rowNode : node.children()) {
     std::vector<BlockLayout::TableCellLayout> cells;
     qreal rowHeight = 0;
-    qreal cellX = x;
+    qreal cellX = x + tableInsets.left();
     int column = 0;
     for (const auto& cellNode : rowNode->children()) {
       const qreal columnWidth = column < columnWidths.size() ? columnWidths.at(column) : width / columnCount;
@@ -1120,8 +1108,16 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.contentSourceStart = sourceContentStartForEditableNode(*cellNode);
       cell.header = rowNode->tableRowIsHeader();
       cell.alternate = rowIndex % 2 == 1;
+      const QString key = cell.header ? QStringLiteral("th") : QStringLiteral("td");
+      const auto usedBox = theme.elementBoxStyle(key, cellNode.get(), columnWidth);
+      const auto padding = LayoutBox::insets(usedBox);
+      const auto* cellStyle = theme.elementStyleForNode(*cellNode, key);
+      ThemeElementStyle resolved = cellStyle ? *cellStyle : ThemeElementStyle{};
+      cell.box = LayoutBox::place(key, resolved, usedBox, {}, theme.textFontForElement(key, cellNode.get()));
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
+      options.styleNode = cellNode.get();
+      options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(key, cellNode.get());
       options.baseTextColor = theme.textColorForElement(cell.header ? QStringLiteral("th") : QStringLiteral("td"), cellNode.get());
       options.documentPath = documentPath_;
       options.sourceBase = sourceContentStartForEditableNode(*cellNode) - cellNode->topLevelBlock()->sourceRange().byteStart;
@@ -1139,7 +1135,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
                         qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
                         theme.textFontForElement(cell.header ? QStringLiteral("th") : QStringLiteral("td"), cellNode.get()), options);
       }
-      rowHeight = qMax(rowHeight, cell.text.height() + padding.top() + padding.bottom());
+      rowHeight = qMax(rowHeight, LayoutBox::borderHeight(usedBox, cell.text.height()));
       cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
       cells.push_back(std::move(cell));
       cellX += columnWidth;
@@ -1152,23 +1148,34 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
-      rowHeight = qMax(rowHeight, QFontMetricsF(theme.paragraphFont()).height() + padding.top() + padding.bottom());
+      const auto usedBox = theme.elementBoxStyle(QStringLiteral("td"), nullptr, columnWidth);
+      const auto padding = LayoutBox::insets(usedBox);
+      const auto* style = theme.elementStyle(QStringLiteral("td"));
+      cell.box = LayoutBox::place(QStringLiteral("td"), style ? *style : ThemeElementStyle{}, usedBox, {},
+                                  theme.textFontForElement(QStringLiteral("td")));
+      rowHeight = qMax(rowHeight, QFontMetricsF(cell.box.font).height() + padding.top() + padding.bottom());
       cells.push_back(std::move(cell));
       cellX += columnWidth;
       ++column;
     }
     for (BlockLayout::TableCellLayout& cell : cells) {
       cell.rect.setHeight(rowHeight);
+      cell.box = LayoutBox::place(cell.box.hostKey, cell.box.style, cell.box.usedBox, cell.rect, cell.box.font);
     }
     BlockLayout::TableRowLayout row;
-    row.rect = QRectF(x, cursorY, width, rowHeight);
+    row.nodeId = rowNode->id();
+    row.rect = QRectF(x + tableInsets.left(), cursorY, contentWidth, rowHeight);
+    const auto* rowStyle = theme.elementStyleForNode(*rowNode, QStringLiteral("tr"));
+    row.box = LayoutBox::place(QStringLiteral("tr"), rowStyle ? *rowStyle : ThemeElementStyle{},
+                               theme.elementBoxStyle(QStringLiteral("tr"), rowNode.get(), contentWidth), row.rect);
     row.cells = std::move(cells);
     rows.push_back(std::move(row));
     cursorY += rowHeight;
     ++rowIndex;
   }
 
-  layout->setRect(QRectF(x, y, width, cursorY - y));
+  layout->setRect(QRectF(x, y, width, LayoutBox::borderHeight(tableBox, cursorY - y - tableInsets.top())));
+  layout->setCssBoxGeometry(LayoutBox::place(tableKey, tableStyle ? *tableStyle : ThemeElementStyle{}, tableBox, layout->rect()));
   layout->setTableRows(std::move(rows));
   return layout;
 }
@@ -1659,8 +1666,8 @@ qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
 
 qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type,
                                    const MarkdownNode* node = nullptr, int headingLevel = 0) {
-  const QFont font = type == BlockType::Heading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey, node);
-  const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, type, headingLevel, node);
+  const QFont font = theme.textFontForElement(elementKey, node);
+  const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, node);
   if (multiplier > 0.0) {
     return std::ceil(cssLineHeightPx(font.pointSizeF(), multiplier));
   }
@@ -1776,6 +1783,9 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // skipping the per-node structural cascade. github's structural selectors match only lists/tables,
   // so paragraph estimates are identical to the structural result; the visible-window build
   // (promoteSlot → buildParagraphLike) still resolves structural style for exact heights.
+  const qreal containingWidth = width;
+  const auto margins = theme.elementBoxStyle(elementKey, nullptr, containingWidth).margin;
+  width = qMax<qreal>(1, width - margins.left() - margins.right());
   const qreal lineHeight = cachedEstimateLineHeight(theme, elementKey, node.type(), node.headingLevel());
   // O(1) estimate: derive the wrapped-line count from the block's source char count (sourceRange is
   // UTF-16 code units ≈ visible chars) + a cached per-font narrow advance, WITHOUT materializing
@@ -1787,11 +1797,12 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
   const qreal avgCharWidth = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
-  const QMarginsF padding = isHeading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
+  const auto usedBox = theme.elementBoxStyle(elementKey, nullptr, containingWidth);
+  const QMarginsF padding = LayoutBox::insets(usedBox);
   const qreal charsPerLine =
       std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance - padding.left() - padding.right()) / avgCharWidth));
   qreal height = estimateWrappedLinesFromCharCount(charCount, charsPerLine) * lineHeight;
-  if (isHeading) height += padding.top() + padding.bottom() + theme.headingBorderBottomWidth(node.headingLevel());
+  height += padding.top() + padding.bottom();
   // mustMeasure dropped: DocumentLayout never reads EstimateResult.mustMeasure (promotion is purely
   // viewport-visibility-driven), so the inlinesContainSizedContent walk was pure waste on the
   // estimate path (~2s of the 250k-block open estimate).
@@ -1806,8 +1817,8 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
     return {QFontMetricsF(theme.paragraphFont()).height(), false};
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
-  const bool quoteBox = isQuote && theme.blockquoteBoxThemed();
-  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote")) : ThemeElementBoxStyle{};
+  const bool quoteBox = isQuote;
+  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote"), &node, width) : ThemeElementBoxStyle{};
   const QMarginsF qpad = quoteBox ? qbox.padding : QMarginsF();
   const QMarginsF qborder = quoteBox ? QMarginsF(qbox.borderLeftWidth, qbox.borderTopWidth, qbox.borderRightWidth, qbox.borderBottomWidth) : QMarginsF();
   const qreal quoteIndent = (isQuote && !quoteBox) ? theme.blockQuoteIndent() : 0.0;
@@ -1821,14 +1832,19 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
   for (const auto& child : node.children()) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) { continue; }
     omittedOnlyRenderChildren = false;
-    if (previousChild) { total += spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true); }
-    else if (!firstChildMarginCollapses) { total += spacingBeforeInFlow(*child, theme, /*fast=*/true); }
+    if (previousChild) {
+      total += spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true, childWidth);
+    } else if (!firstChildMarginCollapses) {
+      total += spacingBeforeInFlow(*child, theme, /*fast=*/true, childWidth);
+    }
     const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
     total += r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
     previousChild = child.get();
   }
-  if (previousChild && !lastChildMarginCollapses) { total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true); }
+  if (previousChild && !lastChildMarginCollapses) {
+    total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true, childWidth);
+  }
   total += qpad.bottom() + qborder.bottom();
   if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) { total += QFontMetricsF(theme.paragraphFont()).height(); }
   return {total, mustMeasure};
@@ -1878,7 +1894,8 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
       continue;
     }
     const EstimateResult r = estimateHeight(*child, theme, contentWidth, depth + 1);
-    height += (previousChild ? spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true) : theme.blockSpacing()) + r.height;
+    height += (previousChild ? spacingBetweenInFlow(*previousChild, *child, theme, /*fast=*/true, contentWidth) : theme.blockSpacing()) +
+              r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
     previousChild = child.get();
   }
@@ -1890,7 +1907,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(cons
   const bool isMath = node.type() == BlockType::MathBlock;
   const QFont font = isMath ? theme.mathFont() : theme.codeFont();
   const qreal lineHeight = isMath ? std::max<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight();
-  const QMarginsF padding = theme.codePadding();
+  const QMarginsF padding = LayoutBox::insets(theme.elementBoxStyle(QStringLiteral("pre"), nullptr, width));
   const qreal lineNumberGutter =
       (node.type() == BlockType::CodeFence && showLineNumbers_) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
   const qreal innerWidth = std::max<qreal>(1.0, width - padding.left() - padding.right() - lineNumberGutter);
@@ -1938,24 +1955,20 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateTable(const Markd
   // tableColumnWidths (which materializes every cell's inline text) and per-cell plainTextForInlines.
   // The build path (buildTable) still resolves exact column widths via tableColumnWidths; this
   // estimate only sizes the scrollbar (mustMeasure/promotion resolve exact heights).
-  const QMarginsF padding = theme.tableCellPadding();
   const qreal columnWidth = width / columnCount;
-  const qreal innerWidth = std::max<qreal>(1.0, columnWidth - padding.left() - padding.right());
-  const QFont paraFont = theme.paragraphFont();
-  const QFont headFont = theme.headingFont(6);
-  const qreal paraLineHeight = estimateLineHeight(paraFont);
-  const qreal headLineHeight = estimateLineHeight(headFont);
-  const qreal paraCharsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForFont(paraFont)));
-  const qreal headCharsPerLine = std::max(qreal(1.0), std::floor(innerWidth / avgCharWidthForFont(headFont)));
   qreal total = 0;
   for (const auto& row : node.children()) {
-    qreal rowHeight = QFontMetricsF(paraFont).height() + padding.top() + padding.bottom();
-    const bool header = row->tableRowIsHeader();
+    const QString key = row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td");
+    const auto used = theme.elementBoxStyle(key, nullptr, columnWidth);
+    const auto padding = LayoutBox::insets(used);
+    const auto font = theme.textFontForElement(key);
+    const qreal lineHeight = cachedEstimateLineHeight(theme, key, BlockType::TableCell, 0);
+    const qreal charsPerLine =
+        qMax<qreal>(1, std::floor(qMax<qreal>(1, columnWidth - padding.left() - padding.right()) / avgCharWidthForFont(font)));
+    qreal rowHeight = LayoutBox::borderHeight(used, lineHeight);
     for (const auto& cell : row->children()) {
-      const qsizetype charCount = cell->sourceRange().byteLength();
-      const qreal lines = estimateWrappedLinesFromCharCount(charCount, header ? headCharsPerLine : paraCharsPerLine);
-      const qreal cellHeight = lines * (header ? headLineHeight : paraLineHeight) + padding.top() + padding.bottom();
-      rowHeight = std::max(rowHeight, cellHeight);
+      const qreal lines = estimateWrappedLinesFromCharCount(cell->sourceRange().byteLength(), charsPerLine);
+      rowHeight = qMax(rowHeight, LayoutBox::borderHeight(used, lines * lineHeight));
     }
     total += rowHeight;
   }

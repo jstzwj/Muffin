@@ -1,7 +1,9 @@
 #include "html/HtmlTextMeasurer.h"
 #include "html/HtmlBox.h"
+#include "render/RenderMetrics.h"
 
 #include <QFontMetricsF>
+#include <algorithm>
 #include <QTextOption>
 
 #include <cmath>
@@ -12,12 +14,10 @@ namespace {
 qreal resolvedLineHeight(const HtmlComputedStyle& style, const QFont& font) {
   QFontMetricsF metrics(font);
   if (style.lineHeight > 0) {
-    if (style.lineHeight < 4.0) {
-      return qMax<qreal>(metrics.height(), std::ceil(style.fontSize * style.lineHeight));
-    }
-    return qMax<qreal>(metrics.height(), style.lineHeight);
+    // The shared computed-style projection has already resolved this to px.
+    return std::ceil(qMax<qreal>(metrics.height(), style.lineHeight));
   }
-  return metrics.height();
+  return std::ceil(metrics.height() * kLineHeightFactor);
 }
 
 QString normalizePreText(QString text) {
@@ -118,17 +118,65 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     result->font = baseFont;
     result->layout = std::make_unique<QTextLayout>(text, baseFont);
     QFontMetricsF fm(baseFont);
-    result->height = fm.height();
+    result->height = resolvedLineHeight(blockBox.style(), baseFont);
     return result;
   }
 
   auto result = std::make_unique<HtmlTextLayout>();
   result->text = text;
   result->font = baseFont;
+  result->lineHeight = resolvedLineHeight(blockBox.style(), baseFont);
   result->formatSpans = spans;
   result->linkSpans = std::move(links);
 
-  auto layout = std::make_unique<QTextLayout>(text, baseFont);
+  struct Run {
+    int start, end;
+    quintptr id;
+    LayoutBox box;
+  };
+  std::vector<Run> runs;
+  for (const auto& span : spans) {
+    if (!span.inlineBoxId) continue;
+    if (!runs.empty() && runs.back().id == span.inlineBoxId && runs.back().end == span.start) {
+      runs.back().end = span.start + span.length;
+    } else {
+      auto used = span.inlineUsedBox;
+      used.padding = used.paddingLengths.used(used.padding, availableWidth, true);
+      runs.push_back({span.start, span.start + span.length, span.inlineBoxId,
+                      LayoutBox::place(span.inlineBoxStyle.key, span.inlineBoxStyle, used, {}, span.font)});
+    }
+  }
+  struct Edge {
+    int position;
+    qreal width;
+  };
+  std::vector<Edge> edges;
+  for (const auto& run : runs) {
+    const auto inset = LayoutBox::insets(run.box.usedBox);
+    if (inset.left() > 0) edges.push_back({run.start, inset.left()});
+    if (inset.right() > 0) edges.push_back({run.end, inset.right()});
+  }
+  std::stable_sort(edges.begin(), edges.end(), [](auto a, auto b) { return a.position < b.position; });
+  const auto before = [&](int position) {
+    return position + std::count_if(edges.begin(), edges.end(), [&](auto e) { return e.position < position; });
+  };
+  const auto after = [&](int position) {
+    return position + std::count_if(edges.begin(), edges.end(), [&](auto e) { return e.position <= position; });
+  };
+  for (auto& span : spans) {
+    const int end = before(span.start + span.length);
+    span.start = after(span.start);
+    span.length = end - span.start;
+  }
+  for (auto& span : result->linkSpans) {
+    const int end = before(span.start + span.length);
+    span.start = after(span.start);
+    span.length = end - span.start;
+  }
+  QString layoutText = text;
+  for (auto edge = edges.rbegin(); edge != edges.rend(); ++edge) layoutText.insert(edge->position, QChar(0x200a));
+  auto layout = std::make_unique<QTextLayout>(layoutText, baseFont);
+
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
   option.setAlignment(alignment);
@@ -138,21 +186,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   QVector<QTextLayout::FormatRange> formats;
   for (const auto& span : spans) {
     QTextCharFormat fmt;
-    if (span.bold) {
-      fmt.setFontWeight(QFont::Bold);
-    }
-    if (span.italic) {
-      fmt.setFontItalic(true);
-    }
-    if (span.monospace) {
-      fmt.setFontFamily(QStringLiteral("Courier New"));
-    }
-    if (span.keyboard) {
-      fmt.setFontFamily(QStringLiteral("Courier New"));
-    }
-    if (!span.fontFamilies.isEmpty()) {
-      fmt.setFontFamilies(span.fontFamilies);
-    }
+    if (span.fontSet) fmt.setFont(span.font);
     if (span.color.isValid()) {
       fmt.setForeground(span.color);
     }
@@ -180,6 +214,16 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
       formats.append(range);
     }
   }
+  for (size_t i = 0; i < edges.size(); ++i) {
+    const QChar spacer(0x200a);
+    QFont font = baseFont;
+    font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
+    font.setLetterSpacing(QFont::AbsoluteSpacing, edges[i].width - QFontMetricsF(font).horizontalAdvance(spacer));
+    QTextCharFormat format;
+    format.setFont(font);
+    format.setForeground(Qt::transparent);
+    formats.push_back({edges[i].position + static_cast<int>(i), 1, format});
+  }
   if (!formats.isEmpty()) {
     layout->setFormats(formats);
   }
@@ -193,12 +237,26 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
       break;
     }
     line.setLineWidth(qMax<qreal>(1.0, availableWidth));
-    line.setPosition(QPointF(0, height));
+    const qreal lineHeight = qMax(result->lineHeight, line.height());
+    line.setPosition(QPointF(0, height + (lineHeight - line.height()) * .5));
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
-    height += line.height();
+    height += lineHeight;
   }
   layout->endLayout();
 
+  for (const auto& run : runs) {
+    const int start = after(run.start), end = before(run.end);
+    const auto inset = LayoutBox::insets(run.box.usedBox);
+    for (int i = 0; i < layout->lineCount(); ++i) {
+      const auto line = layout->lineAt(i);
+      const int first = qMax(start, line.textStart()), last = qMin(end, line.textStart() + line.textLength());
+      if (first >= last) continue;
+      const qreal left = line.cursorToX(first), right = line.cursorToX(last);
+      const QRectF rect(qMin(left, right) - inset.left(), line.y() - inset.top(), qAbs(right - left) + inset.left() + inset.right(),
+                        line.height() + inset.top() + inset.bottom());
+      result->inlineBoxes.push_back(LayoutBox::place(run.box.hostKey, run.box.style, run.box.usedBox, rect, run.box.font));
+    }
+  }
   result->width = maxWidth;
   result->height = height;
   result->layout = std::move(layout);
@@ -262,48 +320,23 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
   return result;
 }
 
-void HtmlTextMeasurer::collectInlineTextFromRoot(
-    const HtmlBox& box,
-    QString& outText,
-    std::vector<TextFormatSpan>& outSpans,
-    std::vector<HtmlTextLayout::LinkSpan>& outLinks,
-    int& offset,
-    bool parentBold,
-    bool parentItalic,
-    bool parentMonospace,
-    bool parentKeyboard,
-    HtmlTextDecoration parentDecoration,
-    QColor parentColor,
-    QColor parentBackgroundColor,
-    QTextCharFormat::VerticalAlignment parentVerticalAlignment,
-    QString parentHref,
-    qreal parentFontSize,
-    qreal baseFontSize) const {
-  collectInlineText(box, outText, outSpans, outLinks, offset,
-                    parentBold, parentItalic, parentMonospace, parentKeyboard, parentDecoration,
-                    parentColor, parentBackgroundColor, parentVerticalAlignment,
-                    parentHref, parentFontSize, baseFontSize);
+void HtmlTextMeasurer::collectInlineTextFromRoot(const HtmlBox& box, QString& outText, std::vector<TextFormatSpan>& outSpans,
+                                                 std::vector<HtmlTextLayout::LinkSpan>& outLinks, int& offset, bool, bool,
+                                                 bool parentMonospace, bool parentKeyboard, HtmlTextDecoration parentDecoration,
+                                                 QColor parentColor, QColor parentBackgroundColor,
+                                                 QTextCharFormat::VerticalAlignment parentVerticalAlignment, QString parentHref,
+                                                 qreal parentFontSize, qreal baseFontSize) const {
+  collectInlineText(box, outText, outSpans, outLinks, offset, false, false, parentMonospace, parentKeyboard, parentDecoration, parentColor,
+                    parentBackgroundColor, parentVerticalAlignment, parentHref, parentFontSize, baseFontSize);
 }
 
-void HtmlTextMeasurer::collectInlineText(
-    const HtmlBox& box,
-    QString& outText,
-    std::vector<TextFormatSpan>& outSpans,
-    std::vector<HtmlTextLayout::LinkSpan>& outLinks,
-    int& offset,
-    bool parentBold,
-    bool parentItalic,
-    bool parentMonospace,
-    bool parentKeyboard,
-    HtmlTextDecoration parentDecoration,
-    QColor parentColor,
-    QColor parentBackgroundColor,
-    QTextCharFormat::VerticalAlignment parentVerticalAlignment,
-    QString parentHref,
-    qreal parentFontSize,
-    qreal baseFontSize) const {
-  bool bold = parentBold || box.style().fontWeight >= QFont::Bold;
-  bool italic = parentItalic || box.style().fontStyle == QFont::StyleItalic;
+void HtmlTextMeasurer::collectInlineText(const HtmlBox& box, QString& outText, std::vector<TextFormatSpan>& outSpans,
+                                         std::vector<HtmlTextLayout::LinkSpan>& outLinks, int& offset, bool, bool, bool parentMonospace,
+                                         bool parentKeyboard, HtmlTextDecoration parentDecoration, QColor parentColor,
+                                         QColor parentBackgroundColor, QTextCharFormat::VerticalAlignment parentVerticalAlignment,
+                                         QString parentHref, qreal parentFontSize, qreal baseFontSize) const {
+  const bool bold = box.style().fontWeight >= QFont::Bold;
+  const bool italic = box.style().fontStyle == QFont::StyleItalic;
   bool mono = parentMonospace || box.tag() == HtmlTag::Code || box.tag() == HtmlTag::Kbd;
   const bool keyboard = parentKeyboard || box.tag() == HtmlTag::Kbd;
   auto decoration = parentDecoration;
@@ -334,7 +367,26 @@ void HtmlTextMeasurer::collectInlineText(
           start, offset - start, bold, italic, decoration, color, backgroundColor, mono, keyboard,
           (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ? fontSize : 0.0,
           verticalAlignment});
-      outSpans.back().fontFamilies = box.style().font.families();
+      auto& span = outSpans.back();
+      span.fontFamilies = box.style().font.families();
+      span.font = box.style().font;
+      span.fontSet = true;
+      for (const HtmlBox* ancestor = box.parent(); ancestor; ancestor = ancestor->parent()) {
+        if (ancestor->tag() != HtmlTag::Kbd && ancestor->tag() != HtmlTag::Code) continue;
+        span.inlineBoxStyle = ancestor->style().computed;
+        auto& used = span.inlineUsedBox;
+        used = span.inlineBoxStyle.box;
+        const auto& style = ancestor->style();
+        used.padding = style.padding;
+        used.paddingLengths = style.paddingLengths;
+        used.borderLeftWidth = style.borderWidth.left();
+        used.borderTopWidth = style.borderWidth.top();
+        used.borderRightWidth = style.borderWidth.right();
+        used.borderBottomWidth = style.borderWidth.bottom();
+        used.borderRadius = style.borderRadius;
+        span.inlineBoxId = reinterpret_cast<quintptr>(ancestor);
+        break;
+      }
     }
     if (!href.isEmpty() && offset > start) {
       outLinks.push_back(HtmlTextLayout::LinkSpan{start, offset - start, href});

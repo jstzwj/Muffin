@@ -125,6 +125,8 @@ class DocumentLayout {
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme);
 
  private:
+  QRectF refreshDependentStyles(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
+  bool refreshingStyles_ = false;
   const MarkdownNode* topLevelBlockFor(NodeId id, const MarkdownDocument& document) const;
   void indexLayoutBlock(const BlockLayout& block);
   void removeLayoutIndexFor(const BlockLayout& block);

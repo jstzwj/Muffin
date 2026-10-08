@@ -9,10 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Document themes use one computed-style pipeline and shared box snapshots for paragraphs, headings, inline code/keyboard boxes, code fences and table cells. The mapper's separate cascade and the replaced component geometry fallbacks have been removed; legacy theme fields are converted to CSS at the input boundary.
 - Native theme fonts are generated from the original WOFF/WOFF2 files in the build directory. Source and release builds no longer require duplicate committed TTF files.
 
 ### Fixed
 
+- Tall inline formulas reserve their actual content height beyond KaTeX's outer strut, keeping math painting and selection inside the measured paragraph.
+- Structural CSS changes after an edit invalidate affected materialized blocks, keeping incremental and lazy layouts consistent with a fresh layout. Mixed Markdown/HTML ancestry and local keyboard styles now participate in the document cascade.
+- CSS values distinguish invalid declarations from valid zeros, reset omitted shorthand components, and preserve case-sensitive custom properties computed in their defining parent scope. Percentage and mixed `calc()` box lengths resolve against layout containers; HTML borders and box sizing participate in layout.
+- Computed styles use generation-scoped snapshot caches, and live style projections no longer alias nodes with repeated IDs. Functional selector lists and modern media conditions follow their matching and specificity rules.
 - CSS themes share computed font sizes, inheritance and shorthand/longhand cascading across prototype and live document nodes. Responsive media queries update with the editor viewport, including conditional custom properties.
 - Bundled theme fonts load natively on Windows, macOS and Linux; imported local WOFF/WOFF2 fonts decode offline before registration.
 - Document host styles, page box sizing, heading padding and borders, and inline code/keyboard spacing use consistent layout geometry for rendering and editing. HTML blocks consume the document theme cascade.

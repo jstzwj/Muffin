@@ -3,6 +3,8 @@
 #include <QSizeF>
 #include <QString>
 #include <QStringView>
+#include <QMarginsF>
+#include <array>
 
 namespace muffin {
 
@@ -36,6 +38,32 @@ struct CssLengthResult {
   qreal px = 0.0;  // meaningful only when status == Valid
 };
 
+// Computed <length-percentage>. Percentages survive computation until the
+// containing block is known. In particular, Valid(0) is distinct from Invalid.
+struct CssLengthPercentage {
+  bool operator==(const CssLengthPercentage&) const = default;
+  CssLengthStatus status = CssLengthStatus::Missing;
+  qreal px = 0.0;
+  qreal fraction = 0.0;
+  bool hasPercentage = false;
+  qreal used(qreal containingPx) const { return px + fraction * containingPx; }
+};
+
+CssLengthPercentage parseCssLengthPercentage(QStringView value, const CssLengthContext& context, bool allowUnitless = false);
+
+struct CssBoxLengths {
+  std::array<CssLengthPercentage, 4> sides;  // top, right, bottom, left
+  QMarginsF used(QMarginsF fallback, qreal containingWidth, bool nonNegative = false) const {
+    qreal values[]{fallback.top(), fallback.right(), fallback.bottom(), fallback.left()};
+    for (int i = 0; i < 4; ++i) {
+      if (sides[i].status != CssLengthStatus::Valid) continue;
+      values[i] = sides[i].used(qMax<qreal>(0, containingWidth));
+      if (nonNegative) values[i] = qMax<qreal>(0, values[i]);
+    }
+    return {values[3], values[0], values[1], values[2]};
+  }
+};
+
 // Resolve a single CSS length value (e.g. "4", "1.5px", "2em", "1in", "1e2px",
 // "4vw") to pixels against `ctx`. The magnitude follows the full CSS <number>
 // grammar (optional sign, integer/decimal mantissa, optional exponent), units
@@ -53,10 +81,9 @@ CssLengthResult resolveCssLengthToPx(QStringView value, const CssLengthContext& 
 // Evaluate a CSS `calc(<expr>)` expression to pixels. Supports `+ - * /`, nested
 // parentheses, and per-term units (absolute units plus em/rem/%). `emPx` resolves em, `rootPx`
 // resolves rem (defaults to emPx), `containingPx` resolves `%` (defaults to emPx).
-// Lenient: CSS requires consistent units on +/- and a dimensionless operand on
-// `*`/`/`, but every operand is resolved to px first and combined numerically.
-// Returns 0.0 for any expression it cannot fully parse (callers treat 0 as
-// "unset"). `expression` is the calc() argument with vars already resolved.
+// Compatibility wrapper over parseCssLengthPercentage with the same dimensional
+// validation. Returns 0.0 for invalid expressions; new callers use the typed
+// result to distinguish invalid from a valid zero. Variables must be resolved.
 qreal evalCalcPx(const QString& expression, qreal emPx, qreal rootPx, qreal containingPx);
 
 }  // namespace muffin

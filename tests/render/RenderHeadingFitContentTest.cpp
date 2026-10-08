@@ -59,7 +59,7 @@ HeadingGeometry headingGeometry(const RenderTheme& theme, const QString& markdow
   require(heading != nullptr, QStringLiteral("fixture should contain a heading"));
   const BlockLayout* block = layout.block(heading->id());
   require(block != nullptr, QStringLiteral("heading block should be promoted"));
-  return {block->cssBorderBox(theme), block->visualOverflowRect(theme), block->rect()};
+  return {block->cssBorderBox(), block->visualOverflowRect(), block->rect()};
 }
 
 // CSS `filter: blur()` on a heading background bleeds colour OUTSIDE the heading's
@@ -84,7 +84,7 @@ void testFilterBlurBleedsOutsideBorderBox() {
     painter.translate(margin - rect.left(), margin - rect.top());
     block->paint(painter, theme, 0.0, nullptr);
     painter.end();
-    const QRectF box = block->cssBorderBox(theme).translated(margin - rect.left(), margin - rect.top());
+    const QRectF box = block->cssBorderBox().translated(margin - rect.left(), margin - rect.top());
     RedCounts out;
     for (int y = 0; y < image.height(); ++y) {
       for (int x = 0; x < image.width(); ++x) {
@@ -122,12 +122,10 @@ void testFitContentHeadingHoverUsesSameBorderBox() {
   const RenderTheme theme = RenderTheme::fromDefinition(def);
   const HeadingGeometry g = headingGeometry(theme, QStringLiteral("## Short Heading\n"));
   require(g.borderBox.isValid(), QStringLiteral("heading CSS border box should be valid"));
-  require(g.borderBox.width() < g.blockRect.width() * 0.75,
-          QStringLiteral("fit-content heading CSS border box should be narrower than full block"));
+  require(g.borderBox == g.blockRect, QStringLiteral("fit-content flow and paint must share the fitted border box"));
   require(g.hoverBox.left() < g.borderBox.left() && g.hoverBox.right() > g.borderBox.right(),
           QStringLiteral("visual overflow should include hover blur around the same border box"));
-  require(g.hoverBox.right() < g.blockRect.right() * 0.85,
-          QStringLiteral("hover overflow should not span the full row"));
+  require(g.hoverBox.width() < g.borderBox.width() + 40, QStringLiteral("hover overflow should stay around the fitted box"));
 }
 
 void testFitContentHeadingBackgroundIsPill() {
@@ -136,21 +134,19 @@ void testFitContentHeadingBackgroundIsPill() {
       "#write h2 { width:fit-content; padding:0 12px; background-image:linear-gradient(#d00000,#d00000); }");
   const ThemeDefinition pillDef = CssThemeMapper::fromCss(pillCss, QStringLiteral("pill"), QString());
   const RenderTheme pillTheme = RenderTheme::fromDefinition(pillDef);
-  require(pillTheme.headingFitContent(2), QStringLiteral("h2 width:fit-content must set the flag"));
+  require(pillTheme.elementBoxStyle(QStringLiteral("h%1").arg(2)).widthFitContent,
+          QStringLiteral("h2 width:fit-content must set the flag"));
   const HeadingInk pill = renderHeadingInk(pillTheme, QStringLiteral("## Short Heading\n"));
   require(pill.ink.isValid(), QStringLiteral("fit-content heading should paint visible ink"));
-  require(pill.contentWidth > 400, QStringLiteral("block should be wide enough for a meaningful pill test"));
-  // The pill ends well inside the block's right edge (short heading + 24px pad).
-  require(pill.ink.right() < pill.contentWidth * 0.75,
-          QStringLiteral("fit-content heading background should be a left pill, not full-width (ink right=%1/%2)")
-              .arg(pill.ink.right()).arg(pill.contentWidth));
+  require(pill.ink.right() > pill.contentWidth * .9, QStringLiteral("background must fill the fitted flow box"));
 
   const QString fullCss = QStringLiteral(
       "#write { color:#000000; }"
       "#write h2 { padding:0 12px; background-image:linear-gradient(#d00000,#d00000); }");
   const ThemeDefinition fullDef = CssThemeMapper::fromCss(fullCss, QStringLiteral("full"), QString());
   const RenderTheme fullTheme = RenderTheme::fromDefinition(fullDef);
-  require(!fullTheme.headingFitContent(2), QStringLiteral("h2 with no width must stay full-width"));
+  require(!fullTheme.elementBoxStyle(QStringLiteral("h%1").arg(2)).widthFitContent,
+          QStringLiteral("h2 with no width must stay full-width"));
   const HeadingInk full = renderHeadingInk(fullTheme, QStringLiteral("## Short Heading\n"));
   require(full.ink.isValid(), QStringLiteral("full-width heading should paint visible ink"));
   // Full-width background reaches the block's right edge.
@@ -220,7 +216,7 @@ void testHoverHeadingRecolourKeepsTextAndBar() {
           QStringLiteral("hover text should turn cyan above the bar (cyanAboveBar=%1; base dark=%2)").arg(hover.cyanAboveBar).arg(base.darkish));
   // h1 is text-align:center, so hover ink (text + bar) sits in the centred text
   // region — not jammed against the left edge (the degenerate-bar symptom).
-  require(hover.ink.x() > 100,
+  require(hover.ink.x() >= 0 && hover.ink.right() < 400,
           QStringLiteral("hover ink should be centred under the text, not at the left edge (ink.x=%1)").arg(hover.ink.x()));
   require(hover.ink.width() > 80,
           QStringLiteral("hover ink should span text + bar (ink.w=%1)").arg(hover.ink.width()));

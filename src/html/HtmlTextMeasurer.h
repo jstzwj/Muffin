@@ -27,6 +27,11 @@ struct TextFormatSpan {
   qreal fontSize = 0;
   QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
   QStringList fontFamilies;
+  QFont font;
+  bool fontSet = false;
+  ThemeElementStyle inlineBoxStyle;
+  ThemeElementBoxStyle inlineUsedBox;
+  quintptr inlineBoxId = 0;
 };
 
 // Holds a pre-built QTextLayout for a text-containing box.
@@ -40,7 +45,10 @@ struct HtmlTextLayout {
     int length = 0;
     QString href;
   };
+  // These ranges address text; QTextLayout formats and links address its buffer,
+  // which additionally contains zero-content spacers for inline box edges.
   std::vector<TextFormatSpan> formatSpans;
+  std::vector<LayoutBox> inlineBoxes;
   std::vector<LinkSpan> linkSpans;
   qreal width = 0;
   qreal height = 0;

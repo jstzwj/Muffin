@@ -7,10 +7,52 @@ shorthands enter the same cascade as their longhands. Computed element and root
 font sizes provide the bases for `em` and `rem`; user text size and viewport zoom
 are applied separately.
 
+Lengths distinguish missing, invalid and valid values (including zero). Invalid
+literal declarations are ignored before cascading; a winning declaration whose
+`var()` substitution fails becomes `unset` at computed-value time. Box, border,
+font and background shorthands reset their omitted longhands. Custom-property
+names are case-sensitive; aliases are computed in the defining element before
+inheritance, and dependency cycles invalidate their participating variables.
+
+Computed box lengths keep a pixel component and a percentage component.
+Markdown flow and HTML layout supply the actual containing content width for
+margins, padding and mixed `calc()` expressions; vertical margin/padding
+percentages also use this width. Font-relative units are frozen before
+inheritance. Dimensional arithmetic rejects length-times-length and division by
+zero. Border style initially means `none`; a visible style with no width uses
+`medium`. HTML passes borders and `box-sizing` to Yoga.
+
+Computed-style caches are scoped to the engine generation and opt-in immutable
+element snapshots. Temporary elements are uncached. Editing/rebuilding clears
+both computed and projected caches; live projections distinguish node objects
+and requested style keys, including nodes with identical IDs.
+Equivalent matched declarations and inherited inputs reuse immutable cascade,
+computed-value, native projection and font results within that generation.
+Cache hash buckets also compare their full inputs before reuse.
+Equivalent inline runs share immutable used-style snapshots rather than keeping
+a full box/paint recipe in every text span; positioned fragments own their geometry.
+
+`:is()` and `:where()` accept forgiving selector lists; `:not()` accepts selector
+lists including complex selectors. Their specificity follows the maximum
+argument rule, with zero specificity for `:where()`. Media conditions include
+width/height/resolution ranges, logical conditions, pointer/hover and reduced
+motion preferences. This extends the native CSS subset; complete flex/grid,
+cascade layers and browser formatting contexts remain outside this contract.
+
 `CssThemeMapper::projectComputedStyle` projects this result into native text,
 paint and box values. Theme prototypes, live Markdown nodes and HTML boxes use
 this projection. Mermaid uses the same declaration cascade and retains CSS-wide
 values until its SVG presentation and inheritance projection.
+
+The mapper does not match declarations or run a second cascade. Prototypes and
+live nodes share the `html > body > #write` host and semantic element ancestry,
+including table sections and Markdown formatting around inline HTML. Anonymous
+HTML fragment containers are transparent to selectors. Simple HTML tags retain
+the Markdown editing projection, while their fonts come from the actual style
+tree. Legacy JSON/manual theme fields are lowered into CSS by
+`LegacyThemeAdapter` before entering this pipeline; they are not runtime geometry
+fallbacks. Document defaults are compiled into the UI library, so all consumers
+have the same defaults without relying on an application's resource initializer.
 
 `RenderTheme::updateForViewport` evaluates the retained sheet using CSS viewport
 dimensions (physical layout dimensions divided by zoom). Resizing the editor
@@ -19,13 +61,36 @@ outer box, border, padding and text area; an explicit user width overrides the
 theme width. `resources/themes/document-base.css` supplies document defaults
 before authored CSS and remains independent of editor chrome.
 
-Heading padding and the bottom border enter the flow box. Painting and editing
-read its content origin. Inline code and keyboard boxes reserve horizontal
+`LayoutBox` stores the computed style, used lengths, font and border, padding,
+content and overflow rectangles produced during layout. Paragraphs, headings,
+code fences, quotes, table/row/cell boxes and embedded HTML use this snapshot. Painting, clicking,
+caret placement and selection read its geometry rather than reconstructing it
+from theme tokens. All four heading borders and padding sides enter the flow
+box; fixed, minimum/maximum and fit-content sizes change actual occupied space.
+Inline code and keyboard boxes reserve horizontal
 padding and border width in the text layout. Their generated layout spacers map
 to zero source and visible-text length, so they affect wrapping and cursor
 coordinates without entering copy or saved Markdown. Format ranges address the
 layout buffer, which can include these spacers and collapsed math/image atoms.
 Code blocks read `pre` typography and line height; inline code reads `code`.
+Table header/body cells use actual `th`/`td` styles, including their individual
+fonts, line heights, borders and padding. Inline HTML code/keyboard boxes preserve
+local style attributes, and nested text spans reserve their shared box padding
+once.
+HTML block code/keyboard runs use the same box painter and reserve their edges
+in their text buffer; metadata keeps content offsets separate from layout offsets.
+Lazy promotion replaces both leading and trailing prototype margins with live
+node margins.
+Inline formula flow includes the actual inner math bounds when they exceed
+KaTeX's nominal outer strut, and its paint/selection ranges use those same bounds.
+
+Editing invalidates the style generation and sparse tree together. When a theme
+uses structural selectors, already materialized blocks compare their saved style
+fingerprints with the new tree and rebuild when affected, including inline and
+table-cell styles. Unmaterialized blocks read fresh styles on promotion. Embedded
+HTML fragments are conservatively rebuilt after structural edits because their
+descendant tree is currently temporary. This preserves correctness while keeping
+the Markdown tree sparse; it is not a full browser dependency graph.
 
 Bundled webfonts are converted to native SFNT by CMake at build time using
 `scripts/prepare_theme_fonts.py`. Only original WOFF/WOFF2 and license notices
@@ -47,6 +112,16 @@ font resources, imported webfont decoding, text/zoom scaling, heading flow,
 HTML inheritance and separate code typography. Inline rendering tests check box
 advances, unchanged visible text and caret/click round trips. The full suite
 also checks editing, incremental/lazy layout and Mermaid.
+Snapshot regressions compare eager and promoted lazy rectangles, test a heading
+CSS edit across wrapping/borders/caret/selection, and compare structural edits
+with a fresh layout. Chrome comparisons cover computed values and the used box
+geometry of paragraphs, headings and preformatted blocks with both box-sizing
+modes; native table behavior has separate regression coverage.
+The committed reference is `tests/fixtures/theme/document-box-browser.json`.
+Regenerate it with `node scripts/probe_document_css.mjs` after installing
+Playwright. `CHROME_EXECUTABLE` selects a local browser; otherwise Playwright's
+Chromium is used. The regular native test suite consumes this fixture without
+requiring a browser installation.
 
 At 100% zoom and a 16px user text size, Chrome with the same host CSS and
 Newsprint sheet gives the following reference values:

@@ -24,29 +24,28 @@ qreal paragraphBlockHeight(const QString& markdown) {
   require(p != nullptr, QStringLiteral("fixture should contain a paragraph"));
   const BlockLayout* block = layout.block(p->id());
   require(block != nullptr, QStringLiteral("paragraph block should be promoted"));
+  if (markdown.contains(QLatin1Char('$'))) {
+    require(block->inlineLayout()->mathAtomCount() == 1, "height regression must exercise a rendered math atom");
+    const auto rects = block->inlineLayout()->mathAtomRects(block->inlineTextOrigin());
+    require(rects.size() == 1 && rects.front().top() >= block->rect().top() - .01 &&
+                rects.front().bottom() <= block->rect().bottom() + .01,
+            "painted math content must fit within the same measured paragraph box");
+  }
   return block->rect().height();
 }
 
-// A tall inline atom (a fraction is ~2x text height on a real font) must grow its
-// line, so the paragraph block is taller than the same prose without the math.
-// Before the fix the line was not grown for math atoms, so the painted fraction
-// overflowed into the neighbour line. The block-height comparison is relative (same
-// offscreen font for plain and withMath), but the growth MAGNITUDE depends on how
-// tall that font renders the fraction — so the assertion is proportional, not an
-// absolute pixel margin (see offscreen-test-harness-broken-font-metrics).
+// Actual math content can exceed KaTeX's fixed outer inline strut. Its measured
+// range, paint origin and paragraph flow must agree when that happens.
 void testTallInlineMathGrowsLine() {
   const qreal plain = paragraphBlockHeight(QStringLiteral("alpha bravo charlie\n"));
-  const qreal withMath = paragraphBlockHeight(QStringLiteral("alpha $\\frac{1}{2}$ bravo\n"));
+  // Fractions can fit inside an authored CSS line-height. A 4em rule gives this
+  // regression an explicit tall math box, independent of the installed fonts.
+  const qreal withMath = paragraphBlockHeight(QStringLiteral("alpha $\\rule{1em}{4em}$ bravo\n"));
   require(plain > 8.0, QStringLiteral("plain paragraph should have measurable height (=%1)").arg(plain));
-  // The line must grow when it holds a tall inline atom. The growth MAGNITUDE is
-  // font-dependent: a real font renders the fraction ~2x text height (exercised on
-  // Windows CI), but the offscreen/fontconfig font on Linux CI renders it near-text
-  // (plain≈23, withMath≈27 — only ~17% taller). An absolute pixel margin (+6) failed
-  // on the smaller Linux metrics, so assert PROPORTIONAL growth (>5%, beyond rounding),
-  // which scales with the font. The regression this guards is ZERO growth — the line
-  // not being grown for math atoms, so the painted fraction overflowed its neighbour.
+  // Compare proportional growth under the same font backend rather than a
+  // platform-specific absolute pixel height.
   require(withMath > plain * 1.05,
-          QStringLiteral("a tall inline fraction must grow its line (plain=%1 withMath=%2)").arg(plain).arg(withMath));
+          QStringLiteral("a tall inline math box must grow its line (plain=%1 withMath=%2)").arg(plain).arg(withMath));
 }
 
 }  // namespace

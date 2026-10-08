@@ -1,4 +1,5 @@
 #pragma once
+#include "render/LayoutBox.h"
 
 #include "document/MarkdownNode.h"
 #include "editor/CursorPosition.h"
@@ -23,6 +24,7 @@
 #include <vector>
 
 namespace muffin {
+class MarkdownDocument;
 
 class CodeFenceScrollController;
 
@@ -40,6 +42,7 @@ public:
     NodeId nodeId;
     QRectF rect;
     InlineLayout text;
+    LayoutBox box;
     qsizetype contentSourceStart = -1;
     TableAlignment alignment = TableAlignment::None;
     bool header = false;
@@ -47,6 +50,14 @@ public:
   };
 
   struct TableRowLayout {
+    TableRowLayout() = default;
+    TableRowLayout(const TableRowLayout&) = delete;
+    TableRowLayout& operator=(const TableRowLayout&) = delete;
+    TableRowLayout(TableRowLayout&&) noexcept = default;
+    TableRowLayout& operator=(TableRowLayout&&) noexcept = default;
+
+    NodeId nodeId;
+    LayoutBox box;
     QRectF rect;
     std::vector<TableCellLayout> cells;
   };
@@ -96,16 +107,7 @@ public:
     int level = 1;
   };
 
-  struct CssBoxGeometry {
-    QString hostKey;
-    QRectF flowRect;
-    QRectF borderBox;
-    QRectF paddingBox;
-    QRectF contentBox;
-    QPointF inlineTextOrigin;
-    QRectF visualOverflow;
-    bool valid = false;
-  };
+  using CssBoxGeometry = LayoutBox;
 
   // Interactive state passed into paint so in-block properties (heading text
   // colour, ::after width) animate with the SAME HoverAnimator/FocusAnimator
@@ -132,10 +134,11 @@ public:
   QRectF rect() const;
   void setRect(QRectF rect);
   void setCssBoxGeometry(CssBoxGeometry geometry);
-  CssBoxGeometry cssBoxGeometry(const RenderTheme& theme) const;
-  QRectF cssBorderBox(const RenderTheme& theme) const;
-  QPointF inlineTextOrigin(const RenderTheme& theme) const;
-  QRectF visualOverflowRect(const RenderTheme& theme) const;
+  CssBoxGeometry cssBoxGeometry() const;
+  QRectF cssBorderBox() const;
+  QPointF inlineTextOrigin() const;
+  QRectF visualOverflowRect() const;
+  bool stylesMatch(const RenderTheme& theme, const MarkdownDocument& document) const;
   void translate(qreal dx, qreal dy);
   void translateY(qreal dy);
 
@@ -148,6 +151,8 @@ public:
 
   void setLiteral(QString literal);
   QString literal() const;
+  QFont literalFont() const { return cssBoxGeometry_.font; }
+  qreal literalLineHeight() const { return cssBoxGeometry_.lineHeight; }
   void setCodeLanguage(QString language);
   QString codeLanguage() const;
   void setCodeHighlightSpans(QVector<CodeHighlightSpan> spans);

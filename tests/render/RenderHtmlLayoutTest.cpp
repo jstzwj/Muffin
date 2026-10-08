@@ -386,7 +386,8 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
   const html::HtmlBox* keyboard = firstChildWithTag(*root, html::HtmlTag::Kbd);
   require(subText != nullptr && subText->style().fontSize < 16.0, QStringLiteral("sub text should inherit smaller font size"));
   require(smallText != nullptr && smallText->style().fontSize < 16.0, QStringLiteral("small text should inherit smaller font size"));
-  require(largeText != nullptr && qFuzzyCompare(largeText->style().fontSize, 24.0), QStringLiteral("inline font-size should propagate to text"));
+  require(largeText != nullptr && qFuzzyCompare(largeText->style().fontSize, 18.0),
+          QStringLiteral("24 CSS px propagate as 18 native points"));
   require(keyboard != nullptr && keyboard->style().display == html::HtmlDisplay::Inline,
           QStringLiteral("kbd tag should remain inline"));
 
@@ -416,7 +417,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
       }
     }
     for (const QTextLayout::FormatRange& range : textLayout->layout->formats()) {
-      const QString spanText = textLayout->text.mid(range.start, range.length);
+      const QString spanText = textLayout->layout->text().mid(range.start, range.length);
       const qreal pointSize = range.format.fontPointSize();
       if (spanText == QStringLiteral("2") && pointSize > 0 && pointSize < 16.0) {
         sawSubSize = true;
@@ -425,7 +426,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
         }
       } else if (spanText == QStringLiteral("small") && pointSize > 0 && pointSize < 16.0) {
         sawSmallSize = true;
-      } else if (spanText == QStringLiteral("large") && qFuzzyCompare(pointSize, 24.0)) {
+      } else if (spanText == QStringLiteral("large") && qFuzzyCompare(pointSize, 18.0)) {
         sawLargeSize = true;
       }
     }

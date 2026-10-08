@@ -62,6 +62,7 @@ QStringList splitTopLevelSpaces(const QString& text);
 // The full funnel every theme colour read routes through; returns invalid for unresolvable
 // input (and logs the offending value to themeWarn when that category is enabled).
 QColor extractColor(const QString& value, const QHash<QString, QString>& vars);
+bool isCssColorValue(const QString& value);
 
 // CSS length → pixels. Accepts CSS absolute units, em/rem/%/calc()/bare-number. `rem` resolves against
 // rootPx (the root html font, 16px default — NOT the local em, which is the historic
@@ -76,8 +77,8 @@ qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qrea
 
 // Resolve a CSS box shorthand (margin/padding, 1-4 space-separated values) to pixel margins.
 // Defined in CssValueParser.cpp.
-QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars,
-                         qreal emPx = 16.0, qreal rootPx = -1.0);
+QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx = 16.0, qreal rootPx = -1.0,
+                         qreal containingPx = -1.0);
 
 // Width of the first positive length in a border shorthand (e.g. `1px solid #d0d7de` → 1.0).
 // Defined in CssValueParser.cpp.

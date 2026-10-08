@@ -101,7 +101,7 @@ bool isDragSelectableZone(HitTestResult::Zone zone) {
 }
 
 QPointF tableCellTextOrigin(const BlockLayout::TableCellLayout& cell, const RenderTheme& theme) {
-  const QRectF contentRect = cell.rect.marginsRemoved(theme.tableCellPadding());
+  const QRectF contentRect = cell.box.contentBox;
   qreal textX = contentRect.left();
   if (cell.alignment == TableAlignment::Right) {
     textX = contentRect.right() - cell.text.size().width();

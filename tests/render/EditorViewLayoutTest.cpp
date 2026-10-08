@@ -213,7 +213,7 @@ void testEditorViewTableCellInlineLayout() {
   require(!cell.text.cursorRect(1).isEmpty(), QStringLiteral("table cell cursor rect should exist"));
   require(!cell.text.selectionRects(0, 3).isEmpty(), QStringLiteral("table cell selection rects should exist"));
 
-  const QMarginsF padding = RenderTheme::defaultTheme().tableCellPadding();
+  const QMarginsF padding = RenderTheme::defaultTheme().elementBoxStyle(QStringLiteral("td")).padding;
   const QPointF point = cell.rect.marginsRemoved(padding).topLeft() + QPointF(cell.text.cursorRect(1).left(), cell.text.cursorRect(1).center().y());
   const HitTestResult hit = view.hitTest(point);
   require(hit.zone == HitTestResult::Zone::TableCell, QStringLiteral("table cell hit should use table cell zone"));
@@ -235,8 +235,8 @@ void testEditorViewTableCellInlineCodeEndHit() {
   MarkdownNode* cellNode = childAt(childAt(table, 1), 0);
   const BlockLayout* tableLayout = requireViewBlock(view, table->id(), QStringLiteral("table inline code end"));
   const auto& cell = tableLayout->tableRows().at(1).cells.at(0);
-  const QMarginsF padding = RenderTheme::defaultTheme().tableCellPadding();
-  const QPointF textOrigin = cell.rect.marginsRemoved(padding).topLeft();
+  const QMarginsF padding = RenderTheme::defaultTheme().elementBoxStyle(QStringLiteral("td")).padding;
+  const QPointF textOrigin = cell.box.contentBox.topLeft();
   const QRectF endCursor = cell.text.cursorRectForSourceOffset(cellContent.size());
   const QPointF point = textOrigin + QPointF(endCursor.left() + 2.0, endCursor.center().y());
 

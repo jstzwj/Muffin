@@ -1,5 +1,7 @@
 #pragma once
 
+#include "theme/CssCalc.h"
+
 #include <QColor>
 #include <QJsonObject>
 #include <QMarginsF>
@@ -76,12 +78,8 @@ struct ThemeColors {
   bool isDark = false;
 };
 
-// Typography carried by a theme. Every field is optional: when a font family is
-// empty RenderTheme falls back to its per-platform stack, and when a size is zero
-// it falls back to the built-in size — so a theme that only sets colours (every
-// JSON theme today, and stock CSS themes that omit font rules) is unchanged.
-// When a family IS set, RenderTheme uses it as the primary family and keeps the
-// platform stack as a substitution tail so missing glyphs (CJK, symbols) resolve.
+// Compatibility fields for JSON and existing integrations. LegacyThemeAdapter
+// lowers input fields to CSS; the native renderer reads computed element styles.
 struct ThemeTypography {
   QString bodyFont;       // paragraph + list text
   QString headingFont;    // h1-h6 (empty → bodyFont / platform stack)
@@ -190,12 +188,9 @@ struct ThemePage {
   qreal pageShadowSpread = 0.0;
 };
 
-// Element VISUAL-BOX geometry (margin/padding/border/radius/fit-content of p,
-// h1–h6, blockquote, and the list indent) lives in `ThemeDecorations::elementStyles`
-// (ThemeElementStyle::box) — the single source for those properties. This struct
-// holds only what that system does NOT cover: layout-flow block margins, the box
-// flags/padding for `pre`/`table` (which have no element style), the heading
-// `::before` marker advance, and the render-layer list-marker gap.
+// Legacy box fields are accepted at the input boundary and exposed in theme
+// projections for serialization. LayoutBox owns runtime geometry. Marker gap
+// and generated counter advance are native document-host conventions.
 struct ThemeBlockSpacing {
   // Px the heading text is inset from its left padding edge to reserve room for
   // an inline `::before` marker (phycat h4/h5/h6). 0 for absolute befores (h3,
@@ -215,13 +210,11 @@ struct ThemeBlockSpacing {
   QString ulListStyleType;
   QString olListStyleType;
   QString liListStyleType;
-  // Phase 4b: CSS `pre`/`.md-fences` box. codeBlockBoxThemed flips codePadding()
-  // to the CSS value (legacy scaled(12/10) otherwise) and rounds the fence box.
+  // Compatibility input/projection fields; runtime geometry is in LayoutBox.
   QMarginsF codeBlockPadding;
   qreal codeBlockBorderRadius = 0.0;
   bool codeBlockBoxThemed = false;
-  // Phase 4c: CSS `td`/`th` padding + `table` radius. tableBoxThemed flips
-  // tableCellPadding() to the CSS value (legacy scaled(12/6) otherwise).
+  // Compatibility table input/projection fields.
   QMarginsF tableCellPadding;
   qreal tableBorderRadius = 0.0;
   bool tableBoxThemed = false;
@@ -432,6 +425,13 @@ struct ThemeElementBoxStyle {
   bool paddingSpecified = false;
   QMarginsF margin;
   QMarginsF padding;
+  CssBoxLengths marginLengths;
+  CssBoxLengths paddingLengths;
+  CssLengthPercentage widthLength, minWidthLength, maxWidthLength;
+  CssLengthPercentage heightLength, minHeightLength, maxHeightLength;
+  bool marginLeftAuto = false;
+  bool marginRightAuto = false;
+  bool borderBox = false;
   qreal borderTopWidth = 0.0;
   qreal borderRightWidth = 0.0;
   qreal borderBottomWidth = 0.0;
@@ -440,11 +440,9 @@ struct ThemeElementBoxStyle {
   QColor borderRightColor;
   QColor borderBottomColor;
   QColor borderLeftColor;
+  QString borderTopStyle, borderRightStyle, borderBottomStyle, borderLeftStyle;
   qreal borderRadius = 0.0;
-  // `width: fit-content` (or max-content/min-content) on the element: its own
-  // background/decoration box shrinks to the text instead of spanning the block.
-  // Other width values (auto/%/px) leave this false — only fit-content is a
-  // paint-time concern; layout/hit-test stay full-width regardless.
+  // Intrinsic widths are resolved by layout before painting or input.
   bool widthFitContent = false;
 };
 
@@ -453,6 +451,9 @@ struct ThemeElementPaintStyle {
   QColor backgroundColor;
   GradientSpec backgroundImage;
   QColor boxShadowColor;
+  qreal boxShadowOffsetX = 0;
+  qreal boxShadowOffsetY = 0;
+  qreal boxShadowSpread = 0;
   qreal boxShadowBlur = 0.0;
   qreal opacity = 1.0;
   qreal transformScale = 1.0;
@@ -494,8 +495,13 @@ struct TextShadow {
 struct ThemeElementTextStyle {
   QString fontFamily;
   qreal fontSizePx = 0.0;
+  bool fontSizeSet = false;
   qreal lineHeight = 0.0;
   qreal wordSpacing = 0.0;
+  qreal letterSpacing = 0.0;
+  int decorationLines = 0;  // underline=1, overline=2, line-through=4
+  int underlineStyle = -1;
+  QColor decorationColor;
   int fontWeight = 0;
   bool fontWeightSet = false;
   bool italic = false;
@@ -509,6 +515,7 @@ struct ThemeElementTextStyle {
 };
 
 struct ThemeElementStyle {
+  quint64 fingerprint = 0;  // computed declarations, inheritance and environment
   QString key;  // e.g. "h2", "blockquote p", "li::marker"
   ThemeElementBoxStyle box;
   ThemeElementPaintStyle paint;
@@ -527,19 +534,14 @@ struct ThemeDefinition {
   ThemeBlockSpacing spacing;
   ThemeDecorations decorations;
   std::vector<ThemeElementStyle> elementStyles;
-  // True when the theme uses selectors that need the live document tree to match
-  // (`+`/`~` combinators or structural pseudo-classes such as `:first-child`,
-  // `:nth-child(n)`, `:has(...)`). When set, `structuralSheet` carries the parsed
-  // CSS so the layout path can run the engine against each node's real position.
-  // Absent (false/null) for every theme without such selectors — the load-time
-  // prototype precompute is the whole answer, with no per-layout cost.
+  // Structural selectors require checking already materialized blocks after
+  // document edits. All themes retain source CSS and use the live style engine.
   bool hasStructuralRules = false;
   // True only when some selector reads typeIndex (:nth-of-type / :first-of-type / :last-of-type /
   // :only-of-type). When false (every bundled theme), the structural builder skips the per-sibling
   // typeCounts QString-hash maintenance — the dominant cost of the per-splice sibling re-link.
   bool hasNthOfType = false;
-  qreal bodyFontPx = 16.0;  // body font size in CSS px (em basis for the structural path)
-  std::shared_ptr<CssThemeSheet> structuralSheet;  // only populated when hasStructuralRules
+  qreal bodyFontPx = 16.0;                         // body font size in CSS px for projections
   std::shared_ptr<CssThemeSheet> sourceSheet;      // Immutable CSS, including responsive conditions.
   QHash<QString, QString> fontAliases;
   bool isBuiltIn = true;

@@ -335,8 +335,9 @@ void testCodeFenceIgnoresMdMetaBlockHack() {
       ".md-fences { padding: 8px; }"
       "pre.md-meta-block { padding-top: 2000px; padding-bottom: 10px; margin-top: -2010px; }");
   const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("meta"), QString()));
-  require(theme.codePadding().top() < 50.0,
-          QStringLiteral("code-fence padding must ignore pre.md-meta-block hack (top=%1, should be ~8 not 2000)") .arg(theme.codePadding().top()));
+  require(theme.elementBoxStyle(QStringLiteral("pre")).padding.top() < 50.0,
+          QStringLiteral("code-fence padding must ignore pre.md-meta-block hack (top=%1, should be ~8 not 2000)")
+              .arg(theme.elementBoxStyle(QStringLiteral("pre")).padding.top()));
 }
 
 int main(int argc, char** argv) {

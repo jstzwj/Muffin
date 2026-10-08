@@ -1,6 +1,5 @@
 <RCC>
   <qresource prefix="/themes">
-    <file alias="document-base.css">../resources/themes/document-base.css</file>
     <file alias="font-licenses/README.md">../resources/themes/font-licenses/README.md</file>
     <file alias="font-licenses/PT-Serif-OFL.txt">../resources/themes/font-licenses/PT-Serif-OFL.txt</file>
     <file alias="font-licenses/Open-Sans-Apache-2.0.txt">../resources/themes/font-licenses/Open-Sans-Apache-2.0.txt</file>

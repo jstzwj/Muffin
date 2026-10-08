@@ -50,19 +50,86 @@ inline bool selectorRequiresExportContext(const QString& selector) {
   return false;
 }
 
-// Coarse CSS specificity for the whole selector: (a = #id, b = class/attr/pseudo, c = type),
-// packed so larger == more specific. Good enough for cascade ties (themes rarely set the same
-// token on conflicting selectors).
+// Functional selectors contribute their most specific argument; :where()
+// contributes zero. Strings/attribute values never contribute selector tokens.
 inline int specificityOf(const QString& selector) {
-  int a = selector.count(QLatin1Char('#'));
-  int b = selector.count(QLatin1Char('.')) + selector.count(QLatin1Char('[')) + selector.count(QLatin1Char(':'));
-  // type selectors: a letter starting a compound (after a combinator or at start),
-  // i.e. not attached to # . : [
-  static const QRegularExpression tagRe(QStringLiteral("(^|[\\s>+~])[a-zA-Z]"));
-  int c = 0;
-  auto it = tagRe.globalMatch(selector);
-  while (it.hasNext()) { ++c; it.next(); }
-  return a * 10000 + b * 100 + c;
+  int result = 0;
+  bool typePosition = true;
+  for (int i = 0; i < selector.size();) {
+    const QChar c = selector[i];
+    if (c.isSpace() || c == '>' || c == '+' || c == '~' || c == ',') {
+      typePosition = true;
+      ++i;
+      continue;
+    }
+    if (c == '[') {
+      result += 100;
+      QChar quote;
+      for (++i; i < selector.size(); ++i) {
+        if (!quote.isNull()) {
+          if (selector[i] == QLatin1Char(0x5c))
+            ++i;
+          else if (selector[i] == quote)
+            quote = {};
+        } else if (selector[i] == QLatin1Char(0x27) || selector[i] == '"')
+          quote = selector[i];
+        else if (selector[i] == ']') {
+          ++i;
+          break;
+        }
+      }
+      typePosition = false;
+      continue;
+    }
+    if (c == '#' || c == '.') {
+      result += c == '#' ? 10000 : 100;
+      for (++i; i < selector.size() && isIdentChar(selector[i]); ++i) {
+      }
+    } else if (c == ':') {
+      const bool element = i + 1 < selector.size() && selector[i + 1] == ':';
+      i += element ? 2 : 1;
+      const int start = i;
+      while (i < selector.size() && isIdentChar(selector[i])) ++i;
+      const auto name = selector.mid(start, i - start).toLower();
+      const bool functional = name == QLatin1String("is") || name == QLatin1String("not") || name == QLatin1String("has");
+      if (name != QLatin1String("where") && !functional)
+        result += element || name == QLatin1String("before") || name == QLatin1String("after") ? 1 : 100;
+      if (i < selector.size() && selector[i] == '(') {
+        ++i;
+        int depth = 1, best = 0, argument = i;
+        QChar quote;
+        for (; i < selector.size() && depth > 0; ++i) {
+          const QChar v = selector[i];
+          if (!quote.isNull()) {
+            if (v == QLatin1Char(0x5c))
+              ++i;
+            else if (v == quote)
+              quote = {};
+            continue;
+          }
+          if (v == QLatin1Char(0x27) || v == '"') {
+            quote = v;
+            continue;
+          }
+          if (v == '(') ++depth;
+          if (v == ')') --depth;
+          if ((v == ',' && depth == 1) || depth == 0) {
+            if (functional) best = qMax(best, specificityOf(selector.mid(argument, i - argument)));
+            argument = i + 1;
+          }
+        }
+        if (functional) result += best;
+      }
+    } else {
+      if (typePosition && c.isLetter()) ++result;
+      if (isIdentChar(c))
+        while (i < selector.size() && isIdentChar(selector[i])) ++i;
+      else
+        ++i;
+    }
+    typePosition = false;
+  }
+  return result;
 }
 
 // Shared cascade-winner comparison: importance beats specificity beats source order, last wins

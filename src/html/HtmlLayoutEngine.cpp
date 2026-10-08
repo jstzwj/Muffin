@@ -145,6 +145,21 @@ void HtmlLayoutEngine::layout(
   YGNodeCalculateLayout(rootNode, static_cast<float>(availableWidth), YGUndefined, YGDirectionLTR);
 
   readLayoutBack(root, rootNode);
+  const auto snapshot = [&](auto&& self, HtmlBox& box) -> void {
+    const auto& style = box.style();
+    auto used = style.computed.box;
+    used.padding = style.padding;
+    used.borderLeftWidth = style.borderWidth.left();
+    used.borderTopWidth = style.borderWidth.top();
+    used.borderRightWidth = style.borderWidth.right();
+    used.borderBottomWidth = style.borderWidth.bottom();
+    used.borderRadius = style.borderRadius;
+    const auto& geometry = box.geometry();
+    box.layoutBox = LayoutBox::place(box.cssTag, style.computed, used, QRectF(geometry.left, geometry.top, geometry.width, geometry.height),
+                                     style.font);
+    for (const auto& child : box.children()) self(self, *child);
+  };
+  snapshot(snapshot, root);
 
   // Free all YogaContext objects before freeing nodes
   // (YGNodeFreeRecursive doesn't call context destructors)
@@ -160,7 +175,15 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts) {
   YGNode* node = YGNodeNew();
 
-  const auto& style = box.style();
+  auto& style = box.style();
+
+  // Resolve only after the parent content width is known. Keep expressions on
+  // the box so a subsequent layout at a different width recomputes them.
+  style.margin = style.marginLengths.used(style.margin, availableWidth);
+  style.padding = style.paddingLengths.used(style.padding, availableWidth, true);
+  if (style.widthLength.status == CssLengthStatus::Valid) style.width = qMax<qreal>(0, style.widthLength.used(availableWidth));
+  if (style.heightLength.status == CssLengthStatus::Valid && !style.heightLength.hasPercentage)
+    style.height = qMax<qreal>(0, style.heightLength.px);
 
   // Skip invisible boxes
   if (!style.visible || style.display == HtmlDisplay::None) {
@@ -171,6 +194,11 @@ YGNode* HtmlLayoutEngine::createYogaNode(
 
   // Apply box model styles
   applyBoxStyle(node, style);
+  YGNodeStyleSetBoxSizing(node, style.borderBox ? YGBoxSizingBorderBox : YGBoxSizingContentBox);
+  if (style.minWidthLength.status == CssLengthStatus::Valid)
+    YGNodeStyleSetMinWidth(node, static_cast<float>(qMax<qreal>(0, style.minWidthLength.used(availableWidth))));
+  if (style.maxWidthLength.status == CssLengthStatus::Valid)
+    YGNodeStyleSetMaxWidth(node, static_cast<float>(qMax<qreal>(0, style.maxWidthLength.used(availableWidth))));
   if ((style.display == HtmlDisplay::TableRowGroup ||
        style.display == HtmlDisplay::TableRow) &&
       style.width < 0) {
@@ -313,9 +341,12 @@ YGNode* HtmlLayoutEngine::createYogaNode(
       if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) {
         continue;
       }
-      qreal childAvailableWidth = availableWidth;
+      const qreal borderPadding = style.padding.left() + style.padding.right() + style.borderWidth.left() + style.borderWidth.right();
+      qreal childAvailableWidth = style.width >= 0
+                                      ? (style.borderBox ? qMax<qreal>(0, style.width - borderPadding) : style.width)
+                                      : qMax<qreal>(0, availableWidth - style.margin.left() - style.margin.right() - borderPadding);
       if (style.display == HtmlDisplay::TableRow && child->style().display == HtmlDisplay::TableCell && tableCellCount > 0) {
-        childAvailableWidth = qMax<qreal>(1.0, availableWidth / tableCellCount);
+        childAvailableWidth = qMax<qreal>(1.0, childAvailableWidth / tableCellCount);
       }
       YGNode* childNode = createYogaNode(*child, style.fontSize, childAvailableWidth, textLayouts);
       YGNodeInsertChild(node, childNode, childIndex);
@@ -327,6 +358,10 @@ YGNode* HtmlLayoutEngine::createYogaNode(
 }
 
 void HtmlLayoutEngine::applyBoxStyle(YGNode* node, const HtmlComputedStyle& style) {
+  YGNodeStyleSetBorder(node, YGEdgeTop, static_cast<float>(style.borderWidth.top()));
+  YGNodeStyleSetBorder(node, YGEdgeRight, static_cast<float>(style.borderWidth.right()));
+  YGNodeStyleSetBorder(node, YGEdgeBottom, static_cast<float>(style.borderWidth.bottom()));
+  YGNodeStyleSetBorder(node, YGEdgeLeft, static_cast<float>(style.borderWidth.left()));
   // Margin (use percent API when a percentage was specified, pixel API otherwise)
   if (style.marginPercent.top() >= 0) {
     YGNodeStyleSetMarginPercent(node, YGEdgeTop, static_cast<float>(style.marginPercent.top()));

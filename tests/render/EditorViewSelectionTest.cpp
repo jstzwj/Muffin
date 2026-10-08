@@ -809,7 +809,7 @@ void testInlinePreeditSplicesInsideRevealedLinkUrl() {
   const BlockLayout* blk = requireViewBlock(view, block->id(), QStringLiteral("preedit url"));
   const InlineLayout* layout = blk->inlineLayout();
   require(layout != nullptr && layout->hasPreedit(), "the link block should have the preedit spliced in");
-  const QRectF compCaret = layout->preeditCursorRect(blk->inlineTextOrigin(view.theme()));  // document space
+  const QRectF compCaret = layout->preeditCursorRect(blk->inlineTextOrigin());  // document space
   require(!compCaret.isEmpty(), "the composition caret rect should be resolved");
   // The composition caret (= splice point) must sit at the caret's URL position, not at the end of
   // "Muffin" where a visible-offset anchor would wrongly place it (well to the left of the caret).
@@ -839,7 +839,7 @@ void testInlinePreeditShiftsMathAtom() {
   QApplication::processEvents();
 
   const BlockLayout* blk = requireViewBlock(view, block->id(), QStringLiteral("preedit math before"));
-  const QVector<QRectF> rectsBefore = blk->inlineLayout()->mathAtomRects(blk->inlineTextOrigin(view.theme()));
+  const QVector<QRectF> rectsBefore = blk->inlineLayout()->mathAtomRects(blk->inlineTextOrigin());
   require(!rectsBefore.isEmpty(), "fixture should render the inline math atom");
   const qreal mathXBefore = rectsBefore.first().x();
 
@@ -848,7 +848,7 @@ void testInlinePreeditShiftsMathAtom() {
   QApplication::processEvents();
 
   const BlockLayout* blkAfter = requireViewBlock(view, block->id(), QStringLiteral("preedit math after"));
-  const QVector<QRectF> rectsAfter = blkAfter->inlineLayout()->mathAtomRects(blkAfter->inlineTextOrigin(view.theme()));
+  const QVector<QRectF> rectsAfter = blkAfter->inlineLayout()->mathAtomRects(blkAfter->inlineTextOrigin());
   require(!rectsAfter.isEmpty(), "math atom should still render after the preedit splice");
   const qreal expectedShift = QFontMetricsF(view.theme().paragraphFont()).horizontalAdvance(QStringLiteral("WWWWW"));
   require(rectsAfter.first().x() >= mathXBefore + expectedShift - 2.0,
@@ -1289,7 +1289,7 @@ void testSelectionColorIsThemed() {
   require(layout != nullptr, "layout should exist");
   const QRectF firstRect = layout->selectionRects(6, 11).value(0);
   require(!firstRect.isEmpty(), "selection should produce a rect");
-  const QPointF sampleDoc = firstRect.center();
+  const QPointF sampleDoc = firstRect.center() + view.blockAtViewportPos(selRect.center())->inlineTextOrigin();
   const QPoint sample(static_cast<int>(sampleDoc.x()), static_cast<int>(sampleDoc.y() - view.verticalScrollBar()->value()));
   require(image.rect().contains(sample), "sample point should be inside the capture");
   const QColor pixel = image.pixelColor(sample);
@@ -1660,8 +1660,7 @@ void testRightClickInsideSelectionKeepsSelectionNestedAndMultiBlock() {
 
     const auto pointFor = [&](qsizetype offset) {
       const BlockLayout* l = view.blockLayoutForNode(item->id());
-      return l->inlineTextOrigin(view.theme()) +
-             l->inlineLayout()->cursorRectForSourceOffset(offset).center();
+      return l->inlineTextOrigin() + l->inlineLayout()->cursorRectForSourceOffset(offset).center();
     };
     const QPointF pressPoint = pointFor(5);
     {

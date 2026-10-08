@@ -1,4 +1,5 @@
 #pragma once
+#include "render/LayoutBox.h"
 
 #include "document/InlineNode.h"
 #include "projection/InlineProjection.h"
@@ -30,7 +31,9 @@ namespace muffin {
 class InlineLayout {
 public:
   struct BuildOptions {
+    LayoutStyleCache* styleCache = nullptr;
     InlineProjectionState projectionState;
+    const MarkdownNode* styleNode = nullptr;
     QString documentPath;  // resource base belongs to this layout/document, never global CWD
     qsizetype sourceBase = -1;
     qsizetype pendingPrefixLength = 0;
@@ -140,15 +143,18 @@ public:
   // paragraph holding only an image with blank alt text (real content).
   bool isEmpty() const { return isEmpty_; }
   int mathAtomCount() const;
+  const QVector<LayoutBox>& inlineBoxes() const { return inlineBoxes_; }
+  bool stylesMatch(const RenderTheme& theme, const MarkdownNode& owner) const;
   QVector<QTextLayout::FormatRange> debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const;
 
 private:
-  struct OffsetMapEntry {
-    qsizetype displayStart = 0;
-    qsizetype displayEnd = 0;
-    qsizetype visibleStart = 0;
-    qsizetype visibleEnd = 0;
-  };
+ qsizetype styleSourceBase_ = 0;
+ struct OffsetMapEntry {
+   qsizetype displayStart = 0;
+   qsizetype displayEnd = 0;
+   qsizetype visibleStart = 0;
+   qsizetype visibleEnd = 0;
+ };
 
   struct MathAtom {
     qsizetype displayStart = 0;
@@ -201,6 +207,8 @@ private:
 
   struct HtmlFormatSpan {
     QStringList fontFamilies;
+    QFont font;
+    bool fontSet = false;
     int layoutStart = 0;
     int layoutEnd = 0;
     bool bold = false;
@@ -217,8 +225,13 @@ private:
 
   void buildOffsetMapFromProjection();
   void buildLinkBeforeAtoms();
-  void buildHtmlFormatSpans();
-  void buildInlineBoxSpacing(const RenderTheme& theme);
+  struct HtmlInlineBoxRun {
+    qsizetype start = 0, end = 0;
+    LayoutBox box;
+  };
+  QVector<HtmlInlineBoxRun> htmlInlineBoxRuns_;
+  void buildHtmlFormatSpans(const RenderTheme& theme, qreal width);
+  void buildInlineBoxSpacing();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
@@ -258,7 +271,7 @@ private:
 
   std::unique_ptr<QTextLayout> textLayout_;
   QSizeF size_;
-  QColor textLayoutCodeBackgroundColor_;
+
   QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs
   QColor hoverTextColor_;         // invalid → no hover recolour (CSS :hover colour)
   QColor focusTextColor_;         // invalid → no focus recolour (CSS :focus colour)
@@ -268,30 +281,10 @@ private:
   qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
   TextShadow textShadow_;  // present=false ⇒ no shadow
-  QColor textLayoutCodeBorderColor_;
-  QColor textLayoutCodeTextColor_;
-  bool darkTheme_ = false;
-  // Phase 3c: CSS-driven <kbd> keycap. Invalid/zero → legacy heuristic below.
-  QColor kbdFill_, kbdText_, kbdBorder_, kbdShadow_;
-  QString kbdFont_;
-  qreal kbdPadH_ = 0.0;
-  qreal kbdPadV_ = 0.0;
-  qreal kbdRadius_ = 0.0;
-  qreal kbdBorderWidth_ = 0.0;
-  // Phase 4: per-side bottom border (phycat 3D keycap). Zero/invalid → uniform.
-  qreal kbdBorderBottomWidth_ = 0.0;
-  QColor kbdBorderBottomColor_;
-  // Phase 3b: inline-code box geometry from CSS (defaults reproduce the legacy
-  // -3/+6 / radius-3 / 1px chip so built-ins are unchanged).
-  qreal codeBoxPaddingH_ = 3.0;
-  qreal codeBoxPaddingV_ = 1.0;
-  qreal codeBoxRadius_ = 3.0;
-  qreal codeBoxBorderWidth_ = 1.0;
-  QColor codeBoxShadowColor_;
-  qreal codeBoxShadowOffsetX_ = 0.0;
-  qreal codeBoxShadowOffsetY_ = 0.0;
-  qreal codeBoxShadowBlur_ = 0.0;
-  qreal codeBoxShadowSpread_ = 0.0;
+  std::shared_ptr<const LayoutBox> codeStyle_;
+  QVector<LayoutBox> inlineBoxes_;
+  QHash<qsizetype, std::shared_ptr<const LayoutBox>> spanStyles_;
+  void buildInlineBoxes();
   // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
   // mark background-image gradient. Empty/None → nothing painted.
   QByteArray linkBeforeIcon_;

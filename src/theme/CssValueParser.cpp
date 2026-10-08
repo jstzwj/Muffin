@@ -370,6 +370,23 @@ QColor extractColor(const QString& value, const QHash<QString, QString>& vars) {
   return QColor();
 }
 
+bool isCssColorValue(const QString& raw) {
+  const QString value = raw.trimmed();
+  if (value.compare(QLatin1String("currentcolor"), Qt::CaseInsensitive) == 0 ||
+      value.compare(QLatin1String("transparent"), Qt::CaseInsensitive) == 0)
+    return true;
+  if (cssColor(value).isValid()) return true;
+  static const QRegularExpression function(QStringLiteral(R"(^(rgb|rgba|hsl|hsla|color-mix)\(.+\)$)"),
+                                           QRegularExpression::CaseInsensitiveOption);
+  if (!function.match(value).hasMatch()) return false;
+  int depth = 0;
+  for (int i = value.indexOf('('); i < value.size(); ++i) {
+    if (value[i] == '(') ++depth;
+    if (value[i] == ')' && --depth == 0 && i != value.size() - 1) return false;
+  }
+  return depth == 0 && extractColor(value, {}).isValid();
+}
+
 // --- length / box / border parsing -------------------------------------------
 
 QStringList splitTopLevelSpaces(const QString& text) {
@@ -399,71 +416,23 @@ QStringList splitTopLevelSpaces(const QString& text) {
 }
 
 // CSS length → points. Handles px/rem/em/%/pt/numbers relative to the supplied em size.
-qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qreal emPx) {
-  const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
-  if (resolved.isEmpty()) { return 0.0; }
-  // Parse leading number (optional sign, digits, decimal point).
-  int i = 0;
-  while (i < resolved.size() && (resolved.at(i).isDigit() || resolved.at(i) == QLatin1Char('.') ||
-                                 resolved.at(i) == QLatin1Char('-') || resolved.at(i) == QLatin1Char('+'))) {
-    ++i;
-  }
-  const QString numStr = resolved.left(i);
-  const QString unit = resolved.mid(i).trimmed().toLower();
-  bool ok = false;
-  const qreal n = numStr.toDouble(&ok);
-  if (!ok) { return 0.0; }
-  bool absolute = false;
-  const qreal absolutePx = absoluteCssLengthToPx(n, unit, &absolute);
-  if (absolute) { return pxToPt(absolutePx); }
-  if (unit == QStringLiteral("rem")) { return pxToPt(n * kRootEmPx); }
-  if (unit == QStringLiteral("em")) { return pxToPt(n * emPx); }
-  if (unit == QStringLiteral("%")) { return pxToPt(n / 100.0 * emPx); }
-  return 0.0;
-}
+qreal lengthToPt(const QString& value, const QHash<QString, QString>& vars, qreal emPx) { return pxToPt(lengthToPx(value, vars, emPx)); }
 
 qreal lengthToPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx, qreal rootPx, qreal containingPx) {
-  const QString resolved = CssThemeParser::resolveVars(value, vars).trimmed();
-  if (resolved.isEmpty() || resolved == QStringLiteral("auto")) { return 0.0; }
-  // calc(<expr>) — a full + - * / expression with nested parens and per-term
-  // units (px/pt/em/rem/%). evalCalcPx resolves it to px; 0 ⇒ parse failure
-  // (treated as "unset", same as an unrecognised single value below).
-  if (resolved.startsWith(QStringLiteral("calc("), Qt::CaseInsensitive) && resolved.endsWith(QLatin1Char(')'))) {
-    return evalCalcPx(resolved.mid(5, resolved.size() - 6), emPx, rootPx, containingPx);
-  }
-  int i = 0;
-  while (i < resolved.size() && (resolved.at(i).isDigit() || resolved.at(i) == QLatin1Char('.') ||
-                                 resolved.at(i) == QLatin1Char('-') || resolved.at(i) == QLatin1Char('+'))) {
-    ++i;
-  }
-  bool ok = false;
-  const qreal n = resolved.left(i).toDouble(&ok);
-  if (!ok) { return 0.0; }
-  const QString unit = resolved.mid(i).trimmed().toLower();
-  bool absolute = false;
-  const qreal absolutePx = absoluteCssLengthToPx(n, unit, &absolute);
-  if (absolute) { return absolutePx; }
-  if (unit == QStringLiteral("em")) { return n * emPx; }
-  // CSS `rem` is the ROOT em (the html element's font, 16px by default) — NOT the
-  // current element's em. When a theme sets `body { font-size: 1.5rem }` (→ 24px),
-  // resolving subsequent `rem` values against that body em (the old `emPx` fallback)
-  // made EVERY rem size 1.5× too big: pixyll's `h2 { font-size: 1.5rem }` became 36px
-  // instead of 24px. The root reference (16) is the same base bodyPx itself is computed
-  // against, so this keeps rem consistent with how the body size is derived.
-  if (unit == QStringLiteral("rem")) { return n * (rootPx > 0.0 ? rootPx : kRootEmPx); }
-  // A `%` is normally em-relative (local box shorthand). When the caller supplies
-  // a real containing-block dimension (containingPx > 0), resolve against THAT —
-  // for pseudo width/height like phycat's `h3::before { height: 61% }`, where the %
-  // is relative to the rendered heading height, not the font size.
-  if (unit == QStringLiteral("%")) { return n / 100.0 * (containingPx > 0.0 ? containingPx : emPx); }
-  return 0.0;
+  CssLengthContext context;
+  context.emPx = emPx;
+  context.remPx = rootPx >= 0 ? rootPx : kRootEmPx;
+  const auto length = parseCssLengthPercentage(QStringView(CssThemeParser::resolveVars(value, vars)), context, true);
+  return length.status == CssLengthStatus::Valid ? length.used(containingPx >= 0 ? containingPx : emPx) : 0;
 }
 
-QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx, qreal rootPx) {
+QMarginsF boxToMarginsPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx, qreal rootPx, qreal containingPx) {
   const QStringList parts = splitTopLevelSpaces(CssThemeParser::resolveVars(value, vars));
   if (parts.isEmpty()) { return QMarginsF(); }
   qreal v[4] = {};
-  for (int i = 0; i < qMin(4, parts.size()); ++i) { v[i] = lengthToPx(parts.at(i), vars, emPx, rootPx); }
+  for (int i = 0; i < qMin(4, parts.size()); ++i) {
+    v[i] = lengthToPx(parts.at(i), vars, emPx, rootPx, containingPx);
+  }
   qreal top = v[0], right = v[0], bottom = v[0], left = v[0];
   if (parts.size() == 2) { right = left = v[1]; }
   else if (parts.size() == 3) { right = left = v[1]; bottom = v[2]; }

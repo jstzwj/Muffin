@@ -4,6 +4,7 @@
 
 #include <QString>
 #include <QStringView>
+#include <QRegularExpression>
 
 #include <algorithm>  // std::min/std::max for vmin/vmax
 #include <cmath>      // std::isfinite (overflow guard)
@@ -83,129 +84,138 @@ CssLengthResult resolveCssLengthToPx(QStringView raw, const CssLengthContext& ct
 }
 
 namespace {
-
-// Recursive-descent calc() evaluator. Grammar:
-//   expr  := term (('+' | '-') term)*
-//   term  := factor (('*' | '/') factor)*
-//   factor := number unit | '(' expr ')' | ('+' | '-') factor
-// Each "number unit" resolves to px (px=1, pt=96/72, em=emPx, rem=rootPx,
-// %=containingPx). On any parse error the whole evaluation yields 0 (the
-// surrounding lengthToPx treats 0 as "unset"), matching the single-value path.
-struct CalcParser {
-  const QString s;
-  int i = 0;
-  qreal emPx;
-  qreal rootPx;
-  qreal containingPx;
-  bool ok = true;
-
-  void skipSpace() {
-    while (i < s.size() && s.at(i).isSpace()) { ++i; }
-  }
-
-  // number-with-unit → px. A number is [+-]? digits [. digits]; the unit is the
-  // following run of letters or '%'. A nested `calc(...)` factor is evaluated by
-  // recursing into a sub-parser on its balanced inner content.
-  bool readValue(qreal& out) {
-    skipSpace();
-    if (s.mid(i, 5).startsWith(QStringLiteral("calc("), Qt::CaseInsensitive)) {
-      int depth = 0;
-      int j = i;
-      for (; j < s.size(); ++j) {
-        if (s.at(j) == QLatin1Char('(')) { ++depth; }
-        else if (s.at(j) == QLatin1Char(')')) { --depth; if (depth == 0) { break; } }
-      }
-      if (j >= s.size()) { ok = false; return false; }
-      CalcParser sub{s.mid(i + 5, j - (i + 5)).trimmed(), 0, emPx, rootPx, containingPx, true};
-      out = sub.parseExpr();
-      if (!sub.ok) { ok = false; return false; }
-      i = j + 1;
-      return true;
-    }
-    const int start = i;
-    if (i < s.size() && (s.at(i) == QLatin1Char('+') || s.at(i) == QLatin1Char('-'))) { ++i; }
-    bool anyDigit = false;
-    while (i < s.size() && s.at(i).isDigit()) { ++i; anyDigit = true; }
-    if (i < s.size() && s.at(i) == QLatin1Char('.')) {
-      ++i;
-      while (i < s.size() && s.at(i).isDigit()) { ++i; anyDigit = true; }
-    }
-    if (!anyDigit) { return false; }
-    bool good = false;
-    const qreal n = s.mid(start, i - start).toDouble(&good);
-    if (!good) { return false; }
-    int u = i;
-    while (u < s.size() && (s.at(u).isLetter() || s.at(u) == QLatin1Char('%'))) { ++u; }
-    const QString unit = s.mid(i, u - i).toLower();
-    i = u;
-    bool absolute = false;
-    out = absoluteCssLengthToPx(n, unit, &absolute);
-    if (!absolute && unit == QStringLiteral("em")) { out = n * emPx; }
-    else if (absolute) { return true; }
-    else if (unit == QStringLiteral("rem")) { out = n * (rootPx > 0.0 ? rootPx : emPx); }
-    else if (unit == QStringLiteral("%")) { out = n / 100.0 * (containingPx > 0.0 ? containingPx : emPx); }
-    else { return false; }
-    return true;
-  }
-
-  qreal parseExpr() {
-    qreal v = parseTerm();
-    while (ok) {
-      skipSpace();
-      if (i >= s.size()) { break; }
-      const QChar c = s.at(i);
-      if (c == QLatin1Char('+')) { ++i; v += parseTerm(); }
-      else if (c == QLatin1Char('-')) { ++i; v -= parseTerm(); }
-      else { break; }
-    }
-    return v;
-  }
-
-  qreal parseTerm() {
-    qreal v = parseFactor();
-    while (ok) {
-      skipSpace();
-      if (i >= s.size()) { break; }
-      const QChar c = s.at(i);
-      if (c == QLatin1Char('*')) { ++i; v *= parseFactor(); }
-      else if (c == QLatin1Char('/')) {
-        ++i;
-        const qreal d = parseFactor();
-        if (qFuzzyIsNull(d)) { ok = false; return 0.0; }
-        v /= d;
-      } else { break; }
-    }
-    return v;
-  }
-
-  qreal parseFactor() {
-    skipSpace();
-    if (i >= s.size()) { ok = false; return 0.0; }
-    const QChar c = s.at(i);
-    if (c == QLatin1Char('(')) {
-      ++i;
-      const qreal v = parseExpr();
-      skipSpace();
-      if (i >= s.size() || s.at(i) != QLatin1Char(')')) { ok = false; return 0.0; }
-      ++i;
-      return v;
-    }
-    if (c == QLatin1Char('+')) { ++i; return parseFactor(); }
-    if (c == QLatin1Char('-')) { ++i; return -parseFactor(); }
-    qreal v = 0.0;
-    if (!readValue(v)) { ok = false; return 0.0; }
-    return v;
-  }
+struct Dimension {
+  qreal px = 0, fraction = 0;
+  bool number = false, percentage = false;
 };
 
+// Dimensional arithmetic prevents e.g. calc(2px * 3px) from becoming a length.
+class LengthExpression {
+ public:
+  QString text;
+  const CssLengthContext& context;
+  qsizetype pos = 0;
+  bool valid = true;
+  int depth = 0;
+
+  void spaces() {
+    while (pos < text.size() && text[pos].isSpace()) ++pos;
+  }
+  Dimension sum() {
+    Dimension a = product();
+    while (valid) {
+      const qsizetype end = pos;
+      spaces();
+      if (pos >= text.size() || (text[pos] != '+' && text[pos] != '-')) break;
+      // CSS requires whitespace on both sides of binary + and -.
+      const bool subtract = text[pos] == '-';
+      if (pos == end || pos + 1 >= text.size() || !text[pos + 1].isSpace()) {
+        valid = false;
+        break;
+      }
+      ++pos;
+      Dimension b = product();
+      if (a.number != b.number) {
+        valid = false;
+        break;
+      }
+      a.px += (subtract ? -1 : 1) * b.px;
+      a.fraction += (subtract ? -1 : 1) * b.fraction;
+      a.percentage = a.percentage || b.percentage;
+    }
+    return a;
+  }
+  Dimension product() {
+    Dimension a = factor();
+    while (valid) {
+      const qsizetype before = pos;
+      spaces();
+      if (pos >= text.size() || (text[pos] != '*' && text[pos] != '/')) {
+        pos = before;
+        break;
+      }
+      const bool divide = text[pos++] == '/';
+      Dimension b = factor();
+      if (divide) {
+        if (!b.number || b.px == 0) {
+          valid = false;
+          break;
+        }
+        a.px /= b.px;
+        a.fraction /= b.px;
+      } else {
+        if (!a.number && !b.number) {
+          valid = false;
+          break;
+        }
+        if (a.number) std::swap(a, b);
+        a.px *= b.px;
+        a.fraction *= b.px;
+      }
+    }
+    return a;
+  }
+  Dimension factor() {
+    spaces();
+    if (++depth > 64 || pos >= text.size()) {
+      valid = false;
+      --depth;
+      return {};
+    }
+    Dimension result;
+    if (text.mid(pos, 5) == QLatin1String("calc(")) pos += 4;
+    if (text[pos] == '(') {
+      ++pos;
+      result = sum();
+      spaces();
+      if (pos >= text.size() || text[pos++] != ')') valid = false;
+    } else {
+      static const QRegularExpression token(QStringLiteral(R"([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?(?:%|[a-z]+)?)"));
+      const auto m = token.match(text, pos, QRegularExpression::NormalMatch, QRegularExpression::AnchorAtOffsetMatchOption);
+      if (!m.hasMatch())
+        valid = false;
+      else {
+        const QString value = m.captured();
+        pos = m.capturedEnd();
+        if (value.endsWith('%')) {
+          result.fraction = value.left(value.size() - 1).toDouble() / 100;
+          result.percentage = true;
+        } else {
+          bool number = false;
+          result.px = value.toDouble(&number);
+          result.number = number;
+          if (!number) {
+            const auto length = resolveCssLengthToPx(QStringView(value), context);
+            valid = length.status == CssLengthStatus::Valid;
+            result.px = length.px;
+          }
+        }
+      }
+    }
+    --depth;
+    valid = valid && std::isfinite(result.px) && std::isfinite(result.fraction);
+    return result;
+  }
+};
 }  // namespace
 
+CssLengthPercentage parseCssLengthPercentage(QStringView raw, const CssLengthContext& context, bool allowUnitless) {
+  const QString text = raw.toString().trimmed().toLower();
+  if (text.isEmpty()) return {};
+  LengthExpression parser{text, context};
+  if (text.startsWith(QLatin1Char('('))) return {CssLengthStatus::Invalid};
+  const Dimension result = parser.factor();
+  parser.spaces();
+  if (!parser.valid || parser.pos != text.size() || (result.number && result.px != 0 && !allowUnitless)) return {CssLengthStatus::Invalid};
+  return {CssLengthStatus::Valid, result.px, result.fraction, result.percentage};
+}
+
 qreal evalCalcPx(const QString& expression, qreal emPx, qreal rootPx, qreal containingPx) {
-  CalcParser p{expression.trimmed(), 0, emPx, rootPx > 0.0 ? rootPx : emPx, containingPx, true};
-  const qreal v = p.parseExpr();
-  p.skipSpace();
-  if (!p.ok || p.i != p.s.size()) { return 0.0; }  // trailing junk ⇒ no match
-  return v;
+  CssLengthContext context;
+  context.emPx = emPx;
+  context.remPx = rootPx >= 0 ? rootPx : emPx;
+  const auto value = parseCssLengthPercentage(QStringView(QStringLiteral("calc(") + expression + QLatin1Char(')')), context, true);
+  return value.status == CssLengthStatus::Valid ? value.used(containingPx >= 0 ? containingPx : emPx) : 0;
 }
 
 }  // namespace muffin

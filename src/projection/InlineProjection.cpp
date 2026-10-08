@@ -1110,7 +1110,9 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
       htmlFragment += inlines[j].text();
     }
     static const html::InlineHtmlRenderer renderer;
-    rendered = renderer.render(htmlFragment, state.baseFontSize, state.htmlPalette);
+    auto palette = state.htmlPalette;
+    if (palette.documentParentForOffset) palette.documentParent = palette.documentParentForOffset(openStart);
+    rendered = renderer.render(htmlFragment, state.baseFontSize, palette);
     visibleSize = rendered.text.size();
   }
 

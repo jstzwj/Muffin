@@ -8,9 +8,34 @@ h2 { font-size: 1.5em; }
 h3 { font-size: 1.17em; }
 h4, h5, h6 { font-size: 1em; }
 h1, h2, h3, h4, h5, h6 { font-weight: bold; }
+h1, h2, h3, h4, h5, h6 { margin: 0; }
+pre, blockquote, table, ul, ol { margin: 0 0 1em; }
 code, pre { font-family: Consolas, 'DejaVu Sans Mono', monospace; }
 code { font-size: .875em; padding: 0 2px; border: none; border-radius: 0; }
 kbd { font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: .8em;
   color: #242729; background: white; padding: .1em .6em; border: 1px solid #adb3b9;
   border-radius: 3px; box-shadow: 0 1px 0 rgba(12,13,14,.2); }
 table { border-collapse: collapse; }
+/* Element semantics are CSS, shared by Markdown and embedded HTML. */
+div, section, article, header, footer, nav, main, aside, p, blockquote,
+pre, h1, h2, h3, h4, h5, h6, ul, ol, hr, details, summary, figure { display: block; }
+span, a, code, kbd, tt, b, strong, i, em, u, s, del, mark, sub, sup,
+small, big, abbr, ins, label, img, br, input, button, textarea, select, option, q { display: inline; }
+b, strong, th, summary { font-weight: bold; }
+i, em { font-style: italic; }
+u, a { text-decoration: underline; }
+s, del { text-decoration: line-through; }
+sub, sup { font-size: .75em; }
+small { font-size: .85em; }
+big { font-size: 1.17em; }
+pre { padding: 10px 12px; white-space: pre; line-height: 1.5; }
+pre code { font-size: inherit; padding: 0; border: none; }
+.MathJax { font-family: 'Cambria Math', 'STIX Two Math', 'DejaVu Math TeX Gyre'; font-size: 1.04166666666667em; }
+blockquote { padding-left: 16px; }
+ul, ol { display: block; padding-left: 40px; }
+li { display: list-item; }
+table { display: table; }
+thead, tbody, tfoot { display: table-row-group; }
+tr { display: table-row; }
+th, td { display: table-cell; padding: 6px 12px; }
+figcaption, caption { display: block; font-size: .9em; text-align: center; }

@@ -204,19 +204,20 @@ void EditorView::paintEvent(QPaintEvent* event) {
     const QString host = hostKeyForBlock(*block);
     const AnimatedSample* anim = (keyframeAnimator_ && !host.isEmpty()) ? keyframeAnimator_->sampleFor(host) : nullptr;
     const bool hoverActive = hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0;
-    const ThemeElementStyle* hoverStyle = (!host.isEmpty() && hoverActive) ? theme_.elementStyle(host + QStringLiteral(":hover")) : nullptr;
+    const auto fragment = block->cssBoxGeometry();
+    const ThemeElementPaintStyle* hoverStyle = (!host.isEmpty() && hoverActive) ? &fragment.hoverPaint : nullptr;
     // CSS :focus — the top-level block holding the caret. Parallel to hover; the
     // two are orthogonal (a block can be both hovered and focused).
     const bool focusActive = focusAnimator_ && block->nodeId() == focusAnimator_->animatedBlockId() && focusAnimator_->phase() > 0.0;
-    const ThemeElementStyle* focusStyle = (!host.isEmpty() && focusActive) ? theme_.elementStyle(host + QStringLiteral(":focus")) : nullptr;
-    const QRectF cssBox = block->cssBorderBox(theme_).translated(0, -scrollY());
+    const ThemeElementPaintStyle* focusStyle = (!host.isEmpty() && focusActive) ? &fragment.focusPaint : nullptr;
+    const QRectF cssBox = block->cssBorderBox().translated(0, -scrollY());
     // CSS :focus glow/bg, painted UNDER hover so hover wins on overlap.
     if (focusActive && !host.isEmpty() && focusStyle) {
-      if (focusStyle->paint.boxShadowColor.isValid() && focusStyle->paint.boxShadowBlur > 0.0) {
-        DecorationPainter::paintGlow(painter, cssBox, focusStyle->paint.boxShadowColor, focusStyle->paint.boxShadowBlur, focusAnimator_->phase());
+      if (focusStyle->boxShadowColor.isValid() && focusStyle->boxShadowBlur > 0.0) {
+        DecorationPainter::paintGlow(painter, cssBox, focusStyle->boxShadowColor, focusStyle->boxShadowBlur, focusAnimator_->phase());
       }
-      if (focusStyle->paint.backgroundColor.isValid()) {
-        QColor tint = focusStyle->paint.backgroundColor;
+      if (focusStyle->backgroundColor.isValid()) {
+        QColor tint = focusStyle->backgroundColor;
         tint.setAlphaF(tint.alphaF() * focusAnimator_->phase());
         painter.fillRect(cssBox, tint);
       }
@@ -224,13 +225,13 @@ void EditorView::paintEvent(QPaintEvent* event) {
     // CSS :hover paint diff from the computed hover style. Prefer the element-style
     // path; legacy HoverEffect remains as fallback for themes not yet represented.
     if (hoverActive && !host.isEmpty()) {
-      if (hoverStyle && hoverStyle->paint.boxShadowColor.isValid() && hoverStyle->paint.boxShadowBlur > 0.0) {
-        DecorationPainter::paintGlow(painter, cssBox, hoverStyle->paint.boxShadowColor, hoverStyle->paint.boxShadowBlur, hoverAnimator_->phase());
+      if (hoverStyle && hoverStyle->boxShadowColor.isValid() && hoverStyle->boxShadowBlur > 0.0) {
+        DecorationPainter::paintGlow(painter, cssBox, hoverStyle->boxShadowColor, hoverStyle->boxShadowBlur, hoverAnimator_->phase());
       } else {
         DecorationPainter::paintBlockHoverGlow(painter, theme_, host, cssBox, hoverAnimator_->phase());
       }
-      if (hoverStyle && hoverStyle->paint.backgroundColor.isValid()) {
-        QColor tint = hoverStyle->paint.backgroundColor;
+      if (hoverStyle && hoverStyle->backgroundColor.isValid()) {
+        QColor tint = hoverStyle->backgroundColor;
         tint.setAlphaF(tint.alphaF() * hoverAnimator_->phase());
         painter.fillRect(cssBox, tint);
       }
@@ -241,8 +242,8 @@ void EditorView::paintEvent(QPaintEvent* event) {
     }
     // transform:scale() on :hover/:focus. When both are active, hover wins (it is
     // the more transient interaction); themes rarely declare scale on both.
-    const qreal hoverScale = hoverStyle ? (1.0 + (hoverStyle->paint.transformScale - 1.0) * hoverAnimator_->phase()) : 1.0;
-    const qreal focusScale = focusStyle ? (1.0 + (focusStyle->paint.transformScale - 1.0) * focusAnimator_->phase()) : 1.0;
+    const qreal hoverScale = hoverStyle ? (1.0 + (hoverStyle->transformScale - 1.0) * hoverAnimator_->phase()) : 1.0;
+    const qreal focusScale = focusStyle ? (1.0 + (focusStyle->transformScale - 1.0) * focusAnimator_->phase()) : 1.0;
     const qreal stateScale = qAbs(hoverScale - 1.0) > 0.001 ? hoverScale : focusScale;
     const bool stateWrap = qAbs(stateScale - 1.0) > 0.001;
     const bool wrap = stateWrap || (anim && (anim->hasOpacity || (anim->hasScale && qAbs(anim->scale - 1.0) > 0.001)));
@@ -422,7 +423,7 @@ void EditorView::paintPreedit(QPainter& painter) const {
     if (block && cursorHit_.zone == HitTestResult::Zone::Text) {
       inlineLayout = block->inlineLayout();
       if (inlineLayout) {
-        origin = block->inlineTextOrigin(theme_);
+        origin = block->inlineTextOrigin();
       }
     } else if (block && cursorHit_.zone == HitTestResult::Zone::TableCell &&
                cursorHit_.tableRow >= 0 && cursorHit_.tableColumn >= 0) {

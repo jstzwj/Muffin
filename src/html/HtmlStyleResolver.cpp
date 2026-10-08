@@ -3,6 +3,8 @@
 #include "theme/FontRendering.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssThemeMapper.h"
+#include "theme/DocumentStyleTree.h"
+#include <QFile>
 #include <functional>
 
 namespace muffin::html {
@@ -11,35 +13,59 @@ HtmlStyleResolver::HtmlStyleResolver() = default;
 HtmlStyleResolver::~HtmlStyleResolver() = default;
 
 void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlColorPalette& palette) {
-  resolveBox(root, baseFontSize, false, QColor(), QString(), palette);
-  if (palette.documentStyleSheet) {
-    const CssComputedStyleEngine engine(*palette.documentStyleSheet, palette.cssEnvironment);
-    CssElement html;
-    html.tag = QStringLiteral("html");
-    CssElement body;
-    body.tag = QStringLiteral("body");
-    body.parent = &html;
-    CssElement write;
-    write.id = QStringLiteral("write");
-    if (palette.parentFontPx > 0)
-      write.inlineDeclarations.push_back({QStringLiteral("font-size"), QString::number(palette.parentFontPx) + QStringLiteral("px"), true});
-    write.parent = &body;
+  CssThemeSheet defaultSheet;
+  if (!palette.documentStyleSheet) {
+    const auto cssColor = [](const QColor& color) { return color.name(QColor::HexRgb); };
+    const QString defaults = QStringLiteral(
+                                 "#write { color:%1; font-size:%2px; } a { color:%3; } pre { background:%4; } "
+                                 "blockquote { border-left:3px solid %5; } th,td { border:1px solid %6; } "
+                                 "th { background:%7; } mark { background:%8; }")
+                                 .arg(cssColor(palette.text))
+                                 .arg(baseFontSize * 96.0 / 72.0)
+                                 .arg(cssColor(palette.link))
+                                 .arg(cssColor(palette.codeBackground))
+                                 .arg(cssColor(palette.quoteBorder))
+                                 .arg(cssColor(palette.tableBorder))
+                                 .arg(cssColor(palette.tableHeaderBackground))
+                                 .arg(cssColor(palette.highlight));
+    defaultSheet.mergeIn(CssThemeParser::parse(defaults, {}));
+  }
+  {
+    const CssComputedStyleEngine engine(muffin::documentStyleSheet(palette.documentStyleSheet ? *palette.documentStyleSheet : defaultSheet),
+                                        palette.cssEnvironment);
+    DocumentStyleHost host;
+    CssElement fragment;
+    fragment.parent = palette.documentParent ? palette.documentParent : &host.write;
+    if (!palette.documentParent && palette.parentFontPx > 0)
+      fragment.inlineDeclarations.push_back(
+          {QStringLiteral("font-size"), QString::number(palette.parentFontPx) + QStringLiteral("px"), true});
     const qreal zoom = palette.cssZoom;
     const qreal fontScale = zoom * palette.cssEnvironment.textScale;
     std::function<void(HtmlBox&, const CssElement&, const HtmlComputedStyle*)> project;
     project = [&](HtmlBox& box, const CssElement& element, const HtmlComputedStyle* parent) {
       auto& target = box.style();
+      if (&box == &root) {
+        target.margin = {};
+        target.padding = {};
+        target.borderWidth = {};
+        target.backgroundColor = {};
+      }
       if (box.tag() == HtmlTag::TextRun && parent) {
+        target.computed = parent->computed;
+        target.display = HtmlDisplay::Inline;
         target.font = parent->font;
         target.fontSize = parent->fontSize;
         target.color = parent->color;
         target.fontFamily = parent->fontFamily;
         target.lineHeight = parent->lineHeight;
+        target.textDecoration = parent->textDecoration;
+        target.whiteSpace = parent->whiteSpace;
         target.fontWeight = parent->fontWeight;
         target.fontStyle = parent->fontStyle;
       } else {
         const auto computed = engine.styleFor(element);
         const auto style = CssThemeMapper::projectComputedStyle(element.tag, computed);
+        target.computed = style;
         if (style.paint.color.isValid()) target.color = style.paint.color;
         if (style.paint.backgroundColor.isValid()) target.backgroundColor = style.paint.backgroundColor;
         if (!style.text.fontFamily.isEmpty()) {
@@ -52,7 +78,7 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
           target.fontFamily = families.join(QStringLiteral(", "));
         }
         target.fontSize = pxToPt(computed.fontSizePx) * fontScale;
-        target.font.setPointSizeF(target.fontSize);
+        target.font.setPointSizeF(qMax<qreal>(.001, target.fontSize));
         if (style.text.fontWeightSet) {
           target.fontWeight = style.text.fontWeight;
           target.font.setWeight(static_cast<QFont::Weight>(style.text.fontWeight));
@@ -63,6 +89,15 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         }
         target.lineHeight = style.text.lineHeight > 0 ? computed.fontSizePx * fontScale * style.text.lineHeight : -1;
         if (style.text.alignment) target.textAlign = style.text.alignment;
+        if (!target.color.isValid()) target.color = palette.text;
+        const QString decoration = computed.resolvedValue(QStringLiteral("text-decoration-line")) + QLatin1Char(' ') +
+                                   computed.resolvedValue(QStringLiteral("text-decoration"));
+        target.textDecoration = HtmlTextDecoration::None;
+        if (decoration.contains(QStringLiteral("underline"))) target.textDecoration |= HtmlTextDecoration::Underline;
+        if (decoration.contains(QStringLiteral("line-through"))) target.textDecoration |= HtmlTextDecoration::LineThrough;
+        target.letterSpacing = computed.length(QStringLiteral("letter-spacing")).px * zoom;
+        target.font.setWordSpacing(style.text.wordSpacing * zoom);
+        if (target.letterSpacing != 0) target.font.setLetterSpacing(QFont::AbsoluteSpacing, target.letterSpacing);
         const auto scaleBox = [&](QMarginsF m) { return QMarginsF(m.left() * zoom, m.top() * zoom, m.right() * zoom, m.bottom() * zoom); };
         const auto anySide = [&](const QString& name) {
           return computed.hasProperty(name) || computed.hasProperty(name + QStringLiteral("-top")) ||
@@ -72,17 +107,79 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         if (anySide(QStringLiteral("margin"))) {
           target.margin = scaleBox(style.box.margin);
           target.marginPercent = QMarginsF(-1, -1, -1, -1);
+          target.marginLengths = style.box.marginLengths;
+          for (auto& length : target.marginLengths.sides) length.px *= zoom;
         }
         if (anySide(QStringLiteral("padding"))) {
           target.padding = scaleBox(style.box.padding);
           target.paddingPercent = QMarginsF(-1, -1, -1, -1);
+          target.paddingLengths = style.box.paddingLengths;
+          for (auto& length : target.paddingLengths.sides) length.px *= zoom;
         }
-        if (computed.hasProperty(QStringLiteral("border")) || computed.hasProperty(QStringLiteral("border-top-width"))) {
+        if (computed.hasProperty(QStringLiteral("border")) || computed.hasProperty(QStringLiteral("border-top-width")) ||
+            computed.hasProperty(QStringLiteral("border-right-width")) || computed.hasProperty(QStringLiteral("border-bottom-width")) ||
+            computed.hasProperty(QStringLiteral("border-left-width")) || computed.hasProperty(QStringLiteral("border-style"))) {
           target.borderWidth = scaleBox(
               QMarginsF(style.box.borderLeftWidth, style.box.borderTopWidth, style.box.borderRightWidth, style.box.borderBottomWidth));
           target.borderColor = style.box.borderTopColor;
           target.borderRadius = style.box.borderRadius * zoom;
         }
+        const auto dimension = [&](const QString& property, CssLengthPercentage& length) {
+          if (!computed.hasProperty(property)) return;
+          length = computed.length(property);
+          length.px *= zoom;
+        };
+        dimension(QStringLiteral("width"), target.widthLength);
+        dimension(QStringLiteral("height"), target.heightLength);
+        dimension(QStringLiteral("min-width"), target.minWidthLength);
+        dimension(QStringLiteral("max-width"), target.maxWidthLength);
+        if (computed.hasProperty(QStringLiteral("width"))) {
+          target.width = -1;
+          target.widthPercent = -1;
+        }
+        if (computed.hasProperty(QStringLiteral("height"))) target.height = -1;
+        target.borderBox = style.box.borderBox;
+        target.fontSizeExplicit = computed.hasProperty(QStringLiteral("font-size"));
+        target.whiteSpaceExplicit = computed.hasProperty(QStringLiteral("white-space"));
+        const auto zoomValue = computed.resolvedValue(QStringLiteral("zoom"));
+        bool zoomOk = false;
+        const auto elementZoom = (zoomValue.endsWith(QLatin1Char('%')) ? zoomValue.chopped(1) : zoomValue).toDouble(&zoomOk);
+        if (zoomOk && elementZoom > 0) target.zoom = elementZoom / (zoomValue.endsWith(QLatin1Char('%')) ? 100 : 1);
+        const QString display = computed.resolvedValue(QStringLiteral("display")).toLower();
+        if (display == QLatin1String("none"))
+          target.display = HtmlDisplay::None;
+        else if (display == QLatin1String("block"))
+          target.display = HtmlDisplay::Block;
+        else if (display == QLatin1String("inline"))
+          target.display = HtmlDisplay::Inline;
+        else if (display == QLatin1String("inline-block"))
+          target.display = HtmlDisplay::InlineBlock;
+        else if (display == QLatin1String("flex"))
+          target.display = HtmlDisplay::Flex;
+        else if (display == QLatin1String("table"))
+          target.display = HtmlDisplay::Table;
+        else if (display == QLatin1String("table-row-group"))
+          target.display = HtmlDisplay::TableRowGroup;
+        else if (display == QLatin1String("table-row"))
+          target.display = HtmlDisplay::TableRow;
+        else if (display == QLatin1String("table-cell"))
+          target.display = HtmlDisplay::TableCell;
+        else if (display == QLatin1String("list-item"))
+          target.display = HtmlDisplay::ListItem;
+        target.visible =
+            target.display != HtmlDisplay::None && computed.resolvedValue(QStringLiteral("visibility")) != QStringLiteral("hidden");
+        const auto borderStyle = computed.resolvedValue(QStringLiteral("border-top-style"));
+        target.borderStyle = borderStyle == "dashed"   ? HtmlBorderStyle::Dashed
+                             : borderStyle == "dotted" ? HtmlBorderStyle::Dotted
+                             : borderStyle == "double" ? HtmlBorderStyle::Double
+                                                       : HtmlBorderStyle::Solid;
+        const QString whiteSpace = computed.resolvedValue(QStringLiteral("white-space")).toLower();
+        if (whiteSpace == QLatin1String("pre"))
+          target.whiteSpace = HtmlWhiteSpace::Pre;
+        else if (whiteSpace == QLatin1String("pre-wrap"))
+          target.whiteSpace = HtmlWhiteSpace::PreWrap;
+        else if (whiteSpace == QLatin1String("normal"))
+          target.whiteSpace = HtmlWhiteSpace::Normal;
         font_rendering::configureForScreen(target.font);
       }
       QVector<CssElement> children;
@@ -95,7 +192,7 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         el.id = child->cssId;
         el.classes = child->cssClasses;
         el.inlineDeclarations = CssThemeParser::parseDeclarations(child->cssInlineStyle);
-        el.parent = &element;
+        el.parent = &box == &root ? element.parent : &element;
         el.childIndex = child->tag() == HtmlTag::TextRun ? -1 : childIndex++;
         if (el.childIndex >= 0) el.typeIndex = typeIndices[el.tag]++;
         children.push_back(std::move(el));
@@ -111,339 +208,8 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         project(*box.children()[i], children[i], &target);
       }
     };
-    project(root, write, nullptr);
+    project(root, fragment, nullptr);
   }
-}
-
-void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor, const QString& parentFontFamily, const HtmlColorPalette& palette) {
-  // Apply tag-based defaults first
-  applyTagDefaults(box, fontSize, palette);
-
-  // If the box has inline styles, they were already parsed in HtmlBoxBuilder::extractInlineStyle.
-  // Now resolve the effective font size considering inheritance.
-  fontSize = resolveFontSize(box.style(), fontSize);
-  box.style().fontSize = fontSize;
-
-  // Resolve font family: inline style overrides, then inherit from parent
-  QString effectiveFontFamily = parentFontFamily;
-  if (box.style().fontFamily.isEmpty() && !parentFontFamily.isEmpty()) {
-    box.style().fontFamily = parentFontFamily;
-  }
-  if (!box.style().fontFamily.isEmpty()) {
-    effectiveFontFamily = box.style().fontFamily;
-  }
-
-  // Build the font object from resolved properties
-  QFont& font = box.style().font;
-  font.setPointSizeF(fontSize);
-  font.setWeight(static_cast<QFont::Weight>(box.style().fontWeight));
-  font.setStyle(box.style().fontStyle);
-  if (box.style().whiteSpace != HtmlWhiteSpace::Normal) {
-    font.setFamily(QStringLiteral("Courier New"));
-  } else if (!effectiveFontFamily.isEmpty()) {
-    font.setFamily(effectiveFontFamily);
-  }
-  font_rendering::configureForScreen(font);
-
-  // Inherit color if not set
-  if (!box.style().color.isValid() && inheritColor) {
-    box.style().color = parentColor;
-  }
-
-  // Apply display type from tag classification
-  if (box.style().display == HtmlDisplay::Block && isInlineTag(box.tag())) {
-    box.style().display = HtmlDisplay::Inline;
-  }
-
-  // Recurse into children
-  bool shouldInheritColor = box.style().color.isValid();
-  QColor effectiveColor = shouldInheritColor ? box.style().color : parentColor;
-
-  for (const auto& child : box.children()) {
-    resolveBox(*child, fontSize, shouldInheritColor || inheritColor, effectiveColor, effectiveFontFamily, palette);
-  }
-}
-
-void HtmlStyleResolver::applyTagDefaults(HtmlBox& box, qreal fontSize, const HtmlColorPalette& palette) {
-  auto& style = box.style();
-  const auto setDefaultFontSize = [&](qreal value) {
-    if (!style.fontSizeExplicit) {
-      style.fontSize = value;
-    }
-  };
-
-  switch (box.tag()) {
-    case HtmlTag::Body:
-    case HtmlTag::Html:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize);
-      if (!style.backgroundColor.isValid()) {
-        style.backgroundColor = palette.background;
-      }
-      break;
-
-    case HtmlTag::Paragraph:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      break;
-
-    case HtmlTag::Heading1:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 2.0);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 0.67, 0, fontSize * 0.67);
-      break;
-    case HtmlTag::Heading2:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 1.5);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 0.75, 0, fontSize * 0.75);
-      break;
-    case HtmlTag::Heading3:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 1.17);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 0.83, 0, fontSize * 0.83);
-      break;
-    case HtmlTag::Heading4:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 1.12, 0, fontSize * 1.12);
-      break;
-    case HtmlTag::Heading5:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 0.83);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 1.5, 0, fontSize * 1.5);
-      break;
-    case HtmlTag::Heading6:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 0.67);
-      style.fontWeight = QFont::Bold;
-      style.margin = QMarginsF(0, fontSize * 1.67, 0, fontSize * 1.67);
-      break;
-
-    case HtmlTag::Bold:
-    case HtmlTag::Strong:
-      style.display = HtmlDisplay::Inline;
-      style.fontWeight = QFont::Bold;
-      break;
-
-    case HtmlTag::Italic:
-    case HtmlTag::Em:
-      style.display = HtmlDisplay::Inline;
-      style.fontStyle = QFont::StyleItalic;
-      break;
-
-    case HtmlTag::Underline:
-      style.display = HtmlDisplay::Inline;
-      style.textDecoration = HtmlTextDecoration::Underline;
-      break;
-
-    case HtmlTag::Strikethrough:
-    case HtmlTag::Del:
-      style.display = HtmlDisplay::Inline;
-      style.textDecoration = HtmlTextDecoration::LineThrough;
-      break;
-
-    case HtmlTag::Quote:
-      style.display = HtmlDisplay::Inline;
-      break;
-
-    case HtmlTag::Code:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 0.9);
-      break;
-
-    case HtmlTag::Pre:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 0.9);
-      if (!style.whiteSpaceExplicit) {
-        style.whiteSpace = HtmlWhiteSpace::Pre;
-      }
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      style.padding = QMarginsF(12, 12, 12, 12);
-      style.backgroundColor = palette.codeBackground;
-      style.lineHeight = 1.45;
-      break;
-
-    case HtmlTag::BlockQuote:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(40, fontSize, 40, fontSize);
-      style.borderWidth = QMarginsF(0, 0, 0, 3);
-      style.borderColor = palette.quoteBorder;
-      style.padding = QMarginsF(16, 0, 0, 0);
-      break;
-
-    case HtmlTag::Hr:
-      style.display = HtmlDisplay::Block;
-      style.height = -1;  // auto — Yoga will derive from content/margin
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      break;
-
-    case HtmlTag::Div:
-    case HtmlTag::Section:
-    case HtmlTag::Article:
-    case HtmlTag::Header:
-    case HtmlTag::Footer:
-    case HtmlTag::Nav:
-    case HtmlTag::Main:
-    case HtmlTag::Aside:
-      style.display = HtmlDisplay::Block;
-      break;
-
-    case HtmlTag::Span:
-    case HtmlTag::Abbr:
-    case HtmlTag::Ins:
-    case HtmlTag::Label:
-    case HtmlTag::TextRun:
-      style.display = HtmlDisplay::Inline;
-      break;
-
-    case HtmlTag::Mark:
-      style.display = HtmlDisplay::Inline;
-      style.backgroundColor = palette.highlight;
-      break;
-
-    case HtmlTag::Sub:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 0.75);
-      break;
-
-    case HtmlTag::Sup:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 0.75);
-      break;
-
-    case HtmlTag::Small:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 0.85);
-      break;
-
-    case HtmlTag::Big:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 1.17);
-      break;
-
-    case HtmlTag::Kbd:
-      style.display = HtmlDisplay::Inline;
-      setDefaultFontSize(fontSize * 0.9);
-      style.fontWeight = QFont::Normal;
-      style.color = palette.text;
-      break;
-
-    case HtmlTag::Anchor:
-      style.display = HtmlDisplay::Inline;
-      style.color = palette.link;
-      style.textDecoration = HtmlTextDecoration::Underline;
-      break;
-
-    case HtmlTag::Image:
-      style.display = HtmlDisplay::Inline;
-      break;
-
-    case HtmlTag::Break:
-      style.display = HtmlDisplay::Inline;
-      break;
-
-    case HtmlTag::UnorderedList:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      style.padding = QMarginsF(40, 0, 0, 0);
-      break;
-
-    case HtmlTag::OrderedList:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      style.padding = QMarginsF(40, 0, 0, 0);
-      break;
-
-    case HtmlTag::ListItem:
-      style.display = HtmlDisplay::ListItem;
-      style.margin = QMarginsF(0, fontSize * 0.25, 0, fontSize * 0.25);
-      break;
-
-    case HtmlTag::Table:
-      style.display = HtmlDisplay::Table;
-      style.borderWidth = QMarginsF(0, 0, 0, 0);
-      break;
-
-    case HtmlTag::TableHead:
-    case HtmlTag::TableBody:
-      style.display = HtmlDisplay::TableRowGroup;
-      break;
-
-    case HtmlTag::TableRow:
-      style.display = HtmlDisplay::TableRow;
-      break;
-
-    case HtmlTag::TableHeader:
-      style.display = HtmlDisplay::TableCell;
-      style.fontWeight = QFont::Bold;
-      style.backgroundColor = palette.tableHeaderBackground;
-      style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = palette.tableBorder;
-      style.padding = QMarginsF(8, 8, 8, 8);
-      break;
-
-    case HtmlTag::TableCell:
-      style.display = HtmlDisplay::TableCell;
-      style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = palette.tableBorder;
-      style.padding = QMarginsF(8, 8, 8, 8);
-      break;
-
-    case HtmlTag::Details:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(0, fontSize, 0, fontSize);
-      break;
-
-    case HtmlTag::Summary:
-      style.display = HtmlDisplay::Block;
-      style.fontWeight = QFont::Bold;
-      break;
-
-    case HtmlTag::Figure:
-      style.display = HtmlDisplay::Block;
-      style.margin = QMarginsF(40, fontSize, 40, fontSize);
-      break;
-
-    case HtmlTag::FigCaption:
-    case HtmlTag::Caption:
-      style.display = HtmlDisplay::Block;
-      setDefaultFontSize(fontSize * 0.9);
-      style.textAlign = Qt::AlignCenter;
-      break;
-
-    case HtmlTag::Input:
-      style.display = HtmlDisplay::Inline;
-      style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = palette.tableBorder;
-      style.padding = QMarginsF(2, 2, 2, 2);
-      break;
-
-    case HtmlTag::Button:
-      style.display = HtmlDisplay::Inline;
-      style.borderWidth = QMarginsF(1, 1, 1, 1);
-      style.borderColor = palette.muted;
-      style.backgroundColor = palette.codeBackground;
-      style.padding = QMarginsF(4, 4, 8, 4);
-      break;
-
-    case HtmlTag::TextArea:
-    case HtmlTag::Select:
-    case HtmlTag::Option:
-      style.display = HtmlDisplay::Inline;
-      break;
-
-    default:
-      break;
-  }
-}
-
-qreal HtmlStyleResolver::resolveFontSize(const HtmlComputedStyle& style, qreal parentFontSize) const {
-  return style.fontSize > 0 ? style.fontSize : parentFontSize;
 }
 
 }  // namespace muffin::html

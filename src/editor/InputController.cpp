@@ -1326,7 +1326,7 @@ HitTestResult InputController::visualEdgeHitForBlock(NodeId blockId, int directi
 
   const InlineLayout* inlineLayout = block->inlineLayout();
   const int line = direction > 0 ? 0 : qMax(0, inlineLayout->visualLineCount() - 1);
-  const QPointF origin = block->inlineTextOrigin(ctx_.view->theme());
+  const QPointF origin = block->inlineTextOrigin();
   const qsizetype localSource = inlineLayout->sourceOffsetAtVisualLineX(line, documentX - origin.x());
   const CursorPosition cursor = cursorForSourceInNode(*editable, block->contentSourceStart() + localSource);
   return richHitForCursor(cursor);
@@ -1879,7 +1879,7 @@ bool InputController::moveCursorVertical(int direction, bool extendSelection) {
     }
     const int targetLine = line + direction;
     if (targetLine >= 0 && targetLine < inlineLayout->visualLineCount()) {
-      const QPointF origin = block->inlineTextOrigin(ctx_.view->theme());
+      const QPointF origin = block->inlineTextOrigin();
       const qreal localX = verticalNavigationX_ - origin.x();
       const CursorPosition target = block->contentSourceStart() >= 0
           ? cursorForSourceInNode(*node, block->contentSourceStart() + inlineLayout->sourceOffsetAtVisualLineX(targetLine, localX))

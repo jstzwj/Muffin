@@ -990,7 +990,7 @@ void testPseudoExtractionGroupsByHost() {
   const QString css = QStringLiteral(
       ":root { --tint: #bd93f9; --glow: #00f3ff; }"
       "body { background: #0f111a; color: #d6deeb; }"
-      "#write h2::after { background: linear-gradient(to right, var(--glow), transparent); height: 2px; }"
+      "#write h2::after { content:''; background: linear-gradient(to right, var(--glow), transparent); height: 2px; }"
       "blockquote::before { content: \"X\"; color: #f00; }"
       "#write { max-width: 950px; padding: 15px; margin: 0 auto; }");
   const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("t"), QString());
@@ -1547,9 +1547,9 @@ code { color:#00f3ff; padding:2px 6px; border-radius:6px; border:1px solid #8888
 
   const ThemeDefinition e = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                     QStringLiteral("e"), QString());
-  require(qAbs(e.typography.inlineCodePaddingH - 3.0) < 0.01, QStringLiteral("default code paddingH → 3 (legacy)"));
-  require(qAbs(e.typography.inlineCodePaddingV - 1.0) < 0.01, QStringLiteral("default code paddingV → 1 (legacy)"));
-  require(qAbs(e.typography.inlineCodeBorderRadius - 3.0) < 0.01, QStringLiteral("default code radius → 3 (legacy)"));
+  require(qAbs(e.typography.inlineCodePaddingH - 2.0) < 0.01, QStringLiteral("default code paddingH comes from document CSS"));
+  require(qAbs(e.typography.inlineCodePaddingV) < 0.01, QStringLiteral("default code paddingV comes from document CSS"));
+  require(qAbs(e.typography.inlineCodeBorderRadius) < 0.01, QStringLiteral("default code radius comes from document CSS"));
   require(qAbs(e.typography.inlineCodeBorderWidth - 0.0) < 0.01, QStringLiteral("no code rule → border-width 0 (declared-only)"));
 
   // phycat-style: `code` is fully styled (bg/padding/radius) but declares NO
@@ -1576,7 +1576,7 @@ del { color:#999999; }
 
   const ThemeDefinition none = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                       QStringLiteral("n"), QString());
-  require(!none.typography.delColor.isValid(), QStringLiteral("no del rule → delColor unset (inherit prose)"));
+  require(none.typography.delColor == QColor(Qt::black), QStringLiteral("del inherits the computed prose color"));
 }
 
 // Phase 3c: HTML <kbd> keycap box driven by CSS `kbd`, distinct from inline code.
@@ -1598,11 +1598,11 @@ kbd { background-color:#333333; color:#d6deeb; font-family:CascadiaCode, Consola
   require(qAbs(d.typography.kbdBorderWidth - 1.0) < 0.01, QStringLiteral("kbd border-width → 1"));
   require(d.typography.kbdShadowColor.name(QColor::HexRgb) == QStringLiteral("#222222"), QStringLiteral("kbd box-shadow colour"));
 
-  // A theme with no `kbd` rule leaves every kbd token invalid → legacy heuristic.
+  // Missing author rules use the same document defaults as live HTML.
   const ThemeDefinition none = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                        QStringLiteral("n"), QString());
-  require(!none.typography.kbdBackground.isValid() && !none.typography.kbdTextColor.isValid(),
-          QStringLiteral("no kbd rule → all kbd tokens invalid (legacy fallback)"));
+  require(none.typography.kbdBackground == QColor(Qt::white) && none.typography.kbdTextColor == QColor("#242729"),
+          QStringLiteral("kbd uses shared document default colours"));
 }
 
 // Phase 4: kbd per-side bottom border (phycat `border-bottom-width: 3px;
@@ -1620,14 +1620,14 @@ kbd { border:1px solid #3db8bf; border-bottom-width:3px; border-bottom-color:#08
   require(d.typography.kbdBorderBottomColor.name(QColor::HexRgb) == QStringLiteral("#089ba3"), QStringLiteral("border-bottom-color captured"));
   require(d.typography.kbdShadowColor.name(QColor::HexRgb) == QStringLiteral("#7aeaf0"), QStringLiteral("kbd box-shadow colour (depth strip)"));
 
-  // No border-bottom override → bottom tokens stay unset (uniform fallback).
+  // Shorthand expands into computed per-side values.
   const char* cssUniform = R"(
 #write { color:#000000; }
 kbd { border:1px solid #3db8bf; }
 )";
   const ThemeDefinition u = CssThemeMapper::fromCss(QString::fromUtf8(cssUniform), QStringLiteral("kbu"), QString());
-  require(qAbs(u.typography.kbdBorderBottomWidth - 0.0) < 0.01, QStringLiteral("no border-bottom → width 0 (uniform fallback)"));
-  require(!u.typography.kbdBorderBottomColor.isValid(), QStringLiteral("no border-bottom → colour unset (uniform fallback)"));
+  require(qAbs(u.typography.kbdBorderBottomWidth - 1.0) < 0.01, QStringLiteral("uniform border sets bottom width"));
+  require(u.typography.kbdBorderBottomColor == QColor("#3db8bf"), QStringLiteral("uniform border sets bottom colour"));
 }
 
 void testComputedElementStylesCaptureMarkerAndQuoteParagraph() {
@@ -1672,8 +1672,8 @@ void testBlockquoteBoxCapture() {
 blockquote { padding:18px 20px 18px 48px; border:1px solid #aabbcc; border-radius:16px; }
 )";
   const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("bq"), QString());
-  require(RenderTheme::fromDefinition(d).blockquoteBoxThemed(),
-          QStringLiteral("blockquote padding/border/radius should flip the themed flag"));
+  require(RenderTheme::fromDefinition(d).elementBoxStyle(QStringLiteral("blockquote")).present,
+          QStringLiteral("blockquote uses the generic computed box"));
   const ThemeElementStyle* bq = elementStyleFor(d, QStringLiteral("blockquote"));
   require(bq != nullptr, QStringLiteral("blockquote element style should exist"));
   require(qAbs(bq->box.padding.top() - 18.0) < 0.01, QStringLiteral("blockquote padding-top → 18"));
@@ -1686,8 +1686,8 @@ blockquote { padding:18px 20px 18px 48px; border:1px solid #aabbcc; border-radiu
 
   const ThemeDefinition plain = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                         QStringLiteral("p"), QString());
-  require(!RenderTheme::fromDefinition(plain).blockquoteBoxThemed(),
-          QStringLiteral("no blockquote rule → legacy accent-bar path (built-in parity)"));
+  require(RenderTheme::fromDefinition(plain).elementBoxStyle(QStringLiteral("blockquote")).padding.left() == 16,
+          QStringLiteral("unconfigured quote padding comes from the shared host stylesheet"));
 }
 
 // Phase 4b/4c: CSS code-fence + table box tokens flip the themed flags. Absent
@@ -1711,8 +1711,8 @@ table { border-radius:6px; }
 
   const ThemeDefinition none = CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"),
                                                        QStringLiteral("n"), QString());
-  require(!none.spacing.codeBlockBoxThemed && !none.spacing.tableBoxThemed,
-          QStringLiteral("no pre/td rules → legacy hardcoded padding (built-in parity)"));
+  require(none.spacing.codeBlockPadding == QMarginsF(12, 10, 12, 10) && none.spacing.tableCellPadding == QMarginsF(12, 6, 12, 6),
+          QStringLiteral("pre and td defaults come from the shared host stylesheet"));
 }
 
 }  // namespace

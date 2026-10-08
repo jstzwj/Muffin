@@ -115,7 +115,7 @@ QPointF mermaidScenePointToDocument(const BlockLayout& block,
                                     const RenderTheme& theme,
                                     const QRectF& sceneBounds,
                                     QPointF scenePoint) {
-  const QRectF content = block.rect().marginsRemoved(theme.codePadding());
+  const QRectF content = block.rect().marginsRemoved(theme.elementBoxStyle(QStringLiteral("pre")).padding);
   const QSizeF natural = block.mermaidNaturalSize();
   const qreal scale = qMin<qreal>(1.0, content.width() / natural.width());
   const qreal drawWidth = natural.width() * scale;
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
   // --- BlockLayout maps a scrolled dirty clip into scene coordinates ---
   {
     const auto scene = largeFlowScene();
-    const QMarginsF padding = theme.codePadding();
+    const QMarginsF padding = theme.elementBoxStyle(QStringLiteral("pre")).padding;
     const QSizeF naturalSize = scene->bounds.size();
     const QRectF blockRect(24.0, 100.0, 300.0,
                            naturalSize.height() + padding.top() + padding.bottom());
@@ -316,7 +316,7 @@ int main(int argc, char** argv) {
                 metadata.diagramPadding == 8.0,
             QStringLiteral("BlockLayout lost Mermaid presentation metadata"));
 
-    const QRectF content = block->rect().marginsRemoved(theme.codePadding());
+    const QRectF content = block->rect().marginsRemoved(theme.elementBoxStyle(QStringLiteral("pre")).padding);
     const QSizeF natural = block->mermaidNaturalSize();
     const qreal scale = qMin<qreal>(1.0, content.width() / natural.width());
     const qreal drawWidth = natural.width() * scale;
@@ -552,7 +552,7 @@ int main(int argc, char** argv) {
 
     const QRectF panel = block->mermaidDiagnosticRect(theme);
     const QRectF sourceContent = block->literalContentRect(theme);
-    const qreal sourceBoxBottom = sourceContent.bottom() + theme.codePadding().bottom();
+    const qreal sourceBoxBottom = sourceContent.bottom() + theme.elementBoxStyle(QStringLiteral("pre")).padding.bottom();
     require(panel.isValid() && panel.top() > sourceBoxBottom,
             QStringLiteral("diagnostic panel must be below and separate from the source box"));
     require(panel.bottom() <= block->rect().bottom() + 0.01,

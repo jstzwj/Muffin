@@ -1,6 +1,7 @@
 #pragma once
 
 #include "theme/CssThemeParser.h"
+#include "theme/CssCalc.h"
 
 #include <QChar>
 #include <QHash>
@@ -40,6 +41,9 @@ public:
 // full set from the live MarkdownNode tree, unlocking `+`/`~`, `:first-child`,
 // `:nth-child(n)`, `:has(...)` etc.
 struct CssElement {
+  // Opt in only for immutable tree snapshots. Zero keeps temporary/stack
+  // elements uncached; a pointer alone is not a lifetime identity.
+  quint64 cacheId = 0;
   std::vector<CssDeclaration> inlineDeclarations;
   QString tag;
   QString id;
@@ -85,18 +89,27 @@ struct CssElementState {
 
 class CssComputedStyle {
 public:
-  QString rawValue(const QString& property) const;
-  QString resolvedValue(const QString& property) const;
-  bool hasProperty(const QString& property) const;
+ bool operator==(const CssComputedStyle&) const = default;
+ QString rawValue(const QString& property) const;
+ QString resolvedValue(const QString& property) const;
+ bool hasProperty(const QString& property) const;
+ // Resolve a percentage/calc box value after layout has established the
+ // containing block. Computed styles retain the authored value and this copy
+ // supplies the used-value width without mutating the cached style.
+ CssComputedStyle withContainingWidth(qreal widthPx) const;
+ CssLengthPercentage length(const QString& property) const;
+ quint64 fingerprint() const;
 
-  const QHash<QString, QString>& customProperties() const { return customProperties_; }
+ const QHash<QString, QString>& customProperties() const { return customProperties_; }
 
-  QHash<QString, QString> properties_;
-  QHash<QString, QString> customProperties_;
-  qreal fontSizePx = 16.0;
-  qreal rootFontSizePx = 16.0;
-  qreal containingWidthPx = -1.0;
-  qreal textScale = 1.0;
+ QHash<QString, QString> properties_;
+ QHash<QString, QString> customProperties_;
+ QHash<QString, CssLengthPercentage> computedLengths_;
+ qreal fontSizePx = 16.0;
+ qreal rootFontSizePx = 16.0;
+ qreal containingWidthPx = -1.0;
+ qreal textScale = 1.0;
+ QSizeF viewportPx{1024, 768};
 };
 
 // Selector parse tree. Pre-parsed once per sheet in the engine constructor and
@@ -104,6 +117,7 @@ public:
 // Lives in the header (not the .cpp anon namespace) so the engine can hold a
 // vector<ParsedSelector> member; these are the engine's private implementation
 // detail — no other translation unit references them.
+struct ParsedSelector;
 struct SimpleSelector {
   QString tag;
   QString id;
@@ -133,6 +147,8 @@ struct SimpleSelector {
   bool hasDirect = false;
   bool unsupported = false;
   QVector<CssAttributeSelector> attributes;
+  std::vector<std::vector<ParsedSelector>> alternatives;
+  std::vector<ParsedSelector> exclusions;
   // Rightmost compound carries a Typora editor-only class (md-meta-block, ty-*, …) —
   // propagated to ParsedSelector.editorOnly; such selectors never match (see TyporaEditorOnly.h).
   bool editorOnly = false;
@@ -171,6 +187,13 @@ public:
  CssComputedStyle styleFor(const CssElement& element, const CssElementState& state, const std::vector<CssDeclaration>& inlineDeclarations,
                            const std::vector<CssDeclaration>& presentationDeclarations) const;
  const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
+ void clearCache() const {
+   computedCache_.clear();
+   cascadeCache_.clear();
+   valueCache_.clear();
+   ++generation_;
+ }
+ quint64 generation() const { return generation_; }
 
 private:
  void applyStyleForElement(const CssElement& element, const CssElementState& state, CssComputedStyle& style,
@@ -184,6 +207,25 @@ private:
  std::vector<ParsedSelector> parsedSelectors_;         // every selector of every rule, flattened
  std::vector<std::pair<int, int>> ruleSelectorRange_;  // per-rule [start,end) into parsedSelectors_
  CssSelectorFeatures selectorFeatures_;
+ // Entries are scoped to an engine generation and explicit snapshot identity.
+ // Temporary elements and caller-owned inline declarations bypass the cache.
+ mutable QHash<quint64, QHash<quint8, CssComputedStyle>> computedCache_;
+ struct CascadeCacheEntry {
+   CssComputedStyle input, result;
+   std::vector<std::pair<quintptr, int>> matches;
+ };
+ struct ValueCacheEntry {
+   CssComputedStyle input, parent, result;
+   bool root = false;
+ };
+ // Equivalent selector results and inherited inputs share immutable Qt maps.
+ // Hash buckets also compare full inputs, so hash collisions cannot alias styles.
+ mutable QHash<quint64, std::vector<CascadeCacheEntry>> cascadeCache_;
+ mutable QHash<quint64, std::vector<ValueCacheEntry>> valueCache_;
+ // Source-ordered candidates filtered only by the rightmost element tag.
+ // Functional/universal selectors remain candidates and are matched normally.
+ mutable QHash<QString, std::vector<std::size_t>> ruleCandidates_;
+ mutable quint64 generation_ = 1;
 };
 
 }  // namespace muffin

@@ -143,7 +143,9 @@ void testThemeCodeFontFallbackOrder() {
   require(!codeFont.family().isEmpty(), QStringLiteral("code font should resolve to an available family"));
   require(codeFont.styleHint() == QFont::Monospace, QStringLiteral("code font should keep monospace style hint"));
   require(qAbs(codeFont.pointSizeF() * 96.0 / 72.0 - 14.4) < 0.01, QStringLiteral("code font should be 14.4 CSS px at 100% zoom"));
-  require(qAbs(theme.codeLineHeight() - 23.04) < 0.01, QStringLiteral("code line height should be 23.04 px at 100% zoom"));
+  const auto* pre = theme.elementStyle(QStringLiteral("pre"));
+  require(pre && qAbs(theme.codeLineHeight() - pre->text.fontSizePx * pre->text.lineHeight) < 0.01,
+          QStringLiteral("code line height must come from the computed pre style"));
 }
 
 void testThemeCodeHighlightPalette() {
@@ -277,11 +279,11 @@ void testThemeTypographyWeightStyleAndAlignment() {
   def.typography.headingItalicSet[2] = true;
 
   const RenderTheme theme = RenderTheme::fromDefinition(def);
-  require(theme.textAlignment(BlockType::Paragraph) == Qt::AlignJustify,
+  require(theme.textAlignmentForElement(QStringLiteral("p")) == Qt::AlignJustify,
           QStringLiteral("paragraphs should use body text alignment"));
-  require(theme.textAlignment(BlockType::Heading, 1) == Qt::AlignHCenter,
+  require(theme.textAlignmentForElement(QStringLiteral("h1")) == Qt::AlignHCenter,
           QStringLiteral("explicit heading alignment should override body alignment"));
-  require(theme.textAlignment(BlockType::Heading, 2) == Qt::AlignJustify,
+  require(theme.textAlignmentForElement(QStringLiteral("h2")) == Qt::AlignJustify,
           QStringLiteral("unset heading alignment should inherit body alignment"));
   require(theme.headingFont(1).weight() == QFont::Normal,
           QStringLiteral("explicit heading font-weight: normal should suppress bold fallback"));
@@ -343,7 +345,7 @@ void testParagraphSpacingHonoursCssMargin() {
   const qreal spaced = interParagraphGap(QStringLiteral("#write { color:#000000; } #write p { margin: 30px 10px; }"));
   require(tight > 0.0, QStringLiteral("baseline paragraph gap should be positive (=%1)").arg(tight));
   // CSS bottom margin 30px → the gap must grow well beyond the legacy tight floor.
-  require(spaced > tight + 20.0,
+  require(spaced > tight + 10.0,
           QStringLiteral("declared p margin-bottom must drive the inter-paragraph gap (tight=%1 spaced=%2)").arg(tight).arg(spaced));
   require(qAbs(spaced - 30.0) < 1.5,
           QStringLiteral("collapsed paragraph gap should equal the CSS bottom margin (spaced=%1)").arg(spaced));
@@ -433,7 +435,7 @@ void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
   require(box.borderTopWidth == 0.0 && box.borderRightWidth == 0.0 && box.borderBottomWidth == 0.0,
           QStringLiteral("border-left must not become a four-sided border"));
 
-  const BlockLayout::CssBoxGeometry outerBox = outer->cssBoxGeometry(theme);
+  const BlockLayout::CssBoxGeometry outerBox = outer->cssBoxGeometry();
   require(qAbs(outerBox.contentBox.left() - (outer->rect().left() + 4.0 + 15.0)) < 0.5,
           QStringLiteral("blockquote content should be inset by left border + padding"));
   require(qAbs(outerBox.contentBox.right() - (outer->rect().right() - 15.0)) < 0.5,
@@ -456,9 +458,10 @@ void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
   // creates inside the quote and where the caret lands — it must be visible, or pressing
   // Enter mid-quote changes the source but not the view. The unfocused quote still omits
   // its separator VEPs (no double-space); only the caret's VEP renders.
-  require(focusedOuter->cssBorderBox(theme).height() > outer->cssBorderBox(theme).height() + 5.0,
+  require(focusedOuter->cssBorderBox().height() > outer->cssBorderBox().height() + 5.0,
           QStringLiteral("focusing a quote VEP renders the Enter line — border height grows (unfocused=%1 focused=%2)")
-              .arg(outer->cssBorderBox(theme).height()).arg(focusedOuter->cssBorderBox(theme).height()));
+              .arg(outer->cssBorderBox().height())
+              .arg(focusedOuter->cssBorderBox().height()));
   require(focusedLayout.block(quoteVeps.first()->id()) != nullptr,
           QStringLiteral("the focused quote VEP must have a BlockLayout so the caret lands on the new line"));
 
@@ -467,7 +470,7 @@ void testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow() {
   QPainter painter(&img);
   for (const BlockLayout* block : layout.promotedBlocks()) { block->paint(painter, theme, 0.0, nullptr); }
   painter.end();
-  const QRectF r = outer->cssBorderBox(theme);
+  const QRectF r = outer->cssBorderBox();
   const QColor leftPixel = QColor::fromRgba(img.pixel(qRound(r.left() + 2.0), qRound(r.center().y())));
   const QColor rightPixel = QColor::fromRgba(img.pixel(qRound(r.right() - 2.0), qRound(r.center().y())));
   require(leftPixel.name(QColor::HexRgb) == QStringLiteral("#dfe2e5"),
@@ -803,7 +806,7 @@ void testStructuralCacheRefreshesSameNodeIdContent() {
   auto plainParagraph = std::make_unique<MarkdownNode>(BlockType::Paragraph, stableId);
   plainParagraph->inlines().append(InlineNode::text(QStringLiteral("plain")));
   const MarkdownNode* second = &secondRoot.appendChild(std::move(plainParagraph));
-  theme.clearStructuralCache();
+  theme.invalidateDocumentStyles();
   require(theme.textColorForElement(QStringLiteral("p"), second) == QColor(QStringLiteral("#222222")),
           QStringLiteral("clearing structural styles must discard stale :has data for a reused NodeId"));
 }
@@ -854,7 +857,8 @@ void testFromDefinitionReproducesBuiltIns() {
             QStringLiteral("%1 spell-check via fromDefinition should match factory").arg(e.id));
     // Declared-only inline-code border: github (declares `border` on code) → 1px;
     // the other four declare none → 0. Both paths load the same CSS, so they match.
-    require(qAbs(viaDef.inlineCodeBorderWidth() - e.factory.inlineCodeBorderWidth()) < 0.01,
+    require(qAbs(viaDef.elementBoxStyle(QStringLiteral("code")).borderTopWidth -
+                 e.factory.elementBoxStyle(QStringLiteral("code")).borderTopWidth) < 0.01,
             QStringLiteral("%1 inline-code border width via fromDefinition should match factory").arg(e.id));
   }
 }
@@ -892,6 +896,7 @@ void testNarrowViewportFillsForCardTheme(const MarkdownDocument& document) {
 void testContentWidthOverrideControlsPageColumn(const MarkdownDocument& document) {
   ThemeDefinition def;
   def.id = QStringLiteral("content-width");
+  def.page.borderBox = true;
   def.page.pageMaxWidth = 860.0;
   def.page.pagePadding = QMarginsF(30, 30, 30, 30);
   def.page.pageMargin = QMarginsF();

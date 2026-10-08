@@ -30,7 +30,7 @@ QImage renderHeadingImage(const RenderTheme& theme, const QString& markdown) {
   const BlockLayout* block = layout.block(heading->id());
   require(block != nullptr, QStringLiteral("heading block should be promoted"));
   const QRectF rect = block->rect();
-  require(rect.width() > 100.0 && rect.height() > 4.0, QStringLiteral("heading block should be non-trivial"));
+  require(rect.width() > 20.0 && rect.height() > 4.0, QStringLiteral("fit-content heading should have a measurable occupied box"));
 
   QImage image(int(rect.width()), int(rect.height() + 4), QImage::Format_ARGB32_Premultiplied);
   image.fill(Qt::white);

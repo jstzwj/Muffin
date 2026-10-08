@@ -6,7 +6,7 @@ MathRenderPlaceholder MathRenderer::renderBlockPlaceholder(const QString& tex, c
   MathRenderPlaceholder placeholder;
   placeholder.displayText = tex;
   placeholder.font = theme.mathFont();
-  placeholder.padding = theme.codePadding();
+  placeholder.padding = theme.elementBoxStyle(QStringLiteral("pre")).padding;
   return placeholder;
 }
 

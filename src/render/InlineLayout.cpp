@@ -29,6 +29,17 @@ constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
 constexpr qreal kMaxImageDisplayHeight = 200.0;
 
+QRectF mathUsedBounds(const math::MathLayoutResult& layout) {
+  if (!layout.root) return {};
+  auto bounds = layout.root->boundsAt({});
+  // KaTeX's outer inline CSS box has a fixed strut. Its actual child formatting
+  // box can extend above/below that strut (fractions, matrices, rules).
+  for (const auto& child : layout.root->children) {
+    bounds = bounds.united(child->boundsAt(QPointF(child->xOffset, child->yOffset + child->shift)));
+  }
+  return bounds;
+}
+
 QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleNewline) {
   QString text;
   for (const InlineNode& node : inlines) {
@@ -153,30 +164,16 @@ void InlineLayout::build(
   displayText_.clear();
   layoutText_.clear();
   isMisspelled_ = options.isMisspelled;
-  textLayoutCodeBackgroundColor_ = theme.codeBackgroundColor();
-  textLayoutCodeBorderColor_ = theme.codeBorderColor();
-  textLayoutCodeTextColor_ = theme.inlineCodeTextColor();
-  darkTheme_ = theme.backgroundColor().lightness() < 128;
-  kbdFill_ = theme.kbdBackgroundColor();
-  kbdText_ = theme.kbdTextColor();
-  kbdFont_ = theme.kbdFont();
-  kbdPadH_ = theme.kbdPaddingH();
-  kbdPadV_ = theme.kbdPaddingV();
-  kbdRadius_ = theme.kbdBorderRadius();
-  kbdBorder_ = theme.kbdBorderColor();
-  kbdBorderWidth_ = theme.kbdBorderWidth();
-  kbdBorderBottomWidth_ = theme.kbdBorderBottomWidth();
-  kbdBorderBottomColor_ = theme.kbdBorderBottomColor();
-  kbdShadow_ = theme.kbdShadowColor();
-  codeBoxPaddingH_ = theme.inlineCodePaddingH();
-  codeBoxPaddingV_ = theme.inlineCodePaddingV();
-  codeBoxRadius_ = theme.inlineCodeBorderRadius();
-  codeBoxBorderWidth_ = theme.inlineCodeBorderWidth();
-  codeBoxShadowColor_ = theme.inlineCodeShadowColor();
-  codeBoxShadowOffsetX_ = theme.inlineCodeShadowOffsetX();
-  codeBoxShadowOffsetY_ = theme.inlineCodeShadowOffsetY();
-  codeBoxShadowBlur_ = theme.inlineCodeShadowBlur();
-  codeBoxShadowSpread_ = theme.inlineCodeShadowSpread();
+  const auto sharedSnapshot = [&](const ThemeElementStyle& style, const QFont& font) {
+    const auto used = theme.usedBoxForStyle(style, width);
+    return options.styleCache ? options.styleCache->snapshot(style, used, font, width)
+                              : std::make_shared<const LayoutBox>(LayoutBox::place(style.key, style, used, {}, font));
+  };
+  const auto snapshot = [&](const QString& key) {
+    const auto* style = options.styleNode ? theme.elementStyleForNode(*options.styleNode, key) : theme.elementStyle(key);
+    return sharedSnapshot(style ? *style : ThemeElementStyle{}, theme.textFontForElement(key, options.styleNode));
+  };
+  codeStyle_ = snapshot(QStringLiteral("code"));
   // CSS inline decorations: link ::before icon (mask-tinted SVG) + mark gradient.
   linkBeforeIcon_.clear();
   linkBeforeIconTint_ = QColor();
@@ -209,6 +206,11 @@ void InlineLayout::build(
   alignment_ = options.alignment;
   html::HtmlColorPalette htmlPalette = html::HtmlColorPalette::defaultLight();
   htmlPalette.documentStyleSheet = theme.documentStyleSheet();
+  if (options.styleNode) {
+    htmlPalette.documentParent = theme.cssElementForNode(*options.styleNode);
+    htmlPalette.documentParentForOffset = [&theme, owner = options.styleNode, base = qMax<qsizetype>(0, options.sourceBase)](
+                                              qsizetype offset) { return theme.cssParentForInlineHtml(*owner, offset + base); };
+  }
   htmlPalette.fontAliases = theme.fontAliases();
   htmlPalette.cssEnvironment = theme.documentCssEnvironment();
   htmlPalette.cssZoom = theme.zoomPercent() / 100.0;
@@ -217,6 +219,16 @@ void InlineLayout::build(
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
                                  options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline, options.textTransform,
                                  options.renderEmoji, std::move(htmlPalette));
+  spanStyles_.clear();
+  styleSourceBase_ = qMax<qsizetype>(0, options.sourceBase);
+  if (options.styleNode) {
+    for (const auto& span : projection_.spans()) {
+      if (span.kind != InlineSpanKind::Text) continue;
+      const auto style = theme.inlineStyleForNode(*options.styleNode, span.contentSourceStart + qMax<qsizetype>(0, options.sourceBase));
+      const QFont fallback = span.type == InlineType::Code ? codeStyle_->font : baseFont;
+      spanStyles_.insert(span.displayStart, sharedSnapshot(style, theme.fontForStyle(style, fallback)));
+    }
+  }
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width, options.documentPath);
@@ -230,10 +242,11 @@ void InlineLayout::build(
     linkBeforeIconAdvance_ = !linkBeforeIcon_.isEmpty() ? (iconW + linkBeforeIconMarginRight_) : 0.0;
   }
   buildLinkBeforeAtoms();
-  buildHtmlFormatSpans();
-  buildInlineBoxSpacing(theme);
-  buildHtmlFormatSpans();
+  buildHtmlFormatSpans(theme, width);
+  buildInlineBoxSpacing();
+  buildHtmlFormatSpans(theme, width);
   buildTextLayout(theme, width, baseFont);
+  buildInlineBoxes();
   // Genuinely empty: no text glyphs and no rendered image. Checking the image
   // atoms (not just plainText) matters because an image with blank alt text
   // flattens to empty text but is still visible content.
@@ -242,6 +255,19 @@ void InlineLayout::build(
 
 QSizeF InlineLayout::size() const {
   return size_;
+}
+
+bool InlineLayout::stylesMatch(const RenderTheme& theme, const MarkdownNode& owner) const {
+  // Embedded HTML has its own descendant tree. Until that tree is retained,
+  // conservatively rebuild promoted HTML fragments after structural edits.
+  if (!projection_.htmlFormatData().isEmpty()) return false;
+  for (const auto& span : projection_.spans()) {
+    const auto found = spanStyles_.constFind(span.displayStart);
+    if (found != spanStyles_.cend() &&
+        theme.inlineStyleForNode(owner, span.contentSourceStart + styleSourceBase_).fingerprint != found.value()->style.fingerprint)
+      return false;
+  }
+  return true;
 }
 
 qreal InlineLayout::height() const {
@@ -567,8 +593,8 @@ QVector<QRectF> InlineLayout::mathAtomRects(QPointF origin) const {
       if (atomStart >= lineStart && atomStart <= lineEnd) {
         const qreal x = line.cursorToX(atomStart);
         const qreal baseline = origin.y() + line.y() + line.ascent();
-        rects.append(QRectF(origin.x() + x, baseline - atom.layout->baseline,
-                            atom.layout->size.width(), atom.layout->size.height()));
+        const auto used = mathUsedBounds(*atom.layout);
+        rects.append(QRectF(origin.x() + x, baseline + used.top(), atom.layout->size.width(), used.height()));
         break;
       }
     }
@@ -624,68 +650,16 @@ QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDis
 }
 
 void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const {
-  if (!textLayout_) {
-    return;
-  }
+  for (const auto& box : inlineBoxes_)
+    if (box.hostKey == QStringLiteral("code")) paintLayoutBox(painter, box, origin);
+}
 
-  painter.save();
-  // Declared-only border: a width of 0 means the theme's CSS set no `border` on
-  // `code` — paint no edge. QPen(color, 0) is a cosmetic 1px line in Qt, so an
-  // explicit NoPen is required to actually suppress it. The background fill
-  // (brush) is independent and always applies.
-  if (codeBoxBorderWidth_ > 0.0) {
-    painter.setPen(QPen(textLayoutCodeBorderColor_, codeBoxBorderWidth_));
-  } else {
-    painter.setPen(Qt::NoPen);
-  }
-  painter.setBrush(textLayoutCodeBackgroundColor_);
-  // Phase 3b: chip geometry from CSS (defaults reproduce the legacy -3/+6 / r=3
-  // chip). Generated spacing participates in advance, editing and hit testing.
-  // are unaffected; only the painted box grows with the theme's padding/radius.
-  const qreal padH = codeBoxPaddingH_;
-  const qreal padV = codeBoxPaddingV_;
-  const qreal radius = codeBoxRadius_;
-  for (const InlineProjectionSpan& span : projection_.spans()) {
-    if (span.type != InlineType::Code || span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart) {
-      continue;
-    }
-
-    for (int i = 0; i < textLayout_->lineCount(); ++i) {
-      const QTextLine line = textLayout_->lineAt(i);
-      if (!line.isValid()) {
-        continue;
-      }
-      const int lineStart = line.textStart();
-      const int lineEnd = lineStart + line.textLength();
-      const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
-      if (!layoutRange.valid) {
-        continue;
-      }
-      const int rangeStart = qMax(lineStart, toLayoutOffset(static_cast<int>(layoutRange.start)));
-      const int rangeEnd = qMin(lineEnd, toLayoutOffset(static_cast<int>(layoutRange.end)));
-      if (rangeStart >= rangeEnd) {
-        continue;
-      }
-      const qreal x1 = line.cursorToX(rangeStart);
-      const qreal x2 = line.cursorToX(rangeEnd);
-      // The chip wraps glyphs plus the flow-reserved CSS padding, line-bounded.
-      // Vertical padding GROWS the box around the glyph height (naturalTextRect),
-      // mirroring the horizontal growth — sizing against the full line height and
-      // then subtracting padding collapses the chip to nothing when padV is large
-      // relative to the line (e.g. `code { padding:10px 14px }`).
-      const QRectF glyphs = line.naturalTextRect();
-      const QRectF rect(
-          origin.x() + qMin(x1, x2) - padH,
-          origin.y() + glyphs.top() - padV,
-          qAbs(x2 - x1) + padH * 2.0,
-          qMax<qreal>(1.0, glyphs.height() + padV * 2.0));
-      DecorationPainter::paintBoxShadow(
-          painter, rect, radius, codeBoxShadowColor_, codeBoxShadowOffsetX_,
-          codeBoxShadowOffsetY_, codeBoxShadowBlur_, codeBoxShadowSpread_);
-      painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius);
-    }
-  }
-  painter.restore();
+QString InlineLayout::plainText() const { return plainText_; }
+QString InlineLayout::visibleText() const { return projection_.visibleText(); }
+QString InlineLayout::displayText() const { return displayText_; }
+int InlineLayout::mathAtomCount() const { return static_cast<int>(mathAtoms_.size()); }
+QVector<QTextLayout::FormatRange> InlineLayout::debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const {
+  return textLayoutFormats(theme, baseFont);
 }
 
 void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const {
@@ -786,97 +760,33 @@ void InlineLayout::paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF ori
 }
 
 void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF origin) const {
-  if (!textLayout_ || htmlFormatSpans_.isEmpty()) {
-    return;
-  }
+  for (const auto& box : inlineBoxes_)
+    if (box.hostKey == QStringLiteral("kbd")) paintLayoutBox(painter, box, origin);
+}
 
-  // Phase 3c: prefer the theme's `kbd` CSS; fall back to the legacy light/dark
-  // keycap heuristic when the theme declares no `kbd` rule (built-ins unchanged).
-  const bool themed = kbdFill_.isValid();
-  const QColor fill = themed ? kbdFill_ : (darkTheme_ ? QColor(QStringLiteral("#333333")) : QColor(250, 251, 252));
-  const QColor border = kbdBorder_.isValid() ? kbdBorder_
-      : (darkTheme_ ? QColor(QStringLiteral("#444444")) : QColor(196, 201, 209));
-  const QColor bottom = kbdShadow_.isValid() ? kbdShadow_
-      : (darkTheme_ ? QColor(QStringLiteral("#222222")) : QColor(181, 186, 194));
-  const qreal padH = themed ? kbdPadH_ : (darkTheme_ ? 8.0 : 4.0);
-  const qreal radius = themed ? kbdRadius_ : (darkTheme_ ? 6.0 : 2.0);
-  const qreal borderWidth = themed ? kbdBorderWidth_ : 1.0;
-
-  painter.save();
-  painter.setRenderHint(QPainter::Antialiasing, true);
-  for (const HtmlFormatSpan& hs : htmlFormatSpans_) {
-    if (!hs.keyboard || hs.layoutEnd <= hs.layoutStart) {
-      continue;
-    }
-
+void InlineLayout::buildInlineBoxes() {
+  inlineBoxes_.clear();
+  if (!textLayout_) return;
+  const auto add = [&](qsizetype start, qsizetype end, const LayoutBox& style) {
+    const auto insets = LayoutBox::insets(style.usedBox);
     for (int i = 0; i < textLayout_->lineCount(); ++i) {
-      const QTextLine line = textLayout_->lineAt(i);
-      if (!line.isValid()) {
-        continue;
-      }
-      const int lineStart = line.textStart();
-      const int lineEnd = lineStart + line.textLength();
-      const int rangeStart = qMax(lineStart, toLayoutOffset(hs.layoutStart));
-      const int rangeEnd = qMin(lineEnd, toLayoutOffset(hs.layoutEnd));
-      if (rangeStart >= rangeEnd) {
-        continue;
-      }
-
-      const qreal x1 = line.cursorToX(rangeStart);
-      const qreal x2 = line.cursorToX(rangeEnd);
-      const QRectF rect(
-          origin.x() + qMin(x1, x2) - padH,
-          origin.y() + line.y() + 1.0,
-          qAbs(x2 - x1) + padH * 2.0,
-          qMax<qreal>(1.0, line.height() - 3.0));
-
-      const QRectF box = rect.adjusted(0.5, 0.5, -0.5, -0.5);
-      // 3D depth: phycat gives kbd a hard `box-shadow: 0 2px 0 <tint>` — a flush
-      // strip below the key in the shadow colour makes it look raised. Drawn first
-      // so the keycap body sits on top. (CSS shadow offset isn't captured; 2px
-      // matches phycat.) Only when the theme declares a kbd shadow.
-      if (themed && bottom.isValid()) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(bottom);
-        painter.drawRect(QRectF(box.left() + radius, box.bottom(), box.width() - radius * 2.0, 2.0));
-      }
-      // Keycap body: fill + uniform border.
-      painter.setPen(borderWidth > 0.0 ? QPen(border, borderWidth) : QPen(Qt::NoPen));
-      painter.setBrush(fill);
-      painter.drawRoundedRect(box, radius, radius);
-      // Bottom edge: phycat declares `border-bottom-width: 3px` for a chunky bottom.
-      if (themed && kbdBorderBottomWidth_ > 0.0) {
-        const QColor bc = kbdBorderBottomColor_.isValid() ? kbdBorderBottomColor_ : border;
-        painter.setPen(QPen(bc, kbdBorderBottomWidth_));
-        painter.drawLine(box.bottomLeft() + QPointF(radius, 0.0), box.bottomRight() + QPointF(-radius, 0.0));
-      } else if (!themed) {
-        // Legacy heuristic (built-ins): thin shadow-coloured bottom emphasis.
-        painter.setPen(QPen(bottom, darkTheme_ ? 2.0 : 1.0));
-        painter.drawLine(rect.bottomLeft() + QPointF(2.0, -0.5), rect.bottomRight() + QPointF(-2.0, -0.5));
-      }
+      const auto line = textLayout_->lineAt(i);
+      const int first = qMax(line.textStart(), toLayoutOffset(start));
+      const int last = qMin(line.textStart() + line.textLength(), toLayoutOffset(end));
+      if (first >= last) continue;
+      const qreal left = line.cursorToX(first), right = line.cursorToX(last);
+      const auto glyphs = line.naturalTextRect();
+      const QRectF rect(qMin(left, right) - insets.left(), glyphs.top() - insets.top(), qAbs(right - left) + insets.left() + insets.right(),
+                        glyphs.height() + insets.top() + insets.bottom());
+      inlineBoxes_.push_back(LayoutBox::place(style.hostKey, style.style, style.usedBox, rect, style.font));
     }
+  };
+  for (const auto& span : projection_.spans()) {
+    if (span.type != InlineType::Code || span.kind != InlineSpanKind::Text) continue;
+    const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+    if (range.valid) add(range.start, range.end, *spanStyles_.value(span.displayStart, codeStyle_));
   }
-  painter.restore();
-}
-
-QString InlineLayout::plainText() const {
-  return plainText_;
-}
-
-QString InlineLayout::visibleText() const {
-  return projection_.visibleText();
-}
-
-QString InlineLayout::displayText() const {
-  return displayText_;
-}
-
-int InlineLayout::mathAtomCount() const {
-  return mathAtoms_.size();
-}
-
-QVector<QTextLayout::FormatRange> InlineLayout::debugTextFormats(const RenderTheme& theme, const QFont& baseFont) const {
-  return textLayoutFormats(theme, baseFont);
+  for (const auto& run : htmlInlineBoxRuns_) add(run.start, run.end, run.box);
 }
 
 void InlineLayout::buildOffsetMapFromProjection() {
@@ -999,26 +909,25 @@ void InlineLayout::buildLinkBeforeAtoms() {
   }
 }
 
-void InlineLayout::buildInlineBoxSpacing(const RenderTheme& theme) {
+void InlineLayout::buildInlineBoxSpacing() {
   inlineSpacers_.clear();
   struct Edge {
     qsizetype position;
     qreal width;
   };
   QVector<Edge> edges;
-  const auto addBox = [&](qsizetype start, qsizetype end, qreal width) {
-    if (end > start && width > 0) {
-      edges.push_back({start, width});
-      edges.push_back({end, width});
-    }
+  const auto addBox = [&](qsizetype start, qsizetype end, const LayoutBox& box) {
+    if (end <= start) return;
+    const auto inset = LayoutBox::insets(box.usedBox);
+    if (inset.left() > 0) edges.push_back({start, inset.left()});
+    if (inset.right() > 0) edges.push_back({end, inset.right()});
   };
   for (const auto& span : projection_.spans()) {
     if (span.type != InlineType::Code || span.kind != InlineSpanKind::Text) continue;
     const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
-    if (range.valid) addBox(range.start, range.end, theme.inlineCodePaddingH() + theme.inlineCodeBorderWidth());
+    if (range.valid) addBox(range.start, range.end, *spanStyles_.value(span.displayStart, codeStyle_));
   }
-  for (const auto& span : htmlFormatSpans_)
-    if (span.keyboard) addBox(span.layoutStart, span.layoutEnd, theme.kbdPaddingH() + theme.kbdBorderWidth());
+  for (const auto& run : htmlInlineBoxRuns_) addBox(run.start, run.end, run.box);
   if (edges.isEmpty()) return;
   std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) { return a.position < b.position; });
   QVector<Edge> unique;
@@ -1093,10 +1002,12 @@ void InlineLayout::buildInlineBoxSpacing(const RenderTheme& theme) {
   }
 }
 
-void InlineLayout::buildHtmlFormatSpans() {
+void InlineLayout::buildHtmlFormatSpans(const RenderTheme& theme, qreal width) {
   htmlFormatSpans_.clear();
+  htmlInlineBoxRuns_.clear();
   const auto& data = projection_.htmlFormatData();
   for (const auto& hd : data) {
+    quintptr previousBoxId = 0;
     for (const auto& fs : hd.formatSpans) {
       // Map projection display offsets → layout display offsets
       const DisplayOffsetRange layoutRange =
@@ -1117,11 +1028,19 @@ void InlineLayout::buildHtmlFormatSpans() {
       hs.verticalAlignment = fs.verticalAlignment;
       hs.keyboard = fs.keyboard;
       hs.fontFamilies = fs.fontFamilies;
+      hs.font = fs.font;
+      hs.fontSet = fs.fontSet;
+      if (fs.inlineBoxId) {
+        if (previousBoxId == fs.inlineBoxId && !htmlInlineBoxRuns_.isEmpty() && htmlInlineBoxRuns_.back().end == hs.layoutStart) {
+          htmlInlineBoxRuns_.back().end = hs.layoutEnd;
+        } else {
+          const auto& style = fs.inlineBoxStyle;
+          htmlInlineBoxRuns_.push_back(
+              {hs.layoutStart, hs.layoutEnd, LayoutBox::place(style.key, style, theme.usedBoxForStyle(style, width), {}, fs.font)});
+        }
+      }
+      previousBoxId = fs.inlineBoxId;
       htmlFormatSpans_.push_back(hs);
-    }
-    // Register link ranges from inline HTML <a> tags
-    for (const auto& link : hd.links) {
-      // Links are already registered in InlineProjection via linkRanges_
     }
   }
 }
@@ -1482,6 +1401,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     // intruding into the neighbour line (e.g. an inline `$E=mc^2$` covering the
     // line above after a wrap).
     qreal minLineHeight = line.height();
+    qreal requiredAscent = line.ascent(), requiredDescent = line.descent();
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
     for (const ImageAtom& atom : imageAtoms_) {
@@ -1493,9 +1413,12 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     for (const MathAtom& atom : mathAtoms_) {
       const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
       if (atom.layout && atom.layout->valid() && atomStart >= lineStart && atomStart <= lineEnd) {
-        minLineHeight = qMax(minLineHeight, atom.layout->size.height());
+        const auto used = mathUsedBounds(*atom.layout);
+        requiredAscent = qMax(requiredAscent, -used.top());
+        requiredDescent = qMax(requiredDescent, used.bottom());
       }
     }
+    minLineHeight = qMax(minLineHeight, requiredAscent + requiredDescent);
     qreal lineHeight = std::ceil(minLineHeight * kLineHeightFactor);
     if (lineHeightMultiplier_ > 0.0) {
       // CSS `line-height: N` is N * font-size, not N * the platform font
@@ -1503,7 +1426,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       // tall compared with other renderers, especially for serif fallback fonts.
       lineHeight = std::ceil(qMax(minLineHeight, cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_)));
     }
-    line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5));
+    line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5 + requiredAscent - line.ascent()));
     height += lineHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
@@ -1723,13 +1646,12 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     switch (span.type) {
       case InlineType::Code:
-        format.setFont(theme.inlineCodeFont());
-        applyLetterSpacing(format, theme.inlineCodeFont());
-        if (theme.inlineCodeTextColor().isValid()) {
-          format.setForeground(theme.inlineCodeTextColor());
+        format.setFont(codeStyle_->font);
+        applyLetterSpacing(format, codeStyle_->font);
+        if (codeStyle_->style.paint.color.isValid()) {
+          format.setForeground(codeStyle_->style.paint.color);
         }
         if (span.kind == InlineSpanKind::Text) {
-          format.setBackground(theme.codeBackgroundColor());
         }
         break;
       case InlineType::InlineMath:
@@ -1756,6 +1678,21 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
         }
       }
       if (theme.linkOverline()) { format.setFontOverline(true); }
+    }
+    const auto computedRun = spanStyles_.constFind(span.displayStart);
+    if (computedRun != spanStyles_.cend() && span.kind == InlineSpanKind::Text && span.type != InlineType::InlineMath) {
+      const auto& run = *computedRun.value();
+      format.setFont(run.font);
+      applyLetterSpacing(format, run.font);
+      const auto& textStyle = run.style.text;
+      format.setFontUnderline(textStyle.decorationLines & 1);
+      format.setFontOverline(textStyle.decorationLines & 2);
+      format.setFontStrikeOut(textStyle.decorationLines & 4);
+      if (textStyle.decorationLines & 1) {
+        format.setUnderlineStyle(static_cast<QTextCharFormat::UnderlineStyle>(textStyle.underlineStyle));
+        if (textStyle.decorationColor.isValid()) format.setUnderlineColor(textStyle.decorationColor);
+      }
+      if (run.style.paint.color.isValid()) format.setForeground(run.style.paint.color);
     }
     const DisplayOffsetRange layoutRange = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
     if (!layoutRange.valid || layoutRange.end > displayText_.size()) {
@@ -1793,8 +1730,9 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     QFont placeholderFont = baseFont;
     const QFontMetricsF baseMetrics(baseFont);
-    if (baseMetrics.height() > 0.0 && atom.layout->size.height() > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
-      placeholderFont.setPointSizeF(baseFont.pointSizeF() * atom.layout->size.height() / baseMetrics.height());
+    const qreal usedHeight = mathUsedBounds(*atom.layout).height();
+    if (baseMetrics.height() > 0.0 && usedHeight > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
+      placeholderFont.setPointSizeF(baseFont.pointSizeF() * usedHeight / baseMetrics.height());
     }
     const QFontMetricsF placeholderMetrics(placeholderFont);
     const qreal placeholderAdvance = placeholderMetrics.horizontalAdvance(kInlineMathPlaceholder);
@@ -1858,30 +1796,11 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       continue;
     }
     QTextCharFormat format = baseFormat;
-    if (hs.bold) {
-      format.setFontWeight(QFont::Bold);
-    }
-    if (hs.italic) {
-      format.setFontItalic(true);
-    }
-    if (hs.monospace) {
-      format.setFontFamily(QStringLiteral("Courier New"));
-    }
-    if (!hs.fontFamilies.isEmpty()) format.setFontFamilies(hs.fontFamilies);
-    if (hs.keyboard) {
-      // Phase 3c: prefer the theme's `kbd { font-family }`; keep Courier New as
-      // the legacy default (built-ins + the geometry test's monospace assertion).
-      QFont keyboardFont = theme.textFontForElement(QStringLiteral("kbd"));
-      const auto* keyboardStyle = theme.elementStyle(QStringLiteral("kbd"));
-      if (!keyboardStyle || keyboardStyle->text.fontFamily.isEmpty()) keyboardFont.setFamily(QStringLiteral("Courier New"));
-      format.setFont(keyboardFont);
-      format.setForeground(kbdText_.isValid() ? kbdText_
-          : (textLayoutCodeTextColor_.isValid() ? textLayoutCodeTextColor_ : theme.textColor()));
-    }
+    if (hs.fontSet) format.setFont(hs.font);
     if (hs.color.isValid()) {
       format.setForeground(hs.color);
     }
-    if (!hs.keyboard && hs.fontSize > 0 && baseFont.pointSizeF() > 0) {
+    if (hs.fontSize > 0 && baseFont.pointSizeF() > 0) {
       format.setFontPointSize(hs.fontSize);
     }
     if (hs.verticalAlignment != QTextCharFormat::AlignNormal) {
@@ -1960,6 +1879,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
 
   for (const InlineSpacer& spacer : inlineSpacers_) {
     QFont font = baseFont;
+    font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
     font.setLetterSpacing(QFont::AbsoluteSpacing, spacer.width - QFontMetricsF(font).horizontalAdvance(QChar(0x200a)));
     QTextCharFormat format;
     format.setFont(font);

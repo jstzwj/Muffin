@@ -163,7 +163,7 @@ void testMultiLevelCounterReservesMeasuredWidth() {
   const BlockLayout* h6 = layout.block(headings.last()->id());
   require(h6->headingBeforeText() == QStringLiteral("1.1.1.1.1"),
           QStringLiteral("h6 should resolve the full counter chain"));
-  const qreal advance = h6->inlineTextOrigin(theme).x() - h6->rect().left() - theme.headingPadding(6).left();
+  const qreal advance = h6->inlineTextOrigin().x() - h6->rect().left() - theme.elementBoxStyle(QStringLiteral("h%1").arg(6)).padding.left();
   const qreal textWidth = QFontMetricsF(theme.headingFont(6)).horizontalAdvance(h6->headingBeforeText());
   require(advance > textWidth,
           QStringLiteral("counter marker advance must fit measured text plus its margin"));
@@ -179,8 +179,8 @@ void testMultiLevelCounterReservesMeasuredWidth() {
         break;
       }
     }
-    const qreal actualAdvance = block->inlineTextOrigin(theme).x() - block->rect().left() -
-                                theme.headingPadding(level).left();
+    const qreal actualAdvance =
+        block->inlineTextOrigin().x() - block->rect().left() - theme.elementBoxStyle(QStringLiteral("h%1").arg(level)).padding.left();
     const qreal expectedAdvance = QFontMetricsF(theme.headingFont(level))
                                       .horizontalAdvance(block->headingBeforeText()) + marginRight;
     require(qAbs(actualAdvance - expectedAdvance) < 0.01,

@@ -626,8 +626,6 @@ set(MUFFIN_CORE_SOURCES
   src/theme/ThemeFontDecoder.h
   src/theme/CssComputedStyleEngine.cpp
   src/theme/CssComputedStyleEngine.h
-  src/theme/CssSelectorAnalysis.cpp
-  src/theme/CssSelectorAnalysis.h
   src/theme/CssSelectorUtils.h
   src/theme/CssThemeParser.cpp
   src/theme/CssThemeParser.h
@@ -1253,6 +1251,8 @@ set(MUFFIN_UI_SOURCES
   src/math/MathSymbols.h
   src/render/BlockLayout.cpp
   src/render/BlockLayout.h
+  src/render/LayoutBox.h
+  src/render/LayoutBox.cpp
   src/render/CodeHighlight.h
   src/render/BlockLayoutBuilder.cpp
   src/render/BlockLayoutBuilder.h
@@ -1296,7 +1296,10 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssThemeMapper.h
   src/theme/CssDecorationExtractor.cpp
   src/theme/CssDecorationExtractor.h
-  src/theme/CssFlatDecl.h
+  src/theme/DocumentStyleTree.h
+  src/theme/DocumentStyleTree.cpp
+  src/theme/LegacyThemeAdapter.cpp
+  src/theme/LegacyThemeAdapter.h
   src/theme/NodeCssElement.cpp
   src/theme/NodeCssElement.h
   src/theme/CssContent.cpp
@@ -1306,6 +1309,11 @@ set(MUFFIN_UI_SOURCES
 add_library(MuffinUi ${MUFFIN_LIB_TYPE}
   ${MUFFIN_UI_SOURCES}
 )
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/themes/document-base.css")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/resources/themes/document-base.css" MUFFIN_DOCUMENT_BASE_CSS)
+configure_file(cmake/DocumentBaseStyle.h.in "${CMAKE_CURRENT_BINARY_DIR}/generated/DocumentBaseStyle.h" @ONLY)
+target_include_directories(MuffinUi PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 target_link_libraries(MuffinUi
   PUBLIC

@@ -187,7 +187,10 @@ std::vector<CssDeclaration> parseDeclarationBlock(const QString& block) {
     const int colon = findDelim(raw, 0, raw.size(), QLatin1Char(':'));
     if (colon <= 0) { continue; }  // need a property before the ':'
     CssDeclaration d;
-    d.property = raw.left(colon).trimmed().toLower();
+    d.property = raw.left(colon).trimmed();
+    // Normal property names are ASCII case-insensitive; custom property names
+    // (`--Name`) are case-sensitive by CSS definition.
+    if (!d.property.startsWith(QLatin1String("--"))) d.property = d.property.toLower();
     QString val = raw.mid(colon + 1).trimmed();
     // peel trailing !important (case-insensitive)
     const int bang = val.lastIndexOf(QLatin1Char('!'));
@@ -196,7 +199,9 @@ std::vector<CssDeclaration> parseDeclarationBlock(const QString& block) {
       val = val.left(bang).trimmed();
     }
     d.value = val;
-    if (!d.property.isEmpty() && !d.value.isEmpty()) { out.push_back(std::move(d)); }
+    if (!d.property.isEmpty() && (!d.value.isEmpty() || d.property.startsWith(QLatin1String("--")))) {
+      out.push_back(std::move(d));
+    }
   }
   return out;
 }
@@ -549,81 +554,209 @@ QStringList CssThemeParser::localResourcePaths(const QString& text, const QStrin
   return out;
 }
 
-QString CssThemeParser::resolveVars(const QString& value, const QHash<QString, QString>& variables) {
-  // Iteratively replace var(--x [, fallback]) with resolved text. Bounded loops
-  // guard against malformed input / cycles.
-  QString out = value;
-  for (int guard = 0; guard < 64; ++guard) {
-    const int idx = out.indexOf(QStringLiteral("var("), 0, Qt::CaseInsensitive);
-    if (idx < 0) { break; }
-    const int close = findDelim(out, idx + 4, out.size(), QLatin1Char(')'));
-    if (close < 0) { break; }
-    const QString inside = out.mid(idx + 4, close - (idx + 4)).trimmed();
-    // split name [, fallback] on first top-level comma
-    const int comma = findDelim(inside, 0, inside.size(), QLatin1Char(','));
-    const QString name = (comma < 0 ? inside : inside.left(comma)).trimmed().toLower();
-    const QString fallback = (comma < 0 ? QString() : inside.mid(comma + 1).trimmed());
-    QString replacement;
-    auto it = variables.constFind(name);
-    if (it != variables.constEnd()) {
-      replacement = it.value();
-    } else if (!fallback.isEmpty()) {
-      replacement = fallback;
+namespace {
+using VariableLookup = std::function<std::optional<QString>(const QString&)>;
+std::optional<QString> substituteTokens(const QString& value, const VariableLookup& lookup, int depth = 0) {
+  if (depth > 64) return std::nullopt;
+  QString out;
+  for (int i = 0; i < value.size();) {
+    if (value[i] == '\'' || value[i] == '"') {
+      const int start = i;
+      tryReadString(value, i, value.size());
+      out += value.mid(start, i - start);
+      continue;
     }
-    out = out.left(idx) + replacement + out.mid(close + 1);
+    if (value.mid(i, 4).compare(QLatin1String("var("), Qt::CaseInsensitive) != 0 ||
+        (i > 0 && (value[i - 1].isLetterOrNumber() || value[i - 1] == '-'))) {
+      out += value[i++];
+      continue;
+    }
+    const int close = findDelim(value, i + 4, value.size(), QLatin1Char(')'));
+    if (close < 0) return std::nullopt;
+    const QString inside = value.mid(i + 4, close - i - 4);
+    const int comma = findDelim(inside, 0, inside.size(), QLatin1Char(','));
+    const QString name = (comma < 0 ? inside : inside.left(comma)).trimmed();
+    if (!name.startsWith(QLatin1String("--")) || name.contains(QLatin1Char(' '))) return std::nullopt;
+    auto replacement = lookup(name);
+    if (!replacement && comma >= 0) replacement = substituteTokens(inside.mid(comma + 1).trimmed(), lookup, depth + 1);
+    if (!replacement) return std::nullopt;
+    out += *replacement;
+    i = close + 1;
   }
   return out;
 }
+}  // namespace
+
+QHash<QString, QString> CssThemeParser::computeCustomProperties(const QHash<QString, QString>& variables) {
+  // Find dependency cycles first, including references inside fallbacks. A
+  // fallback cannot make a cyclic custom property valid.
+  QHash<QString, QStringList> dependencies;
+  static const QRegularExpression reference(QStringLiteral(R"(var\(\s*(--[-\w]+))"), QRegularExpression::CaseInsensitiveOption);
+  for (auto it = variables.cbegin(); it != variables.cend(); ++it) {
+    const QString& value = it.value();
+    for (int i = 0; i < value.size();) {
+      if (value[i] == QLatin1Char('"') || value[i] == QLatin1Char(0x27)) {
+        tryReadString(value, i, value.size());
+        continue;
+      }
+      const auto match = reference.match(value, i, QRegularExpression::NormalMatch, QRegularExpression::AnchorAtOffsetMatchOption);
+      if (match.hasMatch()) {
+        dependencies[it.key()].push_back(match.captured(1));
+        i = match.capturedEnd();
+      } else
+        ++i;
+    }
+  }
+  QSet<QString> visited, cyclic;
+  QStringList stack;
+  std::function<void(const QString&)> visit = [&](const QString& name) {
+    const int cycleStart = stack.indexOf(name);
+    if (cycleStart >= 0) {
+      for (int i = cycleStart; i < stack.size(); ++i) cyclic.insert(stack[i]);
+      return;
+    }
+    if (visited.contains(name)) return;
+    stack.push_back(name);
+    for (const auto& dep : dependencies.value(name)) visit(dep);
+    stack.removeLast();
+    visited.insert(name);
+  };
+  for (auto it = variables.cbegin(); it != variables.cend(); ++it) visit(it.key());
+  QHash<QString, QString> computed;
+  QSet<QString> invalid = cyclic;
+  std::function<std::optional<QString>(const QString&)> resolve = [&](const QString& name) -> std::optional<QString> {
+    if (computed.contains(name)) return computed.value(name);
+    if (invalid.contains(name) || !variables.contains(name)) return std::nullopt;
+    const auto value = substituteTokens(variables.value(name), resolve);
+    if (!value) {
+      invalid.insert(name);
+      return std::nullopt;
+    }
+    computed.insert(name, *value);
+    return value;
+  };
+  for (auto it = variables.cbegin(); it != variables.cend(); ++it) resolve(it.key());
+  return computed;
+}
+
+std::optional<QString> CssThemeParser::substituteVars(const QString& value, const QHash<QString, QString>& variables) {
+  return substituteTokens(value, [&](const QString& name) -> std::optional<QString> {
+    const auto it = variables.constFind(name);
+    return it == variables.cend() ? std::nullopt : std::optional<QString>(it.value());
+  });
+}
+
+QString CssThemeParser::resolveVars(const QString& value, const QHash<QString, QString>& variables) {
+  if (!value.contains(QStringLiteral("var("), Qt::CaseInsensitive)) return value;
+  return substituteVars(value, computeCustomProperties(variables)).value_or(QString());
+}
 
 bool CssThemeSheet::mediaMatches(const QString& raw, const CssEnvironment& env) {
-  static const QRegularExpression feature(QStringLiteral(R"(\(([^:()]+)(?::\s*([^()]+))?\))"));
-  for (QString branch : CssThemeParser::splitTopLevelCommas(raw)) {
-    branch = branch.simplified().toLower();
-    bool negate = branch.startsWith(QStringLiteral("not "));
-    if (negate) branch = branch.mid(4).trimmed();
-    if (branch.startsWith(QStringLiteral("only "))) branch = branch.mid(5).trimmed();
-    const QString medium = branch.section(QLatin1Char(' '), 0, 0);
-    bool matches = true;
-    if (!branch.startsWith(QLatin1Char('('))) {
-      matches = medium == QStringLiteral("all") || (medium == QStringLiteral("screen") && !env.print) ||
-                (medium == QStringLiteral("print") && env.print);
-      branch = branch.mid(medium.size()).trimmed();
-      if (branch.startsWith(QStringLiteral("and "))) branch = branch.mid(4).trimmed();
+  const auto actualValue = [&](const QString& name) -> qreal {
+    if (name == QLatin1String("width")) return env.viewportWidth;
+    if (name == QLatin1String("height")) return env.viewportHeight;
+    if (name == QLatin1String("resolution")) return env.resolutionDppx;
+    return -1;
+  };
+  const auto number = [&](QString value, const QString& name) -> std::optional<qreal> {
+    static const QRegularExpression re(QStringLiteral(R"(^([0-9]*\.?[0-9]+)(px|em|rem|dppx|dpi|dpcm)?$)"));
+    const auto m = re.match(value.trimmed());
+    if (!m.hasMatch()) return std::nullopt;
+    qreal result = m.captured(1).toDouble();
+    const auto unit = m.captured(2);
+    if (name == QLatin1String("resolution")) {
+      if (unit == QLatin1String("dpi"))
+        result /= 96;
+      else if (unit == QLatin1String("dpcm"))
+        result *= 2.54 / 96;
+      else if (unit != QLatin1String("dppx"))
+        return std::nullopt;
+    } else {
+      if (unit == QLatin1String("em") || unit == QLatin1String("rem"))
+        result *= 16;
+      else if (unit != QLatin1String("px") && !(unit.isEmpty() && result == 0))
+        return std::nullopt;
     }
-    auto it = feature.globalMatch(branch);
-    QString remainder = branch;
-    while (it.hasNext()) {
-      const auto m = it.next();
-      const QString name = m.captured(1).trimmed(), value = m.captured(2).trimmed();
-      bool ok = false;
-      if (name == QStringLiteral("prefers-color-scheme")) {
-        matches = matches && ((value == QStringLiteral("dark") && env.dark) || (value == QStringLiteral("light") && !env.dark));
-      } else if (name == QStringLiteral("orientation")) {
-        matches = matches && ((value == QStringLiteral("landscape") && env.viewportWidth >= env.viewportHeight) ||
-                              (value == QStringLiteral("portrait") && env.viewportWidth < env.viewportHeight));
-      } else {
-        static const QRegularExpression length(QStringLiteral(R"(^([0-9]*\.?[0-9]+)(px|em|rem|dppx|dpi)?$)"));
-        const auto lm = length.match(value);
-        qreal wanted = lm.captured(1).toDouble(&ok);
-        if (lm.captured(2) == QStringLiteral("em") || lm.captured(2) == QStringLiteral("rem")) wanted *= 16.0;
-        if (lm.captured(2) == QStringLiteral("dpi")) wanted /= 96.0;
-        QString base = name;
-        if (base.startsWith(QStringLiteral("min-")) || base.startsWith(QStringLiteral("max-"))) base = base.mid(4);
-        const qreal actual = base == QStringLiteral("width")        ? env.viewportWidth
-                             : base == QStringLiteral("height")     ? env.viewportHeight
-                             : base == QStringLiteral("resolution") ? env.resolutionDppx
-                                                                    : -1.0;
-        matches = matches && ok && actual >= 0.0 &&
-                  (name.startsWith(QStringLiteral("min-"))   ? actual >= wanted
-                   : name.startsWith(QStringLiteral("max-")) ? actual <= wanted
-                                                             : qAbs(actual - wanted) < 0.001);
+    return result;
+  };
+  const auto compare = [](qreal left, const QString& op, qreal right) {
+    if (op == QLatin1String("<")) return left < right;
+    if (op == QLatin1String("<=")) return left <= right;
+    if (op == QLatin1String(">")) return left > right;
+    if (op == QLatin1String(">=")) return left >= right;
+    return qAbs(left - right) < 0.001;
+  };
+  const auto feature = [&](const QString& expression) {
+    const int colon = expression.indexOf(':');
+    if (colon >= 0) {
+      const QString name = expression.left(colon).trimmed(), value = expression.mid(colon + 1).trimmed();
+      if (name == QLatin1String("prefers-color-scheme")) return value == (env.dark ? QLatin1String("dark") : QLatin1String("light"));
+      if (name == QLatin1String("prefers-reduced-motion"))
+        return value == (env.reducedMotion ? QLatin1String("reduce") : QLatin1String("no-preference"));
+      if (name == QLatin1String("hover") || name == QLatin1String("any-hover"))
+        return value == (env.hoverAvailable ? QLatin1String("hover") : QLatin1String("none"));
+      if (name == QLatin1String("pointer") || name == QLatin1String("any-pointer")) return value == env.pointer;
+      if (name == QLatin1String("orientation"))
+        return value == (env.viewportWidth > env.viewportHeight ? QLatin1String("landscape") : QLatin1String("portrait"));
+      const bool minimum = name.startsWith(QLatin1String("min-")), maximum = name.startsWith(QLatin1String("max-"));
+      const QString base = minimum || maximum ? name.mid(4) : name;
+      const auto wanted = number(value, base);
+      const qreal actual = actualValue(base);
+      return wanted && actual >= 0 &&
+             compare(actual,
+                     minimum   ? QStringLiteral(">=")
+                     : maximum ? QStringLiteral("<=")
+                               : QStringLiteral("="),
+                     *wanted);
+    }
+    const qreal actual = actualValue(expression);
+    if (actual >= 0) return actual > 0;
+    static const QRegularExpression range(QStringLiteral(R"(^(.+?)\s*(<=|>=|<|>|=)\s*(.+?)(?:\s*(<=|>=|<|>|=)\s*(.+))?$)"));
+    const auto m = range.match(expression);
+    if (!m.hasMatch()) return false;
+    const QString left = m.captured(1).trimmed(), middle = m.captured(3).trimmed(), right = m.captured(5).trimmed();
+    if (actualValue(left) >= 0 && right.isEmpty()) {
+      const auto wanted = number(middle, left);
+      return wanted && compare(actualValue(left), m.captured(2), *wanted);
+    }
+    const auto low = number(left, middle);
+    if (!low || actualValue(middle) < 0 || !compare(*low, m.captured(2), actualValue(middle))) return false;
+    if (right.isEmpty()) return true;
+    const auto high = number(right, middle);
+    return high && compare(actualValue(middle), m.captured(4), *high);
+  };
+  std::function<bool(QString, int)> evaluate = [&](QString query, int depth) {
+    if (depth > 32) return false;
+    query = query.trimmed();
+    // A media-query-level 'not' negates the complete type + condition list.
+    if (query.startsWith(QLatin1String("not screen")) || query.startsWith(QLatin1String("not print")) ||
+        query.startsWith(QLatin1String("not all")))
+      return !evaluate(query.mid(4), depth + 1);
+    // Split logical operators at this nesting level, keeping features intact.
+    for (const QString& op : {QStringLiteral(" or "), QStringLiteral(" and ")}) {
+      int nesting = 0;
+      for (int i = 0; i < query.size(); ++i) {
+        if (query[i] == '(')
+          ++nesting;
+        else if (query[i] == ')')
+          --nesting;
+        if (nesting == 0 && query.mid(i, op.size()) == op) {
+          const bool a = evaluate(query.left(i), depth + 1), b = evaluate(query.mid(i + op.size()), depth + 1);
+          return op == QLatin1String(" or ") ? a || b : a && b;
+        }
       }
-      remainder.remove(m.captured());
     }
-    remainder.replace(QStringLiteral("and"), QString());
-    if (!remainder.trimmed().isEmpty()) continue;  // Unsupported grammar never becomes unconditional.
-    if (negate ? !matches : matches) return true;
-  }
+    if (query.startsWith(QLatin1String("not "))) return !evaluate(query.mid(4), depth + 1);
+    if (query.startsWith(QLatin1String("only "))) return evaluate(query.mid(5), depth + 1);
+    if (query.startsWith('(') && query.endsWith(')')) {
+      const QString inner = query.mid(1, query.size() - 2).trimmed();
+      return inner.startsWith('(') || inner.startsWith(QLatin1String("not ")) ? evaluate(inner, depth + 1) : feature(inner);
+    }
+    return query == QLatin1String("all") || (query == QLatin1String("screen") && !env.print) ||
+           (query == QLatin1String("print") && env.print);
+  };
+  for (const auto& branch : CssThemeParser::splitTopLevelCommas(raw.simplified().toLower()))
+    if (evaluate(branch, 0)) return true;
   return false;
 }
 

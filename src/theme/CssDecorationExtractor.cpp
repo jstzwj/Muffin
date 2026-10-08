@@ -1,10 +1,7 @@
 #include "theme/CssDecorationExtractor.h"
 
-#include "theme/CssSelectorUtils.h"
 
 #include "theme/CssContent.h"
-#include "theme/CssFlatDecl.h"
-#include "theme/CssSelectorAnalysis.h"
 #include "theme/CssThemeParser.h"
 #include "theme/CssValueParser.h"
 #include "theme/ThemeDefinition.h"
@@ -26,15 +23,6 @@
 namespace muffin {
 
 namespace {
-
-// Cascade candidate for bestValue(): a (value, important, specificity, source-order) tuple
-// compared by importance → specificity → order (last wins on ties, mirroring CSS).
-struct Candidate {
-  QString rawValue;
-  bool important = false;
-  int specificity = 0;  // from FlatDecl.spec (CssSelectorAnalysis)
-  int order = 0;
-};
 
 // --- data: URI decoding (for url(data:image/svg+xml,…) pseudo-element icons) ---
 
@@ -103,96 +91,62 @@ qreal transitionMs(const QString& raw) {
 
 }  // namespace
 
-// --- flat-list query primitives (declared in CssFlatDecl.h) ------------------
-
-// Best raw (un-resolved) value among declarations matching one of `properties`
-// whose selector satisfies `target`. Returns empty if none.
-QString bestValue(const std::vector<FlatDecl>& flat, const std::vector<QString>& properties,
-                  const std::function<bool(const SelInfo&)>& target) {
-  Candidate best;
-  bool have = false;
-  for (const FlatDecl& fd : flat) {
-    if (!target(fd.info)) { continue; }
-    if (std::find(properties.begin(), properties.end(), fd.property) == properties.end()) { continue; }
-    Candidate c{fd.value, fd.important, fd.spec, fd.order};
-    if (!have || cascadeBeats(c, best)) { best = c; have = true; }
+namespace {
+QString propertyValue(const CssComputedStyle& style, std::initializer_list<QString> properties) {
+  for (const auto& property : properties) {
+    const auto value = style.resolvedValue(property);
+    if (!value.isEmpty()) return value;
   }
-  return have ? best.rawValue : QString();
+  return {};
 }
-
-QColor colorToken(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars,
-                  const std::vector<QString>& properties, const std::function<bool(const SelInfo&)>& target) {
-  return extractColor(bestValue(flat, properties, target), vars);
+QColor propertyColor(const CssComputedStyle& style, std::initializer_list<QString> properties) {
+  return extractColor(propertyValue(style, properties), style.customProperties());
 }
-
-// --- ::before/::after capture → PseudoElementRule ----------------------------
-// flatten() keeps pseudo-element rules; group them by host and resolve each into
-// a paint recipe. Host = "#write" | tag | ".md-fences" (skip when unanchored).
-
-std::vector<FlatDecl> filterPseudoFlat(const std::vector<FlatDecl>& flat, const QString& host, const QString& pseudo) {
-  std::vector<FlatDecl> out;
-  for (const FlatDecl& fd : flat) {
-    if (fd.info.pseudoElement != pseudo) { continue; }
-    if (pseudoHostKey(fd.info) != host) { continue; }
-    out.push_back(fd);
-  }
-  return out;
-}
+}  // namespace
 
 // Nested-list guide line from a `li::before { border-left: …; left; top; height:
 // calc(100% - Npx) }` rule. phycat draws the per-item vertical tree line this way;
 // it is a list decoration rather than a generic pseudo marker, so it gets its own
 // model. present ⇒ the theme styled it (valid colour + positive width).
-ListGuide extractListGuide(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars, qreal bodyPx) {
+ListGuide extractListGuide(const CssComputedStyle& sub) {
+  const auto& vars = sub.customProperties();
+  const qreal bodyPx = sub.fontSizePx * sub.textScale;
   ListGuide g;
-  const std::vector<FlatDecl> sub = filterPseudoFlat(flat, QStringLiteral("li"), QStringLiteral("before"));
-  if (sub.empty()) { return g; }
-  const auto allPred = [](const SelInfo&) { return true; };
-  const QString blColorRaw = bestValue(sub, {QStringLiteral("border-left-color"), QStringLiteral("border-left"),
-                                              QStringLiteral("border-color"), QStringLiteral("border")}, allPred);
-  const QString blWidthRaw = bestValue(sub, {QStringLiteral("border-left-width"), QStringLiteral("border-left"),
-                                              QStringLiteral("border-width"), QStringLiteral("border")}, allPred);
+  const QString blColorRaw = sub.resolvedValue(QStringLiteral("border-left-color"));
+  const QString blWidthRaw = sub.resolvedValue(QStringLiteral("border-left-width"));
   g.color = extractColor(blColorRaw, vars);
   g.width = borderWidthPx(blWidthRaw, vars, bodyPx);
-  g.leftOffset = lengthToPx(bestValue(sub, {QStringLiteral("left")}, allPred), vars, bodyPx);
-  const QString topRaw = bestValue(sub, {QStringLiteral("top")}, allPred);
+  g.leftOffset = lengthToPx(propertyValue(sub, {QStringLiteral("left")}), vars, bodyPx);
+  const QString topRaw = propertyValue(sub, {QStringLiteral("top")});
   if (!topRaw.isEmpty()) { g.topInset = lengthToPx(topRaw, vars, bodyPx); }
-  g.bottomInset = parseCalcPercentMinusPx(bestValue(sub, {QStringLiteral("height")}, allPred), vars, bodyPx);
+  g.bottomInset = parseCalcPercentMinusPx(propertyValue(sub, {QStringLiteral("height")}), vars, bodyPx);
   g.present = g.color.isValid() && g.width > 0.0;
   return g;
 }
 
-std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& flat,
-                                                   const QHash<QString, QString>& vars,
-                                                   const std::function<qreal(const QString&)>& emPxForHost) {
-  struct Key { QString host; QString pseudo; };
-  std::vector<Key> keys;
-  const auto seen = [&](const QString& h, const QString& p) {
-    for (const Key& k : keys) { if (k.host == h && k.pseudo == p) { return true; } }
-    return false;
-  };
-  for (const FlatDecl& fd : flat) {
-    if (fd.info.pseudoElement != QStringLiteral("before") && fd.info.pseudoElement != QStringLiteral("after")) { continue; }
-    const QString h = pseudoHostKey(fd.info);
-    if (h.isEmpty()) { continue; }
-    // `li::before` is the nested-list guide-line channel, consumed exclusively by
-    // extractListGuide → decorations.listGuide. No renderer paints a generic `li`
-    // pseudo (paintPseudoDecorations is only called for headings/blockquote), so
-    // emitting one here is dead data — skip it. (`li::after` is untouched.)
-    if (h == QStringLiteral("li") && fd.info.pseudoElement == QStringLiteral("before")) { continue; }
-    if (!seen(h, fd.info.pseudoElement)) { keys.push_back({h, fd.info.pseudoElement}); }
-  }
+std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles& styles) {
   std::vector<PseudoElementRule> out;
-  const auto allPred = [](const SelInfo&) { return true; };
-  for (const Key& k : keys) {
-    const std::vector<FlatDecl> sub = filterPseudoFlat(flat, k.host, k.pseudo);
-    if (sub.empty()) { continue; }
-    const qreal emPx = emPxForHost(k.host);
+  QStringList keys = styles.keys();
+  keys.sort();
+  for (const auto& key : keys) {
+    const qsizetype split = key.indexOf(QStringLiteral("::"));
+    if (split < 0) continue;
+    struct Key {
+      QString host;
+      QString pseudo;
+    };
+    const Key k{key.left(split), key.mid(split + 2)};
+    if (k.pseudo != QStringLiteral("before") && k.pseudo != QStringLiteral("after")) continue;
+    if (k.host == QStringLiteral("li") && k.pseudo == QStringLiteral("before")) continue;
+    const auto& sub = styles.constFind(key).value();
+    if (!sub.hasProperty(QStringLiteral("content"))) continue;
+    const auto& vars = sub.customProperties();
+    const qreal emPx = sub.fontSizePx * sub.textScale;
     PseudoElementRule rule;
     rule.host = k.host;
     rule.pseudo = k.pseudo;
     rule.present = true;
-    const QString contentRaw = bestValue(sub, {QStringLiteral("content")}, allPred);
+    const QString contentRaw = propertyValue(sub, {QStringLiteral("content")});
     QString content = CssThemeParser::resolveVars(contentRaw, vars).trimmed();
     if (content.size() >= 2 && ((content.front() == QLatin1Char('"') && content.back() == QLatin1Char('"')) ||
                                 (content.front() == QLatin1Char('\'') && content.back() == QLatin1Char('\'')))) {
@@ -213,18 +167,18 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     // yields an all-Literal vector (the painter still draws `rule.content` when
     // no counter token is present — see DecorationPainter's resolved-text branch).
     rule.contentTokens = parseContentTokens(content);
-    rule.color = colorToken(sub, vars, {QStringLiteral("color")}, allPred);
-    rule.backgroundColor = colorToken(sub, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, allPred);
-    const QString bgImg = bestValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")}, allPred);
+    rule.color = propertyColor(sub, {QStringLiteral("color")});
+    rule.backgroundColor = propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
+    const QString bgImg = propertyValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")});
     rule.background = parseGradientSpec(bgImg, vars);
-    const QString maskImg = bestValue(sub, {QStringLiteral("mask-image"), QStringLiteral("-webkit-mask-image"),
-                                             QStringLiteral("mask"), QStringLiteral("-webkit-mask")}, allPred);
+    const QString maskImg = propertyValue(
+        sub, {QStringLiteral("mask-image"), QStringLiteral("-webkit-mask-image"), QStringLiteral("mask"), QStringLiteral("-webkit-mask")});
     rule.maskPattern = parseGradientSpec(maskImg, vars);
     rule.maskTint = rule.backgroundColor.isValid() ? rule.backgroundColor
-                                                   : colorToken(sub, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, allPred);
-    const QString opacityRaw = bestValue(sub, {QStringLiteral("opacity")}, allPred);
+                                                   : propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
+    const QString opacityRaw = propertyValue(sub, {QStringLiteral("opacity")});
     if (!opacityRaw.isEmpty()) { rule.opacity = opacityValue(opacityRaw, vars); }
-    const QString maskSize = bestValue(sub, {QStringLiteral("mask-size"), QStringLiteral("-webkit-mask-size")}, allPred);
+    const QString maskSize = propertyValue(sub, {QStringLiteral("mask-size"), QStringLiteral("-webkit-mask-size")});
     if (!maskSize.isEmpty()) {
       const QStringList ms = splitTopLevelSpaces(CssThemeParser::resolveVars(maskSize, vars));
       if (!ms.isEmpty()) {
@@ -236,8 +190,8 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     // Keep the var-resolved raw width/height so the painter can resolve a `%`
     // against the host box later (map-time `lengthToPx` is em-relative, which is
     // wrong for box-relative `%` like phycat's `h3::before { height: 61% }`).
-    const QString widthRaw = bestValue(sub, {QStringLiteral("width")}, allPred);
-    const QString heightRaw = bestValue(sub, {QStringLiteral("height")}, allPred);
+    const QString widthRaw = propertyValue(sub, {QStringLiteral("width")});
+    const QString heightRaw = propertyValue(sub, {QStringLiteral("height")});
     rule.sizeRawWidth = CssThemeParser::resolveVars(widthRaw, vars).trimmed();
     rule.sizeRawHeight = CssThemeParser::resolveVars(heightRaw, vars).trimmed();
     const qreal w = lengthToPx(widthRaw, vars, emPx);
@@ -245,33 +199,36 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     if (w > 0 || h > 0) { rule.size = QSizeF(w, h); }
     // Phase 2b geometry: position/border-radius/outline-border/margin for
     // heading ::before/::after markers (phycat h3 left bar, h4/h5 discs, etc.).
-    const QString posRaw = CssThemeParser::resolveVars(bestValue(sub, {QStringLiteral("position")}, allPred), vars).trimmed().toLower();
+    const QString posRaw = CssThemeParser::resolveVars(propertyValue(sub, {QStringLiteral("position")}), vars).trimmed().toLower();
     rule.absolute = (posRaw == QStringLiteral("absolute"));
-    rule.insets.setLeft(lengthToPx(bestValue(sub, {QStringLiteral("left")}, allPred), vars, emPx));
+    rule.insets.setLeft(lengthToPx(propertyValue(sub, {QStringLiteral("left")}), vars, emPx));
     // `top` carries its own sentinel slot so the painter can tell an explicit
     // top:0 from "no top declared" (QMarginsF defaults every side to 0). `font-size`
     // drives pseudo text size (blockquote ✨ at font-size:20px); 0 ⇒ inherit host font.
-    const QString topRaw = bestValue(sub, {QStringLiteral("top")}, allPred);
+    const QString topRaw = propertyValue(sub, {QStringLiteral("top")});
     if (!topRaw.isEmpty()) { rule.insetsTop = lengthToPx(topRaw, vars, emPx); }
-    rule.fontSizePx = lengthToPx(bestValue(sub, {QStringLiteral("font-size")}, allPred), vars, emPx);
-    rule.borderRadius = lengthToPx(bestValue(sub, {QStringLiteral("border-radius")}, allPred), vars, emPx);
-    const QString bord = bestValue(sub, {QStringLiteral("border"), QStringLiteral("border-color")}, allPred);
+    rule.fontSizePx = emPx;
+    rule.borderRadius = lengthToPx(propertyValue(sub, {QStringLiteral("border-radius")}), vars, emPx);
+    const QString bord = propertyValue(sub, {QStringLiteral("border"), QStringLiteral("border-color")});
     rule.borderColor = extractColor(bord, vars);
-    rule.borderWidth = borderWidthPx(bord, vars, emPx);
-    const QMarginsF pmargin = boxToMarginsPx(bestValue(sub, {QStringLiteral("margin")}, allPred), vars, emPx);
+    rule.borderWidth = sub.resolvedValue(QStringLiteral("border-top-style")) == QStringLiteral("none")
+                           ? 0
+                           : borderWidthPx(sub.resolvedValue(QStringLiteral("border-top-width")), vars, emPx);
+    const QMarginsF pmargin = boxToMarginsPx(propertyValue(sub, {QStringLiteral("margin")}), vars, emPx);
     qreal marginLeft = pmargin.left();
     qreal marginRight = pmargin.right();
-    const QString mright = bestValue(sub, {QStringLiteral("margin-right")}, allPred);
+    const QString mright = propertyValue(sub, {QStringLiteral("margin-right")});
     if (!mright.isEmpty()) { marginRight = lengthToPx(mright, vars, emPx); }
-    const QString mleft = bestValue(sub, {QStringLiteral("margin-left")}, allPred);
+    const QString mleft = propertyValue(sub, {QStringLiteral("margin-left")});
     if (!mleft.isEmpty()) { marginLeft = lengthToPx(mleft, vars, emPx); }
     rule.marginLeft = marginLeft;
     rule.marginRight = marginRight;
-    const QString bb = bestValue(sub,
-        {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color"),
-         QStringLiteral("border-color"), QStringLiteral("border")}, allPred);
+    const QString bb = propertyValue(sub, {QStringLiteral("border-bottom"), QStringLiteral("border-bottom-color"),
+                                           QStringLiteral("border-color"), QStringLiteral("border")});
     rule.borderBottomColor = extractColor(bb, vars);
-    rule.borderBottomWidth = borderWidthPx(bb, vars, emPx);
+    rule.borderBottomWidth = sub.resolvedValue(QStringLiteral("border-bottom-style")) == QStringLiteral("none")
+                                 ? 0
+                                 : borderWidthPx(sub.resolvedValue(QStringLiteral("border-bottom-width")), vars, emPx);
     const QByteArray contentSvg = extractDataUri(CssThemeParser::resolveVars(contentRaw, vars));
     const QByteArray bgSvg = extractDataUri(CssThemeParser::resolveVars(bgImg, vars));
     const QByteArray maskSvg = extractDataUri(CssThemeParser::resolveVars(maskImg, vars));
@@ -279,6 +236,10 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
     // An icon sourced from `mask:` is an alpha shape tinted with the
     // background-color (e.g. phycat's link ::before); render recoloured, not as-is.
     rule.svgFromMask = !maskSvg.isEmpty() && rule.svgData == maskSvg;
+    const auto hover = styles.value(key + QStringLiteral(":hover")).resolvedValue(QStringLiteral("width"));
+    const auto focus = styles.value(key + QStringLiteral(":focus")).resolvedValue(QStringLiteral("width"));
+    if (hover != rule.sizeRawWidth) rule.hoverWidthRaw = hover;
+    if (focus != rule.sizeRawWidth) rule.focusWidthRaw = focus;
     out.push_back(std::move(rule));
   }
   return out;
@@ -287,9 +248,7 @@ std::vector<PseudoElementRule> extractPseudoRules(const std::vector<FlatDecl>& f
 // Host element OWN background-image gradients (not pseudos). Only gradients are
 // captured here — solid background-colours remain on the existing theme tokens
 // (codeBackground/highlight/blockquoteBackground/…) so they aren't double-painted.
-std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatDecl>& flat,
-                                                          const QHash<QString, QString>& vars,
-                                                          qreal emPx) {
+std::vector<ElementBackground> extractElementBackgrounds(const ComputedDecorationStyles& styles) {
   static const std::vector<QString> hosts = {
       QStringLiteral("h1"), QStringLiteral("h2"), QStringLiteral("h3"), QStringLiteral("h4"),
       QStringLiteral("h5"), QStringLiteral("h6"), QStringLiteral("blockquote"), QStringLiteral("hr"),
@@ -297,10 +256,10 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
       QStringLiteral("a"), QStringLiteral("li")};
   std::vector<ElementBackground> out;
   for (const QString& host : hosts) {
-    const auto pred = [&host](const SelInfo& s) {
-      return s.pseudoElement.isEmpty() && !s.hover && !s.focus && !s.active && !s.visited && !s.mdFocus && s.tag == host;
-    };
-    const QString bgImg = bestValue(flat, {QStringLiteral("background-image"), QStringLiteral("background")}, pred);
+    const auto sub = styles.value(host);
+    const auto& vars = sub.customProperties();
+    const qreal emPx = sub.fontSizePx * sub.textScale;
+    const QString bgImg = propertyValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")});
     const GradientSpec grad = parseGradientSpec(bgImg, vars);
     // Phase 2c: a host may carry a rounded pill / top hairline WITHOUT a gradient
     // (e.g. a heading with only `border-top` or `border-radius`). Capture the box
@@ -308,8 +267,8 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
     // when there is nothing decorative at all (preserves the built-in "no host
     // gradient → no entry" contract, since built-ins use border-bottom, not
     // border-top/border-radius, on these hosts).
-    const qreal borderRadius = lengthToPx(bestValue(flat, {QStringLiteral("border-radius")}, pred), vars, emPx);
-    const QString bt = bestValue(flat, {QStringLiteral("border-top"), QStringLiteral("border-top-color")}, pred);
+    const qreal borderRadius = lengthToPx(propertyValue(sub, {QStringLiteral("border-radius")}), vars, emPx);
+    const QString bt = propertyValue(sub, {QStringLiteral("border-top"), QStringLiteral("border-top-color")});
     const QColor borderTopColor = extractColor(bt, vars);
     const qreal borderTopWidth = borderWidthPx(bt, vars, emPx);
     const bool hasBoxDecoration = borderRadius > 0.0 || (borderTopColor.isValid() && borderTopWidth > 0.0);
@@ -317,7 +276,7 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
     ElementBackground eb;
     eb.host = host;
     eb.gradient = grad;
-    eb.color = colorToken(flat, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, pred);
+    eb.color = propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
     eb.opacity = 1.0;
     eb.borderRadius = borderRadius;
     eb.borderTopColor = borderTopColor;
@@ -329,21 +288,27 @@ std::vector<ElementBackground> extractElementBackgrounds(const std::vector<FlatD
 }
 
 // Tractable :hover subset: box-shadow glow (colour + blur) + background tint.
-std::vector<HoverEffect> extractHoverEffects(const std::vector<FlatDecl>& flatHover, const QHash<QString, QString>& vars) {
+std::vector<HoverEffect> extractHoverEffects(const ComputedDecorationStyles& styles) {
   static const std::vector<QString> hosts = {QStringLiteral("h1"), QStringLiteral("h2"), QStringLiteral("h3"),
       QStringLiteral("h4"), QStringLiteral("h5"), QStringLiteral("h6"), QStringLiteral("blockquote"),
       QStringLiteral("pre"), QStringLiteral("code"), QStringLiteral("mark"), QStringLiteral("a"), QStringLiteral("li")};
   std::vector<HoverEffect> out;
   for (const QString& host : hosts) {
-    const auto pred = [&host](const SelInfo& s) { return s.tag == host; };
+    const auto sub = styles.value(host);
+    const auto& vars = sub.customProperties();
+    const qreal emPx = sub.fontSizePx * sub.textScale;
+    const auto hovered = styles.value(host + QStringLiteral(":hover"));
+    if (hovered.resolvedValue(QStringLiteral("box-shadow")) == sub.resolvedValue(QStringLiteral("box-shadow")) &&
+        hovered.resolvedValue(QStringLiteral("background-color")) == sub.resolvedValue(QStringLiteral("background-color")))
+      continue;
     HoverEffect he;
     he.host = host;
-    const QString shadow = bestValue(flatHover, {QStringLiteral("box-shadow")}, pred);
+    const QString shadow = propertyValue(hovered, {QStringLiteral("box-shadow")});
     if (!shadow.isEmpty() && !shadow.contains(QStringLiteral("none"))) {
       he.glowColor = extractColor(shadow, vars);
       he.glowBlur = shadowBlurPx(shadow, vars);
     }
-    he.bgTint = colorToken(flatHover, vars, {QStringLiteral("background-color"), QStringLiteral("background")}, pred);
+    he.bgTint = propertyColor(hovered, {QStringLiteral("background-color"), QStringLiteral("background")});
     if (!he.glowColor.isValid() && !he.bgTint.isValid()) { continue; }
     he.present = true;
     out.push_back(std::move(he));
@@ -351,16 +316,16 @@ std::vector<HoverEffect> extractHoverEffects(const std::vector<FlatDecl>& flatHo
   return out;
 }
 
-std::vector<TransitionSpec> extractTransitions(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars) {
+std::vector<TransitionSpec> extractTransitions(const ComputedDecorationStyles& styles) {
   static const std::vector<QString> hosts = {QStringLiteral("h1"), QStringLiteral("h2"), QStringLiteral("h3"),
       QStringLiteral("h4"), QStringLiteral("h5"), QStringLiteral("h6"), QStringLiteral("blockquote"),
       QStringLiteral("pre"), QStringLiteral("code"), QStringLiteral("mark"), QStringLiteral("a"), QStringLiteral("li")};
   std::vector<TransitionSpec> out;
   for (const QString& host : hosts) {
-    const auto pred = [&host](const SelInfo& s) {
-      return s.pseudoElement.isEmpty() && !s.hover && s.tag == host;
-    };
-    const QString raw = bestValue(flat, {QStringLiteral("transition")}, pred);
+    const auto sub = styles.value(host);
+    const auto& vars = sub.customProperties();
+    const qreal emPx = sub.fontSizePx * sub.textScale;
+    const QString raw = propertyValue(sub, {QStringLiteral("transition")});
     if (raw.isEmpty()) { continue; }
     const qreal ms = transitionMs(CssThemeParser::resolveVars(raw, vars));
     if (ms <= 0.0) { continue; }
@@ -432,16 +397,16 @@ AnimationDef parseAnimationShorthand(const QString& raw, const QHash<QString, QS
 // Always-on `animation:` on a host element (hover/state-triggered animations
 // are captured separately when that wiring lands). Resolved against keyframes
 // at drive time; entries with no matching keyframes are skipped by the driver.
-std::vector<AnimationDef> extractAnimations(const std::vector<FlatDecl>& flat, const QHash<QString, QString>& vars) {
+std::vector<AnimationDef> extractAnimations(const ComputedDecorationStyles& styles) {
   static const std::vector<QString> hosts = {QStringLiteral("h1"), QStringLiteral("h2"), QStringLiteral("h3"),
       QStringLiteral("h4"), QStringLiteral("h5"), QStringLiteral("h6"), QStringLiteral("blockquote"),
       QStringLiteral("pre"), QStringLiteral("code"), QStringLiteral("mark"), QStringLiteral("a"), QStringLiteral("li")};
   std::vector<AnimationDef> out;
   for (const QString& host : hosts) {
-    const auto pred = [&host](const SelInfo& s) {
-      return s.pseudoElement.isEmpty() && !s.hover && s.tag == host;
-    };
-    const QString raw = bestValue(flat, {QStringLiteral("animation")}, pred);
+    const auto sub = styles.value(host);
+    const auto& vars = sub.customProperties();
+    const qreal emPx = sub.fontSizePx * sub.textScale;
+    const QString raw = propertyValue(sub, {QStringLiteral("animation")});
     if (raw.isEmpty()) { continue; }
     AnimationDef a = parseAnimationShorthand(raw, vars, host);
     if (a.name.isEmpty() || a.durationMs <= 0.0) { continue; }

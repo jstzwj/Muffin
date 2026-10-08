@@ -1,0 +1,87 @@
+{
+  "browser": "153.0.8010.54",
+  "viewport": {
+    "width": 800,
+    "height": 700
+  },
+  "cases": [
+    {
+      "id": "h1-content-box",
+      "tag": "h1",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        h1{width:240px;height:100px;box-sizing:content-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 276,
+        "height": 124,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 240,
+        "fontSize": 30
+      }
+    },
+    {
+      "id": "h1-border-box",
+      "tag": "h1",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        h1{width:240px;height:100px;box-sizing:border-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 240,
+        "height": 100,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 204,
+        "fontSize": 30
+      }
+    },
+    {
+      "id": "p-content-box",
+      "tag": "p",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        p{width:240px;height:100px;box-sizing:content-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 276,
+        "height": 124,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 240,
+        "fontSize": 30
+      }
+    },
+    {
+      "id": "p-border-box",
+      "tag": "p",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        p{width:240px;height:100px;box-sizing:border-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 240,
+        "height": 100,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 204,
+        "fontSize": 30
+      }
+    },
+    {
+      "id": "pre-content-box",
+      "tag": "pre",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        pre{width:240px;height:100px;box-sizing:content-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 276,
+        "height": 124,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 240,
+        "fontSize": 30
+      }
+    },
+    {
+      "id": "pre-border-box",
+      "tag": "pre",
+      "css": "#write{max-width:500px;padding:0;margin:0}body{color:black}\n        pre{width:240px;height:100px;box-sizing:border-box;padding:7px 13px 11px 17px;\n        border:3px solid red;font-size:30px;line-height:2;margin:0}",
+      "expected": {
+        "width": 240,
+        "height": 100,
+        "left": 20,
+        "top": 10,
+        "contentWidth": 204,
+        "fontSize": 30
+      }
+    }
+  ]
+}

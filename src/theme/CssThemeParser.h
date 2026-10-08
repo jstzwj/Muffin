@@ -5,6 +5,7 @@
 #include <QStringList>
 
 #include <vector>
+#include <optional>
 
 namespace muffin {
 
@@ -13,7 +14,7 @@ namespace muffin {
 // CssThemeParser::resolveVars() so variable scoping (dark @media overrides) can be
 // applied at translation time.
 struct CssDeclaration {
-  QString property;  // lowercased + trimmed, e.g. "background-color" or "--accent"
+  QString property;  // trimmed; standard names lowercased, custom names case-sensitive
   QString value;     // trimmed, still may contain var(...) references
   bool important = false;
 };
@@ -39,6 +40,9 @@ struct CssEnvironment {
   // SVG's semantic projection supplies parent presentation/inline values and
   // initial values; preserve CSS-wide keywords until that used-value stage.
   bool deferComputedValues = false;
+  bool reducedMotion = false;
+  bool hoverAvailable = true;
+  QString pointer = QStringLiteral("fine");
 };
 
 // An @font-face declaration. `srcPath` is the font file's ABSOLUTE path,
@@ -124,6 +128,8 @@ public:
   // Recursively substitute var(--x[, fallback]) references in `value` using the
   // variable table. Unknown variables with no fallback resolve to empty string.
   static QString resolveVars(const QString& value, const QHash<QString, QString>& variables);
+  static std::optional<QString> substituteVars(const QString& value, const QHash<QString, QString>& computedVariables);
+  static QHash<QString, QString> computeCustomProperties(const QHash<QString, QString>& variables);
 
   // Split a top-level comma list (selectors or font-family lists), respecting
   // parens, brackets and strings. Exposed so the mapper can parse font stacks.

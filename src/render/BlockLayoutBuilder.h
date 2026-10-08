@@ -60,6 +60,7 @@ public:
   // estimate on a 250k-block doc. Settings change only via the prefs dialog, which forces a full
   // refresh anyway, so per-pass caching is always fresh enough.
   void refreshRenderSettings();
+  void resetStyleCache() { inlineStyleCache_.clear(); }
 
   BlockLayoutBuilder();
 
@@ -82,75 +83,34 @@ public:
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
 
 private:
-  // Copy the active preedit (if any) onto `options` when `options.projectionState` marks this block
-  // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
-  void applyPreedit(InlineLayout::BuildOptions& options) const;
-  std::unique_ptr<BlockLayout> buildParagraphLike(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  // A `[TOC]` paragraph rendered as a generated indented link list of the cached
-  // document headings. Used only while the caret is outside the block; when the
-  // caret is inside, buildParagraphLike falls through to a normal paragraph build
-  // (showing the literal "[TOC]") so the marker stays editable.
-  std::unique_ptr<BlockLayout> buildTocPreview(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildContainer(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildListItem(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildLiteralBlock(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildTable(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildThematicBreak(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
-  std::unique_ptr<BlockLayout> buildDefinition(
-      const MarkdownNode& node,
-      const RenderTheme& theme,
-      qreal x,
-      qreal y,
-      qreal width,
-      int depth);
+ mutable LayoutStyleCache inlineStyleCache_;
+ // Copy the active preedit (if any) onto `options` when `options.projectionState` marks this block
+ // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
+ void applyPreedit(InlineLayout::BuildOptions& options) const;
+ std::unique_ptr<BlockLayout> buildParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                 int depth);
+ // A `[TOC]` paragraph rendered as a generated indented link list of the cached
+ // document headings. Used only while the caret is outside the block; when the
+ // caret is inside, buildParagraphLike falls through to a normal paragraph build
+ // (showing the literal "[TOC]") so the marker stays editable.
+ std::unique_ptr<BlockLayout> buildTocPreview(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+ std::unique_ptr<BlockLayout> buildContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+ std::unique_ptr<BlockLayout> buildListItem(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+ std::unique_ptr<BlockLayout> buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                int depth);
+ std::unique_ptr<BlockLayout> buildTable(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+ std::unique_ptr<BlockLayout> buildThematicBreak(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                 int depth);
+ std::unique_ptr<BlockLayout> buildDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
 
-  QString textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const;
-  BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
-  // CSS `list-style-type`-aware marker: kind + text from the node's resolved li
-  // style, falling back to the legacy depth/kind-based marker when unset.
-  struct ResolvedMarker { BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None; QString text; };
+ QString textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const;
+ BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
+ // CSS `list-style-type`-aware marker: kind + text from the node's resolved li
+ // style, falling back to the legacy depth/kind-based marker when unset.
+ struct ResolvedMarker {
+   BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None;
+   QString text;
+ };
   ResolvedMarker resolveListMarker(const MarkdownNode& itemNode, const RenderTheme& theme, qsizetype itemIndex) const;
   ListLineInfo authoredMarkerInfo(const MarkdownNode& itemNode) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;

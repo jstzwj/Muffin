@@ -33,9 +33,10 @@ void testMathRenderingLayout() {
   const BlockLayout* mathBlockLayout = documentLayout.block(mathBlock->id());
   require(mathBlockLayout != nullptr, QStringLiteral("math block layout should exist"));
   require(mathBlockLayout->mathLayout() != nullptr && mathBlockLayout->mathLayout()->valid(), QStringLiteral("math block should have native math layout"));
+  const auto mathInsets = LayoutBox::insets(mathBlockLayout->cssBoxGeometry().usedBox);
   require(qAbs(mathBlockLayout->height() -
-               std::ceil(mathBlockLayout->mathLayout()->size.height() + theme.codePadding().top() + theme.codePadding().bottom())) <= 1.0,
-          QStringLiteral("inactive math block height should be native formula height plus block padding"));
+               std::ceil(mathBlockLayout->mathLayout()->size.height() + mathInsets.top() + mathInsets.bottom())) <= 1.0,
+          QStringLiteral("inactive math block height includes its saved padding and borders"));
   require(!mathBlockLayout->literalEditing(), QStringLiteral("inactive math block should render native formula instead of literal source"));
 
   const math::MathLayoutResult blockFormulaLayout = math::MathRenderer().render(QStringLiteral("\\sqrt{x} = \\frac{1}{2}"), theme, true);
@@ -60,8 +61,10 @@ void testMathRenderingLayout() {
           QStringLiteral("focused math block should enter literal editing layout"));
   require(editingMathBlockLayout->height() > mathBlockLayout->height() + theme.codeLineHeight() * 2.0,
           QStringLiteral("focused math block should reserve both TeX source editor and rendered preview"));
-  const QPointF editingSourcePoint(editingMathBlockLayout->rect().left() + theme.codePadding().left() + QFontMetricsF(theme.codeFont()).horizontalAdvance(QStringLiteral("\\sqrt")),
-                                   editingMathBlockLayout->rect().top() + theme.codePadding().top() + theme.codeLineHeight() * 1.5);
+  const QPointF editingSourcePoint(
+      editingMathBlockLayout->rect().left() + theme.elementBoxStyle(QStringLiteral("pre")).padding.left() +
+          QFontMetricsF(theme.codeFont()).horizontalAdvance(QStringLiteral("\\sqrt")),
+      editingMathBlockLayout->rect().top() + theme.elementBoxStyle(QStringLiteral("pre")).padding.top() + theme.codeLineHeight() * 1.5);
   HitTestResult editingMathHit = editingMathBlockLayout->hitTest(editingSourcePoint, theme);
   require(editingMathHit.zone == HitTestResult::Zone::Math &&
               editingMathHit.cursorRect.left() > editingMathBlockLayout->rect().left() &&

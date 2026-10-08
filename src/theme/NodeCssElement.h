@@ -2,6 +2,7 @@
 
 #include "document/NodeId.h"
 #include "theme/CssComputedStyleEngine.h"
+#include "theme/DocumentStyleTree.h"
 
 #include <QHash>
 
@@ -25,6 +26,8 @@ public:
   explicit NodeCssElementBuilder(bool maintainTypeIndex = true);
 
   const CssElement* build(const MarkdownNode& node);
+  const CssElement* build(const MarkdownNode& node, const QString& key);
+  const CssElement* buildInline(const MarkdownNode& owner, qsizetype sourceOffset) const;
   qsizetype materializedElementCount() const;
 
   const CssElement* previousSibling(const CssElement& element) const override;
@@ -40,11 +43,16 @@ private:
   const MarkdownNode* nodeFor(const CssElement& element) const;
 
   mutable std::vector<std::unique_ptr<CssElement>> pool_;
-  mutable QHash<NodeId, CssElement*> cache_;
+  mutable QHash<const MarkdownNode*, CssElement*> cache_;
   mutable QHash<const CssElement*, const MarkdownNode*> nodes_;
+  mutable QHash<const MarkdownNode*, QHash<QString, CssElement*>> synthetic_;
+  struct InlineView {
+    qsizetype start, end;
+    const CssElement* element;
+  };
+  mutable QHash<const MarkdownNode*, QVector<InlineView>> inlineTrees_;
   bool maintainTypeIndex_ = true;
-  CssElement* html_ = nullptr;
-  CssElement* body_ = nullptr;
+  DocumentStyleHost host_;
 };
 
 // The CSS tag for a block node ("p", "h2", "blockquote", "ul"/"ol", "li",
