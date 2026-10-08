@@ -8,6 +8,7 @@
 #include <QApplication>
 #include <QBuffer>
 #include <QElapsedTimer>
+#include <QDebug>
 #include <QFile>
 #include <QDir>
 #include <QDirIterator>
@@ -72,7 +73,29 @@ void sameFresh(DocumentLayout& layout, const DocumentSession& session, const Ren
       require(expected, "full layout contains reused block identity");
       if (expected) sameTree(*block, *expected);
     }
-    if (pixels) require(paint(layout, theme, width) == paint(fresh, theme, width), "incremental/full/lazy pixels agree");
+    if (pixels) {
+      const auto actual = paint(layout, theme, width), expected = paint(fresh, theme, width);
+      if (actual != expected) {
+        QRect difference;
+        if (actual.size() == expected.size())
+          for (int y = 0; y < actual.height(); ++y)
+            for (int x = 0; x < actual.width(); ++x)
+              if (actual.pixel(x, y) != expected.pixel(x, y)) difference = difference.united(QRect(x, y, 1, 1));
+        qWarning().noquote() << "Pixel mismatch: zoom" << theme.zoomPercent() << "width" << width << "policy" << int(policy) << "difference"
+                             << difference << "source" << session.markdownText().toString().left(240);
+        for (const auto* block : layout.promotedBlocks()) {
+          const auto* other = fresh.block(block->nodeId());
+          if (!other) continue;
+          const auto a = block->inlineTextOrigin(), b = other->inlineTextOrigin();
+          qWarning().noquote() << "Origins" << int(block->type()) << QString::number(a.x(), 'g', 17) << QString::number(a.y(), 'g', 17)
+                               << QString::number(b.x(), 'g', 17) << QString::number(b.y(), 'g', 17);
+        }
+        const auto stem = QString("resource-pixels-%1-%2").arg(failures).arg(int(policy));
+        actual.save(stem + "-actual.png");
+        expected.save(stem + "-expected.png");
+      }
+      require(actual == expected, "incremental/full/lazy pixels agree");
+    }
   }
 }
 RenderTheme formattingTheme(const QString& display, bool fixedImage = false, bool subgrid = false) {

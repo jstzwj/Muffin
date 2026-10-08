@@ -11,6 +11,30 @@
   },
   "cases": [
     {
+      "id": "max-content-glyph-overhang",
+      "html": "<div id=\"case\" style=\"display:grid;font:italic 16px MuffinFixtureSans;line-height:20px;width:200px;grid-template-columns:max-content 1fr\"><div id=\"a\">f</div><div id=\"b\">X</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 20
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 5.015625,
+          "height": 20
+        },
+        "b": {
+          "x": 5.015625,
+          "y": 0,
+          "width": 194.984375,
+          "height": 20
+        }
+      }
+    },
+    {
       "id": "image-small-auto-min",
       "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {

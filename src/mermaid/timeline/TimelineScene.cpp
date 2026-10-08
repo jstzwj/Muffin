@@ -164,6 +164,7 @@ editor::CssPixelFont nodeFont(const QString& family, qreal size,
   editor::CssPixelFont result = editor::makeUnhintedCssPixelFont(
       families.first(), size);
   if (families.size() > 1) result.font.setFamilies(families);
+  if (families.last().compare(QLatin1String("monospace"), Qt::CaseInsensitive) == 0) result.font.setStyleHint(QFont::Monospace);
   result.font.setWeight(weight);
   return result;
 }

@@ -9,6 +9,7 @@ const {chromium} = await import(moduleName ? pathToFileURL(path.resolve(moduleNa
 const browser = await chromium.launch({headless: true, ...(process.env.CHROME_EXECUTABLE ? {executablePath: process.env.CHROME_EXECUTABLE} : {})});
 const attribute = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
 const cases = [
+  {id:'max-content-glyph-overhang',html:'<div id="case" style="display:grid;font:italic 16px Arial;line-height:20px;width:200px;grid-template-columns:max-content 1fr"><div id="a">f</div><div id="b">X</div></div>'},
   {"id": "image-small-auto-min", "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
   {"id": "image-small-zero-min", "html": "<div id=\"case\" style=\"display:grid;width:140px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
   {"id": "image-grow", "html": "<div id=\"case\" style=\"display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
@@ -202,7 +203,7 @@ const cases = [
   {id:'display-none-order', container:'width:200px;grid-template-columns:1fr 1fr;gap:10px', children:['height:20px;order:2','display:none','height:30px;order:-1']},
   {id:'nested', html:'<div id="case" style="display:grid;width:300px;grid-template-columns:1fr 50px;gap:10px;font:16px Arial;line-height:20px"><div id="a" style="display:grid;grid-template-columns:1fr 2fr;gap:5px;min-width:0"><div id="c" style="height:20px"></div><div id="d" style="height:30px"></div></div><div id="b" style="height:40px"></div></div>'},
 ];
-const imageSource = /src="([^"]+)"/.exec(cases[0].html)[1];
+const imageSource = /src="([^"]+)"/.exec(cases.find(c => c.html?.includes('<img')).html)[1];
 for (const [id, attributes] of [
   ['image-width-attribute', 'width="80"'],
   ['image-width-attribute-css-auto', 'width="80" style="width:auto"'],

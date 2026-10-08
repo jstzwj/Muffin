@@ -137,13 +137,16 @@ CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bo
   option.setAlignment(Qt::AlignLeft);
   intrinsic.setTextOption(option);
   intrinsic.beginLayout();
+  qreal maximum = 0;
   while (true) {
     auto line = intrinsic.createLine();
     if (!line.isValid()) break;
     line.setLineWidth(1e6);
+    // Ink overhang does not contribute to CSS max-content. QTextLayout's
+    // maximumWidth() includes negative glyph bearings on some font backends.
+    maximum = qMax(maximum, line.horizontalAdvance());
   }
   intrinsic.endLayout();
-  const qreal maximum = intrinsic.maximumWidth();
   return {noWrap ? maximum : intrinsic.minimumWidth(), maximum};
 }
 CssIntrinsicMetrics intrinsicFlexWidths(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items) {

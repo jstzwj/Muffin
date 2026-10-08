@@ -162,6 +162,14 @@ jobs:
       - name: Test
         run: ${{ matrix.test-command }}
 
+      - name: Upload pixel mismatch diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-diagnostics-${{ matrix.name }}
+          path: build/**/resource-pixels-*.png
+          if-no-files-found: ignore
+
   # Blocking Linux build with AddressSanitizer. Memory errors are release
   # failures, even when they are nondeterministic in an unsanitized build.
   #
@@ -285,3 +293,11 @@ jobs:
 
       - name: Test (AddressSanitizer)
         run: xvfb-run ctest --preset conan-release --verbose
+
+      - name: Upload pixel mismatch diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-diagnostics-linux-asan
+          path: build/**/resource-pixels-*.png
+          if-no-files-found: ignore

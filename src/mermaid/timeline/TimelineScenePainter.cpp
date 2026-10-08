@@ -53,6 +53,7 @@ editor::CssPixelFont paintFont(const QString& family, qreal size,
   editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);
+  if (families.last().compare(QLatin1String("monospace"), Qt::CaseInsensitive) == 0) font.font.setStyleHint(QFont::Monospace);
   font.font.setWeight(weight);
   return font;
 }

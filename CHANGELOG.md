@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CSS max-content widths use text advances rather than glyph ink overhang. Browser-reference tests share 96 logical DPI, and Timeline monospace fallback keeps the same metric and paint font hint for missing leading families.
 - HTML explicit line heights can be smaller than the font's natural metrics; mixed text and inline Flex/Grid still contribute their own line boxes and baselines.
 - Flex/Grid browser comparisons use verified bundled font files at 96 logical DPI. Linux tests locate the system Fontconfig configuration, and cross-paragraph caret assertions account for character-boundary snapping.
 - Editing text inside paired inline HTML preserves parser source ranges, including entity spellings whose source and displayed lengths differ.
