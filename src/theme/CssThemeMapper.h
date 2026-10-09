@@ -36,7 +36,8 @@ class CssThemeMapper {
   // Translate an already-parsed sheet. Split from fromCss so the caller can
   // inspect the sheet (e.g. register its @font-face fonts) between parse and
   // translation. `id` is the machine name; it overrides any name the CSS declares.
-  static ThemeDefinition fromSheet(const CssThemeSheet& sheet, const QString& id, CssEnvironment environment = {});
+  static ThemeDefinition fromSheet(const CssThemeSheet& sheet, const QString& id, CssEnvironment environment = {},
+                                   const CssComputedStyleEngine* computedEngine = nullptr);
   static ThemeElementStyle projectComputedStyle(const QString& key, const CssComputedStyle& style);
   // Parse a CSS `linear-gradient(...)` / `radial-gradient(...)` value into a
   // GradientSpec (rect-independent data; the painter builds a QGradient per

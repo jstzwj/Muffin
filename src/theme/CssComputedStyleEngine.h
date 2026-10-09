@@ -12,6 +12,7 @@
 #include <QVector>
 
 #include <utility>
+#include <memory>
 #include <vector>
 
 namespace muffin {
@@ -181,6 +182,10 @@ struct CssSelectorFeatures {
 class CssComputedStyleEngine {
 public:
  explicit CssComputedStyleEngine(const CssThemeSheet& sheet, CssEnvironment environment = {});
+ // Immutable environment snapshots reuse selector compilation while keeping
+ // computed values/caches isolated from the previous theme and its copies.
+ std::shared_ptr<CssComputedStyleEngine> withEnvironment(CssEnvironment environment) const;
+ bool sameActiveRules(CssEnvironment environment) const { return sourceSheet_->sameActiveRules(environment_, environment); }
 
  CssComputedStyle styleFor(const CssElement& element) const;
  CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
@@ -204,6 +209,7 @@ private:
  CssComputedStyle parentStyleFor(const CssElement* parent) const;
  void computeValues(CssComputedStyle& style, const CssComputedStyle& parent, bool root) const;
 
+ std::shared_ptr<const CssThemeSheet> sourceSheet_;
  CssThemeSheet sheet_;
  CssEnvironment environment_;
  std::vector<ParsedSelector> parsedSelectors_;         // every selector of every rule, flattened

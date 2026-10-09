@@ -88,6 +88,8 @@ public:
   void addFontFace(CssFontFace f) { fontFaces_.push_back(std::move(f)); }
   void addKeyframes(CssKeyframes k) { keyframes_.push_back(std::move(k)); }
   CssThemeSheet evaluated(const CssEnvironment& environment) const;
+  bool sameActiveRules(const CssEnvironment& before, const CssEnvironment& after) const;
+  bool hasViewportUnits() const;
   static bool mediaMatches(const QString& query, const CssEnvironment& environment);
   // Merge another sheet into this one: rules appended after, variables inserted
   // (overriding on name clash), font-faces appended. Used to fold @import'd

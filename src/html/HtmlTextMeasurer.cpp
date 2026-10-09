@@ -254,21 +254,23 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   layout->beginLayout();
   qreal height = 0;
   qreal maxWidth = 0;
+  size_t firstSpan = 0;
+  const QFontMetricsF strut(baseFont);
+  const qreal leading = (result->lineHeight - strut.height()) * .5;
   while (true) {
     QTextLine line = layout->createLine();
     if (!line.isValid()) {
       break;
     }
     line.setLineWidth(qMax<qreal>(1.0, availableWidth));
-    const QFontMetricsF strut(baseFont);
-    const qreal leading = (result->lineHeight - strut.height()) * .5;
     // CSS line boxes use half-leading, including negative leading when the
     // authored line-height is smaller than the font's em/metric box. Qt's
     // natural ascent/descent describes glyph painting, not the CSS line box.
     qreal ascent = strut.ascent() + leading;
     qreal descent = strut.descent() + leading;
-    for (const auto& span : spans) {
-      if (span.start >= line.textStart() + line.textLength() || span.start + span.length <= line.textStart()) continue;
+    while (firstSpan < spans.size() && spans[firstSpan].start + spans[firstSpan].length <= line.textStart()) ++firstSpan;
+    for (size_t i = firstSpan; i < spans.size() && spans[i].start < line.textStart() + line.textLength(); ++i) {
+      const auto& span = spans[i];
       const QFontMetricsF metrics(span.fontSet ? span.font : baseFont);
       const qreal spanLeading = (span.lineHeight - metrics.height()) * .5;
       ascent = qMax(ascent, metrics.ascent() + spanLeading);

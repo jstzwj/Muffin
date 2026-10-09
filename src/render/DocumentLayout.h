@@ -176,6 +176,7 @@ class DocumentLayout {
   QVector<QTextLayout::FormatRange> preeditFormats_;
   int preeditCursor_ = -1;
   qreal viewportWidth_ = 0;
+  QSizeF cssViewport_;
   BuildPolicy buildPolicy_ = BuildPolicy::Eager;
 
   std::vector<BlockSlot> slots_;

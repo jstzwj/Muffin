@@ -761,6 +761,34 @@ bool CssThemeSheet::mediaMatches(const QString& raw, const CssEnvironment& env) 
   return false;
 }
 
+bool CssThemeSheet::sameActiveRules(const CssEnvironment& before, const CssEnvironment& after) const {
+  const auto active = [](const CssRule& rule, const CssEnvironment& env) {
+    if (rule.darkScope && !env.dark) return false;
+    for (const auto& query : rule.mediaQueries)
+      if (!mediaMatches(query, env)) return false;
+    return true;
+  };
+  for (const auto& rule : rules_)
+    if (active(rule, before) != active(rule, after)) return false;
+  return true;
+}
+
+bool CssThemeSheet::hasViewportUnits() const {
+  // Conservative: quoted strings and inactive declarations may also match.
+  // Custom properties must be included before var() substitution.
+  static const QRegularExpression units(QStringLiteral("[0-9.](?:vw|vh|vmin|vmax)\\b"), QRegularExpression::CaseInsensitiveOption);
+  for (auto it = variables_.cbegin(); it != variables_.cend(); ++it)
+    if (units.match(it.value()).hasMatch()) return true;
+  for (const auto& rule : rules_)
+    for (const auto& declaration : rule.declarations)
+      if (units.match(declaration.value).hasMatch()) return true;
+  for (const auto& animation : keyframes_)
+    for (const auto& stop : animation.stops)
+      for (const auto& declaration : stop.declarations)
+        if (units.match(declaration.value).hasMatch()) return true;
+  return false;
+}
+
 CssThemeSheet CssThemeSheet::evaluated(const CssEnvironment& env) const {
   CssThemeSheet result;
   result.fontFaces_ = fontFaces_;

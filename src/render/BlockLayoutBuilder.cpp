@@ -494,6 +494,7 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   // A changed font resource can replace a face without changing QFont::key().
   lineHeightCache_.clear();
   avgCharWidthCache_.clear();
+  paragraphEstimateCache_.clear();
   // Same per-pass freshness reasoning: an ordered list's widest marker can change with the
   // theme (decimal → roman) or with item add/remove, both of which force a rebuild pass.
   listMarkerLayouts_.clear();
@@ -2161,10 +2162,23 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // skipping the per-node structural cascade. github's structural selectors match only lists/tables,
   // so paragraph estimates are identical to the structural result; the visible-window build
   // (promoteSlot → buildParagraphLike) still resolves structural style for exact heights.
-  const qreal containingWidth = width;
-  const auto margins = theme.elementBoxStyle(elementKey, nullptr, containingWidth).margin;
-  width = qMax<qreal>(1, width - margins.left() - margins.right());
-  const qreal lineHeight = cachedEstimateLineHeight(theme, elementKey, node.type(), node.headingLevel());
+  auto& widths = paragraphEstimateCache_[elementKey];
+  auto found = widths.constFind(width);
+  if (found == widths.cend()) {
+    ParagraphEstimate estimate;
+    estimate.box = theme.elementBoxStyle(elementKey, nullptr, width);
+    estimate.lineHeight = cachedEstimateLineHeight(theme, elementKey, node.type(), node.headingLevel());
+    const auto& box = estimate.box;
+    const qreal borderWidth = LayoutBox::borderWidth(box, qMax<qreal>(1, width - box.margin.left() - box.margin.right()));
+    const auto inset = LayoutBox::insets(box);
+    const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
+    const qreal average = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
+    estimate.charsPerLine =
+        qMax<qreal>(1, std::floor(qMax<qreal>(1, borderWidth - beforeAdvance - inset.left() - inset.right()) / average));
+    widths.insert(width, std::move(estimate));
+    found = widths.constFind(width);
+  }
+  const auto& estimate = found.value();
   // O(1) estimate: derive the wrapped-line count from the block's source char count (sourceRange is
   // UTF-16 code units ≈ visible chars) + a cached per-font narrow advance, WITHOUT materializing
   // the inline text. plainTextForInlines + per-char walks were ~20-30s of open on a 2.1M-inline doc.
@@ -2172,15 +2186,8 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // estimate is only a scrollbar placeholder (mustMeasure + viewport promotion resolve exact
   // heights), so the imprecision is harmless.
   const qsizetype charCount = node.sourceRange().byteLength();
-  // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
-  const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
-  const qreal avgCharWidth = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
-  const auto usedBox = theme.elementBoxStyle(elementKey, nullptr, containingWidth);
-  const QMarginsF padding = LayoutBox::insets(usedBox);
-  const qreal charsPerLine =
-      std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance - padding.left() - padding.right()) / avgCharWidth));
-  qreal height = estimateWrappedLinesFromCharCount(charCount, charsPerLine) * lineHeight;
-  height += padding.top() + padding.bottom();
+  const qreal height =
+      LayoutBox::borderHeight(estimate.box, estimateWrappedLinesFromCharCount(charCount, estimate.charsPerLine) * estimate.lineHeight);
   // mustMeasure dropped: DocumentLayout never reads EstimateResult.mustMeasure (promotion is purely
   // viewport-visibility-driven), so the inlinesContainSizedContent walk was pure waste on the
   // estimate path (~2s of the 250k-block open estimate).

@@ -241,6 +241,13 @@ public:
   mutable QHash<QString, QPair<qreal, qreal>> fontMetricsCache_;  // QFont::key() -> {wideAdvance, narrowAdvance}
   mutable QHash<QString, qreal> lineHeightCache_;  // "elementKey|headingLevel" -> estimated line height
   mutable QHash<QString, qreal> avgCharWidthCache_;  // "elementKey|headingLevel" -> cached narrow advance
+  struct ParagraphEstimate {
+    qreal charsPerLine = 1;
+    qreal lineHeight = 0;
+    ThemeElementBoxStyle box;
+  };
+  // One used box/wrap capacity per prototype and containing width per pass.
+  mutable QHash<QString, QHash<qreal, ParagraphEstimate>> paragraphEstimateCache_;
   // Labels and shared gutters are computed once per list per pass. Both the
   // reuse signature and final layout consume the same values, so a changed
   // sibling marker cannot leave retained list items with a stale indent.

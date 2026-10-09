@@ -518,13 +518,15 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   return out;
 }
 
-ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& source, const QString& id, CssEnvironment environment) {
+ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& source, const QString& id, CssEnvironment environment,
+                                          const CssComputedStyleEngine* computedEngine) {
   const CssThemeSheet sheet = documentStyleSheet(source).evaluated(environment);
   ThemeDefinition d;
   d.isBuiltIn = false;
   d.id = id.toLower();
   d.sourceSheet = std::make_shared<CssThemeSheet>(source);
-  CssComputedStyleEngine engine(sheet, environment);
+  const auto ownedEngine = computedEngine ? nullptr : std::make_unique<CssComputedStyleEngine>(documentStyleSheet(source), environment);
+  const auto& engine = computedEngine ? *computedEngine : *ownedEngine;
   DocumentStylePrototypes tree;
   ComputedDecorationStyles styles;
   const QStringList hosts{"html",       "body", "#write",     "p",     "blockquote", "blockquote p", "ul",    "ol",       "li",

@@ -48,7 +48,7 @@ QRectF mathUsedBounds(const math::MathLayoutResult& layout) {
   return bounds;
 }
 
-QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleNewline) {
+QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleNewline, bool& hasHtml) {
   QString text;
   for (const InlineNode& node : inlines) {
     switch (node.type()) {
@@ -58,6 +58,7 @@ QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleN
         text += node.text();
         break;
       case InlineType::HtmlInline:
+        hasHtml = true;
         // <br> is a line break in plain text; other inline HTML keeps its literal text.
         if (isStandaloneBrTag(node.text())) {
           text += QLatin1Char('\n');
@@ -75,7 +76,7 @@ QString flattenPlainText(const QVector<InlineNode>& inlines, bool breakOnSingleN
         text += node.alt();
         break;
       default:
-        text += flattenPlainText(node.children(), breakOnSingleNewline);
+        text += flattenPlainText(node.children(), breakOnSingleNewline, hasHtml);
         break;
     }
   }
@@ -147,7 +148,8 @@ void InlineLayout::build(
     qreal width,
     const QFont& baseFont,
     BuildOptions options) {
-  plainText_ = flattenPlainText(inlines, options.breakOnSingleNewline);
+  hasHtmlContent_ = false;
+  plainText_ = flattenPlainText(inlines, options.breakOnSingleNewline, hasHtmlContent_);
   offsetMap_.clear();
   mathAtoms_.clear();
   imageAtoms_.clear();

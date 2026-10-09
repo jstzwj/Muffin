@@ -48,8 +48,8 @@ public:
  // reduce wrapping without shrinking the type.
  int contentWidthPx() const;
  void setContentWidthPx(int px);
- // Resolve retained responsive CSS for the editor viewport. Returns true when
- // the environment changed and existing block estimates need rebuilding.
+ // Always update the viewport environment. Return true when theme projections
+ // change; false permits translation-only layout when the column width agrees.
  bool updateForViewport(qreal width, qreal height = 768.0);
  bool hasDocumentCss() const { return bool(sourceSheet_); }
  bool pageUsesBorderBox() const { return pageBorderBox_; }
@@ -169,6 +169,8 @@ public:
  const ThemeDecorations& decorations() const;
 
 private:
+ static RenderTheme fromDefinitionWithEngine(const ThemeDefinition& definition, int zoomPercent, int fontSizePx,
+                                             std::shared_ptr<CssComputedStyleEngine> engine);
  explicit RenderTheme(std::nullptr_t) {}
  qreal scaled(qreal value) const;
  qreal scaledFont(qreal value) const;
@@ -220,6 +222,8 @@ private:
  QHash<QString, QString> fontAliases_;
  qreal cssViewportWidth_ = -1.0;
  qreal cssViewportHeight_ = -1.0;
+ bool viewportUnits_ = false;
+ bool percentagePageBox_ = false;
  std::shared_ptr<CssComputedStyleEngine> styleEngine_;
  // Sparse live-node adapter for structural selector navigation. Shared (not unique)
  // so RenderTheme remains copyable; reset with the computed style cache on edits.

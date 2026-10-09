@@ -298,6 +298,8 @@ void DocumentLayout::rebuild(
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
+  const auto environment = theme.documentCssEnvironment();
+  cssViewport_ = QSizeF(environment.viewportWidth, environment.viewportHeight);
   buildPolicy_ = policy;
   selection_ = selection;
 
@@ -493,6 +495,16 @@ bool DocumentLayout::relayoutForViewportWidth(const RenderTheme& theme, qreal vi
   if (!qFuzzyCompare(metrics.contentWidth + 1.0, pageWidth_ + 1.0)) {
     return false;
   }
+  const auto environment = theme.documentCssEnvironment();
+  const QSizeF cssViewport(environment.viewportWidth, environment.viewportHeight);
+  if (cssViewport != cssViewport_) {
+    // Inline HTML may contain viewport units absent from the theme sheet.
+    // Conservatively rebuild materialized HTML; unbuilt slots resolve against
+    // the current environment on promotion. Plain prose keeps the fast path.
+    for (const auto* block : layoutIndex_)
+      if (block->htmlLayout() || (block->inlineLayout() && block->inlineLayout()->hasHtmlContent())) return false;
+  }
+  cssViewport_ = cssViewport;
   viewportWidth_ = viewportWidth;
   pageOuterLeft_ = metrics.outerLeft;
   pageOuterWidth_ = metrics.outerWidth;

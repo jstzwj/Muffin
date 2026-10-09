@@ -357,6 +357,39 @@ void testCacheLifetimeAndGeneration() {
           "new generation invalidates previous computed styles");
 }
 
+void testEnvironmentSnapshots() {
+  const auto sheet = CssThemeParser::parse(
+      ":root{--size:5vw}p{width:calc(var(--size) + 10px)}"
+      "@media(min-width:800px){p:nth-child(2){color:red}}",
+      {});
+  CssEnvironment environment;
+  environment.viewportWidth = 640;
+  environment.viewportHeight = 480;
+  CssComputedStyleEngine engine(sheet, environment);
+  CssElement p;
+  p.tag = "p";
+  p.cacheId = 7;
+  p.childIndex = 1;
+  require(qAbs(engine.styleFor(p).length("width").px - 42) < .01, "initial viewport-unit value");
+  environment.viewportWidth = 720;
+  require(engine.sameActiveRules(environment), "same media bucket reuses selector compilation");
+  const auto resized = engine.withEnvironment(environment);
+  require(resized->generation() > engine.generation(), "environment copy starts a fresh value generation");
+  require(qAbs(resized->styleFor(p).length("width").px - 46) < .01, "custom-property viewport lengths recompute");
+  require(qAbs(engine.styleFor(p).length("width").px - 42) < .01, "old environment and cached snapshot remain immutable");
+  const std::vector<CssDeclaration> inlineStyle{{"height", "10vh", false}};
+  environment.viewportHeight = 600;
+  const auto taller = resized->withEnvironment(environment);
+  require(qAbs(taller->styleFor(p, {}, inlineStyle).length("height").px - 60) < .01, "inline viewport units use the new environment");
+  environment.viewportWidth = 900;
+  require(!engine.sameActiveRules(environment), "media activation changes the rule set");
+  const auto wide = taller->withEnvironment(environment);
+  require(wide->styleFor(p).resolvedValue("color") == "red" && wide->selectorFeatures().hasStructuralRules,
+          "newly active structural rules compile and invalidate values");
+  require(!engine.selectorFeatures().hasStructuralRules && !engine.styleFor(p).hasProperty("color"),
+          "new media state does not mutate the original engine");
+}
+
 void testModernMediaConditions() {
   CssEnvironment env;
   env.viewportWidth = 800;
@@ -390,6 +423,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testDeferredLengthsAndDimensionalMath);
   RUN_TEST(testFunctionalSelectorsAndSpecificity);
   RUN_TEST(testCacheLifetimeAndGeneration);
+  RUN_TEST(testEnvironmentSnapshots);
   RUN_TEST(testModernMediaConditions);
 #undef RUN_TEST
   return 0;

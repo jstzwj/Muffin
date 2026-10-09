@@ -273,6 +273,32 @@ part of each item's reuse signature. A wider sibling marker invalidates the
 affected indents; ordinary body edits retain siblings whose marker geometry is
 unchanged.
 
+### Viewport updates and lazy estimates
+
+Viewport updates compare the active media-rule set before projecting a theme.
+When that set is unchanged, immutable style-engine snapshots reuse compiled
+selectors and candidate indices. Computed and cascade caches are discarded:
+computed values carry their viewport context, and cascade matches contain
+addresses into the snapshot's declaration storage. Theme copies retain their
+own environment and caches.
+
+Theme projections are reused only when the sheet has no viewport-unit values
+and the page box has no percentage width or insets. Media-rule changes,
+viewport-dependent projections, zoom and user text-size changes rebuild the
+projection through the same computed-style engine. The current viewport still
+reaches live nodes and inline declarations on the reuse path.
+
+If projections and content width stay unchanged, native prose layouts can move
+horizontally without reshaping text. Materialized HTML conservatively disables
+this path because its inline styles may contain viewport units absent from the
+theme sheet. Unbuilt HTML resolves the current environment when promoted.
+
+Lazy paragraph and heading estimates cache used boxes, line heights and wrapping
+capacity by prototype element and containing width within one layout pass.
+Explicit height, min/max height and box sizing participate in the placeholder
+height. Starting a new pass clears these entries, including after theme, font,
+zoom or width changes. Visible promotion still computes the full live style.
+
 ### Resource versions
 
 `LayoutResources` gives each image, font database and Mermaid cache entry separate
@@ -366,6 +392,8 @@ fresh references rebuild the same document at the same viewport width. Both
 paths use lazy layout with the first eleven slots promoted. Image timing excludes
 network transfer and measures decoded-resource publication through layout refresh.
 Resize includes responsive theme recalculation and rebuilding the lazy estimates;
+`resize_styles` and `resize_layout` split these costs. The resize probe always
+rebuilds the lazy layout, even when an editor could use horizontal translation;
 it deliberately has no unchanged-width reference. Remove these environment
 variables to restore the smaller default test workload.
 

@@ -174,6 +174,11 @@ RenderTheme RenderTheme::defaultTheme(int zoomPercent) {
 RenderTheme::RenderTheme() : RenderTheme(fromDefinition(ThemeDefinition{})) {}
 
 RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& input, int zoomPercent, int fontSizePx) {
+  return fromDefinitionWithEngine(input, zoomPercent, fontSizePx, {});
+}
+
+RenderTheme RenderTheme::fromDefinitionWithEngine(const ThemeDefinition& input, int zoomPercent, int fontSizePx,
+                                                  std::shared_ptr<CssComputedStyleEngine> engine) {
   const ThemeDefinition definition = adaptLegacyTheme(input);
   const ThemeColors& c = definition.colors;
   RenderTheme t(nullptr);
@@ -237,8 +242,16 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& input, int zoomPe
   t.hasStructuralRules_ = definition.hasStructuralRules;
   t.hasNthOfType_ = definition.hasNthOfType;
   t.bodyFontPx_ = definition.bodyFontPx;
-  if (t.sourceSheet_) {
+  t.styleEngine_ = std::move(engine);
+  if (t.sourceSheet_ && !t.styleEngine_) {
     t.styleEngine_ = std::make_shared<CssComputedStyleEngine>(muffin::documentStyleSheet(*t.sourceSheet_));
+  }
+  t.viewportUnits_ = t.sourceSheet_ && t.sourceSheet_->hasViewportUnits();
+  if (const auto* page = t.elementStyle(QStringLiteral("#write"))) {
+    const auto& box = page->box;
+    t.percentagePageBox_ = box.widthLength.hasPercentage || box.minWidthLength.hasPercentage || box.maxWidthLength.hasPercentage;
+    for (const auto& sides : {box.marginLengths.sides, box.paddingLengths.sides})
+      for (const auto& length : sides) t.percentagePageBox_ = t.percentagePageBox_ || length.hasPercentage;
   }
   t.listMarkerGap_ = definition.spacing.listMarkerGap;
   t.ulListStyleType_ = definition.spacing.ulListStyleType;
@@ -282,6 +295,7 @@ int RenderTheme::zoomPercent() const {
 
 void RenderTheme::setZoomPercent(int percent) {
   zoomPercent_ = qBound(60, percent, 200);
+  cssViewportWidth_ = -1.0;
 }
 
 int RenderTheme::fontSizePx() const {
@@ -303,9 +317,18 @@ bool RenderTheme::updateForViewport(qreal width, qreal height) {
   environment.viewportHeight = cssHeight;
   environment.textScale = fontSizePx_ / 16.0;
   environment.dark = backgroundColor_.lightnessF() < 0.5;
-  const auto definition = CssThemeMapper::fromSheet(*sourceSheet_, sourceId_, environment);
-  RenderTheme resolved = fromDefinition(definition, zoomPercent_, fontSizePx_);
-  resolved.styleEngine_ = std::make_shared<CssComputedStyleEngine>(muffin::documentStyleSheet(*resolved.sourceSheet_), environment);
+  const bool reuseProjection =
+      cssViewportWidth_ >= 0 && !viewportUnits_ && !percentagePageBox_ && styleEngine_->sameActiveRules(environment);
+  auto engine = styleEngine_->withEnvironment(environment);
+  if (reuseProjection) {
+    styleEngine_ = std::move(engine);
+    cssViewportWidth_ = cssWidth;
+    cssViewportHeight_ = cssHeight;
+    invalidateDocumentStyles();
+    return false;
+  }
+  const auto definition = CssThemeMapper::fromSheet(*sourceSheet_, sourceId_, environment, engine.get());
+  RenderTheme resolved = fromDefinitionWithEngine(definition, zoomPercent_, fontSizePx_, std::move(engine));
   resolved.contentWidthPx_ = contentWidthPx_;
   resolved.fontAliases_ = fontAliases_;
   resolved.cssViewportWidth_ = cssWidth;

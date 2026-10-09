@@ -546,7 +546,7 @@ CssLengthPercentage CssComputedStyle::length(const QString& property) const {
 }
 
 CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet, CssEnvironment environment)
-    : sheet_(sheet.evaluated(environment)), environment_(environment) {
+    : sourceSheet_(std::make_shared<const CssThemeSheet>(sheet)), sheet_(sheet.evaluated(environment)), environment_(environment) {
   // Pre-parse every selector once. The match path (applyStyleForElement) reads
   // parsedSelectors_ / ruleSelectorRange_ instead of re-running parseSelector
   // (regex + char walk) on every node × every ancestor level × every rule.
@@ -582,6 +582,20 @@ CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet, CssEn
     }
     ruleSelectorRange_.emplace_back(start, static_cast<int>(parsedSelectors_.size()));
   }
+}
+
+std::shared_ptr<CssComputedStyleEngine> CssComputedStyleEngine::withEnvironment(CssEnvironment environment) const {
+  if (!sameActiveRules(environment)) {
+    auto result = std::make_shared<CssComputedStyleEngine>(*sourceSheet_, environment);
+    result->generation_ = generation_ + 1;
+    return result;
+  }
+  auto result = std::make_shared<CssComputedStyleEngine>(*this);
+  result->environment_ = environment;
+  // Cascade matches contain addresses into sheet_; a copied sheet has its own
+  // declaration storage. Only selector trees and candidate indices are reused.
+  result->clearCache();
+  return result;
 }
 
 namespace {

@@ -484,6 +484,43 @@ void testLazyPromotionUsesLiveMargins() {
   near(eager.totalHeight(), lazy.totalHeight(), "live lazy margins converge to eager height");
 }
 
+void testResponsiveProjectionReuse() {
+  const auto definition = muffin::CssThemeMapper::fromCss(
+      "#write{max-width:500px;padding:20px}p{font-size:16px}"
+      "@media(min-width:900px){p{font-size:24px}}"
+      "@media(orientation:portrait){h1{font-size:25px}}",
+      "resize", {});
+  auto theme = muffin::RenderTheme::fromDefinition(definition);
+  require(theme.updateForViewport(700, 600), "first viewport projects the environment");
+  auto original = theme;
+  require(!theme.updateForViewport(850, 600), "same active rules reuse theme projections");
+  near(theme.documentCssEnvironment().viewportWidth, 850, "reused projection exposes the current viewport");
+  near(original.documentCssEnvironment().viewportWidth, 700, "theme copy retains its viewport");
+  require(theme.updateForViewport(950, 600), "crossing width media condition invalidates projections");
+  near(theme.elementStyle("p")->text.fontSizePx, 24, "media font size updates");
+  require(theme.updateForViewport(950, 1000), "height/orientation change invalidates projections");
+  near(theme.elementStyle("h1")->text.fontSizePx, 25, "orientation media applies");
+  for (const auto& css :
+       {QString(":root{--size:2vw}#write{max-width:500px}p{font-size:var(--size)}"),
+        QString("#write{width:70%;padding:2% 3%;margin:1% auto}"), QString("#write{max-width:calc(80% - 10px);padding:0}")}) {
+    const auto dynamicDefinition = muffin::CssThemeMapper::fromCss(css, "dynamic-resize", {});
+    auto dynamic = muffin::RenderTheme::fromDefinition(dynamicDefinition);
+    dynamic.updateForViewport(700, 600);
+    require(dynamic.updateForViewport(850, 600), "viewport units and percentage page boxes recompute");
+    auto fresh = muffin::RenderTheme::fromDefinition(dynamicDefinition);
+    fresh.updateForViewport(850, 600);
+    near(dynamic.pageWidth(), fresh.pageWidth(), "responsive width agrees with a fresh projection");
+    require(dynamic.pagePadding() == fresh.pagePadding() && dynamic.pageMargin() == fresh.pageMargin(),
+            "responsive page insets agree with a fresh projection");
+    near(dynamic.elementStyle("p")->text.fontSizePx, fresh.elementStyle("p")->text.fontSizePx,
+         "responsive font agrees with a fresh projection");
+  }
+  theme.setZoomPercent(125);
+  require(theme.updateForViewport(1187.5, 1250), "zoom invalidates even when CSS viewport dimensions agree");
+  theme.setFontSizePx(18);
+  require(theme.updateForViewport(1187.5, 1250), "user font size invalidates reused projections");
+}
+
 }  // namespace
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
@@ -505,5 +542,6 @@ int main(int argc, char** argv) {
   testHtmlBlockUsesSharedBoxPainter();
   testBrowserBoxReference();
   testLazyPromotionUsesLiveMargins();
+  testResponsiveProjectionReuse();
   return 0;
 }

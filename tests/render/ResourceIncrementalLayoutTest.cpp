@@ -468,6 +468,53 @@ void realThemes() {
         sameFresh(layout, session, theme, width);
       }
 }
+void responsiveResize() {
+  for (const auto& source : {QString("# Heading\n\nParagraph with enough words to wrap around the fixed page column.\n\nTail"),
+                             QString("<div style='font-size:3vw'>HTML with viewport font</div>\n\nTail"),
+                             QString("Text <span style='font-size:3vw'>inline viewport font</span> tail\n\nTail"),
+                             QString("Text <b style='font-size:3vw'>simple HTML viewport font</b> tail\n\nTail")}) {
+    DocumentSession session;
+    session.setMarkdownText(source, false);
+    auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+        "#write{max-width:500px;padding:20px}p{margin:12px 0}@media(min-width:900px){p{font-size:24px}}", "resize", {}));
+    theme.updateForViewport(700, 600);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 700, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+    layout.buildAll(theme);
+    for (int width : {850, 950, 1050, 800, 420, 1050}) {
+      const auto id = session.document().root().children().front()->id();
+      const auto* previous = layout.block(id);
+      const bool changed = theme.updateForViewport(width, 600);
+      const bool translated = !changed && layout.relayoutForViewportWidth(theme, width);
+      if (!translated) {
+        layout.rebuild(session.document(), theme, width, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+        layout.buildAll(theme);
+      }
+      if (width == 850) {
+        require(!changed, "ordinary resize reuses theme projections");
+        require(translated == source.startsWith('#'), "HTML content conservatively recomputes its own viewport styles");
+        if (translated) require(layout.block(id) == previous, "unchanged column reuses native layout objects");
+      }
+      sameFresh(layout, session, theme, width);
+      const auto* paragraph = layout.block(session.document().root().children().back()->id());
+      const auto caret = paragraph->inlineLayout()->cursorRect(1).translated(paragraph->inlineTextOrigin());
+      const auto hit = layout.hitTest(caret.center(), theme);
+      require(hit.isValid() && hit.textOffset == 1, "resize caret/hit-test round trip");
+    }
+  }
+  DocumentSession session;
+  session.setMarkdownText("first\n\nsecond", false);
+  BlockLayoutBuilder builder;
+  auto fixed = RenderTheme::fromDefinition(CssThemeMapper::fromCss("p{height:100px;box-sizing:border-box;padding:10px}", "fixed", {}));
+  builder.refreshRenderSettings();
+  require(builder.estimateHeight(*session.document().root().children()[0], fixed, 500).height == 100,
+          "lazy estimates honor explicit box sizing/height");
+  auto constrained = RenderTheme::fromDefinition(CssThemeMapper::fromCss("p{min-height:130px;box-sizing:border-box}", "constrained", {}));
+  builder.refreshRenderSettings();
+  require(builder.estimateHeight(*session.document().root().children()[1], constrained, 500).height == 130,
+          "new estimate pass discards the previous theme's cached box constraints");
+}
+
 QJsonObject timing(const std::vector<double>& values) {
   auto sorted = values;
   std::sort(sorted.begin(), sorted.end());
@@ -492,7 +539,7 @@ void performance() {
   DocumentLayout layout;
   layout.rebuild(session.document(), theme, 1100, {}, {}, DocumentLayout::BuildPolicy::Lazy);
   layout.ensureBuilt(0, qMin<qsizetype>(10, layout.slotCount() - 1), theme);
-  std::vector<double> edits, resize, loads, fullEdits, fullLoads;
+  std::vector<double> edits, resize, loads, fullEdits, fullLoads, resizeStyles, resizeEstimates;
   int currentWidth = 1100;
   for (int i = 0; i < iterations; ++i) {
     const auto id = session.document().root().children()[0]->id();
@@ -513,9 +560,12 @@ void performance() {
     const int width = i % 2 ? 1100 : 780;
     timer.restart();
     theme.updateForViewport(width, 900);
+    const double stylesMs = timer.nsecsElapsed() / 1e6;
+    resizeStyles.push_back(stylesMs);
     layout.rebuild(session.document(), theme, width, {}, {}, DocumentLayout::BuildPolicy::Lazy);
     layout.ensureBuilt(0, qMin<qsizetype>(10, layout.slotCount() - 1), theme);
     resize.push_back(timer.nsecsElapsed() / 1e6);
+    resizeEstimates.push_back(resize.back() - stylesMs);
     currentWidth = width;
     const auto url = QString("https://example.invalid/bench-%1.png").arg(i);
     ImageLoader::instance().store(url, {});
@@ -541,6 +591,8 @@ void performance() {
                      {"typing", timing(edits)},
                      {"typing_full_reference", timing(fullEdits)},
                      {"resize", timing(resize)},
+                     {"resize_styles", timing(resizeStyles)},
+                     {"resize_layout", timing(resizeEstimates)},
                      {"image_update", timing(loads)},
                      {"image_full_reference", timing(fullLoads)}};
   const auto bytes = QJsonDocument(result).toJson();
@@ -570,6 +622,7 @@ int main(int argc, char** argv) {
   htmlStructuralEdits();
   fontsAndMermaid();
   realThemes();
+  responsiveResize();
   performance();
   return failures ? 1 : 0;
 }

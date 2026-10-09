@@ -128,6 +128,7 @@ public:
   // True when this layout has an IME preedit spliced into its laid-out text (the composition is
   // rendered by the normal text paint, so EditorView draws only the caret — not overlay glyphs).
   bool hasPreedit() const { return preeditSpliceLength_ > 0; }
+  bool hasHtmlContent() const { return hasHtmlContent_; }
   // Painted rects (document space, origin-relative) of the inline math atoms — the same rects
   // paintTextLayoutMathAtoms draws. Exposed so tests can verify atoms shift with the spliced preedit.
   QVector<QRectF> mathAtomRects(QPointF origin) const;
@@ -323,6 +324,7 @@ private:
   GradientSpec markGradient_;
   QString plainText_;
   bool isEmpty_ = true;
+  bool hasHtmlContent_ = false;
   QString displayText_;
   QString layoutText_;
   // Active IME preedit spliced into layoutText_ (NOT displayText_ — the projection/offset maps stay

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Viewport changes reuse compiled CSS selectors and theme projections while the active media rules and viewport-dependent values stay unchanged. Fixed-width prose columns retain their layout when only their horizontal position changes; lazy paragraph estimates share used-box and wrapping parameters within each pass.
 - Images, font database changes and Mermaid results carry separate paint/geometry resource versions. Editor resource notifications update affected blocks, preserve same-size image layout and coalesce asynchronous completions.
 - Incremental layout reuses nested native blocks and validates the measurements consumed by cached Flex/Grid track solutions. Equal contributions stop size invalidation at container boundaries; resource and real-theme regressions compare fresh and lazy rendering.
 - Flex/Grid measurements carry explicit sizing phases, definite containing sizes and inherited tracks. Selected upstream WPT cases and browser fixtures cover nested percentage, aspect-ratio and subgrid dependencies.
