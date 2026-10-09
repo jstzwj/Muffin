@@ -293,7 +293,7 @@ muffin_add_test(NAME MuffinCssFlexLayoutTest SOURCE tests/theme/CssFlexLayoutTes
 target_compile_definitions(MuffinCssFlexLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinCssGridLayoutTest SOURCE tests/theme/CssGridLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
 target_compile_definitions(MuffinCssGridLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest)
+foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest MuffinRenderHeadingPseudoTest)
   muffin_use_theme_fonts(${_browser_layout_test})
   target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
   if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")

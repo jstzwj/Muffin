@@ -323,7 +323,7 @@ void testBrowserInlinePseudoGeometryAndEditing() {
       require(qAbs(intrinsic.first - expected["minContent"].toDouble()*scale) < 1.1,
               context + QString(" browser min-content actual=%1 expected=%2").arg(intrinsic.first).arg(expected["minContent"].toDouble()*scale));
       require(qAbs(intrinsic.second - expected["maxContent"].toDouble()*scale) < 1.1,
-              context + " browser max-content");
+              context + QString(" browser max-content actual=%1 expected=%2").arg(intrinsic.second).arg(expected["maxContent"].toDouble()*scale));
       require(qAbs(text->height() - expected["height"].toDouble() * scale) < .7,
               context + QString(" browser height actual=%1 expected=%2").arg(text->height()).arg(expected["height"].toDouble() * scale));
       const auto characters = expected["characters"].toArray();
