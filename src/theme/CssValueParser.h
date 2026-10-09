@@ -92,6 +92,7 @@ qreal shadowBlurPx(const QString& shadowRaw, const QHash<QString, QString>& vars
 // Parse linear-gradient(...)/radial-gradient(...)/conic-gradient(...) → a rect-independent
 // GradientSpec (GradientPainter builds a QGradient per target rect). Stop colours resolve
 // through extractColor — the same path as every other theme colour. Defined in CssValueParser.cpp.
-GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>& vars);
+GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>& vars,
+                               const CssLengthContext& context = {});
 
 }  // namespace muffin

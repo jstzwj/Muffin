@@ -200,39 +200,42 @@ bool gradientPartIsColor(const QString& part, const QHash<QString, QString>& var
   return extractColor(part, vars).isValid();
 }
 
-GradientStop parseGradientStop(const QString& part, const QHash<QString, QString>& vars) {
-  GradientStop s;
-  if (part.contains(QStringLiteral("transparent"), Qt::CaseInsensitive)) {
-    s.color = QColor(Qt::transparent);
-  } else {
-    s.color = extractColor(part, vars);
+std::vector<GradientStop> parseGradientStops(const QString& part, const QHash<QString, QString>& vars,
+                                              const CssLengthContext& context, GradientSpec::Kind kind) {
+  auto tokens = splitTopLevelSpaces(part);
+  std::vector<CssLengthPercentage> positions;
+  while (tokens.size() > 1 && positions.size() < 2) {
+    CssLengthPercentage position;
+    if (kind == GradientSpec::Kind::Conic) {
+      static const QRegularExpression angle(QStringLiteral(R"(^([+-]?(?:\d*\.)?\d+)(deg|rad|turn|grad|%)?$)"),
+                                             QRegularExpression::CaseInsensitiveOption);
+      const auto match = angle.match(tokens.back());
+      if (match.hasMatch()) {
+        qreal turns = match.captured(1).toDouble();
+        const auto unit = match.captured(2).toLower();
+        if (unit == "deg") turns /= 360;
+        else if (unit == "rad") turns /= 2 * qAcos(-1.0);
+        else if (unit == "grad") turns /= 400;
+        else if (unit == "%") turns /= 100;
+        else if (unit.isEmpty() && turns != 0) break;
+        position = {CssLengthStatus::Valid, 0, turns, true};
+      }
+    } else {
+      position = parseCssLengthPercentage(tokens.back(), context);
+    }
+    if (position.status != CssLengthStatus::Valid) break;
+    positions.insert(positions.begin(), position);
+    tokens.removeLast();
   }
-  s.position = -1.0;  // unset marker
-  static const QRegularExpression pctRe(QStringLiteral("(^|\\s)([0-9.]+)%"));
-  const QRegularExpressionMatch m = pctRe.match(part);
-  if (m.hasMatch()) { s.position = m.captured(2).toDouble() / 100.0; }
-  return s;
+  const auto color = extractColor(tokens.join(QLatin1Char(' ')), vars);
+  if (!color.isValid()) return {};
+  if (positions.empty()) return {{CssLengthPercentage{}, color}};
+  std::vector<GradientStop> stops;
+  for (const auto& position : positions) stops.push_back({position, color});
+  return stops;
 }
 
-void assignImplicitStopPositions(std::vector<GradientStop>& stops) {
-  if (stops.empty()) { return; }
-  if (stops.front().position < 0.0) { stops.front().position = 0.0; }
-  if (stops.back().position < 0.0) { stops.back().position = 1.0; }
-  for (size_t i = 0; i < stops.size(); ++i) {
-    if (stops[i].position >= 0.0) { continue; }
-    size_t lo = i;
-    while (lo > 0 && stops[lo].position < 0.0) { --lo; }
-    size_t hi = i;
-    while (hi + 1 < stops.size() && stops[hi].position < 0.0) { ++hi; }
-    const qreal plo = stops[lo].position;
-    const qreal phi = stops[hi].position;
-    const qreal count = static_cast<qreal>(hi - lo);
-    stops[i].position = plo + (phi - plo) * static_cast<qreal>(i - lo) / count;
-  }
-  for (auto& s : stops) { s.position = qBound(0.0, s.position, 1.0); }
-}
-
-void parseGradientDirection(const QString& part, GradientSpec& spec) {
+void parseGradientDirection(const QString& part, GradientSpec& spec, const CssLengthContext& context) {
   const QString p = part.trimmed().toLower();
   if (spec.kind == GradientSpec::Kind::Linear) {
     bool ok = false;
@@ -258,6 +261,27 @@ void parseGradientDirection(const QString& part, GradientSpec& spec) {
       }
     }
   } else if (spec.kind == GradientSpec::Kind::Radial) {
+    const auto shape = p.section(QStringLiteral(" at "), 0, 0);
+    if (shape.contains(QStringLiteral("circle"))) spec.radialShape = GradientSpec::RadialShape::Circle;
+    if (shape.contains(QStringLiteral("closest-side"))) spec.radialExtent = GradientSpec::RadialExtent::ClosestSide;
+    else if (shape.contains(QStringLiteral("farthest-side"))) spec.radialExtent = GradientSpec::RadialExtent::FarthestSide;
+    else if (shape.contains(QStringLiteral("closest-corner"))) spec.radialExtent = GradientSpec::RadialExtent::ClosestCorner;
+    else if (shape.contains(QStringLiteral("farthest-corner"))) spec.radialExtent = GradientSpec::RadialExtent::FarthestCorner;
+    else {
+      auto sizes = splitTopLevelSpaces(shape);
+      sizes.removeAll(QStringLiteral("circle"));
+      sizes.removeAll(QStringLiteral("ellipse"));
+      if (!sizes.isEmpty()) {
+        const auto x = parseCssLengthPercentage(sizes.front(), context);
+        const auto y = sizes.size() > 1 ? parseCssLengthPercentage(sizes[1], context) : x;
+        if (x.status == CssLengthStatus::Valid && y.status == CssLengthStatus::Valid) {
+          spec.radialExtent = GradientSpec::RadialExtent::Explicit;
+          spec.radialRadiusX = x;
+          spec.radialRadiusY = y;
+          if (sizes.size() == 1) spec.radialShape = GradientSpec::RadialShape::Circle;
+        }
+      }
+    }
     QString pos;
     const int atIdx = p.indexOf(QStringLiteral("at"));
     if (atIdx >= 0) { pos = p.mid(atIdx + 2).trimmed(); }
@@ -293,9 +317,6 @@ void parseGradientDirection(const QString& part, GradientSpec& spec) {
         spec.radialCenter = c;
       }
     }
-    if (p.contains(QStringLiteral("closest-side"))) { spec.radialRadius = 0.5; }
-    else if (p.contains(QStringLiteral("farthest-side"))) { spec.radialRadius = 1.0; }
-    else if (p.contains(QStringLiteral("farthest-corner"))) { spec.radialRadius = 0.7071; }
   }
 }
 
@@ -465,7 +486,7 @@ qreal shadowBlurPx(const QString& shadowRaw, const QHash<QString, QString>& vars
   return 0.0;
 }
 
-GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>& vars) {
+GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>& vars, const CssLengthContext& context) {
   GradientSpec spec;
   const QString resolved = CssThemeParser::resolveVars(raw, vars).trimmed();
   if (resolved.isEmpty()) { return spec; }
@@ -482,16 +503,16 @@ GradientSpec parseGradientSpec(const QString& raw, const QHash<QString, QString>
   int idx = 0;
   if (!parts.first().trimmed().isEmpty() && !gradientPartIsColor(parts.first(), vars)) {
     if (spec.kind == GradientSpec::Kind::Conic) { parseConicDirection(parts.first(), spec); }
-    else { parseGradientDirection(parts.first(), spec); }
+    else { parseGradientDirection(parts.first(), spec, context); }
     idx = 1;
   }
   std::vector<GradientStop> stops;
   for (; idx < parts.size(); ++idx) {
-    const GradientStop s = parseGradientStop(parts.at(idx), vars);
-    if (s.color.isValid()) { stops.push_back(s); }
+    const auto parsed = parseGradientStops(parts.at(idx), vars, context, spec.kind);
+    if (parsed.empty()) { spec.kind = GradientSpec::Kind::None; return spec; }
+    stops.insert(stops.end(), parsed.begin(), parsed.end());
   }
   if (stops.empty()) { spec.kind = GradientSpec::Kind::None; return spec; }
-  assignImplicitStopPositions(stops);
   spec.stops = stops;
   return spec;
 }

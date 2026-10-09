@@ -170,10 +170,12 @@ std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles
     rule.color = propertyColor(sub, {QStringLiteral("color")});
     rule.backgroundColor = propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
     const QString bgImg = propertyValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")});
-    rule.background = parseGradientSpec(bgImg, vars);
+    const CssLengthContext gradientContext{sub.fontSizePx * sub.textScale, sub.rootFontSizePx * sub.textScale,
+                                            sub.fontSizePx * .5, sub.fontSizePx * .5, sub.viewportPx};
+    rule.background = parseGradientSpec(bgImg, vars, gradientContext);
     const QString maskImg = propertyValue(
         sub, {QStringLiteral("mask-image"), QStringLiteral("-webkit-mask-image"), QStringLiteral("mask"), QStringLiteral("-webkit-mask")});
-    rule.maskPattern = parseGradientSpec(maskImg, vars);
+    rule.maskPattern = parseGradientSpec(maskImg, vars, gradientContext);
     rule.maskTint = rule.backgroundColor.isValid() ? rule.backgroundColor
                                                    : propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
     const QString opacityRaw = propertyValue(sub, {QStringLiteral("opacity")});
@@ -260,7 +262,8 @@ std::vector<ElementBackground> extractElementBackgrounds(const ComputedDecoratio
     const auto& vars = sub.customProperties();
     const qreal emPx = sub.fontSizePx * sub.textScale;
     const QString bgImg = propertyValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")});
-    const GradientSpec grad = parseGradientSpec(bgImg, vars);
+    const GradientSpec grad = parseGradientSpec(bgImg, vars, {emPx, sub.rootFontSizePx * sub.textScale,
+                                                            emPx * .5, emPx * .5, sub.viewportPx});
     // Phase 2c: a host may carry a rounded pill / top hairline WITHOUT a gradient
     // (e.g. a heading with only `border-top` or `border-radius`). Capture the box
     // decorations before gating so such hosts still produce an entry; only skip

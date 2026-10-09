@@ -958,8 +958,8 @@ void testParseGradientLinear() {
   require(qAbs(g.angleDeg - 45.0) < 0.01, QStringLiteral("45deg should set angleDeg=45"));
   require(g.stops.size() == 2, QStringLiteral("two stops expected"));
   require(g.stops.at(0).color == QColor(QStringLiteral("#ffffff")), QStringLiteral("first stop #ffffff"));
-  require(qAbs(g.stops.at(0).position - 0.0) < 0.01, QStringLiteral("first stop implicit position 0"));
-  require(qAbs(g.stops.at(1).position - 1.0) < 0.01, QStringLiteral("last stop implicit position 1"));
+  require(g.stops.at(0).position.status == CssLengthStatus::Missing, QStringLiteral("first stop defers its implicit position"));
+  require(g.stops.at(1).position.status == CssLengthStatus::Missing, QStringLiteral("last stop defers its implicit position"));
 }
 
 void testParseGradientRadialTransparent() {
@@ -971,7 +971,7 @@ void testParseGradientRadialTransparent() {
           QStringLiteral("'at center' should set center (0.5,0.5)"));
   require(g.stops.size() == 2, QStringLiteral("two stops expected"));
   require(g.stops.at(1).color == QColor(Qt::transparent), QStringLiteral("'transparent' stop → transparent color"));
-  require(qAbs(g.stops.at(1).position - 0.70) < 0.01, QStringLiteral("explicit 70% position honoured"));
+  require(qAbs(g.stops.at(1).position.fraction - 0.70) < 0.01, QStringLiteral("explicit 70% position honoured"));
 }
 
 void testParseGradientVarAndColorMixStops() {

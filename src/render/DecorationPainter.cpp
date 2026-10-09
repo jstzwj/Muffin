@@ -139,7 +139,7 @@ void paintHrGradient(QPainter& painter, const RenderTheme& theme, const QRectF& 
   const qreal h = qMax<qreal>(2.0, rect.height() * 0.08);
   const QRectF bar(rect.left(), rect.center().y() - h / 2.0, rect.width(), h);
   painter.save();
-  painter.fillRect(bar, GradientPainter::makeBrush(eb->gradient, bar));
+  painter.fillRect(bar, GradientPainter::makeBrush(eb->gradient, bar, theme.zoomPercent() / 100.0));
   painter.restore();
 }
 
@@ -274,7 +274,7 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       painter.save();
       painter.setOpacity(after->opacity);
       if (after->background.kind != GradientSpec::Kind::None) {
-        painter.fillRect(bar, GradientPainter::makeBrush(after->background, bar));
+        painter.fillRect(bar, GradientPainter::makeBrush(after->background, bar, theme.zoomPercent() / 100.0));
       } else if (after->backgroundColor.isValid()) {
         painter.fillRect(bar, after->backgroundColor);
       }
@@ -303,8 +303,9 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
     return;
   }
   const QColor tint = rule->maskTint.isValid() ? rule->maskTint : theme.textColor();
-  const qreal tileW = qBound(2.0, rule->maskTile.width(), 256.0);
-  const qreal tileH = qBound(2.0, rule->maskTile.height(), 256.0);
+  const qreal scale = theme.zoomPercent() / 100.0;
+  const qreal tileW = qBound(2.0, rule->maskTile.width() * scale, 256.0);
+  const qreal tileH = qBound(2.0, rule->maskTile.height() * scale, 256.0);
   QImage tile;
   if (hasGradientMask) {
     // Recolour the mask gradient stops to the tint (a mask is colour-agnostic).
@@ -318,7 +319,7 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
     tile.fill(Qt::transparent);
     {
       QPainter tp(&tile);
-      tp.fillRect(tile.rect(), GradientPainter::makeBrush(tinted, QRectF(0, 0, tileW, tileH)));
+      tp.fillRect(tile.rect(), GradientPainter::makeBrush(tinted, QRectF(0, 0, tileW, tileH), scale));
     }
   } else {
     tile = renderMaskTile(rule->svgData, tint, QSize(int(qCeil(tileW)), int(qCeil(tileH))));

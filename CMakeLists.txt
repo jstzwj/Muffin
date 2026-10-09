@@ -1287,6 +1287,7 @@ set(MUFFIN_UI_SOURCES
   src/render/ImagePlaceholder.cpp
   src/render/ImagePlaceholder.h
   src/render/InlineLayout.cpp
+  src/render/InlineFormatting.h
   src/render/InlineLayout.h
   src/render/TreeSitterHighlighter.cpp
   src/render/TreeSitterHighlighter.h

@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Document host styles supply heading/paragraph margins and an inherited base line height for imported themes. Markdown and HTML share CSS half-leading and inline box fragments; generated padding no longer creates line breaks, and wrapped formulas/images belong to their actual line.
+- CSS gradients retain length/percentage and `calc()` stops until painting, including hard edges, omitted/backwards stops and radial ellipse extents. Abyss's 1px texture dots no longer become diffuse halos; browser references cover real theme typography, keyboard wrapping and gradient pixels.
 - Resource layout pixel comparisons prime both Qt font raster paths before exact comparison, avoiding FreeType first-draw edge coverage differences for large headings. Geometry, caret and selection comparisons remain exact.
 - Retained native text layouts keep their shaping snapshot for painting and caret queries. Fontconfig overrides for browser geometry comparisons apply only to the Flex/Grid oracle tests, preserving the font environment of existing raster references.
 - CSS max-content widths use text advances rather than glyph ink overhang. Browser-reference tests share 96 logical DPI, and Timeline monospace fallback keeps the same metric and paint font hint for missing leading families.

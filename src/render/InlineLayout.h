@@ -242,6 +242,7 @@ private:
     QColor color;
     QColor backgroundColor;
     qreal fontSize = 0;
+    qreal lineHeight = 0;
     QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
     bool keyboard = false;
     QString href;
@@ -302,6 +303,7 @@ private:
   QColor baseRunColor_;           // the element base colour the own-text runs render in
   QVector<QPair<int, int>> hoverRecolourRanges_;  // display-offset runs that inherit the base colour (used by both hover and focus recolour)
   qreal lineHeightMultiplier_ = 0.0;
+  qreal zoomScale_ = 1;
   qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
   QTextOption::WrapMode wrapMode_ = QTextOption::WrapAtWordBoundaryOrAnywhere;
@@ -309,6 +311,7 @@ private:
   TextShadow textShadow_;  // present=false ⇒ no shadow
   std::shared_ptr<const LayoutBox> codeStyle_;
   QVector<LayoutBox> inlineBoxes_;
+  QVector<QRectF> lineBoxes_;
   QHash<qsizetype, std::shared_ptr<const LayoutBox>> spanStyles_;
   void buildInlineBoxes();
   // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +

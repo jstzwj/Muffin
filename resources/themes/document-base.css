@@ -1,14 +1,14 @@
 /* Muffin's document host contract. Theme author rules follow this sheet. */
 html { font-size: 16px; }
-body { margin: 0; }
+body { margin: 0; line-height: 1.42857143; }
 #write { box-sizing: border-box; margin: 0 auto; padding: 36px 30px 70px; overflow-wrap: break-word; }
-p { margin: 0 0 1em; }
+p { margin: 1rem 0; }
 h1 { font-size: 2em; }
 h2 { font-size: 1.5em; }
 h3 { font-size: 1.17em; }
 h4, h5, h6 { font-size: 1em; }
 h1, h2, h3, h4, h5, h6 { font-weight: bold; }
-h1, h2, h3, h4, h5, h6 { margin: 0; }
+h1, h2, h3, h4, h5, h6 { margin: 1rem 0; }
 pre, blockquote, table, ul, ol { margin: 0 0 1em; }
 code, pre { font-family: Consolas, 'DejaVu Sans Mono', monospace; }
 code { font-size: .875em; padding: 0 2px; border: none; border-radius: 0; }

@@ -392,7 +392,8 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   }
   out.paint.color = styleColor(colorProps);
   out.paint.backgroundColor = styleColor(bgProps);
-  out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties());
+  out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties(),
+                                               {emPx, bodyPx, emPx * .5, emPx * .5, style.viewportPx});
   const QString shadow = style.rawValue(QStringLiteral("box-shadow"));
   if (!shadow.isEmpty() && !shadow.contains(QStringLiteral("none"))) {
     const auto parsed = parseFirstBoxShadow(shadow, style.customProperties(), emPx);

@@ -1,0 +1,823 @@
+{
+  "browser": "148.0.7778.96",
+  "viewport": {
+    "width": 960,
+    "height": 1600
+  },
+  "font": {
+    "family": "MuffinFixtureSans",
+    "files": {
+      "github/open-sans-v17-latin-ext_latin-regular.woff2": "537d46273fe124bbced2f098f26222fa3155741e9d76f906c3c39e7fa09bf6a8",
+      "github/open-sans-v17-latin-ext_latin-italic.woff2": "8ddc89881ca5f355826d20b2229266c56a2c8d7be69ff9533b1891b55dc15825",
+      "github/open-sans-v17-latin-ext_latin-700.woff2": "59a3166f7bacce6a65bf901ad20f141b619bca39a1318ea5efbdaa587b48a800",
+      "github/open-sans-v17-latin-ext_latin-700italic.woff2": "a250cc9c90a94d628301cbeaca7d8aa6276cda73c8a32af07d3ede513447931a"
+    }
+  },
+  "headings": [
+    {
+      "id": "newsprint",
+      "css": "/* meyer reset -- http://meyerweb.com/eric/tools/css/reset/ , v2.0 | 20110126 | License: none (public domain) */\r\n\r\n@include-when-export url(https://fonts.googleapis.com/css?family=PT+Serif:400,400italic,700,700italic&subset=latin,cyrillic-ext,cyrillic,latin-ext);\r\n\r\n/* =========== */\r\n\r\n/* pt-serif-regular - latin */\r\n@font-face {\r\n  font-family: 'PT Serif';\r\n  font-style: normal;\r\n  font-weight: normal;\r\n\tsrc: local('PT Serif'), local('PTSerif-Regular'), url('./newsprint/pt-serif-v11-latin-regular.woff2') format('woff2');\r\n\tunicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\r\n}\r\n/* pt-serif-italic - latin */\r\n@font-face {\r\n  font-family: 'PT Serif';\r\n  font-style: italic;\r\n  font-weight: normal;\r\n\tsrc: local('PT Serif Italic'), local('PTSerif-Italic'), url('./newsprint/pt-serif-v11-latin-italic.woff2') format('woff2');\r\n\tunicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\r\n}\r\n/* pt-serif-700 - latin */\r\n@font-face {\r\n  font-family: 'PT Serif';\r\n  font-style: normal;\r\n  font-weight: bold;\r\n\tsrc: local('PT Serif Bold'), local('PTSerif-Bold'), url('./newsprint/pt-serif-v11-latin-700.woff2') format('woff2');\r\n\tunicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\r\n}\r\n/* pt-serif-700italic - latin */\r\n@font-face {\r\n  font-family: 'PT Serif';\r\n  font-style: italic;\r\n  font-weight: bold;\r\n\tsrc: local('PT Serif Bold Italic'), local('PTSerif-BoldItalic'), url('./newsprint/pt-serif-v11-latin-700italic.woff2') format('woff2');\r\n\tunicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;\r\n}\r\n\r\n:root {\r\n\t--active-file-bg-color: #dadada;\r\n\t--active-file-bg-color: rgba(32, 43, 51, 0.63);\r\n\t--active-file-text-color: white;\r\n\t--bg-color: #f3f2ee;\r\n\t--text-color: #1f0909;\r\n\t--control-text-color: #444;\r\n\t--rawblock-edit-panel-bd: #e5e5e5;\r\n\r\n\t--select-text-bg-color: rgba(32, 43, 51, 0.63);\r\n  --select-text-font-color: white;\r\n}\r\n\r\npre {\r\n\t--select-text-bg-color: #36284e;\r\n\t--select-text-font-color: #fff;\r\n}\r\n\r\nhtml {\r\n\tfont-size: 16px;\r\n\t-webkit-font-smoothing: antialiased;\r\n}\r\n\r\nhtml, body {\r\n\tbackground-color: #f3f2ee;\r\n\tfont-family: \"PT Serif\", 'Times New Roman', 'SF Pro', Times, serif;\r\n\tcolor: #1f0909;\r\n\tline-height: 1.5em;\r\n}\r\n\r\n/*#write {\r\n\toverflow-x: auto;\r\n    max-width: initial;\r\n\tpadding-left: calc(50% - 17em);\r\n    padding-right: calc(50% - 17em);\r\n}\r\n\r\n@media (max-width: 36em) {\r\n \t#write {\r\n \t\tpadding-left: 1em;\r\n    \tpadding-right: 1em;\r\n \t}\r\n}*/\r\n\r\n#write {\r\n\tmax-width: 40em;\r\n}\r\n\r\n@media only screen and (min-width: 1400px) {\r\n\t#write {\r\n\t\t\tmax-width: 914px;\r\n\t}\r\n}\r\n\r\nol li {\r\n\tlist-style-type: decimal;\r\n\tlist-style-position: outside;\r\n}\r\nul li {\r\n\tlist-style-type: disc;\r\n\tlist-style-position: outside;\r\n}\r\n\r\nol,\r\nul {\r\n\tlist-style: none;\r\n}\r\n\r\nblockquote,\r\nq {\r\n\tquotes: none;\r\n}\r\nblockquote:before,\r\nblockquote:after,\r\nq:before,\r\nq:after {\r\n\tcontent: '';\r\n\tcontent: none;\r\n}\r\ntable {\r\n\tborder-collapse: collapse;\r\n\tborder-spacing: 0;\r\n}\r\n/* styles */\r\n\r\n/* ====== */\r\n\r\n/* headings */\r\n\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6 {\r\n\tfont-weight: bold;\r\n}\r\nh1 {\r\n\tfont-size: 1.875em;\r\n\t/*30 / 16*/\r\n\tline-height: 1.6em;\r\n\t/* 48 / 30*/\r\n\tmargin-top: 2em;\r\n}\r\nh2,\r\nh3 {\r\n\tfont-size: 1.3125em;\r\n\t/*21 / 16*/\r\n\tline-height: 1.15;\r\n\t/*24 / 21*/\r\n\tmargin-top: 2.285714em;\r\n\t/*48 / 21*/\r\n\tmargin-bottom: 1.15em;\r\n\t/*24 / 21*/\r\n}\r\nh3 {\r\n\tfont-weight: normal;\r\n}\r\nh4 {\r\n\tfont-size: 1.125em;\r\n\t/*18 / 16*/\r\n\tmargin-top: 2.67em;\r\n\t/*48 / 18*/\r\n}\r\nh5,\r\nh6 {\r\n\tfont-size: 1em;\r\n\t/*16*/\r\n}\r\nh1 {\r\n\tborder-bottom: 1px solid;\r\n\tmargin-bottom: 1.875em;\r\n\tpadding-bottom: 0.8125em;\r\n}\r\n/* links */\r\n\r\na {\r\n\ttext-decoration: none;\r\n\tcolor: #065588;\r\n}\r\na:hover,\r\na:active {\r\n\ttext-decoration: underline;\r\n}\r\n/* block spacing */\r\n\r\np,\r\nblockquote,\r\n.md-fences {\r\n\tmargin-bottom: 1.5em;\r\n}\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6 {\r\n\tmargin-bottom: 1.5em;\r\n}\r\n/* blockquote */\r\n\r\nblockquote {\r\n\tfont-style: italic;\r\n\tborder-left: 5px solid;\r\n\tmargin-left: 2em;\r\n\tpadding-left: 1em;\r\n}\r\n/* lists */\r\n\r\nul,\r\nol {\r\n\tmargin: 0 0 1.5em 1.5em;\r\n}\r\n/* tables */\r\n.md-meta,.md-before, .md-after {\r\n\tcolor:#999;\r\n}\r\n\r\ntable {\r\n\tmargin-bottom: 1.5em;\r\n\t/*24 / 16*/\r\n\tfont-size: 1em;\r\n\t/* width: 100%; */\r\n}\r\nthead th,\r\ntfoot th {\r\n\tpadding: .25em .25em .25em .4em;\r\n\ttext-transform: uppercase;\r\n}\r\nth {\r\n\ttext-align: left;\r\n}\r\ntd {\r\n\tvertical-align: top;\r\n\tpadding: .25em .25em .25em .4em;\r\n}\r\n\r\ncode,\r\n.md-fences {\r\n\tbackground-color: #dadada;\r\n}\r\n\r\ncode {\r\n\tpadding-left: 2px;\r\n\tpadding-right: 2px;\r\n}\r\n\r\n.md-fences {\r\n\tmargin-left: 2em;\r\n\tmargin-bottom: 3em;\r\n\tpadding-left: 1ch;\r\n\tpadding-right: 1ch;\r\n}\r\n\r\npre,\r\ncode,\r\ntt {\r\n\tfont-size: .875em;\r\n\tline-height: 1.714285em;\r\n}\r\n/* some fixes */\r\n\r\nh1 {\r\n\tline-height: 1.3em;\r\n\tfont-weight: normal;\r\n\tmargin-bottom: 0.5em;\r\n}\r\n\r\np + ul,\r\np + ol{\r\n\tmargin-top: .5em;\r\n}\r\n\r\nh3 + ul,\r\nh4 + ul,\r\nh5 + ul,\r\nh6 + ul,\r\nh3 + ol,\r\nh4 + ol,\r\nh5 + ol,\r\nh6 + ol {\r\n\tmargin-top: .5em;\r\n}\r\n\r\nli > ul,\r\nli > ol {\r\n\tmargin-top: inherit;\r\n\tmargin-bottom: 0;\r\n}\r\n\r\nli ol>li {\r\n\tlist-style-type: lower-alpha;\r\n}\r\n\r\nli li ol>li{\r\n\tlist-style-type: lower-roman;\r\n}\r\n\r\nh2,\r\nh3 {\r\n\tmargin-bottom: .75em;\r\n}\r\nhr {\r\n\tborder-top: none;\r\n\tborder-right: none;\r\n\tborder-bottom: 1px solid;\r\n\tborder-left: none;\r\n}\r\nh1 {\r\n\tborder-color: #c5c5c5;\r\n}\r\nblockquote {\r\n\tborder-color: #bababa;\r\n\tcolor: #656565;\r\n}\r\n\r\nblockquote ul,\r\nblockquote ol {\r\n\tmargin-left:0;\r\n}\r\n\r\n.ty-table-edit {\r\n\tbackground-color: transparent;\r\n}\r\nthead {\r\n\tbackground-color: #dadada;\r\n}\r\ntr:nth-child(even) {\r\n\tbackground: #e8e7e7;\r\n}\r\nhr {\r\n\tborder-color: #c5c5c5;\r\n}\r\n.task-list{\r\n\tpadding-left: 1rem;\r\n}\r\n\r\n.md-task-list-item {\r\n\tpadding-left: 1.5rem;\r\n\tlist-style-type: none;\r\n}\r\n\r\n.md-task-list-item > input:before {\r\n\tcontent: '\\221A';\r\n\tdisplay: inline-block;\r\n\twidth: 1.25rem;\r\n  \theight: 1.6rem;\r\n\tvertical-align: middle;\r\n\ttext-align: center;\r\n\tcolor: #ddd;\r\n\tbackground-color: #F3F2EE;\r\n}\r\n\r\n.md-task-list-item > input:checked:before,\r\n.md-task-list-item > input[checked]:before{\r\n\tcolor: inherit;\r\n}\r\n\r\n#write pre.md-meta-block {\r\n\tmin-height: 1.875rem;\r\n\tcolor: #555;\r\n\tborder: 0px;\r\n\tbackground: transparent;\r\n\tmargin-top: -4px;\r\n\tmargin-left: 1em;\r\n\tmargin-top: 1em;\r\n}\r\n\r\n.md-image>.md-meta {\r\n\tcolor: #9B5146;\r\n}\r\n\r\n.md-image>.md-meta{\r\n\tfont-family: Menlo, 'Ubuntu Mono', Consolas, 'Courier New', 'Microsoft Yahei', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', serif;\r\n}\r\n\r\n\r\n#write>h3.md-focus:before{\r\n\tleft: -1.5rem;\r\n\tcolor:#999;\r\n\tborder-color:#999;\r\n}\r\n#write>h4.md-focus:before{\r\n\tleft: -1.5rem;\r\n\ttop: .25rem;\r\n\tcolor:#999;\r\n\tborder-color:#999;\r\n}\r\n#write>h5.md-focus:before{\r\n\tleft: -1.5rem;\r\n\ttop: .0.3125rem;\r\n\tcolor:#999;\r\n\tborder-color:#999;\r\n}\r\n#write>h6.md-focus:before{\r\n\tleft: -1.5rem;\r\n\ttop: 0.3125rem;\r\n\tcolor:#999;\r\n\tborder-color:#999;\r\n}\r\n\r\n.md-toc:focus .md-toc-content{\r\n\tmargin-top: 19px;\r\n}\r\n\r\n.md-toc-content:empty:before{\r\n\tcolor: #065588;\r\n}\r\n.md-toc-item {\r\n\tcolor: #065588;\r\n}\r\n#write div.md-toc-tooltip {\r\n\tbackground-color: #f3f2ee;\r\n}\r\n\r\n#typora-sidebar {\r\n\tbackground-color: #f3f2ee;\r\n\t-webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.375);\r\n  \tbox-shadow: 0 6px 12px rgba(0, 0, 0, 0.375);\r\n}\r\n\r\n.pin-outline #typora-sidebar {\r\n\tbackground: inherit;\r\n\tbox-shadow: none;\r\n\tborder-right: 1px dashed;\r\n}\r\n\r\n.pin-outline #typora-sidebar:hover .outline-title-wrapper {\r\n\tborder-left:1px dashed;\r\n}\r\n\r\n.outline-item:hover {\r\n  background-color: #dadada;\r\n  border-left: 28px solid #dadada;\r\n  border-right: 18px solid #dadada;\r\n}\r\n\r\n.typora-node .outline-item:hover {\r\n  \tborder-right: 28px solid #dadada;\r\n}\r\n\r\n.outline-expander:before {\r\n  content: \"\\f0da\";\r\n  font-family: FontAwesome;\r\n  font-size:14px;\r\n  top: 1px;\r\n}\r\n\r\n.outline-expander:hover:before,\r\n.outline-item-open>.outline-item>.outline-expander:before {\r\n  content: \"\\f0d7\";\r\n}\r\n\r\n.modal-content {\r\n\tbackground-color: #f3f2ee;\r\n}\r\n\r\n.auto-suggest-container ul li {\r\n\tlist-style-type: none;\r\n}\r\n\r\n/** UI for electron */\r\n\r\n.megamenu-menu,\r\n#top-titlebar, #top-titlebar *,\r\n.megamenu-content {\r\n\tbackground: #f3f2ee;\r\n\tcolor: #1f0909;\r\n}\r\n\r\n.megamenu-menu-header {\r\n\tborder-bottom: 1px dashed #202B33;\r\n}\r\n\r\n.megamenu-menu {\r\n\tbox-shadow: none;\r\n\tborder-right: 1px dashed;\r\n}\r\n\r\nheader, .context-menu, .megamenu-content, footer {\r\n\tfont-family: \"PT Serif\", 'Times New Roman', Times, serif;\r\n    color: #1f0909;\r\n}\r\n\r\n#megamenu-back-btn {\r\n\tcolor: #1f0909;\r\n\tborder-color: #1f0909;\r\n}\r\n\r\n.megamenu-menu-header #megamenu-menu-header-title:before {\r\n\tcolor: #1f0909;\r\n}\r\n\r\n.megamenu-menu-list li a:hover, .megamenu-menu-list li a.active {\r\n\tcolor: inherit;\r\n\tbackground-color: #e8e7df;\r\n}\r\n\r\n.long-btn:hover {\r\n\tbackground-color: #e8e7df;\r\n}\r\n\r\n#recent-file-panel tbody tr:nth-child(2n-1) {\r\n    background-color: transparent !important;\r\n}\r\n\r\n.megamenu-menu-panel tbody tr:hover td:nth-child(2) {\r\n    color: inherit;\r\n}\r\n\r\n.megamenu-menu-panel .btn {\r\n\tbackground-color: #D2D1D1;\r\n}\r\n\r\n.btn-default {\r\n\tbackground-color: transparent;\r\n}\r\n\r\n.typora-sourceview-on #toggle-sourceview-btn,\r\n.ty-show-word-count #footer-word-count {\r\n\tbackground: #c7c5c5;\r\n}\r\n\r\n#typora-quick-open {\r\n    background-color: inherit;\r\n}\r\n\r\n.md-diagram-panel {\r\n\tmargin-top: 8px;\r\n}\r\n\r\n.file-list-item-file-name {\r\n\tfont-weight: initial;\r\n}\r\n\r\n.file-list-item-summary {\r\n\topacity: 1;\r\n}\r\n\r\n.file-list-item {\r\n\tcolor: #777;\r\n}\r\n\r\n.file-list-item.active {\r\n\tbackground-color: inherit;\r\n\tcolor: black;\r\n}\r\n\r\n.ty-side-sort-btn.active {\r\n\tbackground-color: inherit;\r\n}\r\n\r\n.file-list-item.active .file-list-item-file-name  {\r\n\tfont-weight: bold;\r\n}\r\n\r\n.file-list-item{\r\n    opacity:1 !important;\r\n}\r\n\r\n.file-library-node.active>.file-node-background{\r\n\tbackground-color: rgba(32, 43, 51, 0.63);\r\n\tbackground-color: var(--active-file-bg-color);\r\n}\r\n\r\n.file-tree-node.active>.file-node-content{\r\n\tcolor: white;\r\n\tcolor: var(--active-file-text-color);\r\n}\r\n\r\n.md-task-list-item>input {\r\n\tmargin-left: -1.7em;\r\n\tmargin-top: calc(1rem - 12px);\r\n\t-webkit-appearance: button;\r\n}\r\n\r\ninput {\r\n\tborder: 1px solid #aaa;\r\n}\r\n\r\n.megamenu-menu-header #megamenu-menu-header-title,\r\n.megamenu-menu-header:hover, \r\n.megamenu-menu-header:focus {\r\n\tcolor: inherit;\r\n}\r\n\r\n.dropdown-menu .divider {\r\n\tborder-color: #e5e5e5;\r\n\topacity: 1;\r\n}\r\n\r\n/* Windows 7 strong-emphasis workaround */\r\n.os-windows-7 strong,\r\n.os-windows-7 strong  {\r\n\tfont-weight: 760;\r\n}\r\n\r\n.ty-preferences .btn-default {\r\n\tbackground: transparent;\r\n}\r\n\r\n.ty-preferences .window-header {\r\n\tborder-bottom: 1px dashed #202B33;\r\n\tbox-shadow: none;\r\n}\r\n\r\n#sidebar-loading-template, #sidebar-loading-template.file-list-item {\r\n\tcolor: #777;\r\n}\r\n\r\n.searchpanel-search-option-btn.active {\r\n\tbackground: #777;\r\n\tcolor: white;\r\n}\r\n\r\n.export-detail, .light .export-detail, \r\n.light .export-item.active, \r\n.light .export-items-list-control {\r\n\tbackground: #e0e0e0;\r\n\tborder-radius: 2px;\r\n\tfont-weight: 700;\r\n\tcolor: inherit\r\n}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "nodes": [
+        {
+          "tag": "h1",
+          "text": "Muffin Markdown Example"
+        },
+        {
+          "tag": "p",
+          "text": "Chinese | English"
+        },
+        {
+          "tag": "p",
+          "text": "This document is a Markdown syntax sample for exercising Muffin's parser, renderer, and editing paths."
+        },
+        {
+          "tag": "h2",
+          "text": "Inline Features"
+        },
+        {
+          "tag": "p",
+          "text": "Plain text and inline features."
+        },
+        {
+          "tag": "h2",
+          "text": "Headings"
+        },
+        {
+          "tag": "h1",
+          "text": "Heading 1 sample"
+        },
+        {
+          "tag": "h2",
+          "text": "Heading 2 sample"
+        },
+        {
+          "tag": "h3",
+          "text": "Heading 3 sample"
+        },
+        {
+          "tag": "h4",
+          "text": "Heading 4 sample"
+        },
+        {
+          "tag": "h5",
+          "text": "Heading 5 sample"
+        },
+        {
+          "tag": "h6",
+          "text": "Heading 6 sample"
+        }
+      ],
+      "expected": [
+        {
+          "top": 0,
+          "height": 64.375,
+          "width": 580,
+          "fontSize": 30,
+          "marginTop": 60,
+          "marginBottom": 15
+        },
+        {
+          "top": 80.375,
+          "height": 24,
+          "width": 580,
+          "fontSize": 16,
+          "marginTop": 16,
+          "marginBottom": 24
+        },
+        {
+          "top": 128.375,
+          "height": 48,
+          "width": 580,
+          "fontSize": 16,
+          "marginTop": 16,
+          "marginBottom": 24
+        },
+        {
+          "top": 224.359375,
+          "height": 24.140625,
+          "width": 580,
+          "fontSize": 21,
+          "marginTop": 48,
+          "marginBottom": 15.75
+        },
+        {
+          "top": 264.5,
+          "height": 24,
+          "width": 580,
+          "fontSize": 16,
+          "marginTop": 16,
+          "marginBottom": 24
+        },
+        {
+          "top": 336.484375,
+          "height": 24.140625,
+          "width": 580,
+          "fontSize": 21,
+          "marginTop": 48,
+          "marginBottom": 15.75
+        },
+        {
+          "top": 420.625,
+          "height": 64.375,
+          "width": 580,
+          "fontSize": 30,
+          "marginTop": 60,
+          "marginBottom": 15
+        },
+        {
+          "top": 532.984375,
+          "height": 24.140625,
+          "width": 580,
+          "fontSize": 21,
+          "marginTop": 48,
+          "marginBottom": 15.75
+        },
+        {
+          "top": 605.109375,
+          "height": 24.140625,
+          "width": 580,
+          "fontSize": 21,
+          "marginTop": 48,
+          "marginBottom": 15.75
+        },
+        {
+          "top": 677.296875,
+          "height": 24,
+          "width": 580,
+          "fontSize": 18,
+          "marginTop": 48.06,
+          "marginBottom": 27
+        },
+        {
+          "top": 728.296875,
+          "height": 24,
+          "width": 580,
+          "fontSize": 16,
+          "marginTop": 16,
+          "marginBottom": 24
+        },
+        {
+          "top": 776.296875,
+          "height": 24,
+          "width": 580,
+          "fontSize": 16,
+          "marginTop": 16,
+          "marginBottom": 24
+        }
+      ]
+    },
+    {
+      "id": "night",
+      "css": "@import \"night/mermaid.dark.css\";\r\n@import \"night/codeblock.dark.css\";\r\n@import \"night/sourcemode.dark.css\";\r\n\r\n:root {\r\n    --bg-color:  #363B40;\r\n    --side-bar-bg-color: #2E3033;\r\n    --text-color: #b8bfc6;\r\n\r\n    --select-text-bg-color:#4a89dc;\r\n\r\n    --item-hover-bg-color: #0a0d16;\r\n    --control-text-color: #b7b7b7;\n    --muffin-chrome-text: #b7b7b7;\n    --control-text-hover-color: #eee;\r\n    --window-border: 1px solid #555;\r\n\r\n    --active-file-bg-color: rgb(34, 34, 34);\r\n    --active-file-border-color: #8d8df0;\r\n\r\n    --primary-color: #a3d5fe;\r\n\r\n    --active-file-text-color: white;\r\n    --item-hover-bg-color: #70717d;\r\n    --item-hover-text-color: white;\r\n    --primary-color: #6dc1e7;\r\n\r\n    --rawblock-edit-panel-bd: #333;\r\n\r\n    --search-select-bg-color: #428bca;\r\n}\r\n\r\nhtml {\r\n    font-size: 16px;\r\n    -webkit-font-smoothing: antialiased;\r\n}\r\n\r\nhtml,\r\nbody {\r\n    -webkit-text-size-adjust: 100%;\r\n    -ms-text-size-adjust: 100%;\r\n    background: #363B40;\r\n    background: var(--bg-color);\r\n    fill: currentColor;\r\n    line-height: 1.625rem;\r\n}\r\n\r\n#write {\r\n    max-width: 914px;\r\n}\r\n\r\n\r\n@media only screen and (min-width: 1400px) {\r\n\t#write {\r\n\t\tmax-width: 1024px;\r\n\t}\r\n}\r\n\r\n@media only screen and (min-width: 1800px) {\r\n\t#write {\r\n\t\tmax-width: 1200px;\r\n\t}\r\n}\r\n\r\nhtml,\r\nbody,\r\nbutton,\r\ninput,\r\nselect,\r\ntextarea,\r\ndiv.code-tooltip-content {\r\n    color: #b8bfc6;\r\n    border-color: transparent;\r\n}\r\n\r\ndiv.code-tooltip,\r\n.md-hover-tip .md-arrow:after {\r\n    background: #333;\r\n}\r\n\r\n.native-window #md-notification {\r\n    border: 1px solid #70717d;\r\n}\r\n\r\n.popover.bottom > .arrow:after {\r\n    border-bottom-color: #333;\r\n}\r\n\r\nhtml,\r\nbody,\r\nbutton,\r\ninput,\r\nselect,\r\ntextarea {\r\n    font-family: \"Helvetica Neue\", Helvetica, Arial, 'Segoe UI Emoji', 'SF Pro',  sans-serif;\r\n}\r\n\r\nhr {\r\n    height: 2px;\r\n    border: 0;\r\n    margin: 24px 0 !important;\r\n}\r\n\r\nh1,\r\nh2,\r\nh3,\r\nh4,\r\nh5,\r\nh6 {\r\n    font-family: \"Lucida Grande\", \"Corbel\", sans-serif;\r\n    font-weight: normal;\r\n    clear: both;\r\n    -ms-word-wrap: break-word;\r\n    word-wrap: break-word;\r\n    margin: 0;\r\n    padding: 0;\r\n    color: #DEDEDE\r\n}\r\n\r\nh1 {\r\n    font-size: 2.5rem;\r\n    /* 36px */\r\n    line-height: 2.75rem;\r\n    /* 40px */\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n    letter-spacing: -1.5px;\r\n}\r\n\r\nh2 {\r\n    font-size: 1.63rem;\r\n    /* 24px */\r\n    line-height: 1.875rem;\r\n    /* 30px */\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n    letter-spacing: -1px;\r\n    font-weight: bold;\r\n}\r\n\r\nh3 {\r\n    font-size: 1.17rem;\r\n    /* 18px */\r\n    line-height: 1.5rem;\r\n    /* 24px */\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n    letter-spacing: -1px;\r\n    font-weight: bold;\r\n}\r\n\r\nh4 {\r\n    font-size: 1.12rem;\r\n    /* 16px */\r\n    line-height: 1.375rem;\r\n    /* 22px */\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n    color: white;\r\n}\r\n\r\nh5 {\r\n    font-size: 0.97rem;\r\n    /* 16px */\r\n    line-height: 1.25rem;\r\n    /* 22px */\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n    font-weight: bold;\r\n}\r\n\r\nh6 {\r\n    font-size: 0.93rem;\r\n    /* 16px */\r\n    line-height: 1rem;\r\n    /* 16px */\r\n    margin-bottom: 0.75rem;\r\n    color: white;\r\n}\r\n\r\n@media (min-width: 980px) {\r\n    h3.md-focus:before,\r\n    h4.md-focus:before,\r\n    h5.md-focus:before,\r\n    h6.md-focus:before {\r\n        color: #ddd;\r\n        border: 1px solid #ddd;\r\n        border-radius: 3px;\r\n        position: absolute;\r\n        left: -1.642857143rem;\r\n        top: .357142857rem;\r\n        float: left;\r\n        font-size: 9px;\r\n        padding-left: 2px;\r\n        padding-right: 2px;\r\n        vertical-align: bottom;\r\n        font-weight: normal;\r\n        line-height: normal;\r\n    }\r\n\r\n    h3.md-focus:before {\r\n        content: 'h3';\r\n    }\r\n\r\n    h4.md-focus:before {\r\n        content: 'h4';\r\n    }\r\n\r\n    h5.md-focus:before {\r\n        content: 'h5';\r\n        top: 0px;\r\n    }\r\n\r\n    h6.md-focus:before {\r\n        content: 'h6';\r\n        top: 0px;\r\n    }\r\n}\r\n\r\na {\r\n    text-decoration: none;\r\n    outline: 0;\r\n}\r\n\r\na:hover {\r\n    outline: 0;\r\n}\r\n\r\na:focus {\r\n    outline: thin dotted;\r\n}\r\n\r\nsup.md-footnote {\r\n    background-color: #555;\r\n    color: #ddd;\r\n}\r\n\r\np {\r\n    -ms-word-wrap: break-word;\r\n    word-wrap: break-word;\r\n}\r\n\r\np,\r\nul,\r\ndd,\r\nol,\r\nhr,\r\naddress,\r\npre,\r\ntable,\r\niframe,\r\n.wp-caption,\r\n.wp-audio-shortcode,\r\n.wp-video-shortcode {\r\n    margin-top: 0;\r\n    margin-bottom: 1.5rem;\r\n    /* 24px */\r\n}\r\n\r\naudio:not([controls]) {\r\n    display: none;\r\n}\r\n\r\n[hidden] {\r\n    display: none;\r\n}\r\n\r\n::-moz-selection {\r\n    background: #4a89dc;\r\n    color: #fff;\r\n    text-shadow: none;\r\n}\r\n\r\n*.in-text-selection,\r\n::selection {\r\n    background: #4a89dc;\r\n    color: #fff;\r\n    text-shadow: none;\r\n}\r\n\r\nul,\r\nol {\r\n    padding: 0 0 0 1.875rem;\r\n    /* 30px */\r\n}\r\n\r\nul {\r\n    list-style: square;\r\n}\r\n\r\nol {\r\n    list-style: decimal;\r\n}\r\n\r\nul ul,\r\nol ol,\r\nul ol,\r\nol ul {\r\n    margin: 0;\r\n}\r\n\r\nb,\r\nth,\r\ndt,\r\nstrong {\r\n    font-weight: bold;\r\n}\r\n\r\ni,\r\nem,\r\ndfn,\r\ncite {\r\n    font-style: italic;\r\n}\r\n\r\nblockquote {\r\n    padding-left: 1.875rem;\r\n    margin: 0 0 1.875rem 1.875rem;\r\n    border-left: solid 2px #474d54;\r\n    padding-left: 30px;\r\n    margin-top: 35px;\r\n}\r\n\r\npre,\r\ncode,\r\nkbd,\r\ntt,\r\nvar {\r\n    font-size: 0.875em;\r\n    font-family: Monaco, Consolas, \"Andale Mono\", \"DejaVu Sans Mono\", monospace;\r\n}\r\n\r\ncode,\r\ntt,\r\nvar {\r\n    background: rgba(0, 0, 0, 0.05);\r\n}\r\n\r\nkbd {\r\n    padding: 2px 4px;\r\n    font-size: 90%;\r\n    color: #fff;\r\n    background-color: #333;\r\n    border-radius: 3px;\r\n    box-shadow: inset 0 -1px 0 rgba(0,0,0,.25);\r\n}\r\n\r\npre.md-fences {\r\n    padding: 10px 10px 10px 30px;\r\n    margin-bottom: 20px;\r\n    background: #333;\r\n}\r\n\r\n.CodeMirror-gutters {\r\n    background: #333;\r\n    border-right: 1px solid transparent;\r\n}\r\n\r\n.enable-diagrams pre.md-fences[lang=\"sequence\"] .code-tooltip,\r\n.enable-diagrams pre.md-fences[lang=\"flow\"] .code-tooltip,\r\n.enable-diagrams pre.md-fences[lang=\"mermaid\"] .code-tooltip {\r\n    bottom: -2.2em;\r\n    right: 4px;\r\n}\r\n\r\ncode,\r\nkbd,\r\ntt,\r\nvar {\r\n    padding: 2px 5px;\r\n}\r\n\r\ntable {\r\n    max-width: 100%;\r\n    width: 100%;\r\n    border-collapse: collapse;\r\n    border-spacing: 0;\r\n}\r\n\r\nth,\r\ntd {\r\n    padding: 5px 10px;\r\n    vertical-align: top;\r\n}\r\n\r\na {\r\n    -webkit-transition: all .2s ease-in-out;\r\n    transition: all .2s ease-in-out;\r\n}\r\n\r\nhr {\r\n    background: #474d54;\r\n    /* variable */\r\n}\r\n\r\nh1 {\r\n    margin-top: 2em;\r\n}\r\n\r\na {\r\n    color: #e0e0e0;\r\n    text-decoration: underline;\r\n}\r\n\r\na:hover {\r\n    color: #fff;\r\n}\r\n\r\n.md-inline-math script {\r\n    color: #81b1db;\r\n}\r\n\r\nb,\r\nth,\r\ndt,\r\nstrong {\r\n    color: #DEDEDE;\r\n    /* variable */\r\n}\r\n\r\nmark {\r\n    background: #D3D40E;\r\n}\r\n\r\nblockquote {\r\n    color: #9DA2A6;\r\n}\r\n\r\ntable a {\r\n    color: #DEDEDE;\r\n    /* variable */\r\n}\r\n\r\nth,\r\ntd {\r\n    border: solid 1px #474d54;\r\n    /* variable */\r\n}\r\n\r\n.task-list {\r\n    padding-left: 0;\r\n}\r\n\r\n.md-task-list-item {\r\n    padding-left: 1.25rem;\r\n}\r\n\r\n.md-task-list-item > input {\r\n    top: auto;\r\n}\r\n\r\n.md-task-list-item > input:before {\r\n    content: \"\";\r\n    display: inline-block;\r\n    width: 0.875rem;\r\n    height: 0.875rem;\r\n    vertical-align: middle;\r\n    text-align: center;\r\n    border: 1px solid #b8bfc6;\r\n    background-color: #363B40;\r\n    margin-top: -0.4rem;\r\n}\r\n\r\n.md-task-list-item > input:checked:before,\r\n.md-task-list-item > input[checked]:before {\r\n    content: '\\221A';\r\n    /*◘*/\r\n    font-size: 0.625rem;\r\n    line-height: 0.625rem;\r\n    color: #DEDEDE;\r\n}\r\n\r\n/** quick open **/\r\n.auto-suggest-container {\r\n    border: 0px;\r\n    background-color: #525C65;\r\n}\r\n\r\n#typora-quick-open {\r\n    background-color: #525C65;\r\n}\r\n\r\n#typora-quick-open input{\r\n    background-color: #525C65;\r\n    border: 0;\r\n    border-bottom: 1px solid grey;\r\n}\r\n\r\n.typora-quick-open-item {\r\n    background-color: inherit;\r\n    color: inherit;\r\n}\r\n\r\n.typora-quick-open-item.active,\r\n.typora-quick-open-item:hover {\r\n    background-color: #4D8BDB;\r\n    color: white;\r\n}\r\n\r\n.typora-quick-open-item:hover {\r\n    background-color: rgba(77, 139, 219, 0.8);\r\n}\r\n\r\n.typora-search-spinner > div {\r\n  background-color: #fff;\r\n}\r\n\r\n#write pre.md-meta-block {\r\n    border-bottom: 1px dashed #ccc;\r\n    background: transparent;\r\n    padding-bottom: 0.6em;\r\n    line-height: 1.6em;\r\n}\r\n\r\n.btn,\r\n.btn .btn-default {\r\n    background: transparent;\r\n    color: #b8bfc6;\r\n}\r\n\r\n.ty-table-edit {\r\n    border-top: 1px solid gray;\r\n    background-color: #363B40;\r\n}\r\n\r\n.popover-title {\r\n    background: transparent;\r\n}\r\n\r\n.md-image>.md-meta {\r\n    color: #BBBBBB;\r\n    background: transparent;\r\n}\r\n\r\n.md-expand.md-image>.md-meta {\r\n    color: #DDD;\r\n}\r\n\r\n#write>h3:before,\r\n#write>h4:before,\r\n#write>h5:before,\r\n#write>h6:before {\r\n    border: none;\r\n    border-radius: 0px;\r\n    color: #888;\r\n    text-decoration: underline;\r\n    left: -1.4rem;\r\n    top: 0.2rem;\r\n}\r\n\r\n#write>h3.md-focus:before {\r\n    top: 2px;\r\n}\r\n\r\n#write>h4.md-focus:before {\r\n    top: 2px;\r\n}\r\n\r\n.md-toc-item {\r\n    color: #A8C2DC;\r\n}\r\n\r\n#write div.md-toc-tooltip {\r\n    background-color: #363B40;\r\n}\r\n\r\n.dropdown-menu .btn:hover,\r\n.dropdown-menu .btn:focus,\r\n.md-toc .btn:hover,\r\n.md-toc .btn:focus {\r\n    color: white;\r\n    background: black;\r\n}\r\n\r\n#toc-dropmenu {\r\n    background: rgba(50, 54, 59, 0.93);\r\n    border: 1px solid rgba(253, 253, 253, 0.15);\r\n}\r\n\r\n#toc-dropmenu .divider {\r\n    background-color: #9b9b9b;\r\n}\r\n\r\n.outline-expander:before {\r\n    top: 2px;\r\n}\r\n\r\n#typora-sidebar {\r\n    box-shadow: none;\r\n    border-right: 1px dashed;\r\n    border-right: none;\r\n}\r\n\r\n.sidebar-tabs {\r\n    border-bottom:0;\r\n}\r\n\r\n#typora-sidebar:hover .outline-title-wrapper {\r\n    border-left: 1px dashed;\r\n}\r\n\r\n.outline-title-wrapper .btn {\r\n    color: inherit;\r\n}\r\n\r\n.outline-item:hover {\r\n    border-color: #363B40;\r\n    background-color: #363B40;\r\n    color: white;\r\n}\r\n\r\nh1.md-focus .md-attr,\r\nh2.md-focus .md-attr,\r\nh3.md-focus .md-attr,\r\nh4.md-focus .md-attr,\r\nh5.md-focus .md-attr,\r\nh6.md-focus .md-attr,\r\n.md-header-span .md-attr {\r\n    color: #8C8E92;\r\n    display: inline;\r\n}\r\n\r\n.md-comment {\r\n    color: #5a95e3;\r\n    opacity: 0.8;\r\n}\r\n\r\n.md-inline-math svg {\r\n    color: #b8bfc6;\r\n}\r\n\r\n#math-inline-preview .md-arrow:after {\r\n    background: black;\r\n}\r\n\r\n.modal-content {\r\n    background: var(--bg-color);\r\n    border: 0;\r\n}\r\n\r\n.modal-title {\r\n    font-size: 1.5em;\r\n}\r\n\r\n.modal-content input {\r\n    background-color: rgba(26, 21, 21, 0.51);\r\n    color: white;\r\n}\r\n\r\n.modal-content .input-group-addon {\r\n    color: white;\r\n}\r\n\r\n.modal-backdrop {\r\n    background-color: rgba(174, 174, 174, 0.7);\r\n}\r\n\r\n.modal-content .btn-primary {\r\n    border-color: var(--primary-color);\r\n}\r\n\r\n.md-table-resize-popover {\r\n    background-color: #333;\r\n}\r\n\r\n.form-inline .input-group .input-group-addon {\r\n    color: white;\r\n}\r\n\r\n#md-searchpanel {\r\n    border-bottom: 1px dashed grey;\r\n}\r\n\r\n/** UI for electron */\r\n\r\n.context-menu,\r\n#spell-check-panel,\r\n#footer-word-count-info {\r\n    background-color: #42464A;\r\n}\r\n\r\n.context-menu.dropdown-menu .divider,\r\n.dropdown-menu .divider {\r\n    background-color: #777777;\r\n    opacity: 1;\r\n}\r\n\r\nfooter {\r\n    color: inherit;\r\n}\r\n\r\n@media (max-width: 1000px) {\r\n    footer {\r\n        border-top: none;\r\n    }\r\n    footer:hover {\r\n        color: inherit;\r\n    }\r\n}\r\n\r\n#file-info-file-path .file-info-field-value:hover {\r\n    background-color: #555;\r\n    color: #dedede;\r\n}\r\n\r\n.megamenu-content,\r\n.megamenu-opened header {\r\n    background: var(--bg-color);\r\n}\r\n\r\n.megamenu-menu-panel h2,\r\n.megamenu-menu-panel h1,\r\n.long-btn {\r\n    color: inherit;\r\n}\r\n\r\n.megamenu-menu-panel input[type='text'] {\r\n    background: inherit;\r\n    border: 0;\r\n    border-bottom: 1px solid;\r\n}\r\n\r\n#recent-file-panel-action-btn {\r\n    background: inherit;\r\n    border: 1px grey solid;\r\n}\r\n\r\n.megamenu-menu-panel .dropdown-menu > li > a {\r\n    color: inherit;\r\n    background-color: #2F353A;\r\n    text-decoration: none;\r\n}\r\n\r\n.megamenu-menu-panel table td:nth-child(1) {\r\n    color: inherit;\r\n    font-weight: bold;\r\n}\r\n\r\n.megamenu-menu-panel tbody tr:hover td:nth-child(1) {\r\n    color: white;\r\n}\r\n\r\n.modal-footer .btn-default, \r\n.modal-footer .btn-primary,\r\n.modal-footer .btn-default:not(:hover) {\r\n    border: 1px solid;\r\n    border-color: transparent;\r\n}\r\n\r\n.btn-primary {\r\n    color: white;\r\n}\r\n\r\n.btn-default:hover, .btn-default:focus, .btn-default.focus, .btn-default:active, .btn-default.active, .open > .dropdown-toggle.btn-default {\r\n    color: white;\r\n    border: 1px solid #ddd;\r\n    background-color: inherit;\r\n}\r\n\r\n.modal-header {\r\n    border-bottom: 0;\r\n}\r\n\r\n.modal-footer {\r\n    border-top: 0;\r\n}\r\n\r\n#recent-file-panel tbody tr:nth-child(2n-1) {\r\n    background-color: transparent !important;\r\n}\r\n\r\n.megamenu-menu-panel tbody tr:hover td:nth-child(2) {\r\n    color: inherit;\r\n}\r\n\r\n.megamenu-menu-panel .btn {\r\n    border: 1px solid #eee;\r\n    background: transparent;\r\n}\r\n\r\n.mouse-hover .toolbar-icon.btn:hover,\r\n#w-full.mouse-hover,\r\n#w-pin.mouse-hover {\r\n    background-color: inherit;\r\n}\r\n\r\n.typora-node::-webkit-scrollbar {\r\n    width: 5px;\r\n}\r\n\r\n.typora-node::-webkit-scrollbar-thumb:vertical {\r\n    background: rgba(250, 250, 250, 0.3);\r\n}\r\n\r\n.typora-node::-webkit-scrollbar-thumb:vertical:active {\r\n    background: rgba(250, 250, 250, 0.5);\r\n}\r\n\r\n#w-unpin {\r\n    background-color: #4182c4;\r\n}\r\n\r\n#top-titlebar, #top-titlebar * {\r\n    color: var(--item-hover-text-color);\r\n}\r\n\r\n.typora-sourceview-on #toggle-sourceview-btn,\r\n#footer-word-count:hover,\r\n.ty-show-word-count #footer-word-count {\r\n    background: #333333;\r\n}\r\n\r\n#toggle-sourceview-btn:hover {\r\n    color: #eee;\r\n    background: #333333;\r\n}\r\n\r\n/** focus mode */\r\n.on-focus-mode .md-end-block:not(.md-focus):not(.md-focus-container) * {\r\n    color: #686868 !important;\r\n}\r\n\r\n.on-focus-mode .md-end-block:not(.md-focus) img,\r\n.on-focus-mode .md-task-list-item:not(.md-focus-container)>input {\r\n    opacity: #686868 !important;\r\n}\r\n\r\n.on-focus-mode li[cid]:not(.md-focus-container){\r\n    color: #686868;\r\n}\r\n\r\n.on-focus-mode .md-fences.md-focus .CodeMirror-code>*:not(.CodeMirror-activeline) *,\r\n.on-focus-mode .CodeMirror.cm-s-inner:not(.CodeMirror-focused) * {\r\n    color: #686868 !important;\r\n}\r\n\r\n.on-focus-mode .md-focus,\r\n.on-focus-mode .md-focus-container {\r\n    color: #fff;\r\n}\r\n\r\n.on-focus-mode #typora-source .CodeMirror-code>*:not(.CodeMirror-activeline) * {\r\n    color: #686868 !important;\r\n}\r\n\r\n\r\n/*diagrams*/\r\n#write .md-focus .md-diagram-panel {\r\n    border: 1px solid #ddd;\r\n    margin-left: -1px;\r\n    width: calc(100% + 2px);\r\n}\r\n\r\n/*diagrams*/\r\n#write .md-focus.md-fences-with-lineno .md-diagram-panel {\r\n    margin-left: auto;\r\n}\r\n\r\n.md-diagram-panel-error {\r\n    color: #f1908e;\r\n}\r\n\r\n.active-tab-files #info-panel-tab-file,\r\n.active-tab-files #info-panel-tab-file:hover,\r\n.active-tab-outline #info-panel-tab-outline,\r\n.active-tab-outline #info-panel-tab-outline:hover {\r\n    color: #eee;\r\n}\r\n\r\n.sidebar-footer-item:hover,\r\n.footer-item:hover {\r\n    background: inherit;\r\n    color: white;\r\n}\r\n\r\n.ty-side-sort-btn.active,\r\n.ty-side-sort-btn:hover,\r\n.selected-folder-menu-item a:after {\r\n    color: white;\r\n}\r\n\r\n#sidebar-files-menu {\r\n    border:solid 1px;\r\n    box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.79);\r\n    background-color: var(--bg-color);\r\n}\r\n\r\n.file-list-item {\r\n    border-bottom:none;\r\n}\r\n\r\n.file-list-item-summary {\r\n    opacity: 1;\r\n}\r\n\r\n.file-list-item.active:first-child {\r\n    border-top: none;\r\n}\r\n\r\n.file-node-background {\r\n    height: 32px;\r\n}\r\n\r\n.file-library-node.active>.file-node-content,\r\n.file-list-item.active {\r\n    color: white;\r\n    color: var(--active-file-text-color);\r\n}\r\n\r\n.file-library-node.active>.file-node-background{\r\n    background-color: rgb(34, 34, 34);\r\n    background-color: var(--active-file-bg-color);\r\n}\r\n.file-list-item.active {\r\n    background-color: rgb(34, 34, 34);\r\n    background-color: var(--active-file-bg-color);\r\n}\r\n\r\n#ty-tooltip {\r\n    background-color: black;\r\n    color: #eee;\r\n}\r\n\r\n.md-task-list-item>input {\r\n    margin-left: -1.3em;\r\n    margin-top: 0.3rem;\r\n    -webkit-appearance: none;\r\n}\r\n\r\n.md-mathjax-midline {\r\n    background-color: #57616b;\r\n    border-bottom: none;\r\n}\r\n\r\nfooter.ty-footer {\r\n    border-color: #656565;\r\n}\r\n\r\n.ty-preferences .btn-default {\r\n    background: transparent;\r\n}\r\n.ty-preferences .btn-default:hover {\r\n    background: #57616b;\r\n}\r\n\r\n.ty-preferences select {\r\n    border: 1px solid #989698;\r\n    height: 21px;\r\n}\r\n\r\n.ty-preferences .nav-group-item.active,\r\n.export-item.active,\r\n.export-items-list-control,\r\n.export-detail {\r\n    background: var(--item-hover-bg-color);\r\n}\r\n\r\n.ty-preferences input[type=\"search\"] {\r\n    border-color: #333;\r\n    background: #333;\r\n    line-height: 22px;\r\n    border-radius: 6px;\r\n    color: white;\r\n}\r\n\r\n.ty-preferences input[type=\"search\"]:focus {\r\n    box-shadow: none;\r\n}\r\n\r\n[data-is-directory=\"true\"] .file-node-content {\r\n    margin-bottom: 0;\r\n}\r\n\r\n.file-node-title {\r\n    line-height: 22px;\r\n}\r\n\r\n.html-for-mac .file-node-open-state, .html-for-mac .file-node-icon {\r\n    line-height: 26px;\r\n}\r\n\r\n::-webkit-scrollbar-thumb {\r\n    background: rgba(230, 230, 230, 0.30);\r\n}\r\n\r\n::-webkit-scrollbar-thumb:active {\r\n    background: rgba(230, 230, 230, 0.50);\r\n}\r\n\r\n#typora-sidebar:hover div.sidebar-content-content::-webkit-scrollbar-thumb:horizontal {\r\n    background: rgba(230, 230, 230, 0.30);\r\n}\r\n\r\n.nav-group-item:active {\r\n    background-color: #474d54 !important;\r\n}\r\n\r\n.md-search-hit {\r\n    background: rgba(199, 140, 60, 0.81);\r\n    color: #eee;\r\n}\r\n\r\n.md-search-hit * {\r\n    color: #eee;\r\n}\r\n\r\n#md-searchpanel input {\r\n    color: white;\r\n}\r\n\r\n.modal-backdrop.in {\r\n    opacity: 1;\r\n    backdrop-filter: blur(1px);\r\n}\r\n\r\n.clear-btn-icon {\r\n    top: 8px;\r\n}\r\n\r\n/* Expanded file-node children layout fix */\r\n.file-node-expanded>.file-node-children {\r\n    display: grid;\r\n  }\r\n\r\n.md-alert-text-note {\r\n    color: rgb(47, 129, 247);\r\n}\r\n.md-alert-text-important {\r\n    color: rgb(163, 113, 247);\r\n}\r\n.md-alert-text-warning {\r\n    color:  rgb(210, 153, 34);\r\n}\n#write,#write *{font-family:MuffinFixtureSans!important}",
+      "nodes": [
+        {
+          "tag": "h1",
+          "text": "Muffin Markdown Example"
+        },
+        {
+          "tag": "p",
+          "text": "Chinese | English"
+        },
+        {
+          "tag": "p",
+          "text": "This document is a Markdown syntax sample for exercising Muffin's parser, renderer, and editing paths."
+        },
+        {
+          "tag": "h2",
+          "text": "Inline Features"
+        },
+        {
+          "tag": "p",
+          "text": "Plain text and inline features."
+        },
+        {
+          "tag": "h2",
+          "text": "Headings"
+        },
+        {
+          "tag": "h1",
+          "text": "Heading 1 sample"
+        },
+        {
+          "tag": "h2",
+          "text": "Heading 2 sample"
+        },
+        {
+          "tag": "h3",
+          "text": "Heading 3 sample"
+        },
+        {
+          "tag": "h4",
+          "text": "Heading 4 sample"
+        },
+        {
+          "tag": "h5",
+          "text": "Heading 5 sample"
+        },
+        {
+          "tag": "h6",
+          "text": "Heading 6 sample"
+        }
+      ],
+      "expected": [
+        {
+          "top": 0,
+          "height": 44,
+          "width": 854,
+          "fontSize": 40,
+          "marginTop": 80,
+          "marginBottom": 24
+        },
+        {
+          "top": 68,
+          "height": 26,
+          "width": 854,
+          "fontSize": 16,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 118,
+          "height": 26,
+          "width": 854,
+          "fontSize": 16,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 168,
+          "height": 30,
+          "width": 854,
+          "fontSize": 26.08,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 222,
+          "height": 26,
+          "width": 854,
+          "fontSize": 16,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 272,
+          "height": 30,
+          "width": 854,
+          "fontSize": 26.08,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 382,
+          "height": 44,
+          "width": 854,
+          "fontSize": 40,
+          "marginTop": 80,
+          "marginBottom": 24
+        },
+        {
+          "top": 450,
+          "height": 30,
+          "width": 854,
+          "fontSize": 26.08,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 504,
+          "height": 24,
+          "width": 854,
+          "fontSize": 18.72,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 552,
+          "height": 22,
+          "width": 854,
+          "fontSize": 17.92,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 598,
+          "height": 20,
+          "width": 854,
+          "fontSize": 15.52,
+          "marginTop": 0,
+          "marginBottom": 24
+        },
+        {
+          "top": 642,
+          "height": 16,
+          "width": 854,
+          "fontSize": 14.88,
+          "marginTop": 0,
+          "marginBottom": 12
+        }
+      ]
+    },
+    {
+      "id": "latex-heading-defaults",
+      "css": "#write{font-size:9.5pt;max-width:21cm}h1{font-size:1.9em;text-align:center}\n  h2{font-size:1.5em}h3{font-size:1.25em;line-height:1.25em}h4{font-size:1.15em;line-height:1.15em}\n  h5{font-size:1.10em;line-height:1.10em}h6{font-size:1.05em;line-height:1.10em}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "nodes": [
+        {
+          "tag": "h1",
+          "text": "Heading 1 sample"
+        },
+        {
+          "tag": "h2",
+          "text": "Heading 2 sample"
+        },
+        {
+          "tag": "h3",
+          "text": "Heading 3 sample"
+        },
+        {
+          "tag": "h4",
+          "text": "Heading 4 sample"
+        },
+        {
+          "tag": "h5",
+          "text": "Heading 5 sample"
+        },
+        {
+          "tag": "h6",
+          "text": "Heading 6 sample"
+        }
+      ],
+      "expected": [
+        {
+          "top": 0,
+          "height": 34.375,
+          "width": 733.6875,
+          "fontSize": 24.0667,
+          "marginTop": 16,
+          "marginBottom": 16
+        },
+        {
+          "top": 50.375,
+          "height": 27.140625,
+          "width": 733.6875,
+          "fontSize": 19,
+          "marginTop": 16,
+          "marginBottom": 16
+        },
+        {
+          "top": 93.515625,
+          "height": 19.796875,
+          "width": 733.6875,
+          "fontSize": 15.8333,
+          "marginTop": 16,
+          "marginBottom": 16
+        },
+        {
+          "top": 129.3125,
+          "height": 16.75,
+          "width": 733.6875,
+          "fontSize": 14.5667,
+          "marginTop": 16,
+          "marginBottom": 16
+        },
+        {
+          "top": 162.0625,
+          "height": 15.328125,
+          "width": 733.6875,
+          "fontSize": 13.9333,
+          "marginTop": 16,
+          "marginBottom": 16
+        },
+        {
+          "top": 193.390625,
+          "height": 14.625,
+          "width": 733.6875,
+          "fontSize": 13.3,
+          "marginTop": 16,
+          "marginBottom": 16
+        }
+      ]
+    }
+  ],
+  "inlines": [
+    {
+      "id": "negative-leading",
+      "width": 500,
+      "css": "#write{padding:0;margin:0;max-width:none;width:500px}p{margin:0}p{font-size:40px;line-height:.5}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "html": "Alpha<br>Beta",
+      "markdown": "Alpha  \nBeta",
+      "expected": {
+        "height": 40,
+        "boxes": []
+      }
+    },
+    {
+      "id": "mixed-small-line-height",
+      "width": 500,
+      "css": "#write{padding:0;margin:0;max-width:none;width:500px}p{margin:0}p{font-size:16px;line-height:.5}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "html": "A <span style=\"font-size:30px;line-height:1\">B</span> C<br>next",
+      "markdown": "A <span style=\"font-size:30px;line-height:1\">B</span> C  \nnext",
+      "expected": {
+        "height": 38,
+        "boxes": []
+      }
+    },
+    {
+      "id": "keyboard-wrap-88",
+      "width": 88,
+      "css": "#write{padding:0;margin:0;max-width:none;width:88px}p{margin:0}p{font-size:16px;line-height:24px}kbd{font-size:1em;padding:0 8px;border:1px solid black}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "html": "abcdefgh <kbd>S</kbd>, next.",
+      "markdown": "abcdefgh <kbd>S</kbd>, next.",
+      "expected": {
+        "height": 48,
+        "boxes": [
+          {
+            "left": 0,
+            "width": 26.78125
+          }
+        ]
+      }
+    },
+    {
+      "id": "keyboard-wrap-108",
+      "width": 108,
+      "css": "#write{padding:0;margin:0;max-width:none;width:108px}p{margin:0}p{font-size:16px;line-height:24px}kbd{font-size:1em;padding:0 8px;border:1px solid black}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "html": "abcdefgh <kbd>S</kbd>, next.",
+      "markdown": "abcdefgh <kbd>S</kbd>, next.",
+      "expected": {
+        "height": 48,
+        "boxes": [
+          {
+            "left": 73.265625,
+            "width": 26.78125
+          }
+        ]
+      }
+    },
+    {
+      "id": "keyboard-wrap-140",
+      "width": 140,
+      "css": "#write{padding:0;margin:0;max-width:none;width:140px}p{margin:0}p{font-size:16px;line-height:24px}kbd{font-size:1em;padding:0 8px;border:1px solid black}#write,#write *{font-family:MuffinFixtureSans!important}",
+      "html": "abcdefgh <kbd>S</kbd>, next.",
+      "markdown": "abcdefgh <kbd>S</kbd>, next.",
+      "expected": {
+        "height": 48,
+        "boxes": [
+          {
+            "left": 73.265625,
+            "width": 26.78125
+          }
+        ]
+      }
+    }
+  ],
+  "gradients": [
+    {
+      "id": "abyss-dot",
+      "css": "radial-gradient(#ffffff 1px, transparent 1px)",
+      "width": 20,
+      "height": 20,
+      "samples": [
+        [
+          9,
+          9
+        ],
+        [
+          10,
+          10
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          11,
+          10
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          5
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAOUlEQVR4nOyStw0AQAgDefT7r0yYgCAXFL6GxjpcWAWMChgKKVzwOyEL8r6gysIblh+ncDYUXhA6AAAA//8UDxuiAAAABklEQVQDAOH4BCrcoWOJAAAAAElFTkSuQmCC"
+    },
+    {
+      "id": "abyss-dot-zoom",
+      "css": "radial-gradient(#ffffff 1px, transparent 1px)",
+      "width": 40,
+      "height": 40,
+      "zoom": 2,
+      "samples": [
+        [
+          19,
+          19
+        ],
+        [
+          20,
+          20
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          17,
+          19
+        ],
+        [
+          23,
+          20
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAYklEQVR4nOzUsQ3AIAwFUQdl/5UTKGCBM9Iv7jV01glLHhVuVDgDKQMpAykDKQMpAykDKQOptxp903qfqZq0DdpxZ3BTZPyK235wiV7xLZ4ZykDKQMpAykDKQMpAykAqPvAHAAD//zbIXcYAAAAGSURBVAMAemYMUDlkgvwAAAAASUVORK5CYII="
+    },
+    {
+      "id": "font-relative-stops",
+      "css": "linear-gradient(to right, red 1em, blue 1em)",
+      "fontSize": 20,
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          1,
+          3
+        ],
+        [
+          18,
+          3
+        ],
+        [
+          21,
+          3
+        ],
+        [
+          35,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAJklEQVR4nOzNwQkAAAjDwCjuv7Lu0I9Qmn+4WfQK/W6eChzYDz4AAAD//0RzVVIAAAAGSURBVAMAegQCEnRmkIAAAAAASUVORK5CYII="
+    },
+    {
+      "id": "hard-linear",
+      "css": "linear-gradient(to right, red 10px, blue 10px)",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          1,
+          3
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          35,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAKElEQVR4nOzNoQ0AAAjEwELYf2XY4AWGhHxtxVWjCvTflxxl2PA/eAAAAP//e14XQQAAAAZJREFUAwCYBAISCBAZMwAAAABJRU5ErkJggg=="
+    },
+    {
+      "id": "mixed-calc-40",
+      "css": "linear-gradient(to right, red calc(25% + 2px), blue calc(25% + 2px))",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          10,
+          3
+        ],
+        [
+          13,
+          3
+        ],
+        [
+          35,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAJ0lEQVR4nOzNsQkAAAjEwCjuv7KOoFaCfOrARdJnTK5dzlGCBf+DCwAA//+nl6V1AAAABklEQVQDAJIEAhJnrflXAAAAAElFTkSuQmCC"
+    },
+    {
+      "id": "mixed-calc-80",
+      "css": "linear-gradient(to right, red calc(25% + 2px), blue calc(25% + 2px))",
+      "width": 80,
+      "height": 8,
+      "samples": [
+        [
+          20,
+          3
+        ],
+        [
+          23,
+          3
+        ],
+        [
+          70,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAAFAAAAAICAIAAADhru9gAAAAK0lEQVR4nOzP0QkAAAgCUYv2X7mGEPpQ3wAHNwtWgW/8aZjJsLoMq8uwugMAAP//wnqpUwAAAAZJREFUAwAdvAISGdrwkgAAAABJRU5ErkJggg=="
+    },
+    {
+      "id": "omitted-between-lengths",
+      "css": "linear-gradient(to right, red 4px, lime, blue 36px)",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          3,
+          3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          19,
+          3
+        ],
+        [
+          27,
+          3
+        ],
+        [
+          37,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAdElEQVR4nOyRQQuAIAyF3yCoW/b/f2R287bI5pwD8VDdGvMp4sfzsYlRK82IG+JaNPg+AnajCSPAYWlRrwm2SJRuJdFr10vzcAyQBzrGpTgv0XxgNpcvAB1jDUfUtGZ7DDhjFq1fbxs+xgjo5/5nXIN8POMTAAD//x7NfScAAAAGSURBVAMATSl7SStLz+gAAAAASUVORK5CYII="
+    },
+    {
+      "id": "backwards-stop-fixup",
+      "css": "linear-gradient(to right, red 20px, blue 10px)",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          1,
+          3
+        ],
+        [
+          18,
+          3
+        ],
+        [
+          21,
+          3
+        ],
+        [
+          35,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAJklEQVR4nOzNwQkAAAjDwCjuv7Lu0I9Qmn+4WfQK/W6eChzYDz4AAAD//0RzVVIAAAAGSURBVAMAegQCEnRmkIAAAAAASUVORK5CYII="
+    },
+    {
+      "id": "double-position",
+      "css": "linear-gradient(to right, red 0 10px, blue 10px 100%)",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          1,
+          3
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          35,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAKElEQVR4nOzNoQ0AAAjEwELYf2XY4AWGhHxtxVWjCvTflxxl2PA/eAAAAP//e14XQQAAAAZJREFUAwCYBAISCBAZMwAAAABJRU5ErkJggg=="
+    },
+    {
+      "id": "outside-axis",
+      "css": "linear-gradient(to right, red -20px, blue 60px)",
+      "width": 40,
+      "height": 8,
+      "samples": [
+        [
+          1,
+          3
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          20,
+          3
+        ],
+        [
+          38,
+          3
+        ]
+      ],
+      "png": "iVBORw0KGgoAAAANSUhEUgAAACgAAAAICAIAAAAEMCoMAAAAl0lEQVR4nKSRCRKAIAwDU+3HfLg/U6sSjyLFY3Q4YthhSKs9uhFtGjpsoo0cpRji05BvLs6ip/0GFUCQFnATDu9Q8/vCS8nvQtQAQ1o4YbYOeGfbcfx45zPPqeWLUgJEDvWlBvc8fD08X0t8OnZm4ulDhXIe/jZXIaslftvjMvEN72um/3uW53vD5z2WvAePPS54VHgJ+RkAAP//WnE7SwAAAAZJREFUAwBxBpFUZTD+kwAAAABJRU5ErkJggg=="
+    },
+    {
+      "id": "abyss-ellipse",
+      "css": "radial-gradient(ellipse at center bottom, white, black 70%)",
+      "width": 200,
+      "height": 40,
+      "samples": [
+        [
+          99,
+          38
+        ],
+        [
+          20,
+          30
+        ],
+        [
+          50,
+          20
+        ],
+        [
+          99,
+          10
+        ],
+        [
+          180,
+          30
+        ]
+      ],
+      "png": "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"
+    },
+    {
+      "id": "explicit-ellipse",
+      "css": "radial-gradient(ellipse 60px 20px at center, white, black)",
+      "width": 200,
+      "height": 60,
+      "samples": [
+        [
+          99,
+          29
+        ],
+        [
+          130,
+          29
+        ],
+        [
+          99,
+          39
+        ],
+        [
+          160,
+          29
+        ],
+        [
+          99,
+          52
+        ]
+      ],
+      "png": "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"
+    },
+    {
+      "id": "clockwise-conic",
+      "css": "conic-gradient(from 45deg, red, lime 50%, blue)",
+      "width": 80,
+      "height": 80,
+      "samples": [
+        [
+          60,
+          20
+        ],
+        [
+          60,
+          60
+        ],
+        [
+          20,
+          60
+        ],
+        [
+          20,
+          20
+        ]
+      ],
+      "png": "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"
+    }
+  ]
+}

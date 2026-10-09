@@ -2,6 +2,7 @@
 
 #include "theme/ThemeDefinition.h"
 #include <QFont>
+#include <QFontMetricsF>
 #include <QRectF>
 #include <QHash>
 #include <memory>
@@ -32,6 +33,20 @@ struct LayoutBox {
     return QMarginsF(box.borderLeftWidth, box.borderTopWidth, box.borderRightWidth, box.borderBottomWidth);
   }
   static QMarginsF insets(const ThemeElementBoxStyle& box) { return box.padding + borders(box); }
+  // A wrapped inline has edges only at its authored start/end (box-decoration-break:
+  // slice). Use the run's font and the shared text baseline, not the tallest glyph
+  // or atom elsewhere in the line, for its painted box.
+  static LayoutBox inlineFragment(const LayoutBox& run, qreal left, qreal right, qreal baseline,
+                                   bool first, bool last) {
+    auto used = run.usedBox;
+    if (!first) { used.padding.setLeft(0); used.borderLeftWidth = 0; }
+    if (!last) { used.padding.setRight(0); used.borderRightWidth = 0; }
+    const auto inset = insets(used);
+    const QFontMetricsF metrics(run.font);
+    const QRectF rect(qMin(left, right) - inset.left(), baseline - metrics.ascent() - inset.top(),
+                      qAbs(right - left) + inset.left() + inset.right(), metrics.height() + inset.top() + inset.bottom());
+    return place(run.hostKey, run.style, used, rect, run.font);
+  }
   static qreal borderWidth(const ThemeElementBoxStyle& box, qreal containingWidth, qreal intrinsicWidth = -1) {
     const auto inset = insets(box);
     const qreal extra = box.borderBox ? 0 : inset.left() + inset.right();

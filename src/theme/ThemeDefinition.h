@@ -226,7 +226,7 @@ struct ThemeBlockSpacing {
 // paint time (gradients are rect-relative). kind=None ⇒ no gradient; the field is
 // optional on every decoration that holds one.
 struct GradientStop {
-  qreal position = 0.0;  // 0..1 along the gradient axis
+  CssLengthPercentage position;  // Missing = distribute at used-value time
   QColor color;
 };
 struct GradientSpec {
@@ -235,7 +235,11 @@ struct GradientSpec {
   std::vector<GradientStop> stops;
   qreal angleDeg = 180.0;                       // linear: CSS angle (0=to top, 90=to right)
   QPointF radialCenter = QPointF(0.5, 0.5);     // radial: center as fractions of target rect
-  qreal radialRadius = 0.5;                     // radial: radius as fraction of target's larger side
+  enum class RadialShape { Ellipse, Circle };
+  enum class RadialExtent { FarthestCorner, ClosestCorner, FarthestSide, ClosestSide, Explicit };
+  RadialShape radialShape = RadialShape::Ellipse;
+  RadialExtent radialExtent = RadialExtent::FarthestCorner;
+  CssLengthPercentage radialRadiusX, radialRadiusY;
   QPointF conicCenter = QPointF(0.5, 0.5);      // conic: center as fractions of target rect
   qreal conicStartDeg = 0.0;                    // conic: CSS `from <angle>` (0=12 o'clock, clockwise)
 };

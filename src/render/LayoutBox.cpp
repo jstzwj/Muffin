@@ -59,7 +59,10 @@ void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset) {
   painter.setClipPath(clip, Qt::IntersectClip);
   painter.setPen(Qt::NoPen);
   if (paint.backgroundColor.isValid()) painter.fillPath(clip, paint.backgroundColor);
-  if (GradientPainter::isGradient(paint.backgroundImage)) painter.fillPath(clip, GradientPainter::makeBrush(paint.backgroundImage, rect));
+  if (GradientPainter::isGradient(paint.backgroundImage)) {
+    const qreal scale = box.style.text.fontSizePx > 0 ? box.font.pointSizeF() * 96 / 72 / box.style.text.fontSizePx : 1;
+    painter.fillPath(clip, GradientPainter::makeBrush(paint.backgroundImage, rect, scale));
+  }
   const auto side = [&](QRectF area, const QColor& color, const QString& style, bool horizontal) {
     if (area.width() <= 0 || area.height() <= 0 || !color.isValid()) return;
     const qreal width = horizontal ? area.height() : area.width();

@@ -59,8 +59,7 @@ const std::function<bool(QRgb)> isRed = [](QRgb p) {
   return qRed(p) > 150 && qGreen(p) < 90 && qBlue(p) < 90;
 };
 
-// The inline-code chip is a paint-only box around the code text. CSS padding
-// grows the box symmetrically, so a theme with larger padding produces a wider
+// CSS padding reserves inline advance and grows the painted box. A theme with larger padding produces a wider
 // red background bbox than the default — relative (same code text / font), so
 // robust to offscreen font-metric differences.
 void testInlineCodeChipGrowsWithPadding() {
@@ -106,7 +105,8 @@ void testInlineBoxPaddingReservesFlowAndPreservesText() {
   };
   const qreal codeBase = endpoint(QStringLiteral("#write{color:black}code{padding:0;border:none}"), QStringLiteral("a `ab` c\n"));
   const qreal codePad = endpoint(QStringLiteral("#write{color:black}code{padding:0 14px;border:none}"), QStringLiteral("a `ab` c\n"));
-  require(qAbs(codePad - codeBase - 28) < .1, QStringLiteral("code padding must reserve exactly 28px in text flow"));
+  require(qAbs(codePad - codeBase - 28) < .1, QStringLiteral("code padding must reserve exactly 28px in text flow: base=%1 padded=%2 delta=%3")
+                                                   .arg(codeBase).arg(codePad).arg(codePad-codeBase));
   const qreal kbdBase =
       endpoint(QStringLiteral("#write{color:black}kbd{padding:0;border:0 solid black}"), QStringLiteral("a <kbd>ab</kbd> c\n"));
   const qreal kbdPad =

@@ -709,6 +709,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const qreal overflow = std::max({fragment.style.paint.boxShadowBlur, fragment.hoverPaint.boxShadowBlur, fragment.focusPaint.boxShadowBlur,
                                    fragment.style.paint.filterBlur + 2});
   fragment.visualOverflow = fragment.borderBox.adjusted(-overflow, -overflow, overflow, overflow);
+  fragment.visualOverflow = fragment.visualOverflow.united(inlineLayout->visualTextBounds().translated(fragment.inlineTextOrigin));
   layout->setCssBoxGeometry(std::move(fragment));
 
   layout->setInlineLayout(std::move(inlineLayout));
@@ -2048,7 +2049,7 @@ qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elem
   const QFont font = theme.textFontForElement(elementKey, node);
   const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, node);
   if (multiplier > 0.0) {
-    return std::ceil(cssLineHeightPx(font.pointSizeF(), multiplier));
+    return cssLineHeightPx(font.pointSizeF(), multiplier);
   }
   return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
 }

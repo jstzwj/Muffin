@@ -280,6 +280,12 @@ muffin_add_test(NAME MuffinMarkdownHtmlSerializerTest SOURCE tests/projection/Ma
 muffin_add_test(NAME MuffinCssComputedStyleEngineTest SOURCE tests/theme/CssComputedStyleEngineTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinDocumentStyleConformanceTest SOURCE tests/theme/DocumentStyleConformanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 target_compile_definitions(MuffinDocumentStyleConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+muffin_add_test(NAME MuffinTypographyConformanceTest SOURCE tests/theme/TypographyConformanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+target_compile_definitions(MuffinTypographyConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
+  set_property(TEST MuffinTypographyConformanceTest APPEND PROPERTY ENVIRONMENT_MODIFICATION
+    "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")
+endif()
 muffin_add_test(NAME MuffinCssFlexLayoutTest SOURCE tests/theme/CssFlexLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
 target_compile_definitions(MuffinCssFlexLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinCssGridLayoutTest SOURCE tests/theme/CssGridLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)

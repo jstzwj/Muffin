@@ -17,10 +17,10 @@ using namespace muffin;
 namespace {
 
 // The layout buffer contains zero-source-length spacers for CSS inline boxes.
-// Fixture text contains no authored hair spaces; projection/copy text must stay
+// Fixture text contains no authored private-use spacers; projection/copy text must stay
 // unchanged while format ranges continue to address the actual layout buffer.
 QString withoutBoxSpacing(QString text) {
-  text.remove(QChar(0x200a));
+  text.remove(QChar(0xe001));
   return text;
 }
 QString keyboardFamily(const RenderTheme& theme) {

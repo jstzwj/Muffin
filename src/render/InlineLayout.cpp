@@ -2,6 +2,7 @@
 #include "render/CssFormattingContext.h"
 #include "render/CssSizing.h"
 #include "render/RenderMetrics.h"
+#include "render/InlineFormatting.h"
 
 #include "document/ImageSyntaxOps.h"
 #include "editor/ResourceUrl.h"
@@ -160,6 +161,7 @@ void InlineLayout::build(
   displayOffsetMap_.clear();
   displayText_.clear();
   layoutText_.clear();
+  lineBoxes_.clear();
   isMisspelled_ = options.isMisspelled;
   const auto sharedSnapshot = [&](const ThemeElementStyle& style, const QFont& font) {
     const auto used = theme.usedBoxForStyle(style, width);
@@ -198,6 +200,7 @@ void InlineLayout::build(
   preeditCursor_ = options.preeditCursor;
   preeditInsertAtSourceOffset_ = options.preeditInsertAtSourceOffset;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
+  zoomScale_ = theme.zoomPercent() / 100.0;
   wordSpacing_ = options.wordSpacing;
   textShadow_ = options.textShadow;
   alignment_ = options.alignment;
@@ -291,6 +294,9 @@ QRectF InlineLayout::visualTextBounds() const {
     bounds = have ? bounds.united(lineRect) : lineRect;
     have = true;
   }
+  for (const auto& box : inlineBoxes_) bounds = bounds.united(box.visualOverflow);
+  for (const auto& rect : mathAtomRects({})) bounds = bounds.united(rect);
+  for (const auto& atom : htmlAtoms_) bounds = bounds.united(atom.rect);
   return bounds;
 }
 
@@ -626,7 +632,7 @@ QVector<QRectF> InlineLayout::mathAtomRects(QPointF origin) const {
       }
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
-      if (atomStart >= lineStart && atomStart <= lineEnd) {
+      if (atomStart >= lineStart && atomStart < lineEnd) {
         const qreal x = line.cursorToX(atomStart);
         const qreal baseline = origin.y() + line.y() + line.ascent();
         const auto used = mathUsedBounds(*atom.layout);
@@ -742,7 +748,7 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
         const qreal x1 = line.cursorToX(rs);
         const qreal x2 = line.cursorToX(re);
         const QRectF rect(origin.x() + qMin(x1, x2), origin.y() + line.y(), qAbs(x2 - x1), line.height());
-        painter.fillRect(rect, GradientPainter::makeBrush(markGradient_, rect));
+        painter.fillRect(rect, GradientPainter::makeBrush(markGradient_, rect, zoomScale_));
       }
     }
     painter.restore();
@@ -824,17 +830,14 @@ void InlineLayout::buildInlineBoxes() {
   inlineBoxes_.clear();
   if (!textLayout_) return;
   const auto add = [&](qsizetype start, qsizetype end, const LayoutBox& style) {
-    const auto insets = LayoutBox::insets(style.usedBox);
     for (int i = 0; i < textLayout_->lineCount(); ++i) {
       const auto line = textLayout_->lineAt(i);
       const int first = qMax(line.textStart(), toLayoutOffset(start));
       const int last = qMin(line.textStart() + line.textLength(), toLayoutOffset(end));
       if (first >= last) continue;
       const qreal left = line.cursorToX(first), right = line.cursorToX(last);
-      const auto glyphs = line.naturalTextRect();
-      const QRectF rect(qMin(left, right) - insets.left(), glyphs.top() - insets.top(), qAbs(right - left) + insets.left() + insets.right(),
-                        glyphs.height() + insets.top() + insets.bottom());
-      inlineBoxes_.push_back(LayoutBox::place(style.hostKey, style.style, style.usedBox, rect, style.font));
+      inlineBoxes_.push_back(LayoutBox::inlineFragment(style, left, right, line.y() + line.ascent(),
+                                                       first == toLayoutOffset(start), last == toLayoutOffset(end)));
     }
   };
   for (const auto& span : projection_.spans()) {
@@ -1043,7 +1046,7 @@ void InlineLayout::buildInlineBoxSpacing() {
     displayOffsets.push_back({projected, projected, pos, pos + 1});
     inlineSpacers_.push_back({pos, edge.width});
   }
-  for (auto it = edges.rbegin(); it != edges.rend(); ++it) displayText_.insert(it->position, QChar(0x200a));
+  for (auto it = edges.rbegin(); it != edges.rend(); ++it) displayText_.insert(it->position, kInlineBoxSpacer);
   std::stable_sort(offsets.begin(), offsets.end(), [](const auto& a, const auto& b) { return a.displayStart < b.displayStart; });
   std::stable_sort(displayOffsets.begin(), displayOffsets.end(),
                    [](const auto& a, const auto& b) { return a.layoutStart < b.layoutStart; });
@@ -1091,6 +1094,7 @@ void InlineLayout::buildHtmlFormatSpans(const RenderTheme& theme, qreal width) {
       hs.color = fs.color;
       hs.backgroundColor = fs.backgroundColor;
       hs.fontSize = fs.fontSize;
+      hs.lineHeight = fs.lineHeight;
       hs.verticalAlignment = fs.verticalAlignment;
       hs.keyboard = fs.keyboard;
       hs.fontFamilies = fs.fontFamilies;
@@ -1582,6 +1586,32 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     hoverRecolourRanges_.clear();
   }
 
+  struct LineRun { int start, end; QFont font; qreal lineHeight; bool shifted; };
+  QVector<LineRun> lineRuns;
+  for (const auto& span : projection_.spans()) {
+    if (span.kind == InlineSpanKind::Atom || span.kind == InlineSpanKind::HtmlContent) continue;
+    const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+    if (!range.valid || range.end <= range.start) continue;
+    QFont font = span.type == InlineType::Code ? codeStyle_->font : baseFont;
+    if (span.bold) font.setWeight(QFont::Bold);
+    if (span.italic) font.setItalic(true);
+    qreal multiplier = lineHeightMultiplier_;
+    if (const auto snapshot = spanStyles_.value(span.displayStart); snapshot && span.kind == InlineSpanKind::Text) {
+      font = snapshot->font;
+      multiplier = snapshot->style.text.lineHeight;
+    }
+    lineRuns.push_back({toLayoutOffset(range.start), toLayoutOffset(range.end), font,
+                       multiplier > 0 ? cssLineHeightPx(font.pointSizeF(), multiplier) : 0,
+                       span.subscript || span.superscript});
+  }
+  for (const auto& span : htmlFormatSpans_) {
+    QFont font = span.fontSet ? span.font : baseFont;
+    if (span.fontSize > 0) font.setPointSizeF(span.fontSize);
+    lineRuns.push_back({toLayoutOffset(span.layoutStart), toLayoutOffset(span.layoutEnd), font, span.lineHeight,
+                       span.verticalAlignment != QTextCharFormat::AlignNormal});
+  }
+  std::sort(lineRuns.begin(), lineRuns.end(), [](const auto& a, const auto& b) { return a.start < b.start; });
+  qsizetype firstRun = 0;
   const qreal lineWidth = qMax<qreal>(1.0, width);
   qreal height = 0.0;
   qreal maxWidth = 0.0;
@@ -1592,53 +1622,39 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       break;
     }
     line.setLineWidth(lineWidth);
-    // Ensure the line is tall enough for any image / math atoms on this line.
-    // Without this, a tall inline atom (image, or math with a superscript /
-    // fraction) paints baseline-aligned but overflows the un-grown line box,
-    // intruding into the neighbour line (e.g. an inline `$E=mc^2$` covering the
-    // line above after a wrap).
-    qreal minLineHeight = line.height();
-    qreal requiredAscent = line.ascent(), requiredDescent = line.descent();
+    InlineLineBox lineBox(baseFont, lineHeightMultiplier_ > 0 ? cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_) : 0);
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
+    while (firstRun < lineRuns.size() && lineRuns[firstRun].end <= lineStart) ++firstRun;
+    for (qsizetype i = firstRun; i < lineRuns.size() && lineRuns[i].start < lineEnd; ++i) {
+      if (lineRuns[i].end <= lineStart) continue;
+      lineBox.includeText(lineRuns[i].font, lineRuns[i].lineHeight);
+      if (lineRuns[i].shifted) lineBox.includeAtomic(line.ascent(), line.height());
+    }
     for (const auto& atom : htmlAtoms_) {
       const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (start < lineStart || start >= lineEnd) continue;
-      const QFontMetricsF strut(baseFont);
-      const auto nominal = lineHeightMultiplier_ > 0 ? cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_) : strut.height();
-      const auto leading = (nominal - strut.height()) * .5;
-      requiredAscent = std::max({requiredAscent, strut.ascent() + leading, atom.baseline + atom.margin.top()});
-      requiredDescent = std::max({requiredDescent, strut.descent() + leading, atom.crop.height() - atom.baseline + atom.margin.bottom()});
+      if (start >= lineStart && start < lineEnd) lineBox.includeAtomic(atom.baseline, atom.crop.height(), atom.margin);
     }
     for (const ImageAtom& atom : imageAtoms_) {
-      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (atom.loaded && atomStart >= lineStart && atomStart <= lineEnd) {
-        minLineHeight = qMax(minLineHeight, atom.displaySize.height());
-      }
+      const int start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.loaded && start >= lineStart && start < lineEnd)
+        lineBox.includeAtomic(atom.displaySize.height(), atom.displaySize.height());
     }
     for (const MathAtom& atom : mathAtoms_) {
-      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (atom.layout && atom.layout->valid() && atomStart >= lineStart && atomStart <= lineEnd) {
+      const int start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.layout && atom.layout->valid() && start >= lineStart && start < lineEnd) {
         const auto used = mathUsedBounds(*atom.layout);
-        requiredAscent = qMax(requiredAscent, -used.top());
-        requiredDescent = qMax(requiredDescent, used.bottom());
+        lineBox.includeAtomic(-used.top(), used.height());
       }
     }
-    minLineHeight = qMax(minLineHeight, requiredAscent + requiredDescent);
-    qreal lineHeight = std::ceil(minLineHeight * kLineHeightFactor);
-    if (lineHeightMultiplier_ > 0.0) {
-      // CSS `line-height: N` is N * font-size, not N * the platform font
-      // metrics line box. Multiplying QTextLine::height() made CSS themes too
-      // tall compared with other renderers, especially for serif fallback fonts.
-      lineHeight = std::ceil(qMax(minLineHeight, cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_)));
-    }
-    line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5 + requiredAscent - line.ascent()));
+    const qreal allocatedHeight = lineBox.placeLine(line, height);
+    lineBoxes_.push_back(QRectF(0, height, lineWidth, allocatedHeight));
     for (auto& atom : htmlAtoms_) {
       const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
       if (start >= lineStart && start < lineEnd)
         atom.rect = QRectF(QPointF(line.cursorToX(start) + atom.margin.left(), line.y() + line.ascent() - atom.baseline), atom.crop.size());
     }
-    height += lineHeight;
+    height += allocatedHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
   textLayout_->endLayout();
@@ -1726,7 +1742,7 @@ void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) c
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
       const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (atomStart < lineStart || atomStart > lineEnd) {
+      if (atomStart < lineStart || atomStart >= lineEnd) {
         continue;
       }
       const qreal x = line.cursorToX(atomStart);
@@ -1762,20 +1778,11 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
       const int lineStart = line.textStart();
       const int lineEnd = lineStart + line.textLength();
       const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (atomStart < lineStart || atomStart > lineEnd) {
+      if (atomStart < lineStart || atomStart >= lineEnd) {
         continue;
       }
       const qreal x = line.cursorToX(atomStart);
-      // Vertically place the image exactly where buildTextLayout allocated the line.
-      // line.y() is the centred top of the line's minLineHeight content; the image grew
-      // minLineHeight to its own height, so it starts at line.y() when it is the tallest
-      // item on the line and is centred only when shorter than the text line box.
-      // Recomputing minLineHeight = max(line.height(), image height) — the same expression
-      // buildTextLayout uses — keeps paint in lock-step with layout. The previous
-      // `ceil(line.height()*1.16)` estimate was only valid for a plain text line and drifted
-      // negative under CSS `line-height`, painting the image above its own block rect.
-      const qreal minLineHeight = qMax(line.height(), atom.displaySize.height());
-      const qreal y = origin.y() + line.y() + (minLineHeight - atom.displaySize.height()) * 0.5;
+      const qreal y = origin.y() + line.y() + line.ascent() - atom.displaySize.height();
       const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
       if (atom.cssBox) paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
       painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
@@ -1953,11 +1960,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       continue;
     }
     QFont placeholderFont = baseFont;
-    const QFontMetricsF baseMetrics(baseFont);
-    const qreal usedHeight = mathUsedBounds(*atom.layout).height();
-    if (baseMetrics.height() > 0.0 && usedHeight > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
-      placeholderFont.setPointSizeF(baseFont.pointSizeF() * usedHeight / baseMetrics.height());
-    }
     const QFontMetricsF placeholderMetrics(placeholderFont);
     const qreal placeholderAdvance = placeholderMetrics.horizontalAdvance(kInlineMathPlaceholder);
     placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, atom.layout->size.width() - placeholderAdvance);
@@ -1977,10 +1979,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
       continue;
     }
     QFont placeholderFont = baseFont;
-    const QFontMetricsF baseMetrics(baseFont);
-    if (atom.displaySize.height() > baseMetrics.height() && baseFont.pointSizeF() > 0.0) {
-      placeholderFont.setPointSizeF(baseFont.pointSizeF() * atom.displaySize.height() / baseMetrics.height());
-    }
     const QFontMetricsF placeholderMetrics(placeholderFont);
     const qreal placeholderAdvance = placeholderMetrics.horizontalAdvance(kImagePlaceholder);
     placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, atom.displaySize.width() - placeholderAdvance);
@@ -2114,7 +2112,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
   for (const InlineSpacer& spacer : inlineSpacers_) {
     QFont font = baseFont;
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
-    font.setLetterSpacing(QFont::AbsoluteSpacing, spacer.width - QFontMetricsF(font).horizontalAdvance(QChar(0x200a)));
+    font.setLetterSpacing(QFont::AbsoluteSpacing, spacer.width - QFontMetricsF(font).horizontalAdvance(kInlineBoxSpacer));
     QTextCharFormat format;
     format.setFont(font);
     format.setForeground(Qt::transparent);
@@ -2301,11 +2299,12 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     if (!line.isValid()) {
       continue;
     }
-    if (localPos.y() < line.y()) {
+    const auto bounds = lineBoxes_[i];
+    if (localPos.y() < bounds.top()) {
       break;
     }
     targetLine = line;
-    if (localPos.y() <= line.y() + line.height()) {
+    if (localPos.y() < bounds.bottom()) {
       break;
     }
   }
@@ -2378,7 +2377,8 @@ QRectF InlineLayout::textLayoutCursorRectForDisplayOffset(qsizetype displayOffse
     }
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
-    if (displayOffset < lineStart || displayOffset > lineEnd) {
+    if (displayOffset < lineStart || displayOffset > lineEnd ||
+        (displayOffset == lineEnd && i + 1 < textLayout_->lineCount())) {
       continue;
     }
     const qreal x = line.cursorToX(static_cast<int>(displayOffset));

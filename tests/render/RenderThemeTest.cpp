@@ -940,7 +940,8 @@ void testDecoratedThemePaints(const MarkdownDocument& document) {
   h2bg.present = true;
   h2bg.gradient.kind = GradientSpec::Kind::Radial;
   h2bg.gradient.radialCenter = QPointF(0.5, 1.0);
-  h2bg.gradient.stops = {{0.0, QColor(QStringLiteral("#00f3ff"))}, {1.0, QColor(Qt::transparent)}};
+  h2bg.gradient.stops = {{{CssLengthStatus::Valid, 0, 0, true}, QColor(QStringLiteral("#00f3ff"))},
+                        {{CssLengthStatus::Valid, 0, 1, true}, QColor(Qt::transparent)}};
   def.decorations.backgrounds.push_back(h2bg);
   PseudoElementRule h1after;
   h1after.host = QStringLiteral("h1");
@@ -957,7 +958,8 @@ void testDecoratedThemePaints(const MarkdownDocument& document) {
   wbefore.opacity = 0.05;
   wbefore.maskTile = QSizeF(20.0, 20.0);
   wbefore.maskPattern.kind = GradientSpec::Kind::Radial;
-  wbefore.maskPattern.stops = {{0.0, QColor(QStringLiteral("#ffffff"))}, {1.0, QColor(Qt::transparent)}};
+  wbefore.maskPattern.stops = {{{CssLengthStatus::Valid, 0, 0, true}, QColor(QStringLiteral("#ffffff"))},
+                             {{CssLengthStatus::Valid, 0, 1, true}, QColor(Qt::transparent)}};
   def.decorations.pseudos.push_back(wbefore);
   const RenderTheme theme = RenderTheme::fromDefinition(def);
 

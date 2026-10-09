@@ -63,6 +63,7 @@ struct HtmlTextLayout {
   // which additionally contains zero-content spacers for inline box edges.
   std::vector<TextFormatSpan> formatSpans;
   std::vector<LayoutBox> inlineBoxes;
+  std::vector<QRectF> lineBoxes;
   std::vector<LinkSpan> linkSpans;
   qreal width = 0;
   qreal height = 0;

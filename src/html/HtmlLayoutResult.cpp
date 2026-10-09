@@ -91,7 +91,8 @@ int HtmlLayoutResult::textOffsetAtPoint(QPointF point) const {
           const int first = qMax(span.start, line.textStart()), last = qMin(span.start + span.length, line.textStart() + line.textLength());
           if (first >= last) continue;
           const auto left = line.cursorToX(first), right = line.cursorToX(last);
-          const QRectF rect = QRectF(qMin(left, right), line.y(), qAbs(right - left), line.height()).translated(origin);
+          const auto bounds = i < int(text.lineBoxes.size()) ? text.lineBoxes[i] : QRectF(0, line.y(), 0, line.height());
+          const QRectF rect = QRectF(qMin(left, right), bounds.top(), qAbs(right - left), bounds.height()).translated(origin);
           const auto dx = std::max({rect.left() - point.x(), qreal(0), point.x() - rect.right()});
           const auto dy = std::max({rect.top() - point.y(), qreal(0), point.y() - rect.bottom()});
           const auto distance = dx * dx + dy * dy;
@@ -252,7 +253,8 @@ QString HtmlLayoutResult::linkHrefAtTextLayout(const HtmlBox& box, QPointF local
   int cursor = -1;
   for (int i = 0; i < textLayout->layout->lineCount(); ++i) {
     const QTextLine line = textLayout->layout->lineAt(i);
-    if (localPos.y() >= line.y() && localPos.y() <= line.y() + line.height()) {
+    const auto bounds = i < int(textLayout->lineBoxes.size()) ? textLayout->lineBoxes[i] : QRectF(0, line.y(), 0, line.height());
+    if (localPos.y() >= bounds.top() && localPos.y() < bounds.bottom()) {
       cursor = line.xToCursor(localPos.x(), QTextLine::CursorOnCharacter);
       break;
     }

@@ -1,6 +1,7 @@
 #include "html/HtmlTextMeasurer.h"
 #include "html/HtmlBox.h"
 #include "render/RenderMetrics.h"
+#include "render/InlineFormatting.h"
 
 #include <QFontMetricsF>
 #include <algorithm>
@@ -183,7 +184,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   }
   result->sourceSpans = std::move(sources);
   QString layoutText = text;
-  for (auto edge = edges.rbegin(); edge != edges.rend(); ++edge) layoutText.insert(edge->position, QChar(0x200a));
+  for (auto edge = edges.rbegin(); edge != edges.rend(); ++edge) layoutText.insert(edge->position, kInlineBoxSpacer);
   auto layout = std::make_unique<QTextLayout>(layoutText, baseFont);
 
   QTextOption option;
@@ -228,7 +229,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     }
   }
   for (size_t i = 0; i < edges.size(); ++i) {
-    const QChar spacer(0x200a);
+    const QChar spacer = kInlineBoxSpacer;
     QFont font = baseFont;
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
     font.setLetterSpacing(QFont::AbsoluteSpacing, edges[i].width - QFontMetricsF(font).horizontalAdvance(spacer));
@@ -255,38 +256,27 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   qreal height = 0;
   qreal maxWidth = 0;
   size_t firstSpan = 0;
-  const QFontMetricsF strut(baseFont);
-  const qreal leading = (result->lineHeight - strut.height()) * .5;
   while (true) {
     QTextLine line = layout->createLine();
     if (!line.isValid()) {
       break;
     }
     line.setLineWidth(qMax<qreal>(1.0, availableWidth));
-    // CSS line boxes use half-leading, including negative leading when the
-    // authored line-height is smaller than the font's em/metric box. Qt's
-    // natural ascent/descent describes glyph painting, not the CSS line box.
-    qreal ascent = strut.ascent() + leading;
-    qreal descent = strut.descent() + leading;
+    InlineLineBox lineBox(baseFont, result->lineHeight);
     while (firstSpan < spans.size() && spans[firstSpan].start + spans[firstSpan].length <= line.textStart()) ++firstSpan;
     for (size_t i = firstSpan; i < spans.size() && spans[i].start < line.textStart() + line.textLength(); ++i) {
       const auto& span = spans[i];
-      const QFontMetricsF metrics(span.fontSet ? span.font : baseFont);
-      const qreal spanLeading = (span.lineHeight - metrics.height()) * .5;
-      ascent = qMax(ascent, metrics.ascent() + spanLeading);
-      descent = qMax(descent, metrics.descent() + spanLeading);
+      lineBox.includeText(span.fontSet ? span.font : baseFont, span.lineHeight);
       if (span.verticalAlignment != QTextCharFormat::AlignNormal) {
-        ascent = qMax(ascent, line.ascent());
-        descent = qMax(descent, line.descent());
+        lineBox.includeAtomic(line.ascent(), line.height());
       }
     }
     for (const auto& atom : result->atoms)
       if (atom.start >= line.textStart() && atom.start < line.textStart() + line.textLength()) {
-        ascent = qMax(ascent, atom.baseline + atom.margin.top());
-        descent = qMax(descent, atom.size.height() - atom.baseline + atom.margin.bottom());
+        lineBox.includeAtomic(atom.baseline, atom.size.height(), atom.margin);
       }
-    const qreal lineHeight = qMax(result->lineHeight, ascent + descent);
-    line.setPosition(QPointF(0, height + (lineHeight - ascent - descent) * .5 + ascent - line.ascent()));
+    const qreal lineHeight = lineBox.placeLine(line, height);
+    result->lineBoxes.emplace_back(0, height, availableWidth, lineHeight);
     for (auto& atom : result->atoms)
       if (atom.start >= line.textStart() && atom.start < line.textStart() + line.textLength()) {
         atom.rect = QRectF(line.cursorToX(atom.start) + atom.margin.left(), line.y() + line.ascent() - atom.baseline, atom.size.width(),
@@ -301,15 +291,13 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
 
   for (const auto& run : runs) {
     const int start = after(run.start), end = before(run.end);
-    const auto inset = LayoutBox::insets(run.box.usedBox);
     for (int i = 0; i < layout->lineCount(); ++i) {
       const auto line = layout->lineAt(i);
       const int first = qMax(start, line.textStart()), last = qMin(end, line.textStart() + line.textLength());
       if (first >= last) continue;
       const qreal left = line.cursorToX(first), right = line.cursorToX(last);
-      const QRectF rect(qMin(left, right) - inset.left(), line.y() - inset.top(), qAbs(right - left) + inset.left() + inset.right(),
-                        line.height() + inset.top() + inset.bottom());
-      result->inlineBoxes.push_back(LayoutBox::place(run.box.hostKey, run.box.style, run.box.usedBox, rect, run.box.font));
+      result->inlineBoxes.push_back(LayoutBox::inlineFragment(run.box, left, right, line.y() + line.ascent(),
+                                                             first == start, last == end));
     }
   }
   result->width = maxWidth;
