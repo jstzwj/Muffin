@@ -103,7 +103,7 @@ const HoverEffect* hoverEffectFor(const RenderTheme& theme, const QString& host)
   return nullptr;
 }
 
-qreal pseudoLength(const PseudoElementRule& rule, const QString& property, qreal basis, qreal fallback, qreal zoom) {
+qreal pseudoUsedLengthImpl(const PseudoElementRule& rule, const QString& property, qreal basis, qreal fallback, qreal zoom) {
   if (rule.computed) {
     const auto length = rule.computed->length(property);
     if (length.status == CssLengthStatus::Valid) return length.px * zoom + length.fraction * basis;
@@ -115,10 +115,10 @@ QRectF positionedPseudo(const PseudoElementRule& rule, QRectF host, QRectF box, 
   if (!rule.computed) return box;
   const auto& style = *rule.computed;
   const auto valid = [&](const char* name) { return style.length(QLatin1String(name)).status == CssLengthStatus::Valid; };
-  if (valid("left")) box.moveLeft(host.left() + pseudoLength(rule, "left", host.width(), 0, zoom));
-  else if (valid("right")) box.moveRight(host.right() - pseudoLength(rule, "right", host.width(), 0, zoom));
-  if (valid("top")) box.moveTop(host.top() + pseudoLength(rule, "top", host.height(), 0, zoom));
-  else if (valid("bottom")) box.moveBottom(host.bottom() - pseudoLength(rule, "bottom", host.height(), 0, zoom));
+  if (valid("left")) box.moveLeft(host.left() + pseudoUsedLengthImpl(rule, "left", host.width(), 0, zoom));
+  else if (valid("right")) box.moveRight(host.right() - pseudoUsedLengthImpl(rule, "right", host.width(), 0, zoom));
+  if (valid("top")) box.moveTop(host.top() + pseudoUsedLengthImpl(rule, "top", host.height(), 0, zoom));
+  else if (valid("bottom")) box.moveBottom(host.bottom() - pseudoUsedLengthImpl(rule, "bottom", host.height(), 0, zoom));
   const CssLengthContext context{style.fontSizePx * style.textScale, style.rootFontSizePx * style.textScale,
                                style.fontSizePx * .5, style.fontSizePx * .5, style.viewportPx};
   static const QRegularExpression translations(QStringLiteral(R"(translate(x|y)?\(([^()]*(?:\([^()]*\)[^()]*)*)\))"));
@@ -173,6 +173,10 @@ void paintPseudoIcon(QPainter& painter, const PseudoElementRule& rule, QRectF bo
 
 }  // namespace
 
+qreal pseudoUsedLength(const PseudoElementRule& rule, const QString& property, qreal basis, qreal fallback, qreal zoom) {
+  return pseudoUsedLengthImpl(rule, property, basis, fallback, zoom);
+}
+
 void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& target, const QColor& tint, bool recolour) {
   const auto icon = svgIcon(svgData);
   if (!icon) {
@@ -196,6 +200,10 @@ void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& targe
   painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
   painter.drawImage(target, tile);
   painter.restore();
+}
+
+void paintPseudoIconBox(QPainter& painter, const PseudoElementRule& rule, const QRectF& box, const QColor& tint, qreal zoom) {
+  paintPseudoIcon(painter, rule, box, tint, zoom);
 }
 
 bool hasElementBackground(const RenderTheme& theme, const QString& host) {
@@ -239,7 +247,6 @@ void paintShapeBox(QPainter& painter, const PseudoElementRule& rule, QRectF box)
 
 void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect, const PaintContext& ctx) {
   const bool isHeading = ctx.headingLevel >= 1 && ctx.headingLevel <= 6;
-  const QFontMetricsF fm(ctx.font);
   const qreal em = ctx.font.pointSizeF() * 96.0 / 72.0;
   const qreal zoom = theme.zoomPercent() / 100.0;
   const qreal vCenter = ctx.textBounds.isValid() ? ctx.textBounds.center().y() : rect.center().y();
@@ -252,36 +259,9 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         // height against the HOST rect when the CSS used a `%` (phycat's `height:
         // 61%` is 61% of the rendered heading, not 0.61em — the map-time value in
         // `size` is em-relative and made the bar too short).
-        const qreal w = pseudoLength(*before, "width", rect.width(), before->size.width() > 0 ? before->size.width() : 4, zoom);
-        const qreal h = pseudoLength(*before, "height", rect.height(), before->size.height() > 0 ? before->size.height() : em / zoom, zoom);
+        const qreal w = pseudoUsedLength(*before, "width", rect.width(), before->size.width() > 0 ? before->size.width() : 4, zoom);
+        const qreal h = pseudoUsedLength(*before, "height", rect.height(), before->size.height() > 0 ? before->size.height() : em / zoom, zoom);
         paintShapeBox(painter, *before, positionedPseudo(*before, rect, QRectF(rect.left(), vCenter - h / 2, w, h), zoom));
-      } else if (!before->svgData.isEmpty()) {
-        // Legacy: an inline SVG ::before painted into the left margin (no advance).
-        const QPointF anchor = ctx.textStart.x() >= 0 ? ctx.textStart : rect.topLeft();
-        const qreal s = (before->size.width() > 0 ? before->size.width() : em);
-        const QColor tint = before->svgFromMask ? before->maskTint : before->color;
-        paintIcon(painter, before->svgData, QRectF(anchor.x() - s - 2.0, anchor.y(), s, s), tint, before->svgFromMask);
-      } else {
-        // Inline marker (h4 disc / h5 ring / h6 dash): occupies the reserved zone
-        // [contentLeftX, textStart) so it sits left of the (already-shifted) text.
-        const qreal zoneLeft = ctx.contentLeftX >= 0.0 ? ctx.contentLeftX : rect.left();
-        const qreal zoneRight = (ctx.textStart.x() >= 0 ? ctx.textStart.x() : rect.right()) - before->marginRight;
-        if (before->backgroundColor.isValid() || before->borderWidth > 0.0) {
-          const qreal w = before->size.width() > 0.0 ? before->size.width() : em;
-          const qreal h = before->size.height() > 0.0 ? before->size.height() : em;
-          paintShapeBox(painter, *before, QRectF(zoneRight - w, vCenter - h / 2.0, w, h));
-        } else if (!before->content.isEmpty() && zoneRight > zoneLeft) {
-          // Prefer the layout-resolved text (counter() evaluated to "1. " etc.) over
-          // the rule's literal `content` (which still holds `counter(h1) ". "` raw).
-          const QString text = ctx.beforeContent.isEmpty() ? before->content : ctx.beforeContent;
-          painter.save();
-          painter.setOpacity(before->opacity);
-          painter.setFont(ctx.font);
-          painter.setPen(before->color.isValid() ? before->color : theme.textColor());
-          painter.drawText(QRectF(zoneLeft, ctx.textBounds.top(), zoneRight - zoneLeft, ctx.textBounds.height()),
-                           Qt::AlignVCenter | Qt::AlignLeft, text);
-          painter.restore();
-        }
       }
     } else if (!before->content.isEmpty() && host == QStringLiteral("blockquote")) {
       // Honor CSS geometry: position:absolute left/top anchor the glyph and
@@ -304,27 +284,14 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
   }
 
   if (const PseudoElementRule* after = pseudoRule(theme, host, QStringLiteral("after"))) {
-    if (!after->svgData.isEmpty() && isHeading) {
-      // Trailing mask icon (phycat h3-h6): immediately after the text, top-aligned
-      // (vertical-align: top), sized to the rule's width/height.
-      const QPointF anchor = ctx.textEnd.x() >= 0 ? ctx.textEnd : QPointF(rect.right(), rect.top());
-      const qreal w = pseudoLength(*after, "width", rect.width(), after->size.width() > 0 ? after->size.width() : em / zoom, zoom);
-      const qreal h = pseudoLength(*after, "height", rect.height(), after->size.height() > 0 ? after->size.height() : em / zoom, zoom);
-      const bool topAligned = after->computed && after->computed->resolvedValue("vertical-align") == "top";
-      const qreal top = topAligned && ctx.lastLineBox.isValid() ? ctx.lastLineBox.top() : anchor.y();
-      const QColor tint = after->svgFromMask ? after->maskTint : after->color;
-      painter.save();
-      painter.setOpacity(after->opacity);
-      paintPseudoIcon(painter, *after, QRectF(anchor.x() + after->marginLeft * zoom, top, w, h), tint, zoom);
-      painter.restore();
-    } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
-                (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) &&
-               isHeading) {
+    if (after->absolute && isHeading &&
+        (after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
+         (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0))) {
       // ::after underline bar. Width/height come from the rule (e.g. Whitey's
       // h2::after border-bottom: 100px centred; phycat's h1::after gradient bar).
       const qreal borderW = after->borderBottomWidth > 0.0 ? after->borderBottomWidth : 0.0;
-      const qreal barH = pseudoLength(*after, "height", rect.height(), after->size.height() > 0 ? after->size.height() : qMax<qreal>(2, borderW), zoom);
-      qreal barW = pseudoLength(*after, "width", rect.width(), after->size.width() > 0 ? after->size.width() :
+      const qreal barH = pseudoUsedLength(*after, "height", rect.height(), after->size.height() > 0 ? after->size.height() : qMax<qreal>(2, borderW), zoom);
+      qreal barW = pseudoUsedLength(*after, "width", rect.width(), after->size.width() > 0 ? after->size.width() :
                                (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()) / zoom, zoom);
       // Hover widens the bar toward its :hover width (phycat h1::after 40px → 100%),
       // animated by the HoverAnimator phase. Focus widens it toward its :focus
@@ -345,10 +312,7 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         barW = barW + (qBound(0.0, focusW, rect.width()) - barW) * ctx.focusPhase;
       }
       barW = qMin(barW, rect.width());
-      const qreal textMid =
-          ctx.textBounds.isValid()
-              ? ctx.textBounds.center().x()
-              : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0 ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0 : rect.center().x());
+      const qreal textMid = ctx.textBounds.isValid() ? ctx.textBounds.center().x() : rect.center().x();
       const QRectF initial(textMid - barW / 2, rect.bottom() - barH, barW, barH);
       const QRectF bar = after->absolute ? positionedPseudo(*after, rect, initial, zoom) : initial;
       painter.save();

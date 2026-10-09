@@ -147,7 +147,20 @@ CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bo
     maximum = qMax(maximum, line.horizontalAdvance());
   }
   intrinsic.endLayout();
-  return {noWrap ? maximum : intrinsic.minimumWidth(), maximum};
+  if (noWrap) return {maximum, maximum};
+  // minimumWidth() can lose an unbreakable sequence at a format-run boundary
+  // (notably text joined to generated content by NBSP). Measure the actual
+  // word-wrap opportunities instead of trusting that incidental shaping cache.
+  qreal minimum = 0;
+  intrinsic.beginLayout();
+  while (true) {
+    auto line = intrinsic.createLine();
+    if (!line.isValid()) break;
+    line.setLineWidth(0);
+    minimum = qMax(minimum, line.horizontalAdvance());
+  }
+  intrinsic.endLayout();
+  return {minimum, maximum};
 }
 CssIntrinsicMetrics intrinsicFlexWidths(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items) {
   CssIntrinsicMetrics result;

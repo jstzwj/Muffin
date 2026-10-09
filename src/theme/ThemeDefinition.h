@@ -194,10 +194,6 @@ struct ThemePage {
 // projections for serialization. LayoutBox owns runtime geometry. Marker gap
 // and generated counter advance are native document-host conventions.
 struct ThemeBlockSpacing {
-  // Px the heading text is inset from its left padding edge to reserve room for
-  // an inline `::before` marker (phycat h4/h5/h6). 0 for absolute befores (h3,
-  // which sits in the heading's own padding gap) and headings with no before.
-  qreal headingBeforeAdvance[6] = {};
   QMarginsF codeBlockMargin;
   QMarginsF tableMargin;
   QMarginsF listMargin;
@@ -411,13 +407,14 @@ struct ThemeDecorations {
   // ::before content like `counter(h1) ". "` can be resolved against a real outline
   // state machine at layout time (DocumentLayout walks the AST in document order,
   // applies each heading host's resets then increments). `none` is the absence of ops.
-  // Keyed by host: "h1".."h6", plus "#write"/"body" for the document-root reset.
+  // Keyed by host and pseudo ("h1", "h1::before", "h1::after", ...),
+  // plus "#write" for the document-root reset.
   struct CounterOps {
     QVector<QPair<QString, int>> resets;      // name → reset value (default 0)
     QVector<QPair<QString, int>> increments;  // name → increment step (default 1)
   };
   QHash<QString, CounterOps> hostCounterOps;
-  // True iff some h1..h6 ::before rule has a counter()/counters() token. Gates the
+  // True iff some heading ::before/::after rule has a counter()/counters() token. Gates the
   // whole heading-counter subsystem: when false, DocumentLayout never walks the AST
   // for counters and builders never look up — zero cost for ordinary themes.
   bool hasHeadingCounters = false;

@@ -66,25 +66,6 @@ bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
   return false;
 }
 
-qreal measuredHeadingBeforeAdvance(const RenderTheme& theme, int level,
-                                   const QString& resolvedText, const QFont& font) {
-  const qreal fallback = theme.headingBeforeAdvance(level);
-  if (resolvedText.isEmpty()) return fallback;
-
-  qreal marginRight = 0.0;
-  const QString host = QStringLiteral("h%1").arg(level);
-  for (const PseudoElementRule& rule : theme.decorations().pseudos) {
-    if (rule.host == host && rule.pseudo == QStringLiteral("before")) {
-      marginRight = rule.marginRight;
-      break;
-    }
-  }
-  // Counter text is known at layout time, so use its exact inline advance.
-  // Keeping the mapper's 1em fallback here leaves spare space for short values
-  // such as "1" and right-aligns them away from the shared heading edge.
-  return QFontMetricsF(font).horizontalAdvance(resolvedText) + marginRight;
-}
-
 // `fast` skips the per-node structural CSS cascade (mirrors spacingBetweenBlocks' fast path): the
 // estimate path passes fast=true to resolve load-time PROTOTYPE margins (nullptr node → elementStyle,
 // O(1)) instead of elementStyleForNode (O(sibling chain) on github). estimateContainer/estimateListItem
@@ -457,7 +438,7 @@ void BlockLayoutBuilder::setMermaidSyncMode(bool sync) {
   mermaidSyncMode_ = sync;
 }
 
-void BlockLayoutBuilder::setHeadingCounterText(const QHash<NodeId, QString>* map) {
+void BlockLayoutBuilder::setHeadingCounterText(const QHash<NodeId, QPair<QString, QString>>* map) {
   headingCounterText_ = map;
 }
 
@@ -611,7 +592,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   // outline is unchanged — so a heading always reads its correct ordinal.
   if (headingCounterText_ && node.type() == BlockType::Heading) {
     const auto it = headingCounterText_->constFind(node.id());
-    if (it != headingCounterText_->constEnd()) { layout->setHeadingBeforeText(it.value()); }
+    if (it != headingCounterText_->constEnd()) { layout->setHeadingBeforeText(it.value().first); }
   }
   if (isEmptyDocumentParagraph(md(), node)) {
     layout->setPlaceholderText(QCoreApplication::translate("muffin::BlockLayoutBuilder", "Start writing..."));
@@ -631,9 +612,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   width = LayoutBox::borderWidth(usedBox, availableWidth);
   const QFont font = theme.textFontForElement(elementKey, &node);
   const auto insets = LayoutBox::insets(usedBox);
-  const qreal beforeAdvance =
-      node.type() == BlockType::Heading ? measuredHeadingBeforeAdvance(theme, node.headingLevel(), layout->headingBeforeText(), font) : 0;
-  const qreal textWidth = qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance);
+  // Generated heading pseudo-elements are part of InlineLayout now. The text
+  // width must be the complete content box; subtracting a guessed marker
+  // advance here would make wrapping and hit testing disagree with paint.
+  const qreal textWidth = qMax<qreal>(1, width - insets.left() - insets.right());
   const auto intrinsicKind = resolvedStyle ? resolvedStyle->layout.sizes[0] : CssIntrinsicSize::Auto;
   const bool intrinsic =
       !allocations_.contains(&node) && (intrinsicKind == CssIntrinsicSize::MinContent || intrinsicKind == CssIntrinsicSize::MaxContent ||
@@ -662,6 +644,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.breakOnSingleNewline = breakOnSingleNewline_;
   options.renderEmoji = renderEmoji_;
   options.styleNode = &node;
+  options.pseudoBefore = theme.pseudoForNode(node, QStringLiteral("before"));
+  options.pseudoAfter = theme.pseudoForNode(node, QStringLiteral("after"));
+  options.pseudoBeforeText = layout->headingBeforeText();
+  if (headingCounterText_) options.pseudoAfterText = headingCounterText_->value(node.id()).second;
   if (resolvedStyle) {
     options.anywhereMinimum = resolvedStyle->layout.overflowWrap == "anywhere" || resolvedStyle->layout.wordBreak == "break-all";
     options.wrapMode = resolvedStyle->layout.wordBreak == "break-all"   ? QTextOption::WrapAnywhere
@@ -674,7 +660,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   if (const auto* focused = theme.elementStyleForNode(node, elementKey + QStringLiteral(":focus")))
     options.focusTextColor = focused->paint.color;
   options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
-  options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
   options.alignment = theme.textAlignmentForElement(elementKey, &node);
   options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
   options.textShadow = theme.textShadowForElement(elementKey, &node);
@@ -685,7 +670,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   }
   if (intrinsic) {
     const auto metrics = inlineLayout->intrinsicWidths();
-    const qreal extra = insets.left() + insets.right() + beforeAdvance;
+    const qreal extra = insets.left() + insets.right();
     const qreal content = intrinsicKind == CssIntrinsicSize::MinContent ? metrics.first
                           : intrinsicKind == CssIntrinsicSize::MaxContent
                               ? metrics.second
@@ -694,7 +679,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
     intrinsicBox.widthFitContent = false;
     intrinsicBox.widthLength = {CssLengthStatus::Valid, content + extra - (usedBox.borderBox ? 0 : extra)};
     width = LayoutBox::borderWidth(intrinsicBox, availableWidth);
-    inlineLayout->build(node.inlines(), editableSource, theme, qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance), font,
+    inlineLayout->build(node.inlines(), editableSource, theme, qMax<qreal>(1, width - insets.left() - insets.right()), font,
                         options);
   }
   if (usedBox.marginLeftAuto) x += qMax<qreal>(0, availableWidth - width) / (usedBox.marginRightAuto ? 2 : 1);
@@ -703,7 +688,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QRectF flowRect(x, y, width, height);
   layout->setRect(flowRect);
   auto fragment =
-      LayoutBox::place(elementKey, resolvedStyle ? *resolvedStyle : ThemeElementStyle{}, usedBox, flowRect, font, beforeAdvance);
+      LayoutBox::place(elementKey, resolvedStyle ? *resolvedStyle : ThemeElementStyle{}, usedBox, flowRect, font);
   if (const auto* style = theme.elementStyleForNode(node, elementKey + QStringLiteral(":hover"))) fragment.hoverPaint = style->paint;
   if (const auto* style = theme.elementStyleForNode(node, elementKey + QStringLiteral(":focus"))) fragment.focusPaint = style->paint;
   const qreal overflow = std::max({fragment.style.paint.boxShadowBlur, fragment.hoverPaint.boxShadowBlur, fragment.focusPaint.boxShadowBlur,
@@ -846,7 +831,7 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
          << node.literal() << theme.zoomPercent() << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
   stream << theme.paragraphFont().key() << theme.codeFont().key();
   const auto key = cssTagForNode(node);
-  for (const auto& state : {QString(), QString(":hover"), QString(":focus")}) {
+  for (const auto& state : {QString(), QString(":hover"), QString(":focus"), QString("::before"), QString("::after")}) {
     const auto* style = theme.elementStyleForNode(node, key + state);
     stream << (style ? style->fingerprint : quint64(0));
   }
@@ -1218,7 +1203,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     options.baseTextColor = theme.textColorForElement(elementKey, &node);
     options.lineHeightMultiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
-    options.wordSpacing = theme.wordSpacingForElement(elementKey, &node);
     options.alignment = theme.textAlignmentForElement(elementKey, &node);
     options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
     options.textShadow = theme.textShadowForElement(elementKey, &node);
@@ -2172,10 +2156,9 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
     const auto& box = estimate.box;
     const qreal borderWidth = LayoutBox::borderWidth(box, qMax<qreal>(1, width - box.margin.left() - box.margin.right()));
     const auto inset = LayoutBox::insets(box);
-    const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
     const qreal average = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
     estimate.charsPerLine =
-        qMax<qreal>(1, std::floor(qMax<qreal>(1, borderWidth - beforeAdvance - inset.left() - inset.right()) / average));
+        qMax<qreal>(1, std::floor(qMax<qreal>(1, borderWidth - inset.left() - inset.right()) / average));
     widths.insert(width, std::move(estimate));
     found = widths.constFind(width);
   }

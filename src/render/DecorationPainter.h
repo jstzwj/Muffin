@@ -21,15 +21,7 @@ struct PaintContext {
   int headingLevel = 0;                     // 1..6 when the host is a heading
   QString codeLanguage;                     // code-fence language, for ::before attr()
   QFont font;                               // host font (sizes icons / content text)
-  QPointF textEnd = QPointF(-1.0, -1.0);    // where heading text ends (for an ::after icon)
-  QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
   QRectF textBounds;                        // visual text bounds after QTextLayout alignment
-  QRectF lastLineBox;                       // CSS line box containing a trailing generated inline
-  qreal contentLeftX = -1.0;                // heading content-box left (inline ::before marker zone start)
-  // Resolved ::before text for headings (e.g. "1. " from `content: counter(h1) ". "`),
-  // computed by the layout pass against the live counter state. Empty ⇒ fall back to
-  // the rule's literal `content` (the legacy path for non-counter themes / literal glyphs).
-  QString beforeContent;
   // Hover animation phase (0..1) for the host block, from the HoverAnimator. 0 ⇒
   // base (not hovered); drives hover-state pseudo geometry such as a widening
   // ::after underline (phycat `h1:hover::after { width:100% }`).
@@ -62,6 +54,13 @@ void paintWriteTexture(QPainter& painter, const RenderTheme& theme, const QRectF
 // `tint` (a `mask:`-based icon such as phycat's link ::before, whose SVG carries
 // no fill of its own); otherwise the SVG renders with its embedded fill.
 void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& target, const QColor& tint = QColor(), bool recolour = false);
+
+// Shared used-value and primitive painting helpers for generated inline
+// pseudo-elements. Keeping these here prevents the inline layout and block
+// decoration paths from resolving the same CSS length differently.
+qreal pseudoUsedLength(const PseudoElementRule& rule, const QString& property, qreal basis, qreal fallback, qreal zoom);
+void paintPseudoIconBox(QPainter& painter, const PseudoElementRule& rule, const QRectF& box,
+                        const QColor& tint, qreal zoom);
 
 // `:hover` box-shadow glow around a block, scaled by `phase` (0..1, from the
 // HoverAnimator). No-op when the host declares no hover glow. Drawn BEFORE the

@@ -48,7 +48,13 @@ try {
     },entry.fontSize/16);
     const blocks=await page.evaluate(()=>[...document.querySelector('#write').children].map(n=>{
       const r=n.getBoundingClientRect(),s=getComputedStyle(n);
-      return {tag:n.tagName.toLowerCase(),rect:[r.x,r.y,r.width,r.height],fontFamily:s.fontFamily,fontSize:parseFloat(s.fontSize),
+      const measure=document.createElement('span');
+      measure.textContent=n.textContent;
+      Object.assign(measure.style,{position:'absolute',whiteSpace:'pre',font:s.font,letterSpacing:s.letterSpacing,wordSpacing:s.wordSpacing});
+      document.body.append(measure);
+      const fontAdvance=measure.getBoundingClientRect().width;
+      measure.remove();
+      return {tag:n.tagName.toLowerCase(),rect:[r.x,r.y,r.width,r.height],fontFamily:s.fontFamily,fontSize:parseFloat(s.fontSize),fontAdvance,
         lineHeight:s.lineHeight,fontWeight:s.fontWeight,letterSpacing:s.letterSpacing,text:n.textContent,pseudos:['before','after'].map(p=>{const s=getComputedStyle(n,'::'+p);
           return {pseudo:p,content:s.content,position:s.position,width:s.width,height:s.height,top:s.top,left:s.left,bottom:s.bottom,right:s.right,color:s.color,transform:s.transform};})};
     }));
@@ -59,7 +65,8 @@ try {
     await page.screenshot({path:path.join(directory,entry.id+'-focus-browser.png'),fullPage:true});
     const comparable=entry.blocks.length===blocks.length;
     const delta=comparable?entry.blocks.map((n,i)=>({index:i,tag:blocks[i].tag,editorEmpty:n.editorEmpty,
-      rect:n.rect.map((v,k)=>+(v-blocks[i].rect[k]).toFixed(3)),fontSize:+(n.fontSize-blocks[i].fontSize).toFixed(3)})):[];
+      rect:n.rect.map((v,k)=>+(v-blocks[i].rect[k]).toFixed(3)),fontSize:+(n.fontSize-blocks[i].fontSize).toFixed(3),
+      fontAdvance:n.text===blocks[i].text ? +(n.fontMetrics.advance-blocks[i].fontAdvance).toFixed(3) : null})):[];
     rows.push({...entry,browserBlocks:blocks,delta});
     console.log(entry.id,comparable?'geometry recorded':'AST child count differs');
     await page.close();
@@ -69,7 +76,7 @@ try {
     'The browser host receives the same application canvas/ink palette. Soft-break mode is disabled in both renderers.',
     'Native/browser PNG pairs and normal/focus variants are in this directory. The JSON records used geometry and pseudo computed styles.',
     '','Numbers below are native minus browser, in CSS pixels. Font rasterization is not a pixel-identical contract.',
-    '','| Case | First heading width delta | Font size delta | Last block top delta |','|---|---:|---:|---:|'];
-  for(const row of rows)report.push(`| ${row.id} | ${row.delta[0]?.rect[2]??'n/a'} | ${row.delta[0]?.fontSize??'n/a'} | ${row.delta.filter(d=>!d.editorEmpty).at(-1)?.rect[1]??'n/a'} |`);
+    '','| Case | First heading box width delta | Font size delta | Heading text advance delta | Last block top delta |','|---|---:|---:|---:|---:|'];
+  for(const row of rows)report.push(`| ${row.id} | ${row.delta[0]?.rect[2]??'n/a'} | ${row.delta[0]?.fontSize??'n/a'} | ${row.delta[0]?.fontAdvance??'n/a'} | ${row.delta.filter(d=>!d.editorEmpty).at(-1)?.rect[1]??'n/a'} |`);
   fs.writeFileSync(path.join(directory,'report.md'),report.join('\n')+'\n');
 }finally{await browser.close();}

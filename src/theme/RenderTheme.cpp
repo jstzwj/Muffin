@@ -5,6 +5,7 @@
 #include "document/MarkdownNode.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssThemeMapper.h"
+#include "theme/CssDecorationExtractor.h"
 #include "theme/NodeCssElement.h"
 #include "theme/DocumentStyleTree.h"
 #include "theme/LegacyThemeAdapter.h"
@@ -257,9 +258,6 @@ RenderTheme RenderTheme::fromDefinitionWithEngine(const ThemeDefinition& input, 
   t.ulListStyleType_ = definition.spacing.ulListStyleType;
   t.olListStyleType_ = definition.spacing.olListStyleType;
   t.liListStyleType_ = definition.spacing.liListStyleType;
-  for (int i = 0; i < 6; ++i) {
-    t.headingBeforeAdvance_[i] = definition.spacing.headingBeforeAdvance[i];
-  }
   t.codeBlockBackground_ = c.codeBlockBackground;
   t.headingAccentColor_ = c.headingAccentColor;
   t.blockquoteBackground_ = c.blockquoteBackground;
@@ -497,10 +495,6 @@ QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel, const Markd
   return QMarginsF(scaled(m.left()), scaled(m.top()), scaled(m.right()), scaled(m.bottom()));
 }
 
-qreal RenderTheme::headingBeforeAdvance(int level) const {
-  return scaled(headingBeforeAdvance_[qBound(0, level - 1, 5)]);
-}
-
 bool RenderTheme::hasBlockMargin(BlockType type, int headingLevel, const MarkdownNode* node) const {
   const QString key = type == BlockType::Heading      ? QStringLiteral("h%1").arg(headingLevel)
                       : type == BlockType::Paragraph  ? QStringLiteral("p")
@@ -543,13 +537,6 @@ qreal RenderTheme::lineHeightMultiplierForElement(const QString& key, const Mark
   return style ? style->text.lineHeight : 0;
 }
 
-qreal RenderTheme::wordSpacingForElement(const QString& key, const MarkdownNode* node) const {
-  if (const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) {
-    if (style->text.wordSpacing != 0.0) { return scaled(style->text.wordSpacing); }
-  }
-  return 0.0;
-}
-
 Qt::Alignment RenderTheme::textAlignmentForElement(const QString& key, const MarkdownNode* node) const {
   const auto* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   return style && style->text.alignment ? style->text.alignment : Qt::AlignLeft;
@@ -579,9 +566,7 @@ QFont RenderTheme::fontForStyle(const ThemeElementStyle& style, QFont font) cons
   if (style.text.fontSizeSet || style.text.fontSizePx > 0) font.setPointSizeF(qMax<qreal>(.001, scaledFont(pxToPt(style.text.fontSizePx))));
   if (style.text.fontWeightSet) font.setWeight(static_cast<QFont::Weight>(style.text.fontWeight));
   if (style.text.italicSet) font.setItalic(style.text.italic);
-  font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(style.text.letterSpacing));
-  font.setWordSpacing(scaled(style.text.wordSpacing));
-  font_rendering::configureForScreen(font);
+  font_rendering::configureCssFont(font, scaled(style.text.letterSpacing), scaled(style.text.wordSpacing));
   computedFontCache_.insert(cacheKey, font);
   return font;
 }
@@ -651,6 +636,21 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
   const auto snapshot = std::make_shared<const ThemeElementStyle>(std::move(resolved));
   nodeStyleCache_.insert(cacheKey, snapshot);
   return snapshot.get();
+}
+
+std::optional<PseudoElementRule> RenderTheme::pseudoForNode(const MarkdownNode& node, const QString& pseudo) const {
+  const auto host = cssTagForNode(node);
+  const auto key = host + QStringLiteral("::") + pseudo;
+  if (styleEngine_) {
+    if (!styleTree_) styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
+    const auto* element = styleTree_->build(node, key);
+    const auto rules = extractPseudoRules({{key, styleEngine_->styleFor(*element)}});
+    if (!rules.empty()) return rules.front();
+    return {};
+  }
+  for (const auto& rule : decorations_.pseudos)
+    if (rule.host == host && rule.pseudo == pseudo) return rule;
+  return {};
 }
 
 void RenderTheme::invalidateDocumentStyles() const {

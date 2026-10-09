@@ -1479,8 +1479,10 @@ a:not(.md-toc-inner) { text-decoration:none; }
           QStringLiteral("paragraph colour should become prose text colour"));
   require(d.typography.headingColor[2].name(QColor::HexRgb) == QStringLiteral("#d6deeb"),
           QStringLiteral("heading should inherit #write colour, not paragraph muted colour or unsupported child pseudo colour"));
-  require(qAbs(d.spacing.headingBeforeAdvance[3] - 18.0) < 0.01,
-          QStringLiteral("supported h4::before marker should still reserve space"));
+  const auto marker = std::find_if(d.decorations.pseudos.begin(), d.decorations.pseudos.end(),
+      [](const auto& rule) { return rule.host == "h4" && rule.pseudo == "before"; });
+  require(marker != d.decorations.pseudos.end() && qAbs(marker->size.width() + marker->marginRight - 18) < .01,
+          QStringLiteral("supported h4::before marker retains authored dimensions for inline layout"));
   require(!d.typography.linkUnderlined,
           QStringLiteral("supported :not(.class) selector should still feed normal link styles"));
 }

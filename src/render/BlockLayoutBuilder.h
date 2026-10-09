@@ -48,7 +48,7 @@ public:
   // "1. "). Owned by the layout; the builder only reads it. nullptr/empty for
   // non-counter themes. Set every pass by configureBuilder so single-block and
   // range rebuilds share the same map the full/range pass just recomputed.
-  void setHeadingCounterText(const QHash<NodeId, QString>* map);
+  void setHeadingCounterText(const QHash<NodeId, QPair<QString, QString>>* map);
   // DocumentLayout's heading outline (for `[TOC]` block rendering). Owned by the
   // layout; the builder only reads it. nullptr/empty when there are no headings (or
   // before the first full/range rebuild). Set every pass by configureBuilder so the
@@ -214,7 +214,7 @@ public:
   QVector<QTextLayout::FormatRange> preeditFormats_;
   int preeditCursor_ = -1;
   NodeId editingHtmlBlockId_;
-  const QHash<NodeId, QString>* headingCounterText_ = nullptr;
+  const QHash<NodeId, QPair<QString, QString>>* headingCounterText_ = nullptr;
   const QVector<OutlineEntry>* tocEntries_ = nullptr;
   // Cached once per layout pass by refreshRenderSettings() (configureBuilder). The per-block
   // estimate/build loops read these instead of hitting QSettings per block.

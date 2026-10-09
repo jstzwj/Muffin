@@ -85,8 +85,6 @@ public:
  qreal pageShadowSpread() const;
  QMarginsF blockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr, qreal containingWidth = -1) const;
  bool hasBlockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
- // Space reserved by generated inline heading content.
- qreal headingBeforeAdvance(int level) const;
 
  QFont paragraphFont() const;
  // Live nodes always resolve against the sparse document tree. Prototypes
@@ -94,7 +92,6 @@ public:
  QFont textFontForElement(const QString& key, const MarkdownNode* node = nullptr) const;
  QColor textColorForElement(const QString& key, const MarkdownNode* node = nullptr) const;
  qreal lineHeightMultiplierForElement(const QString& key, const MarkdownNode* node = nullptr) const;
- qreal wordSpacingForElement(const QString& key, const MarkdownNode* node = nullptr) const;
  Qt::Alignment textAlignmentForElement(const QString& key, const MarkdownNode* node = nullptr) const;
  // CSS text-transform for an element (0=none, 1=upper, 2=lower, 3=capitalize).
  int textTransformForElement(const QString& key, const MarkdownNode* node = nullptr) const;
@@ -109,6 +106,7 @@ public:
  const CssElement* cssElementForNode(const MarkdownNode& node) const;
  const CssElement* cssParentForInlineHtml(const MarkdownNode& owner, qsizetype sourceOffset) const;
  const ThemeElementStyle* elementStyleForNode(const MarkdownNode& node, const QString& key) const;
+ std::optional<PseudoElementRule> pseudoForNode(const MarkdownNode& node, const QString& pseudo) const;
  // Drop resolved styles and the sparse live-tree adapter. Recreating the adapter
  // is proportional to the selector paths queried, so every edit gets fresh data.
  void invalidateDocumentStyles() const;
@@ -238,7 +236,6 @@ private:
  mutable QHash<QString, ThemeElementStyle> projectedStyleCache_;
  mutable QHash<QString, QFont> computedFontCache_;
 
- qreal headingBeforeAdvance_[6] = {};
  qreal listMarkerGap_ = 0.0;
  QString ulListStyleType_;
  QString olListStyleType_;

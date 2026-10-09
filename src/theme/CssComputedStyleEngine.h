@@ -56,6 +56,9 @@ struct CssElement {
   // the selector carries the `i` flag.
   QHash<QString, QString> attributes;
   QString pseudoElement;  // "", "before", "after", "selection", "marker"
+  // A pseudo inherits from its originating element, but selectors navigate the
+  // origin's parent/siblings (it is not a second DOM child of the host).
+  const CssElement* originatingElement = nullptr;
   const CssElement* parent = nullptr;
   const CssElement* previousSibling = nullptr;  // adapter only; prototype stays null
   const CssElement* nextSibling = nullptr;      // adapter only

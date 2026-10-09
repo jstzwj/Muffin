@@ -260,6 +260,7 @@ muffin_add_test(NAME MuffinRenderHtmlPaintTest        SOURCE tests/render/Render
 muffin_add_test(NAME MuffinRenderTreeSitterTest       SOURCE tests/render/RenderTreeSitterTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingFitContentTest SOURCE tests/render/RenderHeadingFitContentTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingPseudoTest SOURCE tests/render/RenderHeadingPseudoTest.cpp LINK MuffinUi RESOURCE_LOCK)
+target_compile_definitions(MuffinRenderHeadingPseudoTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 muffin_add_test(NAME MuffinRenderHeadingCounterTest SOURCE tests/render/HeadingCounterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTableOfContentsTest SOURCE tests/render/TableOfContentsTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTableBackgroundTest SOURCE tests/render/TableBackgroundTest.cpp LINK MuffinUi RESOURCE_LOCK)

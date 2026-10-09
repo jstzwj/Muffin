@@ -20,7 +20,6 @@ struct LayoutBox {
   ThemeElementBoxStyle usedBox;
   QFont font;
   qreal lineHeight = 0;
-  qreal beforeAdvance = 0;
   QRectF flowRect;
   QRectF borderBox;
   QRectF paddingBox;
@@ -67,17 +66,16 @@ struct LayoutBox {
       height = qMax(height, box.minHeightLength.px + extra);
     return qMax<qreal>(0, height);
   }
-  static LayoutBox place(QString key, ThemeElementStyle style, ThemeElementBoxStyle used, QRectF rect, QFont font = {}, qreal before = 0) {
+  static LayoutBox place(QString key, ThemeElementStyle style, ThemeElementBoxStyle used, QRectF rect, QFont font = {}) {
     LayoutBox box;
     box.hostKey = std::move(key);
     box.style = std::move(style);
     box.usedBox = std::move(used);
     box.font = std::move(font);
-    box.beforeAdvance = before;
     box.flowRect = box.borderBox = rect;
     box.paddingBox = rect.marginsRemoved(borders(box.usedBox));
     box.contentBox = box.paddingBox.marginsRemoved(box.usedBox.padding);
-    box.inlineTextOrigin = box.contentBox.topLeft() + QPointF(before, 0);
+    box.inlineTextOrigin = box.contentBox.topLeft();
     const qreal overflow = qMax(box.style.paint.boxShadowBlur + box.style.paint.boxShadowSpread, box.style.paint.filterBlur + 2);
     box.visualOverflow = rect.adjusted(-overflow, -overflow, overflow, overflow);
     box.valid = true;

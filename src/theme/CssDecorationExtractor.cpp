@@ -165,9 +165,9 @@ std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles
     rule.content = content;
     // Tokenize so a heading ::before content like `counter(h1) ". "` can be
     // resolved against live counter state at layout time. Pure-literal content
-    // yields an all-Literal vector (the painter still draws `rule.content` when
-    // no counter token is present — see DecorationPainter's resolved-text branch).
-    rule.contentTokens = parseContentTokens(content);
+    // yields an all-Literal vector. Keep quotes while tokenizing so adjacent
+    // CSS strings retain their authored spaces and concatenate correctly.
+    rule.contentTokens = parseContentTokens(contentRaw);
     rule.color = propertyColor(sub, {QStringLiteral("color")});
     rule.backgroundColor = propertyColor(sub, {QStringLiteral("background-color"), QStringLiteral("background")});
     const QString bgImg = propertyValue(sub, {QStringLiteral("background-image"), QStringLiteral("background")});

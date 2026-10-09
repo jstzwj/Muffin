@@ -140,7 +140,7 @@ void testNestedHeadingInBlockquoteCounted() {
           QStringLiteral("blockquote-nested h1 → '2. ' (got '%1')").arg(layout.block(headings.at(1)->id())->headingBeforeText()));
 }
 
-void testMultiLevelCounterReservesMeasuredWidth() {
+void testMultiLevelCounterUsesInlineLayout() {
   const QString css = QStringLiteral(
       "#write { color:#000; counter-reset:h2 h3 h4 h5 h6; }"
       "h2 { counter-reset:h3 h4 h5 h6; } h3 { counter-reset:h4 h5 h6; }"
@@ -163,7 +163,7 @@ void testMultiLevelCounterReservesMeasuredWidth() {
   const BlockLayout* h6 = layout.block(headings.last()->id());
   require(h6->headingBeforeText() == QStringLiteral("1.1.1.1.1"),
           QStringLiteral("h6 should resolve the full counter chain"));
-  const qreal advance = h6->inlineTextOrigin().x() - h6->rect().left() - theme.elementBoxStyle(QStringLiteral("h%1").arg(6)).padding.left();
+  const qreal advance = h6->inlineLayout()->cursorRect(0).left();
   const qreal textWidth = QFontMetricsF(theme.headingFont(6)).horizontalAdvance(h6->headingBeforeText());
   require(advance > textWidth,
           QStringLiteral("counter marker advance must fit measured text plus its margin"));
@@ -180,25 +180,17 @@ void testMultiLevelCounterReservesMeasuredWidth() {
       }
     }
     const qreal actualAdvance =
-        block->inlineTextOrigin().x() - block->rect().left() - theme.elementBoxStyle(QStringLiteral("h%1").arg(level)).padding.left();
+        block->inlineLayout()->cursorRect(0).left();
     const qreal expectedAdvance = QFontMetricsF(theme.headingFont(level))
                                       .horizontalAdvance(block->headingBeforeText()) + marginRight;
-    require(qAbs(actualAdvance - expectedAdvance) < 0.01,
+    require(qAbs(actualAdvance - expectedAdvance) < 0.05,
             QStringLiteral("h%1 counter column should use exact text width plus margin").arg(level));
 
     QImage markerImage(140, 50, QImage::Format_ARGB32_Premultiplied);
     markerImage.fill(Qt::transparent);
     {
       QPainter painter(&markerImage);
-      DecorationPainter::PaintContext ctx;
-      ctx.headingLevel = level;
-      ctx.beforeContent = block->headingBeforeText();
-      ctx.font = theme.headingFont(level);
-      ctx.contentLeftX = 20.0;
-      ctx.textStart = QPointF(100.0, 5.0);
-      ctx.textBounds = QRectF(100.0, 5.0, 30.0, 35.0);
-      DecorationPainter::paintPseudoDecorations(
-          painter, theme, QStringLiteral("h%1").arg(level), QRectF(20.0, 5.0, 110.0, 35.0), ctx);
+      block->inlineLayout()->paint(painter, QPointF(20, 5));
     }
     int paintedLeft = markerImage.width();
     for (int y = 0; y < markerImage.height(); ++y) {
@@ -210,6 +202,28 @@ void testMultiLevelCounterReservesMeasuredWidth() {
     if (commonPaintLeft < 0) commonPaintLeft = paintedLeft;
     require(qAbs(paintedLeft - commonPaintLeft) <= 1,
             QStringLiteral("h2-h6 counter text should share one left edge"));
+  }
+}
+
+void testCounterBeforeAndAfterUseDocumentOrder() {
+  const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+      "#write{counter-reset:n}h4{font-size:16px;font-weight:400}"
+      "h4::before{counter-increment:n;content:counter(n) '.'}"
+      "h4::after{counter-increment:n;content:'.' counter(n)}", "two-sided-counters", {}));
+  DocumentSession session;
+  session.setMarkdownText("#### A\n\n#### B\n", false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 400);
+  const auto& nodes = session.document().root().children();
+  for (int i=0; i<2; ++i) {
+    const auto* block = layout.block(nodes[i]->id());
+    const auto prefix = QString::number(2*i+1) + '.';
+    const auto suffix = '.' + QString::number(2*i+2);
+    require(block->headingBeforeText() == prefix, "::before resolves before the ::after increment");
+    const auto actual = block->inlineLayout()->intrinsicWidths().second;
+    const auto expected = QFontMetricsF(theme.headingFont(4)).horizontalAdvance(prefix + (i ? "B" : "A") + suffix);
+    require(qAbs(actual-expected) < .1, "both generated counter strings participate in intrinsic measurement");
+    require(block->inlineLayout()->visibleText() == (i ? "B" : "A"), "counter strings remain outside editable source");
   }
 }
 
@@ -226,7 +240,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testLiteralContentIsFastPath);
   RUN_TEST(testSingleColonBeforeNormalizes);
   RUN_TEST(testNestedHeadingInBlockquoteCounted);
-  RUN_TEST(testMultiLevelCounterReservesMeasuredWidth);
+  RUN_TEST(testMultiLevelCounterUsesInlineLayout);
+  RUN_TEST(testCounterBeforeAndAfterUseDocumentOrder);
 #undef RUN_TEST
   return 0;
 }

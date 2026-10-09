@@ -118,6 +118,24 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node) {
 
 const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node, const QString& key) {
   const auto* parent = ensure(node);
+  const auto pseudoSeparator = key.indexOf(QStringLiteral("::"));
+  if (pseudoSeparator >= 0) {
+    auto& pseudos = synthetic_[&node];
+    const auto pseudo = key.mid(pseudoSeparator + 2).section(QLatin1Char(':'), 0, 0);
+    const auto pseudoKey = QStringLiteral("::") + pseudo;
+    if (!pseudos.contains(pseudoKey)) {
+      auto* element = makeOwned();
+      const auto identity = element->cacheId;
+      *element = *parent;
+      element->cacheId = identity;
+      element->inlineDeclarations.clear();
+      element->pseudoElement = pseudo;
+      element->originatingElement = parent;
+      nodes_.insert(element, &node);
+      pseudos.insert(pseudoKey, element);
+    }
+    return pseudos.value(pseudoKey);
+  }
   const QString tag = key.section(QLatin1Char(' '), -1).section(QLatin1Char(':'), 0, 0);
   if (tag == parent->tag || tag.startsWith(QLatin1Char('#'))) return parent;
   auto& children = synthetic_[&node];

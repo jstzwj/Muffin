@@ -1335,27 +1335,12 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
       // text, an underline-gradient bar, etc.
       DecorationPainter::PaintContext dctx;
       dctx.headingLevel = headingLevel_;
-      dctx.beforeContent = headingBeforeText_;
       dctx.font = cssBoxGeometry_.font;
       const BlockLayout::CssBoxGeometry box = cssBoxGeometry();
       const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
       const QRectF hostRect = box.paddingBox.translated(0, -scrollY);
-      const qreal beforeAdvance = box.beforeAdvance;
-      // textBounds reflects the shifted text origin so ::after anchors to the
-      // real text end; contentLeftX lets an inline ::before marker place itself
-      // in the reserved zone immediately before the shared text origin.
       const QRectF textBounds = inlineLayout_->visualTextBounds().translated(textOrigin);
       dctx.textBounds = textBounds;
-      const int lastLine = inlineLayout_->visualLineCount() - 1;
-      dctx.lastLineBox = inlineLayout_->allocatedLineRect(lastLine).translated(textOrigin);
-      dctx.contentLeftX = textOrigin.x() - beforeAdvance;
-      dctx.textStart = textBounds.isValid() ? textBounds.topLeft() : textOrigin;
-      dctx.textEnd = textBounds.isValid() ? QPointF(textBounds.right(), textBounds.top())
-                                          : QPointF(textOrigin.x() + inlineLayout_->size().width(), textOrigin.y());
-      if (lastLine >= 0) {
-        const auto end = inlineLayout_->visualLineRect(lastLine).translated(textOrigin);
-        dctx.textEnd = QPointF(end.right(), end.top());
-      }
       dctx.hoverPhase = hoverPhase;
       dctx.focusPhase = focusPhase;
       DecorationPainter::paintPseudoDecorations(

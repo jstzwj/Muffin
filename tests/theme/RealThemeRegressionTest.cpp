@@ -9,6 +9,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFontInfo>
+#include <QRawFont>
+#include <QtEndian>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QPainter>
@@ -107,9 +109,16 @@ QJsonArray geometry(const DocumentSession& document, const DocumentLayout& layou
         runs.append(QJsonObject{{"start", run.start}, {"length", run.length}, {"family", font.families().join(", ")},
                                 {"size", font.pointSizeF() * 96 / 72}, {"weight", int(font.weight())}, {"letterSpacing", font.letterSpacing()}});
       }
+    const auto rawFont = QRawFont::fromFont(box.font);
+    const auto os2 = rawFont.fontTable("OS/2");
+    const QJsonObject metrics{{"requestedPx", box.font.pointSizeF() * 96 / 72},
+        {"resolvedPx", rawFont.pixelSize()}, {"requestedWeight", int(box.font.weight())},
+        {"faceWeight", os2.size() >= 6 ? int(qFromBigEndian<quint16>(os2.constData()+4)) : -1},
+        {"layoutLetterSpacing", box.font.letterSpacing()}, {"layoutWordSpacing", box.font.wordSpacing()},
+        {"advance", QFontMetricsF(box.font).horizontalAdvance(block->inlineLayout() ? block->inlineLayout()->visibleText() : QString())}};
     result.append(QJsonObject{{"type", int(node->type())}, {"headingLevel", node->headingLevel()}, {"rect", rect(block->rect())},
                              {"content", rect(box.contentBox)}, {"fontFamily", box.font.families().join(", ")},
-                             {"resolvedFont", QFontInfo(box.font).family()}, {"fontSize", box.font.pointSizeF() * 96 / 72},
+                             {"resolvedFont", QFontInfo(box.font).family()}, {"fontMetrics", metrics}, {"fontSize", box.font.pointSizeF() * 96 / 72},
                              {"text", block->inlineLayout() ? block->inlineLayout()->visibleText() : QString()},
                              {"lines", block->inlineLayout() ? block->inlineLayout()->visualLineCount() : 0}, {"runs", runs},
                              {"editorEmpty", node->type() == BlockType::Paragraph && node->sourceRange().byteStart == node->sourceRange().byteEnd}});

@@ -3,6 +3,9 @@
 #include "render/CssSizing.h"
 #include "render/RenderMetrics.h"
 #include "render/InlineFormatting.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssThemeMapper.h"
+#include "theme/CssContent.h"
 
 #include "document/ImageSyntaxOps.h"
 #include "editor/ResourceUrl.h"
@@ -35,6 +38,8 @@ namespace {
 constexpr QChar kInlineMathPlaceholder(0x00a0);
 constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
 constexpr QChar kLinkBeforePlaceholder(0xe000);  // PUA: flow-reserved slot for a::before icons
+// Reserve atomic boxes with an ink-free glyph, including font fallback paths.
+constexpr QChar kGeneratedPseudoPlaceholder(0x00a0);
 constexpr QChar kTabIndentSourceChar(0x200b);
 constexpr QChar kTabIndentLayoutChar(0x00a0);
 
@@ -159,6 +164,8 @@ void InlineLayout::build(
   previewHeight_ = 0.0;
   htmlFormatSpans_.clear();
   displayOffsetMap_.clear();
+  generatedPseudoAtoms_.clear();
+  generatedPseudoFormats_.clear();
   displayText_.clear();
   layoutText_.clear();
   lineBoxes_.clear();
@@ -201,7 +208,6 @@ void InlineLayout::build(
   preeditInsertAtSourceOffset_ = options.preeditInsertAtSourceOffset;
   lineHeightMultiplier_ = options.lineHeightMultiplier;
   zoomScale_ = theme.zoomPercent() / 100.0;
-  wordSpacing_ = options.wordSpacing;
   textShadow_ = options.textShadow;
   alignment_ = options.alignment;
   wrapMode_ = options.wrapMode;
@@ -247,13 +253,14 @@ void InlineLayout::build(
   buildLinkBeforeAtoms();
   buildHtmlFormatSpans(theme, width);
   buildInlineBoxSpacing();
+  buildGeneratedPseudoAtoms(theme, baseFont, width, options);
   buildHtmlFormatSpans(theme, width);
   buildTextLayout(theme, width, baseFont);
   buildInlineBoxes();
   // Genuinely empty: no text glyphs and no rendered image. Checking the image
   // atoms (not just plainText) matters because an image with blank alt text
   // flattens to empty text but is still visible content.
-  isEmpty_ = plainText_.isEmpty() && imageAtoms_.isEmpty() && htmlAtoms_.isEmpty();
+  isEmpty_ = plainText_.isEmpty() && imageAtoms_.isEmpty() && htmlAtoms_.isEmpty() && generatedPseudoAtoms_.isEmpty();
 }
 
 QSizeF InlineLayout::size() const {
@@ -261,6 +268,12 @@ QSizeF InlineLayout::size() const {
 }
 
 bool InlineLayout::stylesMatch(const RenderTheme& theme, const MarkdownNode& owner) const {
+  const auto fingerprint = [&](const QString& pseudo) {
+    const auto rule = theme.pseudoForNode(owner, pseudo);
+    return rule && rule->computed ? rule->computed->fingerprint() : quint64(0);
+  };
+  if (fingerprint(QStringLiteral("before")) != pseudoBeforeFingerprint_ ||
+      fingerprint(QStringLiteral("after")) != pseudoAfterFingerprint_) return false;
   // Embedded HTML has its own descendant tree. Until that tree is retained,
   // conservatively rebuild promoted HTML fragments after structural edits.
   if (!projection_.htmlFormatData().isEmpty()) return false;
@@ -297,6 +310,8 @@ QRectF InlineLayout::visualTextBounds() const {
   for (const auto& box : inlineBoxes_) bounds = bounds.united(box.visualOverflow);
   for (const auto& rect : mathAtomRects({})) bounds = bounds.united(rect);
   for (const auto& atom : htmlAtoms_) bounds = bounds.united(atom.rect);
+  for (const auto& atom : generatedPseudoAtoms_)
+    if (atom.kind != GeneratedPseudoAtom::Kind::Text) bounds = bounds.united(atom.box.visualOverflow);
   return bounds;
 }
 
@@ -366,6 +381,7 @@ void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase, qr
   paintTextLayoutImageAtoms(painter, origin);
   for (const auto& atom : htmlAtoms_)
     atom.layout->paintBoxFragment(painter, *atom.layout->root()->children().front(), origin + atom.rect.topLeft() - atom.crop.topLeft());
+  paintGeneratedPseudoAtoms(painter, origin);
   paintImagePreview(painter, origin);
   painter.restore();
 }
@@ -442,7 +458,12 @@ QRectF InlineLayout::hitTestCursorRect(QPointF localPos) const {
       return atom.layout->cursorRectForTextOffset(atom.layout->textOffsetAtPoint(point))
           .translated(atom.rect.topLeft() - atom.crop.topLeft());
     }
-  return textLayoutHitForPoint(localPos).cursorRect;
+  const auto hit = textLayoutHitForPoint(localPos);
+  const auto display = hit.displayOffset;
+  for (const auto& atom : generatedPseudoAtoms_)
+    if (display >= atom.rangeStart && display <= atom.rangeEnd)
+      return cursorRect(atom.before ? 0 : projection_.visibleText().size());
+  return hit.cursorRect;
 }
 
 QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
@@ -713,7 +734,7 @@ QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDis
 
 void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) const {
   for (const auto& box : inlineBoxes_)
-    if (box.hostKey == QStringLiteral("code")) paintLayoutBox(painter, box, origin);
+    if (box.hostKey == QStringLiteral("code") || box.hostKey.contains(QStringLiteral("::"))) paintLayoutBox(painter, box, origin);
 }
 
 QString InlineLayout::plainText() const { return plainText_; }
@@ -846,6 +867,9 @@ void InlineLayout::buildInlineBoxes() {
     if (range.valid) add(range.start, range.end, *spanStyles_.value(span.displayStart, codeStyle_));
   }
   for (const auto& run : htmlInlineBoxRuns_) add(run.start, run.end, run.box);
+  for (const auto& atom : generatedPseudoAtoms_)
+    if (atom.kind == GeneratedPseudoAtom::Kind::Text && atom.box.valid)
+      add(atom.displayStart, atom.displayEnd, atom.box);
 }
 
 void InlineLayout::buildOffsetMapFromProjection() {
@@ -1068,6 +1092,168 @@ void InlineLayout::buildInlineBoxSpacing() {
     atom.displayEnd = before(atom.displayEnd);
     atom.displayStart = after(atom.displayStart);
   }
+}
+
+void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoElementRule& rule,
+                                             GeneratedPseudoAtom::Kind kind, const QFont& font,
+                                             qreal width, qreal height, qreal marginLeft,
+                                             qreal marginRight, bool before) {
+  if (text.isEmpty()) return;
+  QString inserted = text;
+  const bool leftSpacer = kind == GeneratedPseudoAtom::Kind::Text && !qFuzzyIsNull(marginLeft);
+  const bool rightSpacer = kind == GeneratedPseudoAtom::Kind::Text && !qFuzzyIsNull(marginRight);
+  if (leftSpacer) inserted.prepend(kInlineBoxSpacer);
+  if (rightSpacer) inserted.append(kInlineBoxSpacer);
+  const bool block = rule.computed && rule.computed->resolvedValue("display") == "block";
+  const bool atomicBreak = !block && kind != GeneratedPseudoAtom::Kind::Text;
+  // QTextLayout reserves U+FFFC for QTextDocument's object handlers. Keep the
+  // calibrated glyph and explicitly supply the atomic box's UAX #14 break
+  // opportunity at its adjoining text edge instead of joining it to a word.
+  if (atomicBreak) {
+    if (before) inserted.append(QChar(0x200b));
+    else inserted.prepend(QChar(0x200b));
+  }
+  if (block) {
+    if (before) inserted.append(QChar::LineSeparator);
+    else inserted.prepend(QChar::LineSeparator);
+  }
+  const qsizetype position = before ? 0 : displayText_.size();
+  const qsizetype length = inserted.size();
+
+  const auto shift = [&](qsizetype& start, qsizetype& end) {
+    if (start >= position) {
+      start += length;
+      end += length;
+    } else if (end > position) {
+      end += length;
+    }
+  };
+  for (auto& entry : offsetMap_) shift(entry.displayStart, entry.displayEnd);
+  for (auto& entry : displayOffsetMap_) shift(entry.layoutStart, entry.layoutEnd);
+  for (auto& atom : mathAtoms_) shift(atom.displayStart, atom.displayEnd);
+  for (auto& atom : imageAtoms_) shift(atom.displayStart, atom.displayEnd);
+  for (auto& atom : htmlAtoms_) shift(atom.displayStart, atom.displayEnd);
+  for (auto& atom : linkBeforeAtoms_) shift(atom.displayStart, atom.displayEnd);
+  for (auto& atom : generatedPseudoAtoms_) {
+    shift(atom.displayStart, atom.displayEnd);
+    shift(atom.rangeStart, atom.rangeEnd);
+  }
+  for (auto& spacer : inlineSpacers_) {
+    if (spacer.start >= position) spacer.start += length;
+  }
+  for (auto& format : generatedPseudoFormats_) {
+    if (format.start >= position) format.start += static_cast<int>(length);
+  }
+
+  displayText_.insert(position, inserted);
+  const qsizetype visibleAnchor = before ? 0 : projection_.visibleText().size();
+  offsetMap_.push_back({position, position + length, visibleAnchor, visibleAnchor});
+  const qsizetype projectionAnchor = before ? 0 : projection_.displayText().size();
+  displayOffsetMap_.push_back({projectionAnchor, projectionAnchor, position, position + length});
+  std::stable_sort(offsetMap_.begin(), offsetMap_.end(), [](const auto& a, const auto& b) {
+    return a.displayStart < b.displayStart;
+  });
+  std::stable_sort(displayOffsetMap_.begin(), displayOffsetMap_.end(), [](const auto& a, const auto& b) {
+    return a.layoutStart < b.layoutStart;
+  });
+
+  GeneratedPseudoAtom atom;
+  atom.rangeStart = position;
+  atom.rangeEnd = position + length;
+  atom.displayStart = position + (leftSpacer ? 1 : 0) + ((block || atomicBreak) && !before ? 1 : 0);
+  atom.displayEnd = atom.displayStart + text.size();
+  atom.advance = kind != GeneratedPseudoAtom::Kind::Text ? width + marginLeft + marginRight : 0.0;
+  atom.width = width;
+  atom.height = height;
+  atom.marginLeft = marginLeft;
+  atom.marginRight = marginRight;
+  atom.baseline = height;
+  atom.kind = kind;
+  atom.text = kind == GeneratedPseudoAtom::Kind::Text ? text : QString();
+  atom.rule = rule;
+  atom.font = font;
+  atom.block = block;
+  atom.before = before;
+
+  QTextCharFormat format;
+  if (kind == GeneratedPseudoAtom::Kind::Text) {
+    format.setFont(font);
+    if (rule.color.isValid()) {
+      auto color = rule.color;
+      color.setAlphaF(color.alphaF() * rule.opacity);
+      format.setForeground(color);
+    }
+  } else {
+    QFont markerFont = font;
+    markerFont.setLetterSpacing(QFont::AbsoluteSpacing, 0);
+    const qreal glyphWidthWithoutSpacing = QFontMetricsF(markerFont).horizontalAdvance(kGeneratedPseudoPlaceholder);
+    markerFont.setLetterSpacing(QFont::AbsoluteSpacing, atom.advance - glyphWidthWithoutSpacing);
+    format.setFont(markerFont);
+    format.setForeground(Qt::transparent);
+  }
+  generatedPseudoFormats_.push_back({static_cast<int>(atom.displayStart), static_cast<int>(text.size()), format});
+  if (leftSpacer) inlineSpacers_.push_back({atom.displayStart - 1, marginLeft});
+  if (rightSpacer) inlineSpacers_.push_back({atom.displayEnd, marginRight});
+  generatedPseudoAtoms_.push_back(std::move(atom));
+}
+
+void InlineLayout::buildGeneratedPseudoAtoms(const RenderTheme& theme, const QFont& baseFont, qreal width,
+                                             const BuildOptions& options) {
+  pseudoBeforeFingerprint_ = options.pseudoBefore && options.pseudoBefore->computed ? options.pseudoBefore->computed->fingerprint() : 0;
+  pseudoAfterFingerprint_ = options.pseudoAfter && options.pseudoAfter->computed ? options.pseudoAfter->computed->fingerprint() : 0;
+  const qreal zoom = theme.zoomPercent() / 100.0;
+  const qreal em = qMax<qreal>(1.0, QFontMetricsF(baseFont).height());
+  const auto add = [&](const PseudoElementRule* rule, const QString& resolvedText, bool before) {
+    if (!rule || !rule->present || rule->absolute) return;
+    if (rule->computed) {
+      const auto content = rule->computed->resolvedValue("content").trimmed().toLower();
+      if (content == "none" || content == "normal" || rule->computed->resolvedValue("display") == "none") return;
+    }
+    const bool icon = !rule->svgData.isEmpty();
+    const bool shape = rule->backgroundColor.isValid() || rule->background.kind != GradientSpec::Kind::None ||
+                       rule->borderWidth > 0.0 || rule->borderBottomWidth > 0.0;
+    QString text = resolvedText;
+    if (text.isEmpty() && !rule->content.isEmpty()) {
+      if (rule->computed) {
+        const auto tokens = parseContentTokens(rule->computed->resolvedValue("content"));
+        if (std::all_of(tokens.begin(), tokens.end(), [](const auto& token) { return token.kind == ContentToken::Kind::Literal; }))
+          for (const auto& token : tokens) text += token.text;
+      } else text = rule->content;
+    }
+    const bool sized = rule->computed && (rule->computed->hasProperty("width") || rule->computed->hasProperty("height"));
+    if (!icon && !shape && !sized && text.isEmpty()) return;
+
+    QFont font = baseFont;
+    ThemeElementStyle style;
+    if (rule->computed) {
+      style = CssThemeMapper::projectComputedStyle(rule->host + "::" + rule->pseudo, *rule->computed);
+      font = theme.fontForStyle(style, font);
+    }
+    else if (rule->fontSizePx > 0.0) font.setPointSizeF(rule->fontSizePx * zoom * 72.0 / 96.0);
+    const bool block = rule->computed && rule->computed->resolvedValue("display") == "block";
+    const qreal fallbackW = rule->size.width() > 0.0 ? rule->size.width() : block ? width / zoom : icon ? em / zoom : 0;
+    const qreal fallbackH = rule->size.height() > 0.0 ? rule->size.height() : icon ? em / zoom : 0;
+    auto used = theme.usedBoxForStyle(style, width);
+    const auto inset = LayoutBox::insets(used);
+    qreal w = DecorationPainter::pseudoUsedLength(*rule, QStringLiteral("width"), width, fallbackW, zoom);
+    qreal h = DecorationPainter::pseudoUsedLength(*rule, QStringLiteral("height"), em, fallbackH, zoom);
+    if (!used.borderBox) { w += inset.left() + inset.right(); h += inset.top() + inset.bottom(); }
+    const qreal ml = used.margin.left(), mr = used.margin.right();
+    const bool atomic = icon || text.isEmpty();
+    if (atomic) {
+      insertGeneratedPseudoText(QString(kGeneratedPseudoPlaceholder), *rule,
+                                icon ? GeneratedPseudoAtom::Kind::Icon : GeneratedPseudoAtom::Kind::Shape,
+                                font, qMax<qreal>(0.0, w), qMax<qreal>(0.0, h), ml, mr, before);
+    } else {
+      insertGeneratedPseudoText(text, *rule, GeneratedPseudoAtom::Kind::Text, font, 0.0, 0.0,
+                                ml + inset.left(), mr + inset.right(), before);
+    }
+    auto& atom = generatedPseudoAtoms_.last();
+    atom.box = LayoutBox::place(style.key, style, used, {}, font);
+    if (icon && rule->svgFromMask) atom.box.style.paint.backgroundColor = QColor();
+  };
+  add(options.pseudoBefore ? &*options.pseudoBefore : nullptr, options.pseudoBeforeText, true);
+  add(options.pseudoAfter ? &*options.pseudoAfter : nullptr, options.pseudoAfterText, false);
 }
 
 void InlineLayout::buildHtmlFormatSpans(const RenderTheme& theme, qreal width) {
@@ -1507,6 +1693,11 @@ void InlineLayout::buildHtmlAtoms(qreal width, const QFont& font, const QString&
 
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
   layoutText_ = layoutTextForDisplayText(displayText_);
+  // Tab-indent projection markers use U+200B too, but generated object breaks
+  // must remain zero-width breaks rather than becoming indentation NBSPs.
+  for (const auto& atom : generatedPseudoAtoms_)
+    if (!atom.block && atom.kind != GeneratedPseudoAtom::Kind::Text)
+      layoutText_[atom.before ? atom.displayEnd : atom.displayStart - 1] = QChar(0x200b);
   QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
 
   // Splice the active IME preedit into layoutText_ at the caret so following text shifts/wraps
@@ -1610,6 +1801,13 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     lineRuns.push_back({toLayoutOffset(span.layoutStart), toLayoutOffset(span.layoutEnd), font, span.lineHeight,
                        span.verticalAlignment != QTextCharFormat::AlignNormal});
   }
+  for (const auto& atom : generatedPseudoAtoms_) {
+    if (atom.kind == GeneratedPseudoAtom::Kind::Text) {
+      lineRuns.push_back({toLayoutOffset(static_cast<int>(atom.displayStart)),
+                          toLayoutOffset(static_cast<int>(atom.displayEnd)), atom.font,
+                          cssLineHeightPx(atom.font.pointSizeF(), atom.box.style.text.lineHeight), false});
+    }
+  }
   std::sort(lineRuns.begin(), lineRuns.end(), [](const auto& a, const auto& b) { return a.start < b.start; });
   qsizetype firstRun = 0;
   const qreal lineWidth = qMax<qreal>(1.0, width);
@@ -1647,12 +1845,63 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
         lineBox.includeAtomic(-used.top(), used.height());
       }
     }
-    const qreal allocatedHeight = lineBox.placeLine(line, height);
+    const GeneratedPseudoAtom* blockAtom = nullptr;
+    qreal topAlignedHeight = 0, bottomAlignedHeight = 0;
+    for (const GeneratedPseudoAtom& atom : generatedPseudoAtoms_) {
+      const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.kind != GeneratedPseudoAtom::Kind::Text && start >= lineStart && start < lineEnd) {
+        if (atom.block) { blockAtom = &atom; continue; }
+        const auto align = atom.rule.computed ? atom.rule.computed->resolvedValue("vertical-align") : QString();
+        const auto margin = atom.box.usedBox.margin;
+        if (align == "top") topAlignedHeight = qMax(topAlignedHeight, atom.height + margin.top() + margin.bottom());
+        else if (align == "bottom") bottomAlignedHeight = qMax(bottomAlignedHeight, atom.height + margin.top() + margin.bottom());
+        else if (align == "middle") lineBox.includeAtomic((atom.height + QFontMetricsF(baseFont).xHeight()) / 2, atom.height, margin);
+        else lineBox.includeAtomic(atom.baseline, atom.height, margin);
+      }
+    }
+    // Top/bottom atoms establish the minimum enclosing line height. Let the
+    // tallest establish its edge first; otherwise the shorter atom can move
+    // the text baseline unnecessarily before the tallest expands the line.
+    if (bottomAlignedHeight > topAlignedHeight) {
+      lineBox.includeBottomAligned(bottomAlignedHeight);
+      lineBox.includeTopAligned(topAlignedHeight);
+    } else {
+      lineBox.includeTopAligned(topAlignedHeight);
+      lineBox.includeBottomAligned(bottomAlignedHeight);
+    }
+    qreal allocatedHeight;
+    if (blockAtom) {
+      allocatedHeight = blockAtom->height + blockAtom->box.usedBox.margin.top() + blockAtom->box.usedBox.margin.bottom();
+      line.setPosition({0, height});
+    } else {
+      allocatedHeight = lineBox.placeLine(line, height);
+    }
     lineBoxes_.push_back(QRectF(0, height, lineWidth, allocatedHeight));
     for (auto& atom : htmlAtoms_) {
       const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
       if (start >= lineStart && start < lineEnd)
         atom.rect = QRectF(QPointF(line.cursorToX(start) + atom.margin.left(), line.y() + line.ascent() - atom.baseline), atom.crop.size());
+    }
+    for (auto& atom : generatedPseudoAtoms_) {
+      const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (atom.kind != GeneratedPseudoAtom::Kind::Text && start >= lineStart && start < lineEnd) {
+        const bool topAligned = atom.rule.computed && atom.rule.computed->resolvedValue("vertical-align") == "top";
+        const bool bottomAligned = atom.rule.computed && atom.rule.computed->resolvedValue("vertical-align") == "bottom";
+        const bool middleAligned = atom.rule.computed && atom.rule.computed->resolvedValue("vertical-align") == "middle";
+        atom.baseline = middleAligned ? (atom.height + QFontMetricsF(baseFont).xHeight()) / 2 : atom.height;
+        atom.rect = QRectF(line.cursorToX(start) + atom.marginLeft,
+                           topAligned ? height + atom.box.usedBox.margin.top() : bottomAligned
+                               ? height + allocatedHeight - atom.height - atom.box.usedBox.margin.bottom()
+                               : line.y() + line.ascent() - atom.baseline,
+                           atom.width, atom.height);
+        if (atom.block) {
+          qreal x = atom.marginLeft;
+          const qreal spare = qMax<qreal>(0, lineWidth - atom.width - atom.marginLeft - atom.marginRight);
+          if (atom.box.usedBox.marginLeftAuto) x += spare / (atom.box.usedBox.marginRightAuto ? 2 : 1);
+          atom.rect.moveTopLeft({x, height + atom.box.usedBox.margin.top()});
+        }
+        atom.box = LayoutBox::place(atom.box.hostKey, atom.box.style, atom.box.usedBox, atom.rect, atom.font);
+      }
     }
     height += allocatedHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
@@ -1792,6 +2041,31 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
   }
 }
 
+void InlineLayout::paintGeneratedPseudoAtoms(QPainter& painter, QPointF origin) const {
+  if (!textLayout_) return;
+  const qreal zoom = zoomScale_;
+  for (const GeneratedPseudoAtom& atom : generatedPseudoAtoms_) {
+    if (atom.kind == GeneratedPseudoAtom::Kind::Text) continue;
+    const int start = toLayoutOffset(static_cast<int>(atom.displayStart));
+    for (int i = 0; i < textLayout_->lineCount(); ++i) {
+      const QTextLine line = textLayout_->lineAt(i);
+      if (!line.isValid()) continue;
+      const int lineStart = line.textStart();
+      const int lineEnd = lineStart + line.textLength();
+      if (start < lineStart || start >= lineEnd) continue;
+      paintLayoutBox(painter, atom.box, origin);
+      if (atom.kind == GeneratedPseudoAtom::Kind::Icon) {
+        const QColor tint = atom.rule.svgFromMask ? atom.rule.maskTint : atom.rule.color;
+        painter.save();
+        painter.setOpacity(painter.opacity() * atom.rule.opacity);
+        DecorationPainter::paintPseudoIconBox(painter, atom.rule, atom.box.contentBox.translated(origin), tint, zoom);
+        painter.restore();
+      }
+      break;
+    }
+  }
+}
+
 void InlineLayout::paintImagePreview(QPainter& painter, QPointF origin) const {
   if (previewAtoms_.isEmpty() || !textLayout_) {
     return;
@@ -1832,7 +2106,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
   QTextCharFormat baseFormat;
   baseFormat.setFont(baseFont);
   applyLetterSpacing(baseFormat, baseFont);
-  if (wordSpacing_ != 0.0) { baseFormat.setFontWordSpacing(wordSpacing_); }
   baseFormat.setForeground(baseTextColorOverride_.isValid() ? baseTextColorOverride_ : theme.textColor());
   QTextLayout::FormatRange baseRange;
   baseRange.start = 0;
@@ -1940,7 +2213,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
   const qreal tabIndentTargetWidth = qMax<qreal>(1.0, tabMetrics.horizontalAdvance(QStringLiteral("汉汉")));
   const qreal tabIndentPlaceholderWidth = qMax<qreal>(0.0, tabMetrics.horizontalAdvance(QString(kTabIndentLayoutChar)));
   for (qsizetype i = 0; i < displayText_.size(); ++i) {
-    if (displayText_.at(i) != kTabIndentSourceChar) {
+    if (displayText_.at(i) != kTabIndentSourceChar || layoutText_.at(i) != kTabIndentLayoutChar) {
       continue;
     }
     QFont tabFont = baseFont;
@@ -2118,6 +2391,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     format.setForeground(Qt::transparent);
     formats.push_back({static_cast<int>(spacer.start), 1, format});
   }
+  formats += generatedPseudoFormats_;
   return formats;
 }
 
@@ -2219,11 +2493,19 @@ qsizetype InlineLayout::layoutDisplayOffsetForProjectionOffset(qsizetype project
   }
 
   projectionOffset = qBound<qsizetype>(0, projectionOffset, projection_.displayText().size());
+  qsizetype generatedFallback = -1;
   for (const DisplayOffsetMapEntry& entry : displayOffsetMap_) {
     if (projectionOffset < entry.projectionStart || projectionOffset > entry.projectionEnd) {
       continue;
     }
-    if (entry.layoutEnd <= entry.layoutStart || entry.projectionEnd <= entry.projectionStart) {
+    if (entry.projectionEnd <= entry.projectionStart) {
+      // Generated content has no source extent. Prefer the adjacent editable
+      // range for both caret bias and selections; only an empty source needs
+      // this fallback (the boundary between ::before and ::after).
+      if (generatedFallback < 0) generatedFallback = entry.layoutEnd;
+      continue;
+    }
+    if (entry.layoutEnd <= entry.layoutStart) {
       return bias == InlineProjectionBias::Forward ? entry.layoutEnd : entry.layoutStart;
     }
     if (projectionOffset <= entry.projectionStart) {
@@ -2239,7 +2521,7 @@ qsizetype InlineLayout::layoutDisplayOffsetForProjectionOffset(qsizetype project
     return qBound<qsizetype>(entry.layoutStart, entry.layoutStart + snapped, entry.layoutEnd);
   }
 
-  return displayText_.size();
+  return generatedFallback >= 0 ? generatedFallback : displayText_.size();
 }
 
 bool InlineLayout::layoutDisplayOffsetForSourceOffset(qsizetype sourceOffset, InlineProjectionBias bias, qsizetype& layoutOffset) const {

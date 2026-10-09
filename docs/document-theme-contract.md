@@ -409,6 +409,40 @@ Newsprint sheet gives the following reference values:
 | h2 top margin | 48px |
 | Code block line height | approximately 24px |
 
+Generated heading content is inserted into the retained inline display stream,
+with zero source extent. Its text is shaped by the same `QTextLayout`; atomic
+shapes and masks own used `LayoutBox` fragments and participate in intrinsic
+widths, line breaking, vertical alignment and visual overflow. Painting consumes
+these fragments, and clicks on generated content snap to the adjoining source
+caret. Source selections exclude the generated text. The heading-specific
+advance reservation and draw-time inline position estimation have been deleted.
+Absolutely positioned decorations remain outside normal inline flow.
+
+`scripts/probe_inline_pseudos.mjs` records Chromium references with the bundled
+font bytes. `RenderHeadingPseudoTest` compares generated-content geometry and
+tests 100%/125%/200% zoom, narrow/multiline headings, local edits, source/visible
+caret mapping, selection and fresh eager/lazy pixels. Pseudo styles use live
+host topology for selectors, while inheriting from the originating element.
+Heading counters retain the existing flat document-order scope. Complete CSS
+counter scopes and margin collapsing for block pseudo-elements remain outside
+this inline-layout contract.
+
+`font_rendering::configureCssFont` is shared by Markdown and HTML. On Windows it
+detects a missing bold face through OpenType metadata, verifies the uniform
+DirectWrite simulation advance against the same unsimulated face, and removes
+that extra advance while preserving bold ink. Spaces are compensated separately;
+real bold faces and variable fonts retain their design metrics. Author spacing
+is an explicit input, so applying the configuration twice does not accumulate a
+correction. The original-family fallback stack remains intact.
+
+The real-theme audit exports requested/resolved pixel sizes, requested/actual
+face weights, native advances and layout spacing. The browser audit records the
+same text's advance with the same imported font files. Qt currently rounds the
+requested font size to integer logical pixels before font-engine resolution;
+fractional CSS sizes can therefore retain a small advance difference. This
+limitation is recorded explicitly instead of compensating with a family-specific
+stretch or an undefined `QTextLayout::setRawFont` drawing path.
+
 These values have been checked against Chrome computed styles and the Windows
 native Qt font backend. This contract supports the native renderer's CSS subset;
 it does not imply complete browser CSS support or pixel identity with Typora's

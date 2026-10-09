@@ -110,7 +110,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   QFont baseFont = blockBox.style().font;
   baseFont.setPointSizeF(fontSize);
   // Apply letter-spacing from the block box style (inherited property)
-  if (blockBox.style().letterSpacing != 0) {
+  if (!blockBox.style().computed.fingerprint && blockBox.style().letterSpacing != 0) {
     baseFont.setLetterSpacing(QFont::AbsoluteSpacing, blockBox.style().letterSpacing);
   }
 

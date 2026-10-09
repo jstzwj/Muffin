@@ -63,7 +63,6 @@ public:
     // states compose. Invalid → no focus recolour.
     QColor focusTextColor;
     qreal lineHeightMultiplier = 0.0;
-    qreal wordSpacing = 0.0;
     Qt::Alignment alignment;
     // CSS text-transform (uppercase/lowercase/capitalize) applied to the projected
     // display text. Length-preserving per-code-point mapping ⇒ offsets stay exact.
@@ -81,6 +80,13 @@ public:
     QVector<QTextLayout::FormatRange> preeditFormats;
     int preeditCursor = -1;                       // composition caret within the preedit (-1 = none)
     qsizetype preeditInsertAtSourceOffset = -1;   // caret CONTENT-LOCAL source offset in this block
+    // Generated heading pseudo-elements are supplied by the same resolved theme
+    // tree as the host. They are inserted into the inline display stream before
+    // shaping so wrapping, hit testing and painting share one geometry.
+    std::optional<PseudoElementRule> pseudoBefore;
+    std::optional<PseudoElementRule> pseudoAfter;
+    QString pseudoBeforeText;
+    QString pseudoAfterText;
   };
 
   InlineLayout() = default;
@@ -230,6 +236,27 @@ private:
     qsizetype visibleStart = 0;  // link run's first visible offset (caret target)
   };
 
+  struct GeneratedPseudoAtom {
+    enum class Kind { Text, Shape, Icon };
+    qsizetype rangeStart = 0, rangeEnd = 0;
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
+    qreal advance = 0.0;
+    qreal width = 0.0;
+    qreal height = 0.0;
+    qreal marginLeft = 0.0;
+    qreal marginRight = 0.0;
+    qreal baseline = 0.0;
+    QRectF rect;
+    LayoutBox box;
+    bool block = false;
+    bool before = false;
+    Kind kind = Kind::Shape;
+    QString text;
+    PseudoElementRule rule;
+    QFont font;
+  };
+
   struct HtmlFormatSpan {
     QStringList fontFamilies;
     QFont font;
@@ -258,6 +285,12 @@ private:
   QVector<HtmlInlineBoxRun> htmlInlineBoxRuns_;
   void buildHtmlFormatSpans(const RenderTheme& theme, qreal width);
   void buildInlineBoxSpacing();
+  void buildGeneratedPseudoAtoms(const RenderTheme& theme, const QFont& baseFont, qreal width,
+                                 const BuildOptions& options);
+  void insertGeneratedPseudoText(const QString& text, const PseudoElementRule& rule,
+                                 GeneratedPseudoAtom::Kind kind, const QFont& font,
+                                 qreal width, qreal height, qreal marginLeft, qreal marginRight,
+                                 bool before);
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
@@ -281,6 +314,7 @@ private:
   void paintTextShadow(QPainter& painter, QPointF origin) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
+  void paintGeneratedPseudoAtoms(QPainter& painter, QPointF origin) const;
   void paintImagePreview(QPainter& painter, QPointF origin) const;
   QVector<QTextLayout::FormatRange> textLayoutFormats(const RenderTheme& theme, const QFont& baseFont) const;
   qsizetype visibleOffsetForDisplayOffset(qsizetype displayOffset) const;
@@ -305,7 +339,6 @@ private:
   QVector<QPair<int, int>> hoverRecolourRanges_;  // display-offset runs that inherit the base colour (used by both hover and focus recolour)
   qreal lineHeightMultiplier_ = 0.0;
   qreal zoomScale_ = 1;
-  qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
   QTextOption::WrapMode wrapMode_ = QTextOption::WrapAtWordBoundaryOrAnywhere;
   bool anywhereMinimum_ = false;
@@ -325,6 +358,9 @@ private:
   qreal linkBeforeIconAdvance_ = 0.0;      // reserved flow width (icon + margin)
   qreal linkBeforeIconHeight_ = 0.0;       // paint height (vertical centering)
   QVector<LinkBeforeAtom> linkBeforeAtoms_;
+  QVector<GeneratedPseudoAtom> generatedPseudoAtoms_;
+  quint64 pseudoBeforeFingerprint_ = 0, pseudoAfterFingerprint_ = 0;
+  QVector<QTextLayout::FormatRange> generatedPseudoFormats_;
   GradientSpec markGradient_;
   QString plainText_;
   bool isEmpty_ = true;

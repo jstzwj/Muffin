@@ -108,8 +108,7 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         if (decoration.contains(QStringLiteral("underline"))) target.textDecoration |= HtmlTextDecoration::Underline;
         if (decoration.contains(QStringLiteral("line-through"))) target.textDecoration |= HtmlTextDecoration::LineThrough;
         target.letterSpacing = computed.length(QStringLiteral("letter-spacing")).px * zoom;
-        target.font.setWordSpacing(style.text.wordSpacing * zoom);
-        if (target.letterSpacing != 0) target.font.setLetterSpacing(QFont::AbsoluteSpacing, target.letterSpacing);
+        font_rendering::configureCssFont(target.font, target.letterSpacing, style.text.wordSpacing * zoom);
         const auto scaleBox = [&](QMarginsF m) { return QMarginsF(m.left() * zoom, m.top() * zoom, m.right() * zoom, m.bottom() * zoom); };
         const auto anySide = [&](const QString& name) {
           return computed.hasProperty(name) || computed.hasProperty(name + QStringLiteral("-top")) ||

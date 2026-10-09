@@ -728,19 +728,17 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& source, const QSt
     ty.headingFontWeightSet[level - 1] = h.text.fontWeightSet;
     ty.headingItalic[level - 1] = h.text.italic;
     ty.headingItalicSet[level - 1] = h.text.italicSet;
-    ThemeDecorations::CounterOps ops;
     for (const auto& key : {host, host + QStringLiteral("::before"), host + QStringLiteral("::after")}) {
-      ops.resets += parseCounters(style(key).resolvedValue(QStringLiteral("counter-reset")), 0);
-      ops.increments += parseCounters(style(key).resolvedValue(QStringLiteral("counter-increment")), 1);
+      ThemeDecorations::CounterOps ops;
+      ops.resets = parseCounters(style(key).resolvedValue(QStringLiteral("counter-reset")), 0);
+      ops.increments = parseCounters(style(key).resolvedValue(QStringLiteral("counter-increment")), 1);
+      if (!ops.resets.isEmpty() || !ops.increments.isEmpty()) d.decorations.hostCounterOps.insert(key, ops);
     }
-    if (!ops.resets.isEmpty() || !ops.increments.isEmpty()) d.decorations.hostCounterOps.insert(host, ops);
     for (const auto& rule : d.decorations.pseudos) {
-      if (rule.host != host || rule.pseudo != QStringLiteral("before")) continue;
+      if (rule.host != host) continue;
       if (std::any_of(rule.contentTokens.begin(), rule.contentTokens.end(),
                       [](const ContentToken& t) { return t.kind != ContentToken::Kind::Literal; }))
         d.decorations.hasHeadingCounters = true;
-      if (!rule.absolute && rule.svgData.isEmpty() && (rule.backgroundColor.isValid() || rule.borderWidth > 0 || !rule.content.isEmpty()))
-        d.spacing.headingBeforeAdvance[level - 1] = (rule.size.width() > 0 ? rule.size.width() : h.text.fontSizePx) + rule.marginRight;
     }
   }
   ThemeDecorations::CounterOps rootOps;

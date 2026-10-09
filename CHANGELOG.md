@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Generated heading `::before`/`::after` content participates in text measurement, wrapping, line boxes and overflow; painting, clicking and selection consume the same layout. The former heading-width reservation and guessed inline paint positions have been removed.
+- Live pseudo selectors inherit from their originating element and share structural style invalidation. CSS font configuration compensates verified Windows synthetic-bold advance inflation without changing real bold faces or dropping bold ink.
 - Heading theme selectors share Markdown host classes between prototypes and live nodes. Generated decorations resolve absolute offsets, percentages, translations and zoom from the common computed style; trailing SVG masks retain their own image size and use the allocated line box for top alignment.
 - Shadow masks normalize raster subpixel precision, preventing floating-point accumulation noise from changing full/lazy pixels on imported themes with fractional page dimensions.
 - Clicking the trailing edge of a collapsed inline formula or image maps to its full visible range, rather than the first source character inside the atom. Real theme regressions exercise original fonts, multiple text sizes, resizing, typing/deletion, caret/selection and full/lazy pixel consistency.

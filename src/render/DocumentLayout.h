@@ -184,7 +184,7 @@ class DocumentLayout {
   QHash<NodeId, LayoutPositionToken*> topLevelIndex_;  // top-level node id -> stable position token
   QHash<NodeId, NodeId> nestedToTopLevel_;          // any node id -> top-level node id
   QHash<NodeId, QVector<NodeId>> nestedIdsByTopLevel_;  // exact removal set for a structural splice
-  QHash<NodeId, QString> headingCounterText_;       // heading node id -> resolved ::before counter text ("1. ")
+  QHash<NodeId, QPair<QString, QString>> headingCounterText_;  // resolved before/after content in document order
   QVector<OutlineEntry> tocEntries_;                // document headings for `[TOC]` block rendering
   quint64 tocOutlineRevision_ = 0;
   QHash<NodeId, const BlockLayout*> layoutIndex_;   // node id -> built BlockLayout* (lazy-populated)

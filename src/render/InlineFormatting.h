@@ -46,6 +46,12 @@ struct InlineLineBox {
     descent = std::max(descent, height - baseline + margin.bottom());
     atomicDescent = std::max(atomicDescent, height - baseline + margin.bottom());
   }
+  void includeTopAligned(qreal boxHeight) {
+    // A top-aligned atom grows the line below its top edge without moving the
+    // baseline up as a baseline-aligned replaced box would.
+    descent = std::max(descent, boxHeight - ascent);
+  }
+  void includeBottomAligned(qreal boxHeight) { ascent = std::max(ascent, boxHeight - descent); }
   qreal height() const { return ascent + descent; }
   qreal placeLine(QTextLine line, qreal top) const {
     // Qt stores positions at 1/64px. Round the baseline inward so a replaced

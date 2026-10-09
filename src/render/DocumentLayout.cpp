@@ -1281,13 +1281,16 @@ void DocumentLayout::recomputeHeadingCounters(const MarkdownDocument& document, 
 
   // Document-order DFS so headings nested in blockquotes/lists still count, matching
   // CSS counter semantics. A heading first applies its host's reset+increment, then
-  // resolves its ::before content against the now-current counter values.
+  // resolves ::before and ::after in generation order against current values.
   const std::function<void(const MarkdownNode&)> walk = [&](const MarkdownNode& node) {
     if (node.type() == BlockType::Heading && node.headingLevel() >= 1 && node.headingLevel() <= 6) {
       const QString host = QStringLiteral("h%1").arg(node.headingLevel());
       applyHost(host);
-      for (const PseudoElementRule& rule : theme.decorations().pseudos) {
-        if (rule.host != host || rule.pseudo != QStringLiteral("before")) { continue; }
+      for (const auto& pseudo : {QStringLiteral("before"), QStringLiteral("after")}) {
+        applyHost(host + QStringLiteral("::") + pseudo);
+        const auto generated = theme.pseudoForNode(node, pseudo);
+        if (!generated) continue;
+        const auto& rule = *generated;
         bool hasCounter = false;
         for (const ContentToken& t : rule.contentTokens) {
           if (t.kind != ContentToken::Kind::Literal) { hasCounter = true; break; }
@@ -1296,9 +1299,10 @@ void DocumentLayout::recomputeHeadingCounters(const MarkdownDocument& document, 
           const auto value = [&counters](const QString& name) { return counters.value(name, 0); };
           // Headings are a single flat scope: counters() joins the one in-scope value.
           const auto chain = [&counters](const QString& name) { return QVector<int>{counters.value(name, 0)}; };
-          headingCounterText_.insert(node.id(), resolveContentTokens(rule.contentTokens, value, chain));
+          const auto text = resolveContentTokens(rule.contentTokens, value, chain);
+          if (pseudo == QStringLiteral("before")) headingCounterText_[node.id()].first = text;
+          else headingCounterText_[node.id()].second = text;
         }
-        break;
       }
     }
     for (const auto& child : node.children()) { walk(*child); }

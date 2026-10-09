@@ -1276,8 +1276,9 @@ CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, con
       if (cached != node->constEnd()) return cached.value();
     }
   }
-  CssComputedStyle parent = parentStyleFor(element.parent);
-  if (!element.parent && element.tag.compare(QLatin1String("html"), Qt::CaseInsensitive) == 0) parent.customProperties_.clear();
+  const auto* inheritanceParent = element.originatingElement ? element.originatingElement : element.parent;
+  CssComputedStyle parent = parentStyleFor(inheritanceParent);
+  if (!inheritanceParent && element.tag.compare(QLatin1String("html"), Qt::CaseInsensitive) == 0) parent.customProperties_.clear();
   CssComputedStyle style;
   style.customProperties_ = parent.customProperties_;
   style.fontSizePx = parent.fontSizePx;
@@ -1289,7 +1290,7 @@ CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, con
     }
   applyStyleForElement(element, state, style, inlineDeclarations, presentationDeclarations);
   if (!environment_.deferComputedValues) {
-    const bool root = !element.parent;
+    const bool root = !inheritanceParent;
     const auto valueKey = qHashMulti(size_t(0), style.fingerprint(), parent.fingerprint(), root);
     auto bucket = valueCache_.constFind(valueKey);
     bool found = false;

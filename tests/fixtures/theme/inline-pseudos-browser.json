@@ -1,0 +1,919 @@
+{
+  "browser": "148.0.7778.96",
+  "font": {
+    "family": "MuffinFixtureSans",
+    "files": {
+      "github/open-sans-v17-latin-ext_latin-regular.woff2": "537d46273fe124bbced2f098f26222fa3155741e9d76f906c3c39e7fa09bf6a8",
+      "github/open-sans-v17-latin-ext_latin-italic.woff2": "8ddc89881ca5f355826d20b2229266c56a2c8d7be69ff9533b1891b55dc15825",
+      "github/open-sans-v17-latin-ext_latin-700.woff2": "59a3166f7bacce6a65bf901ad20f141b619bca39a1318ea5efbdaa587b48a800",
+      "github/open-sans-v17-latin-ext_latin-700italic.woff2": "a250cc9c90a94d628301cbeaca7d8aa6276cda73c8a32af07d3ede513447931a"
+    }
+  },
+  "cases": [
+    {
+      "id": "marker-wrap-90",
+      "width": 90,
+      "text": "Long heading that wraps",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:90px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:12px;height:12px;margin-right:8px;background:red}",
+      "expected": {
+        "height": 72,
+        "minContent": 60.125,
+        "maxContent": 204.484375,
+        "characters": [
+          {
+            "x": 20,
+            "y": 1,
+            "width": 8.3125
+          },
+          {
+            "x": 28.296875,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "x": 37.96875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 47.78125,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 56.546875,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 9.8125,
+            "y": 25,
+            "width": 8.984375
+          },
+          {
+            "x": 18.796875,
+            "y": 25,
+            "width": 8.90625
+          },
+          {
+            "x": 27.6875,
+            "y": 25,
+            "width": 9.8125
+          },
+          {
+            "x": 37.5,
+            "y": 25,
+            "width": 4.046875
+          },
+          {
+            "x": 41.546875,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 51.359375,
+            "y": 25,
+            "width": 8.78125
+          },
+          {
+            "x": 60.125,
+            "y": 25,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 5.640625,
+            "y": 49,
+            "width": 9.828125
+          },
+          {
+            "x": 15.46875,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 24.359375,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 30.015625,
+            "y": 49,
+            "width": 4.15625
+          },
+          {
+            "x": 34.171875,
+            "y": 49,
+            "width": 12.453125
+          },
+          {
+            "x": 46.609375,
+            "y": 49,
+            "width": 6.546875
+          },
+          {
+            "x": 53.140625,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 62.046875,
+            "y": 49,
+            "width": 9.8125
+          },
+          {
+            "x": 71.84375,
+            "y": 49,
+            "width": 7.640625
+          }
+        ]
+      }
+    },
+    {
+      "id": "marker-wrap-170",
+      "width": 170,
+      "text": "Long heading that wraps",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:12px;height:12px;margin-right:8px;background:red}",
+      "expected": {
+        "height": 48,
+        "minContent": 60.125,
+        "maxContent": 204.484375,
+        "characters": [
+          {
+            "x": 20,
+            "y": 1,
+            "width": 8.3125
+          },
+          {
+            "x": 28.296875,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "x": 37.96875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 47.78125,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 56.546875,
+            "y": 1,
+            "width": 4.171875
+          },
+          {
+            "x": 60.703125,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 70.53125,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 79.5,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 88.40625,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 98.203125,
+            "y": 1,
+            "width": 4.0625
+          },
+          {
+            "x": 102.25,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 112.078125,
+            "y": 1,
+            "width": 8.765625
+          },
+          {
+            "x": 120.84375,
+            "y": 1,
+            "width": 4.15625
+          },
+          {
+            "x": 125,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "x": 130.640625,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 140.46875,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 149.359375,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "x": 155.015625,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 12.453125
+          },
+          {
+            "x": 12.4375,
+            "y": 25,
+            "width": 6.546875
+          },
+          {
+            "x": 18.96875,
+            "y": 25,
+            "width": 8.90625
+          },
+          {
+            "x": 27.875,
+            "y": 25,
+            "width": 9.8125
+          },
+          {
+            "x": 37.671875,
+            "y": 25,
+            "width": 7.640625
+          }
+        ]
+      }
+    },
+    {
+      "id": "generated-text",
+      "width": 170,
+      "text": "Long heading that wraps",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"1.2 \";color:red}h4::after{content:\" end\";color:blue}",
+      "expected": {
+        "height": 48,
+        "minContent": 78.078125,
+        "maxContent": 243.96875,
+        "characters": [
+          {
+            "x": 26.71875,
+            "y": 1,
+            "width": 8.3125
+          },
+          {
+            "x": 35.015625,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "x": 44.6875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 54.5,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 63.265625,
+            "y": 1,
+            "width": 4.171875
+          },
+          {
+            "x": 67.421875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 77.25,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 86.21875,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 95.125,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 104.921875,
+            "y": 1,
+            "width": 4.0625
+          },
+          {
+            "x": 108.96875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 118.796875,
+            "y": 1,
+            "width": 8.765625
+          },
+          {
+            "x": 127.5625,
+            "y": 1,
+            "width": 4.15625
+          },
+          {
+            "x": 131.71875,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "x": 137.359375,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 147.1875,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 156.078125,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "x": 161.734375,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 12.453125
+          },
+          {
+            "x": 12.4375,
+            "y": 25,
+            "width": 6.546875
+          },
+          {
+            "x": 18.96875,
+            "y": 25,
+            "width": 8.90625
+          },
+          {
+            "x": 27.875,
+            "y": 25,
+            "width": 9.8125
+          },
+          {
+            "x": 37.671875,
+            "y": 25,
+            "width": 7.640625
+          }
+        ]
+      }
+    },
+    {
+      "id": "concatenated-strings",
+      "width": 170,
+      "text": "Heading",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"pre \" \"fix \";color:red}",
+      "expected": {
+        "height": 24,
+        "minContent": 62.125,
+        "maxContent": 113.609375,
+        "characters": [
+          {
+            "x": 51.484375,
+            "y": 1,
+            "width": 11.8125
+          },
+          {
+            "x": 63.28125,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 72.265625,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 81.15625,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 90.96875,
+            "y": 1,
+            "width": 4.046875
+          },
+          {
+            "x": 95.015625,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 104.828125,
+            "y": 1,
+            "width": 8.78125
+          }
+        ]
+      }
+    },
+    {
+      "id": "suffix-wrap",
+      "width": 90,
+      "text": "Heading text",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:90px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::after{content:\"\";display:inline-block;width:40px;height:40px;vertical-align:top;background:blue}",
+      "expected": {
+        "height": 64,
+        "minContent": 62.125,
+        "maxContent": 134.9375,
+        "characters": [
+          {
+            "x": 0,
+            "y": 1,
+            "width": 11.8125
+          },
+          {
+            "x": 11.796875,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 20.78125,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 29.671875,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 39.484375,
+            "y": 1,
+            "width": 4.046875
+          },
+          {
+            "x": 43.53125,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 53.34375,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 62.109375,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 5.65625
+          },
+          {
+            "x": 5.640625,
+            "y": 25,
+            "width": 8.984375
+          },
+          {
+            "x": 14.625,
+            "y": 25,
+            "width": 8.390625
+          },
+          {
+            "x": 23,
+            "y": 25,
+            "width": 5.65625
+          }
+        ]
+      }
+    },
+    {
+      "id": "block-underline",
+      "width": 170,
+      "text": "Heading",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::after{content:\"\";display:block;width:100px;height:0;border-bottom:1px solid blue;margin:5px auto 0}",
+      "expected": {
+        "height": 30,
+        "minContent": 100,
+        "maxContent": 100,
+        "characters": [
+          {
+            "x": 0,
+            "y": 1,
+            "width": 11.8125
+          },
+          {
+            "x": 11.796875,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 20.78125,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 29.671875,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 39.484375,
+            "y": 1,
+            "width": 4.046875
+          },
+          {
+            "x": 43.53125,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 53.34375,
+            "y": 1,
+            "width": 8.78125
+          }
+        ]
+      }
+    },
+    {
+      "id": "invisible-box",
+      "width": 90,
+      "text": "Long heading that wraps",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:90px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:20px;height:12px}",
+      "expected": {
+        "height": 72,
+        "minContent": 60.125,
+        "maxContent": 204.484375,
+        "characters": [
+          {
+            "x": 20,
+            "y": 1,
+            "width": 8.3125
+          },
+          {
+            "x": 28.296875,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "x": 37.96875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 47.78125,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 56.546875,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 9.8125,
+            "y": 25,
+            "width": 8.984375
+          },
+          {
+            "x": 18.796875,
+            "y": 25,
+            "width": 8.90625
+          },
+          {
+            "x": 27.6875,
+            "y": 25,
+            "width": 9.8125
+          },
+          {
+            "x": 37.5,
+            "y": 25,
+            "width": 4.046875
+          },
+          {
+            "x": 41.546875,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 51.359375,
+            "y": 25,
+            "width": 8.78125
+          },
+          {
+            "x": 60.125,
+            "y": 25,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 5.640625,
+            "y": 49,
+            "width": 9.828125
+          },
+          {
+            "x": 15.46875,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 24.359375,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 30.015625,
+            "y": 49,
+            "width": 4.15625
+          },
+          {
+            "x": 34.171875,
+            "y": 49,
+            "width": 12.453125
+          },
+          {
+            "x": 46.609375,
+            "y": 49,
+            "width": 6.546875
+          },
+          {
+            "x": 53.140625,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 62.046875,
+            "y": 49,
+            "width": 9.8125
+          },
+          {
+            "x": 71.84375,
+            "y": 49,
+            "width": 7.640625
+          }
+        ]
+      }
+    },
+    {
+      "id": "zero-width-box",
+      "width": 90,
+      "text": "Long heading that wraps",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:90px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:0;height:0;margin-right:8px}",
+      "expected": {
+        "height": 72,
+        "minContent": 60.125,
+        "maxContent": 192.484375,
+        "characters": [
+          {
+            "x": 8,
+            "y": 1,
+            "width": 8.3125
+          },
+          {
+            "x": 16.296875,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "x": 25.96875,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 35.78125,
+            "y": 1,
+            "width": 8.78125
+          },
+          {
+            "x": 44.546875,
+            "y": 1,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 9.8125,
+            "y": 25,
+            "width": 8.984375
+          },
+          {
+            "x": 18.796875,
+            "y": 25,
+            "width": 8.90625
+          },
+          {
+            "x": 27.6875,
+            "y": 25,
+            "width": 9.8125
+          },
+          {
+            "x": 37.5,
+            "y": 25,
+            "width": 4.046875
+          },
+          {
+            "x": 41.546875,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "x": 51.359375,
+            "y": 25,
+            "width": 8.78125
+          },
+          {
+            "x": 60.125,
+            "y": 25,
+            "width": 0
+          },
+          {
+            "x": 0,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 5.640625,
+            "y": 49,
+            "width": 9.828125
+          },
+          {
+            "x": 15.46875,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 24.359375,
+            "y": 49,
+            "width": 5.65625
+          },
+          {
+            "x": 30.015625,
+            "y": 49,
+            "width": 4.15625
+          },
+          {
+            "x": 34.171875,
+            "y": 49,
+            "width": 12.453125
+          },
+          {
+            "x": 46.609375,
+            "y": 49,
+            "width": 6.546875
+          },
+          {
+            "x": 53.140625,
+            "y": 49,
+            "width": 8.90625
+          },
+          {
+            "x": 62.046875,
+            "y": 49,
+            "width": 9.8125
+          },
+          {
+            "x": 71.84375,
+            "y": 49,
+            "width": 7.640625
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed-alignment",
+      "width": 170,
+      "text": "Heading",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:12px;height:40px;vertical-align:top;background:red}h4::after{content:\"\";display:inline-block;width:12px;height:60px;vertical-align:bottom;background:blue}",
+      "expected": {
+        "height": 60,
+        "minContent": 62.125,
+        "maxContent": 86.125,
+        "characters": [
+          {
+            "x": 12,
+            "y": 37,
+            "width": 11.8125
+          },
+          {
+            "x": 23.796875,
+            "y": 37,
+            "width": 8.984375
+          },
+          {
+            "x": 32.78125,
+            "y": 37,
+            "width": 8.90625
+          },
+          {
+            "x": 41.671875,
+            "y": 37,
+            "width": 9.8125
+          },
+          {
+            "x": 51.484375,
+            "y": 37,
+            "width": 4.046875
+          },
+          {
+            "x": 55.53125,
+            "y": 37,
+            "width": 9.828125
+          },
+          {
+            "x": 65.34375,
+            "y": 37,
+            "width": 8.78125
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed-alignment-reversed",
+      "width": 170,
+      "text": "Heading",
+      "css": "html,body{margin:0}#write{margin:0;padding:0;max-width:none;width:170px}\n      h4{margin:0;padding:0;border:0;font-family:MuffinFixtureSans;font-size:16px;font-weight:400;line-height:24px}h4::before{content:\"\";display:inline-block;width:12px;height:60px;vertical-align:top;background:red}h4::after{content:\"\";display:inline-block;width:12px;height:40px;vertical-align:bottom;background:blue}",
+      "expected": {
+        "height": 60,
+        "minContent": 62.125,
+        "maxContent": 86.125,
+        "characters": [
+          {
+            "x": 12,
+            "y": 1,
+            "width": 11.8125
+          },
+          {
+            "x": 23.796875,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "x": 32.78125,
+            "y": 1,
+            "width": 8.90625
+          },
+          {
+            "x": 41.671875,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "x": 51.484375,
+            "y": 1,
+            "width": 4.046875
+          },
+          {
+            "x": 55.53125,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "x": 65.34375,
+            "y": 1,
+            "width": 8.78125
+          }
+        ]
+      }
+    }
+  ]
+}
