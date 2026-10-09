@@ -285,6 +285,24 @@ muffin_add_test(NAME MuffinTypographyConformanceTest SOURCE tests/theme/Typograp
 target_compile_definitions(MuffinTypographyConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 muffin_add_test(NAME MuffinRealThemeRegressionTest SOURCE tests/theme/RealThemeRegressionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRealThemeBrowserGeometryTest SOURCE tests/theme/RealThemeBrowserGeometryTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinTextLayoutTest SOURCE tests/render/TextLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinFractionalTextLayoutTest SOURCE tests/render/TextLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
+set_property(TEST MuffinTextLayoutTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "MUFFIN_TEXT_LAYOUT_BACKEND=set:native")
+set_property(TEST MuffinFractionalTextLayoutTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional")
+set(_text_fixture_fonts)
+foreach(_font abyss han latex-regular latex-bold latex-italic latex-bolditalic)
+  set(_native "${CMAKE_CURRENT_BINARY_DIR}/text-fixture-fonts/${_font}.ttf")
+  add_custom_command(OUTPUT "${_native}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare_theme_fonts.py"
+      --input "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/theme/fonts/${_font}.woff2" --output "${_native}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/theme/fonts/${_font}.woff2"
+      "${CMAKE_CURRENT_SOURCE_DIR}/scripts/prepare_theme_fonts.py" VERBATIM)
+  list(APPEND _text_fixture_fonts "${_native}")
+endforeach()
+add_custom_target(muffin_text_fixture_fonts DEPENDS ${_text_fixture_fonts})
+foreach(_text_test MuffinTextLayoutTest MuffinFractionalTextLayoutTest)
+  add_dependencies(${_text_test} muffin_text_fixture_fonts)
+endforeach()
 target_compile_definitions(MuffinRealThemeRegressionTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
   set_property(TEST MuffinTypographyConformanceTest APPEND PROPERTY ENVIRONMENT_MODIFICATION
@@ -294,7 +312,7 @@ muffin_add_test(NAME MuffinCssFlexLayoutTest SOURCE tests/theme/CssFlexLayoutTes
 target_compile_definitions(MuffinCssFlexLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinCssGridLayoutTest SOURCE tests/theme/CssGridLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
 target_compile_definitions(MuffinCssGridLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest MuffinRenderHeadingPseudoTest MuffinRenderLinkBeforeFlowTest MuffinRealThemeBrowserGeometryTest)
+foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest MuffinRenderHeadingPseudoTest MuffinRenderLinkBeforeFlowTest MuffinRealThemeBrowserGeometryTest MuffinTextLayoutTest MuffinFractionalTextLayoutTest)
   muffin_use_theme_fonts(${_browser_layout_test})
   target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
   target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
@@ -355,6 +373,13 @@ muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinFocusEscapeTest             SOURCE tests/editor/FocusEscapeTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinVirtualSourceEditTest       SOURCE tests/editor/VirtualSourceEditTest.cpp       LINK MuffinUi RESOURCE_LOCK)
+add_dependencies(MuffinVirtualSourceEditTest muffin_text_fixture_fonts)
+muffin_use_theme_fonts(MuffinVirtualSourceEditTest)
+target_compile_definitions(MuffinVirtualSourceEditTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
+  set_property(TEST MuffinVirtualSourceEditTest APPEND PROPERTY ENVIRONMENT_MODIFICATION
+    "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")
+endif()
 muffin_add_test(NAME MuffinEditorAccessibleTest        SOURCE tests/editor/EditorAccessibleTest.cpp        LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinSourceEditorBackendDeleteTest SOURCE tests/app/SourceEditorBackendDeleteTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinDocumentSearchTest             SOURCE tests/editor/DocumentSearchTest.cpp       LINK MuffinUi)
@@ -401,6 +426,20 @@ muffin_add_test(NAME MuffinLanguageIntegrationTest SOURCE tests/app/LanguageInte
 if(NOT WIN32 OR DEFINED ENV{CI})
   muffin_add_test(NAME MuffinSpellCheckerTest SOURCE tests/spellcheck/SpellCheckerTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_DICTS_QRC} RESOURCE_LOCK)
 endif()
+
+# Reuse the same freshness-covered executables with the experimental backend.
+# Each process gets an immutable backend and inherits its ordinary test's Qt
+# runtime/font environment, so these exercise actual editor paths in CI.
+foreach(_text_test MuffinVirtualSourceEditTest MuffinEditorCodeFenceSelectionTest
+                   MuffinEditorViewHitTestTest MuffinRenderHeadingPseudoTest
+                   MuffinRenderLinkBeforeFlowTest)
+  string(REGEX REPLACE "^Muffin" "MuffinFractional" _text_variant "${_text_test}")
+  add_test(NAME ${_text_variant} COMMAND $<TARGET_FILE:${_text_test}>)
+  get_property(_text_environment TEST ${_text_test} PROPERTY ENVIRONMENT_MODIFICATION)
+  set_tests_properties(${_text_variant} PROPERTIES
+    ENVIRONMENT_MODIFICATION "${_text_environment};MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional"
+    RESOURCE_LOCK MuffinQtGui)
+endforeach()
 
 # Close the build-freshness manifest: the two first-party libraries and the
 # app contribute their exact compiled source lists (relative paths resolve

@@ -20,7 +20,7 @@
 #include <QFileInfo>
 #include <QFocusEvent>
 #include <QFontDatabase>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QInputMethodEvent>
 #include <QKeyEvent>
 #include <QMenu>
@@ -30,7 +30,6 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QTextCharFormat>
-#include <QTextLayout>
 #include <QTextOption>
 #include <QTimer>
 #include <QUrl>
@@ -215,7 +214,7 @@ struct VirtualSourceEdit::LineLayout {
   qsizetype sourceStart = 0;
   qsizetype length = 0;
   QString text;
-  std::unique_ptr<QTextLayout> layout;
+  std::unique_ptr<TextLayout> layout;
   int height = 1;
   qreal width = 0.0;
   bool longLine = false;
@@ -643,7 +642,7 @@ qsizetype VirtualSourceEdit::findTextBackward(QStringView text, qsizetype from) 
 }
 
 int VirtualSourceEdit::baseLineHeight() const {
-  return qMax(14, static_cast<int>(std::ceil(QFontMetricsF(sourceFont_).lineSpacing() * kLineSpacingScale)));
+  return qMax(14, static_cast<int>(std::ceil(TextFontMetrics(sourceFont_).lineSpacing() * kLineSpacingScale)));
 }
 
 int VirtualSourceEdit::textAreaWidth() const {
@@ -666,7 +665,7 @@ std::shared_ptr<VirtualSourceEdit::LineLayout> VirtualSourceEdit::buildLineLayou
   const int rowHeight = baseLineHeight();
   if (result->length > kLongLineThreshold) {
     result->longLine = true;
-    const qreal advance = qMax<qreal>(1.0, QFontMetricsF(sourceFont_).horizontalAdvance(QLatin1Char('M')));
+    const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
     if (wordWrap_) {
       const qsizetype columns = qMax<qsizetype>(1, static_cast<qsizetype>(textAreaWidth() / advance));
       const qint64 rows = qMax<qint64>(1, (result->length + columns - 1) / columns);
@@ -683,17 +682,17 @@ std::shared_ptr<VirtualSourceEdit::LineLayout> VirtualSourceEdit::buildLineLayou
   }
 
   result->text = source().mid(result->sourceStart, result->length);
-  result->layout = std::make_unique<QTextLayout>(result->text, sourceFont_);
+  result->layout = std::make_unique<TextLayout>(result->text, sourceFont_);
   QTextOption option;
   option.setWrapMode(wordWrap_ ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
-  option.setTabStopDistance(QFontMetricsF(sourceFont_).horizontalAdvance(QLatin1Char(' ')) * 4.0);
+  option.setTabStopDistance(TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char(' ')) * 4.0);
   result->layout->setTextOption(option);
   result->layout->setFormats(sourceFormats(result->text, colors_, sourceFont_));
   result->layout->beginLayout();
   qreal y = 0.0;
   qreal maxWidth = 0.0;
   while (true) {
-    QTextLine line = result->layout->createLine();
+    TextLine line = result->layout->createLine();
     if (!line.isValid()) break;
     line.setLineWidth(wordWrap_ ? textAreaWidth() : 1000000000.0);
     line.setPosition(QPointF(0.0, y));
@@ -765,7 +764,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
   if (source().isEmpty() && !placeholder_.isEmpty()) {
     painter.setFont(sourceFont_);
     painter.setPen(colors_.lineNumber);
-    painter.drawText(QPointF(kGutterWidth + kTextInset, baseLineHeight()), placeholder_);
+    drawDocumentText(painter, QPointF(kGutterWidth + kTextInset, baseLineHeight()), placeholder_);
     return;
   }
 
@@ -792,7 +791,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
 
     const qreal originX = kGutterWidth + kTextInset - horizontalScrollBar()->value();
     if (lineLayout->longLine) {
-      const qreal advance = qMax<qreal>(1.0, QFontMetricsF(sourceFont_).horizontalAdvance(QLatin1Char('M')));
+      const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
       const int rowHeight = baseLineHeight();
       const qsizetype columns = wordWrap_
           ? qMax<qsizetype>(1, static_cast<qsizetype>(textAreaWidth() / advance))
@@ -821,8 +820,8 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
           const qreal sx = chunkX + (selectedStart - absoluteStart) * advance;
           painter.fillRect(QRectF(sx, rowY, (selectedEnd - selectedStart) * advance, rowHeight), colors_.selection);
         }
-        painter.drawText(QPointF(chunkX, rowY + QFontMetricsF(sourceFont_).ascent() +
-                                 (rowHeight - QFontMetricsF(sourceFont_).height()) / 2.0), chunk);
+        drawDocumentText(painter, QPointF(chunkX, rowY + TextFontMetrics(sourceFont_).ascent() +
+                                 (rowHeight - TextFontMetrics(sourceFont_).height()) / 2.0), chunk);
       }
     } else {
       QVector<QTextLayout::FormatRange> selections;
@@ -852,18 +851,18 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
     // redrawn after the preedit so nothing overlaps; it clips at the viewport edge (composition
     // is transient and does not extend the horizontal scroll range).
     const QRect cursorRect = cursorRectForOffset(cursor_);
-    const qreal rowHeight = qMax<qreal>(cursorRect.height(), QFontMetricsF(sourceFont_).height());
+    const qreal rowHeight = qMax<qreal>(cursorRect.height(), TextFontMetrics(sourceFont_).height());
     painter.fillRect(
         QRectF(qreal(cursorRect.left()), qreal(cursorRect.top()),
                qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left()), rowHeight),
         colors_.background);
 
-    QTextLayout preeditLayout(preedit_, sourceFont_);
+    TextLayout preeditLayout(preedit_, sourceFont_);
     preeditLayout.setFormats(preeditFormats_);
     const qreal preeditWidth = qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left() - 4.0);
     preeditLayout.beginLayout();
     {
-      QTextLine line = preeditLayout.createLine();
+      TextLine line = preeditLayout.createLine();
       if (line.isValid()) {
         line.setLineWidth(preeditWidth);
         line.setPosition(QPointF(0, 0));
@@ -883,10 +882,10 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
     const QString rest = lineText(line).mid(qBound<qsizetype>(0, cursor_ - lineStartOffset, source().size()));
     if (!rest.isEmpty()) {
       const qreal preeditAdvance = preeditLayout.lineAt(0).naturalTextWidth();
-      QTextLayout restLayout(rest, sourceFont_);
+      TextLayout restLayout(rest, sourceFont_);
       restLayout.beginLayout();
       {
-        QTextLine restLine = restLayout.createLine();
+        TextLine restLine = restLayout.createLine();
         if (restLine.isValid()) {
           restLine.setLineWidth(qMax<qreal>(1.0, preeditWidth - preeditAdvance));
           restLine.setPosition(QPointF(0, 0));
@@ -915,16 +914,16 @@ qsizetype VirtualSourceEdit::offsetForPoint(const QPoint& viewportPoint) const {
   const qreal localY = absoluteY - lineY;
   qsizetype local = 0;
   if (layout->longLine) {
-    const qreal advance = qMax<qreal>(1.0, QFontMetricsF(sourceFont_).horizontalAdvance(QLatin1Char('M')));
+    const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
     const qsizetype columns = wordWrap_
         ? qMax<qsizetype>(1, static_cast<qsizetype>(textAreaWidth() / advance))
         : layout->length;
     const qsizetype row = wordWrap_ ? qMax<qsizetype>(0, static_cast<qsizetype>(localY / baseLineHeight())) : 0;
     local = row * columns + qMax<qsizetype>(0, static_cast<qsizetype>(std::round(x / advance)));
   } else if (layout->layout) {
-    QTextLine textLine = layout->layout->lineAt(0);
+    TextLine textLine = layout->layout->lineAt(0);
     for (int i = 0; i < layout->layout->lineCount(); ++i) {
-      const QTextLine candidate = layout->layout->lineAt(i);
+      const TextLine candidate = layout->layout->lineAt(i);
       if (localY >= candidate.y() && localY < candidate.y() + qMax<qreal>(baseLineHeight(), candidate.height())) {
         textLine = candidate;
         break;
@@ -945,7 +944,7 @@ QRect VirtualSourceEdit::cursorRectForOffset(qsizetype offset) const {
   qreal y = heights_.yForLine(line) - verticalScrollBar()->value();
   int height = baseLineHeight();
   if (layout->longLine) {
-    const qreal advance = qMax<qreal>(1.0, QFontMetricsF(sourceFont_).horizontalAdvance(QLatin1Char('M')));
+    const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
     const qsizetype columns = wordWrap_
         ? qMax<qsizetype>(1, static_cast<qsizetype>(textAreaWidth() / advance))
         : qMax<qsizetype>(1, layout->length + 1);
@@ -954,7 +953,7 @@ QRect VirtualSourceEdit::cursorRectForOffset(qsizetype offset) const {
     x += column * advance;
     y += row * baseLineHeight();
   } else if (layout->layout) {
-    QTextLine textLine = layout->layout->lineForTextPosition(static_cast<int>(local));
+    TextLine textLine = layout->layout->lineForTextPosition(static_cast<int>(local));
     if (!textLine.isValid() && layout->layout->lineCount() > 0) textLine = layout->layout->lineAt(layout->layout->lineCount() - 1);
     if (textLine.isValid()) {
       x += textLine.cursorToX(static_cast<int>(local));

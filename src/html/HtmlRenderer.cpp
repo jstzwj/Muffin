@@ -5,7 +5,7 @@
 #include "html/HtmlLayoutEngine.h"
 #include "html/HtmlLayoutResult.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QDir>
 #include <QFileInfo>
 #include <QUrl>

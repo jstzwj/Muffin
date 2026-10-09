@@ -8,7 +8,7 @@
 #include "theme/NodeCssElement.h"
 
 #include <QElapsedTimer>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLoggingCategory>
 
 #include <algorithm>
@@ -253,13 +253,13 @@ qreal trailingHeightForLastBlock(const BlockLayout* lastBlock, const RenderTheme
 }  // namespace
 
 QRectF DocumentLayout::trailingParagraphCursorRect(const BlockLayout& lastBlock, const RenderTheme& theme, qreal pageLeft) {
-  const qreal lineHeight = QFontMetricsF(theme.paragraphFont()).height();
+  const qreal lineHeight = TextFontMetrics(theme.paragraphFont()).height();
   const qreal x = pageLeft > 0 ? pageLeft : lastBlock.rect().left();
   return QRectF(x, lastBlock.rect().bottom() + theme.blockSpacing(), 1.0, lineHeight);
 }
 
 qreal DocumentLayout::trailingSpaceForVirtualParagraph(const RenderTheme& theme) {
-  return theme.blockSpacing() + QFontMetricsF(theme.paragraphFont()).height();
+  return theme.blockSpacing() + TextFontMetrics(theme.paragraphFont()).height();
 }
 
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath) {

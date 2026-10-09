@@ -1,6 +1,7 @@
 #pragma once
 
 #include "theme/ThemeDefinition.h"
+#include "render/TextLayout.h"
 #include <QSizeF>
 #include <QRectF>
 #include <functional>
@@ -9,7 +10,6 @@
 #include <vector>
 
 struct YGNode;
-class QTextLayout;
 namespace muffin {
 struct CssIntrinsicMetrics {
   qreal minContent = 0;
@@ -93,7 +93,7 @@ struct CssFormattingResult {
 
 // Shared Yoga configuration and CSS mapping. No Markdown/HTML defaults here.
 YGNode* createCssLayoutNode();
-CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap = false, bool anywhereMinimum = false);
+CssIntrinsicMetrics intrinsicTextWidths(const TextLayout& text, bool noWrap = false, bool anywhereMinimum = false);
 void applyCssFormattingStyle(YGNode* node, const CssLayoutStyle& style, qreal scale = 1);
 CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items, qreal contentWidth,
                                     qreal contentHeight = -1, qreal scale = 1);

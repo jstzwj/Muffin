@@ -9,7 +9,7 @@
 #include "theme/ThemeDefinition.h"
 
 #include <QBrush>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QImage>
 #include <QPainter>

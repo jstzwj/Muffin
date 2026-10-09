@@ -34,3 +34,17 @@ This original-font audit is diagnostic, not a pixel-equality claim across Qt and
 `MuffinRealThemeBrowserGeometryTest` compares the original bundled Newsprint/Night CSS at 720/960/1440px with `real-theme-browser.json`. Only font families are overridden with the same SHA-verified Open Sans files in both engines. It checks page widths, block positions/sizes, first/last baselines, horizontal caret positions, code/keyboard boxes and fresh/lazy/incremental editing consistency. DOM character ink boxes and full-line editor carets have different vertical extents, so vertical comparison uses their shared baseline. CSS hashes require explicitly regenerating the reference after theme edits. Run `node scripts/probe_real_theme_geometry.mjs` to regenerate; CI reads the committed fixture without a browser download.
 
 For fractional-size backend experiments, see [the font backend investigation](../../../docs/font-backend-investigation.zh.md). The opt-in `MuffinFontBackendProbe` target writes native glyph runs, wrapping/caret data and PNGs; `scripts/probe_font_backend.mjs` compares the same font bytes in Chromium. These experiments do not select a new production font backend.
+
+`MuffinTextLayoutTest` and `MuffinFractionalTextLayoutTest` exercise the shared
+document text interface under both process configurations. Regenerate their
+96-case reference with `node scripts/generate_text_backend_reference.mjs`.
+`fonts/README.md` documents the test-only WOFF2 subsets and their licenses.
+Narrow italic specimens are explicitly diagnostic; actual wrapping and caret
+differences for both backends are written to `build/text-backend-comparison-*.json`.
+The enforced cases check normal wrapping/advances, fractional glyph sizes,
+Chinese fallback, intrinsic widths, tabs, painting and edited full/lazy geometry.
+CTest also reruns the source/IME, code selection, hit testing and heading/link
+generated-content tests with `MUFFIN_TEXT_LAYOUT_BACKEND=fractional`. These reuse
+the ordinary test executables and run in isolated processes. The source/IME
+fixture pins real Latin, Chinese and Japanese glyphs instead of relying on the
+headless platform's generic font.

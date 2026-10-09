@@ -17,7 +17,7 @@
 #include <QRectF>
 #include <QSizeF>
 #include <QStringView>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <QString>
 #include <Qt>
 #include <QVector>
@@ -322,7 +322,7 @@ private:
   QRectF textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const;
   QVector<QRectF> selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const;
 
-  std::unique_ptr<QTextLayout> textLayout_;
+  std::unique_ptr<TextLayout> textLayout_;
   QSizeF size_;
 
   QColor baseTextColorOverride_;  // invalid → theme.textColor() for plain runs

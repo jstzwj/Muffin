@@ -1,6 +1,6 @@
 #include "EditorViewTestUtils.h"
 
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <QTextOption>
 #include <QScrollBar>
 
@@ -342,7 +342,7 @@ void testFocusedEmptyFootnoteDefinitionSlotSuppressesPlaceholder() {
   DocumentSession session;
   EditorView view;
   const RenderTheme theme = RenderTheme::defaultTheme();
-  const QFontMetricsF metrics(theme.paragraphFont());
+  const TextFontMetrics metrics(theme.paragraphFont());
 
   session.setMarkdownText(QStringLiteral("[^]: "), false);
   MarkdownNode* footnote = blockAt(session, 0);
@@ -417,7 +417,7 @@ void testClickBelowLastBlockHitsBlockAfterWithDistinctCursorRect() {
   require(hit.zone == HitTestResult::Zone::BlockAfter, "click below last block should hit BlockAfter zone");
   require(hit.cursorRect.top() >= blockRect.bottom() + theme.blockSpacing() - 0.5,
           "trailing caret should sit a block-spacing below the last block");
-  const qreal expectedLineHeight = QFontMetricsF(theme.paragraphFont()).height();
+  const qreal expectedLineHeight = TextFontMetrics(theme.paragraphFont()).height();
   require(qAbs(hit.cursorRect.height() - expectedLineHeight) < 0.5,
           "trailing caret should use paragraph line height, not code line height");
 
@@ -692,7 +692,7 @@ void testCodeFenceClickDoesNotScrollAwayFromPress() {
   QObject::connect(&view, &EditorView::selectionChanged, &view,
                    [&captured](SelectionRange s, HitTestResult) { captured = s; });
 
-  const QFontMetricsF metrics(theme.codeFont());
+  const TextFontMetrics metrics(theme.codeFont());
   const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
   const qreal y = content.top() + theme.codeLineHeight() * 0.5;
   // Press near the RIGHT edge of the visible window. Under the bug the offset increased and the
@@ -746,7 +746,7 @@ void testCodeFenceCaretRectFollowsHorizontalScroll() {
   require(maxOffset > 1.0, "line should overflow enough to scroll");
   controller.codeFenceScroll().setOffset(code->id(), maxOffset);  // scrolled to the far-right end
 
-  const QFontMetricsF metrics(theme.codeFont());
+  const TextFontMetrics metrics(theme.codeFont());
   const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
   const qreal y = content.top() + theme.codeLineHeight() * 0.5;
   // Press near the right edge so the caret lands near the line end (visible only because we scrolled).
@@ -772,7 +772,7 @@ void testCodeFenceCaretRectFollowsHorizontalScroll() {
 // code fence. The rects come back in document space at the content's natural advance; paint shifts
 // them by -offset to match the translated text. Asserting the offset-adjusted span equals the
 // press/drag viewport span guards against a highlight that drifts off the characters it covers
-// (e.g. from a QFontMetricsF-vs-QTextLayout divergence, a double offset, or a stale offset).
+// (e.g. from a TextFontMetrics-vs-TextLayout divergence, a double offset, or a stale offset).
 void testCodeFenceScrollableSelectionRectAlignsWithDrag() {
   SettingsOverride wrapOff("markdown/codeBlockWrap", false);
   DocumentSession session;
@@ -787,7 +787,7 @@ void testCodeFenceScrollableSelectionRectAlignsWithDrag() {
 
   MarkdownNode* code = blockAt(session, 0);
   const RenderTheme theme = view.theme();
-  const QFontMetricsF metrics(theme.codeFont());
+  const TextFontMetrics metrics(theme.codeFont());
   const qreal charWidth = metrics.horizontalAdvance(QLatin1Char('a'));
   const BlockLayout* block = view.blockLayoutForNode(code->id());
   require(block != nullptr && block->type() == BlockType::CodeFence, "code fence block should resolve");

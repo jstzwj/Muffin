@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Document text uses a shared logical-pixel layout and font-metrics interface across paragraphs, headings, HTML, code blocks, generated content and source/IME rendering. The existing backend remains the default; an opt-in fractional-size backend shares shaping, painting and editing coordinates, with pinned Latin/Chinese font regressions and performance probes.
+- Markdown and HTML share CSS font aliases, generic families and ordered fallback resolution. Code-block carets and selections consume shaped-line advances, preserving tabs and ligatures instead of measuring string prefixes independently.
+
 - Pseudo selectors retain the originating element's attributes, structural position and active-state inheritance. Inline HTML link ranges survive format-data transfer, and generated link content preserves click targets and editable boundary coordinates.
 - `currentColor` backgrounds use the computed foreground color, including inherited hover/focus pseudo styles.
 - Generated heading `::before`/`::after` content participates in text measurement, wrapping, line boxes and overflow; painting, clicking and selection consume the same layout. The former heading-width reservation and guessed inline paint positions have been removed.

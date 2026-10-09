@@ -6,7 +6,7 @@
 #include <cmath>
 #include <numeric>
 #include <tuple>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <QDataStream>
 
 namespace muffin {
@@ -129,8 +129,8 @@ float baselineItem(YGNodeConstRef node, float, float) {
   return static_cast<float>(context.baseline < 0 ? YGNodeLayoutGetHeight(node) : context.baseline + inset);
 }
 }  // namespace
-CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bool anywhereMinimum) {
-  QTextLayout intrinsic(text.text(), text.font());
+CssIntrinsicMetrics intrinsicTextWidths(const TextLayout& text, bool noWrap, bool anywhereMinimum) {
+  TextLayout intrinsic(text.text(), text.font(), text.backend());
   intrinsic.setFormats(text.formats());
   auto option = text.textOption();
   option.setWrapMode(noWrap ? QTextOption::NoWrap : anywhereMinimum ? QTextOption::WrapAnywhere : QTextOption::WordWrap);
@@ -142,7 +142,7 @@ CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bo
     auto line = intrinsic.createLine();
     if (!line.isValid()) break;
     line.setLineWidth(1e6);
-    // Ink overhang does not contribute to CSS max-content. QTextLayout's
+    // Ink overhang does not contribute to CSS max-content. TextLayout's
     // maximumWidth() includes negative glyph bearings on some font backends.
     maximum = qMax(maximum, line.horizontalAdvance());
   }

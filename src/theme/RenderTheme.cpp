@@ -11,7 +11,7 @@
 #include "theme/LegacyThemeAdapter.h"
 
 #include <QFontDatabase>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QStringList>
 #include <QtGlobal>
 
@@ -32,124 +32,6 @@ QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
   }
   const QString systemFamily = QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
   return systemFamily.isEmpty() ? QStringLiteral("sans-serif") : systemFamily;
-}
-
-// Resolved per-platform fallback families, each cached on first use. Used both as
-// the legacy default (when a theme supplies no font) and as the substitution tail
-// appended after a theme-supplied family so missing glyphs (CJK, symbols) resolve.
-const QString& sansFamily() {
-  static const QString f = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Segoe UI"), QStringLiteral("Arial"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("PingFang SC"), QStringLiteral("Hiragino Sans GB"), QStringLiteral("Helvetica Neue"),
-      QStringLiteral("Arial"),
-#else
-      QStringLiteral("Noto Sans CJK SC"), QStringLiteral("Noto Sans"), QStringLiteral("DejaVu Sans"),
-      QStringLiteral("Arial"),
-#endif
-  });
-  return f;
-}
-const QString& serifFamily() {
-  static const QString f = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Georgia"), QStringLiteral("Cambria"), QStringLiteral("Times New Roman"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("New York"), QStringLiteral("Times New Roman"), QStringLiteral("Georgia"),
-#else
-      QStringLiteral("Noto Serif"), QStringLiteral("DejaVu Serif"), QStringLiteral("Times New Roman"),
-#endif
-      QStringLiteral("serif"),
-  });
-  return f;
-}
-const QString& codeFamily() {
-  static const QString f = firstAvailableFontFamily({
-#if defined(Q_OS_WIN)
-      QStringLiteral("Lucida Console"), QStringLiteral("Consolas"), QStringLiteral("Courier"),
-#elif defined(Q_OS_MACOS)
-      QStringLiteral("Menlo"), QStringLiteral("Monaco"), QStringLiteral("Courier New"),
-#else
-      QStringLiteral("DejaVu Sans Mono"), QStringLiteral("Noto Sans Mono"), QStringLiteral("Liberation Mono"),
-#endif
-      QStringLiteral("monospace"),
-  });
-  return f;
-}
-QString genericFamilyTail(const QString& generic) {
-  const QString lower = generic.toLower();
-  if (lower == QStringLiteral("serif")) { return serifFamily(); }
-  if (lower == QStringLiteral("monospace")) { return codeFamily(); }
-  return sansFamily();
-}
-
-QString availableFamilyNamed(const QString& wanted, const QStringList& available) {
-  for (const QString& family : available) {
-    if (family.compare(wanted, Qt::CaseInsensitive) == 0) { return family; }
-  }
-  return {};
-}
-
-QString platformCssFamilyAlias(const QString& requested, const QStringList& available) {
-  if (const QString exact = availableFamilyNamed(requested, available); !exact.isEmpty()) {
-    return exact;
-  }
-#if defined(Q_OS_WIN)
-  // Chromium resolves these traditional CSS/PostScript names through Windows
-  // aliases. DirectWrite via QFont::setFamilies does not, so make the same
-  // substitutions only when the concrete Windows family is installed.
-  const QString lower = requested.toLower();
-  QString target;
-  if (lower == QStringLiteral("times")) target = QStringLiteral("Times New Roman");
-  else if (lower == QStringLiteral("helvetica")) target = QStringLiteral("Arial");
-  else if (lower == QStringLiteral("courier")) target = QStringLiteral("Courier New");
-  if (!target.isEmpty()) {
-    if (const QString actual = availableFamilyNamed(target, available); !actual.isEmpty()) {
-      return actual;
-    }
-  }
-#else
-  Q_UNUSED(available);
-#endif
-  return requested;
-}
-
-QStringList themeFamilyList(const QString& raw, const QString& platformTail, const QHash<QString, QString>& aliases) {
-  QStringList requested = raw.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
-  for (QString& f : requested) { f = f.trimmed(); }
-  requested.removeAll(QString());
-
-  QString genericTail;
-  if (!requested.isEmpty()) {
-    const QString last = requested.last().toLower();
-    if (last == QStringLiteral("serif") || last == QStringLiteral("sans-serif") || last == QStringLiteral("monospace")) {
-      genericTail = genericFamilyTail(requested.takeLast());
-    }
-  }
-
-  const QStringList availableFamilies = QFontDatabase::families();
-  QStringList out;
-  for (const QString& family : requested) {
-    // @font-face: a CSS theme may declare `font-family: CascadiaCode` while the
-    // font file's internal name (what QFontDatabase registers) is "Cascadia Code",
-    // or `"LXGW WenKai"` whose internal name is 霞鹜文楷. Substitute the declared
-    // alias with the registered name so the stack resolves to the bundled font.
-    QString resolved = family;
-    if (const QString alias = aliases.value(family.toLower()); !alias.isEmpty()) {
-      resolved = alias;
-    }
-    resolved = platformCssFamilyAlias(resolved, availableFamilies);
-    // Keep unresolved CSS names in their declared order. Qt's font matcher owns
-    // platform aliases/substitutions (for example CSS `Times` -> Times New Roman
-    // on Windows) and per-glyph fallback. Pre-filtering against the exact names
-    // returned by QFontDatabase removes those aliases and can promote a later CJK
-    // family to the primary font for Latin text.
-    if (!out.contains(resolved, Qt::CaseInsensitive)) { out << resolved; }
-  }
-  if (!genericTail.isEmpty() && !out.contains(genericTail, Qt::CaseInsensitive)) { out << genericTail; }
-  if (!platformTail.isEmpty() && !out.contains(platformTail, Qt::CaseInsensitive)) { out << platformTail; }
-  return out;
 }
 
 const QString& mathFamily() {
@@ -504,7 +386,7 @@ QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* no
     if (it != prototypeFontCache_.constEnd()) return it.value();
   }
   QFont font;
-  font.setFamily(serifBody_ ? serifFamily() : sansFamily());
+  font.setFamily(serifBody_ ? font_rendering::serifFamily() : font_rendering::sansFamily());
   font.setPointSizeF(scaledFont(12));
   const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   if (style)
@@ -552,7 +434,7 @@ QFont RenderTheme::fontForStyle(const ThemeElementStyle& style, QFont font) cons
   if (const auto found = computedFontCache_.constFind(cacheKey); found != computedFontCache_.cend()) return found.value();
   font.setStyleHint(style.text.fontFamily.split(QLatin1Char('\n')).contains(QStringLiteral("monospace")) ? QFont::Monospace
                                                                                                          : QFont::AnyStyle);
-  if (!style.text.fontFamily.isEmpty()) font.setFamilies(themeFamilyList(style.text.fontFamily, sansFamily(), fontAliases_));
+  if (!style.text.fontFamily.isEmpty()) font.setFamilies(font_rendering::cssFamilyList(style.text.fontFamily, font_rendering::sansFamily(), fontAliases_));
   if (style.text.fontSizeSet || style.text.fontSizePx > 0) font.setPointSizeF(qMax<qreal>(.001, scaledFont(pxToPt(style.text.fontSizePx))));
   if (style.text.fontWeightSet) font.setWeight(static_cast<QFont::Weight>(style.text.fontWeight));
   if (style.text.italicSet) font.setItalic(style.text.italic);
@@ -699,13 +581,13 @@ QFont RenderTheme::inlineCodeFont() const { return textFontForElement(QStringLit
 qreal RenderTheme::codeLineHeight() const {
   const auto* style = elementStyle(QStringLiteral("pre"));
   if (style && style->text.fontSizePx > 0 && style->text.lineHeight > 0) return scaledFont(style->text.fontSizePx * style->text.lineHeight);
-  return QFontMetricsF(codeFont()).height();
+  return TextFontMetrics(codeFont()).height();
 }
 
 QFont RenderTheme::mathFont() const {
   QFont font;
   if (!mathFont_.isEmpty()) {
-    font.setFamilies(themeFamilyList(mathFont_, mathFamily(), fontAliases_));
+    font.setFamilies(font_rendering::cssFamilyList(mathFont_, mathFamily(), fontAliases_));
   } else {
     font.setFamily(mathFamily());
   }

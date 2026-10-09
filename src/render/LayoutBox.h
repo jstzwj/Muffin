@@ -2,7 +2,7 @@
 
 #include "theme/ThemeDefinition.h"
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QRectF>
 #include <QHash>
 #include <memory>
@@ -41,7 +41,7 @@ struct LayoutBox {
     if (!first) { used.padding.setLeft(0); used.borderLeftWidth = 0; }
     if (!last) { used.padding.setRight(0); used.borderRightWidth = 0; }
     const auto inset = insets(used);
-    const QFontMetricsF metrics(run.font);
+    const TextFontMetrics metrics(run.font);
     const QRectF rect(qMin(left, right) - inset.left(), baseline - metrics.ascent() - inset.top(),
                       qAbs(right - left) + inset.left() + inset.right(), metrics.height() + inset.top() + inset.bottom());
     return place(run.hostKey, run.style, used, rect, run.font);

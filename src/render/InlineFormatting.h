@@ -3,9 +3,8 @@
 #include "render/RenderMetrics.h"
 
 #include <QChar>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QMarginsF>
-#include <QTextLine>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -15,7 +14,7 @@ namespace muffin {
 // A generated inline box edge must reserve advance without introducing a word
 // boundary or being discarded as trailing whitespace. It has no source text.
 // A private-use character has a stable shaped advance. Default-ignorable
-// WORD JOINER can report a missing-glyph advance in QFontMetricsF while Qt's
+// WORD JOINER can report a missing-glyph advance in TextFontMetrics while Qt's
 // layout strips that glyph, making width calibration font-dependent.
 inline constexpr QChar kInlineBoxSpacer{0xe001};
 
@@ -27,14 +26,14 @@ struct InlineLineBox {
   qreal atomicDescent = -std::numeric_limits<qreal>::infinity();
 
   InlineLineBox(const QFont& font, qreal lineHeight) {
-    const QFontMetricsF metrics(font);
+    const TextFontMetrics metrics(font);
     const qreal leading = (usedLineHeight(font, lineHeight) - metrics.height()) * .5;
     ascent = metrics.ascent() + leading;
     descent = metrics.descent() + leading;
   }
 
   static qreal usedLineHeight(const QFont& font, qreal specified) {
-    return specified > 0 ? specified : std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
+    return specified > 0 ? specified : std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
   }
   void includeText(const QFont& font, qreal lineHeight) {
     const InlineLineBox run(font, lineHeight);
@@ -53,7 +52,7 @@ struct InlineLineBox {
   }
   void includeBottomAligned(qreal boxHeight) { ascent = std::max(ascent, boxHeight - descent); }
   qreal height() const { return ascent + descent; }
-  qreal placeLine(QTextLine line, qreal top) const {
+  qreal placeLine(TextLine line, qreal top) const {
     // Qt stores positions at 1/64px. Round the baseline inward so a replaced
     // box cannot escape above its allocated line due to truncation. Ordinary
     // CSS text keeps the specified line height rather than accumulating this

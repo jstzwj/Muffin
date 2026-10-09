@@ -3,7 +3,7 @@
 #include "render/RenderMetrics.h"
 #include "render/InlineFormatting.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <algorithm>
 #include <QTextOption>
 
@@ -13,7 +13,7 @@ namespace muffin::html {
 namespace {
 
 qreal resolvedLineHeight(const HtmlComputedStyle& style, const QFont& font) {
-  QFontMetricsF metrics(font);
+  TextFontMetrics metrics(font);
   if (style.lineHeight > 0) {
     // The shared computed-style projection has already resolved this to px.
     return style.lineHeight;
@@ -39,10 +39,10 @@ void HtmlTextMeasurer::setDefaultTextColor(QColor color) { defaultTextColor_ = c
 
 QSizeF HtmlTextMeasurer::measure(const QString& text, const QFont& font, qreal availableWidth) const {
   if (text.isEmpty()) {
-    QFontMetricsF fm(font);
+    TextFontMetrics fm(font);
     return QSizeF(0, fm.height());
   }
-  // Same QTextLayout line loop as buildLayout (default alignment); delegate so the two can
+  // Same TextLayout line loop as buildLayout (default alignment); delegate so the two can
   // never drift — they used to be byte-identical copies.
   const std::unique_ptr<HtmlTextLayout> laidOut = buildLayout(text, font, availableWidth, Qt::Alignment());
   return QSizeF(laidOut->width, laidOut->height);
@@ -57,7 +57,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildLayout(
   result->text = text;
   result->font = font;
 
-  auto layout = std::make_unique<QTextLayout>(text, font);
+  auto layout = std::make_unique<TextLayout>(text, font);
   QTextOption option;
   option.setWrapMode(QTextOption::WordWrap);
   option.setAlignment(alignment);
@@ -67,7 +67,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildLayout(
   qreal height = 0;
   qreal maxWidth = 0;
   while (true) {
-    QTextLine line = layout->createLine();
+    TextLine line = layout->createLine();
     if (!line.isValid()) {
       break;
     }
@@ -118,8 +118,8 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     auto result = std::make_unique<HtmlTextLayout>();
     result->text = text;
     result->font = baseFont;
-    result->layout = std::make_unique<QTextLayout>(text, baseFont);
-    QFontMetricsF fm(baseFont);
+    result->layout = std::make_unique<TextLayout>(text, baseFont);
+    TextFontMetrics fm(baseFont);
     result->height = resolvedLineHeight(blockBox.style(), baseFont);
     return result;
   }
@@ -185,7 +185,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   result->sourceSpans = std::move(sources);
   QString layoutText = text;
   for (auto edge = edges.rbegin(); edge != edges.rend(); ++edge) layoutText.insert(edge->position, kInlineBoxSpacer);
-  auto layout = std::make_unique<QTextLayout>(layoutText, baseFont);
+  auto layout = std::make_unique<TextLayout>(layoutText, baseFont);
 
   QTextOption option;
   const auto& wrapping = blockBox.style().computed.layout;
@@ -232,7 +232,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     const QChar spacer = kInlineBoxSpacer;
     QFont font = baseFont;
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
-    font.setLetterSpacing(QFont::AbsoluteSpacing, edges[i].width - QFontMetricsF(font).horizontalAdvance(spacer));
+    font.setLetterSpacing(QFont::AbsoluteSpacing, edges[i].width - TextFontMetrics(font).horizontalAdvance(spacer));
     QTextCharFormat format;
     format.setFont(font);
     format.setForeground(Qt::transparent);
@@ -242,7 +242,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     QFont font = baseFont;
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
     font.setLetterSpacing(QFont::AbsoluteSpacing, atom.size.width() + atom.margin.left() + atom.margin.right() -
-                                                      QFontMetricsF(font).horizontalAdvance(QChar(0xfffc)));
+                                                      TextFontMetrics(font).horizontalAdvance(QChar(0xfffc)));
     QTextCharFormat format;
     format.setFont(font);
     format.setForeground(Qt::transparent);
@@ -257,7 +257,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   qreal maxWidth = 0;
   size_t firstSpan = 0;
   while (true) {
-    QTextLine line = layout->createLine();
+    TextLine line = layout->createLine();
     if (!line.isValid()) {
       break;
     }
@@ -327,7 +327,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
   result->font = font;
   result->lineHeight = resolvedLineHeight(preBox.style(), font);
 
-  auto layout = std::make_unique<QTextLayout>(text, font);
+  auto layout = std::make_unique<TextLayout>(text, font);
   QTextOption option;
   option.setWrapMode(preBox.style().whiteSpace == HtmlWhiteSpace::PreWrap
                          ? QTextOption::WrapAtWordBoundaryOrAnywhere
@@ -339,7 +339,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
   qreal height = 0;
   qreal maxWidth = 0;
   while (true) {
-    QTextLine line = layout->createLine();
+    TextLine line = layout->createLine();
     if (!line.isValid()) {
       break;
     }

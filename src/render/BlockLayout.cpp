@@ -17,10 +17,9 @@
 #include "render/CssFormattingContext.h"
 #include "render/InlineFormatting.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QSettings>
-#include <QTextLayout>
 #include <QTextOption>
 
 #include <algorithm>
@@ -68,8 +67,8 @@ MermaidDiagnosticTextMetrics measureMermaidDiagnosticText(
   const QFont bodyFont = theme.codeFont();
   QFont headerFont = bodyFont;
   headerFont.setBold(true);
-  const QFontMetricsF headerMetrics(headerFont);
-  const QFontMetricsF bodyMetrics(bodyFont);
+  const TextFontMetrics headerMetrics(headerFont);
+  const TextFontMetrics bodyMetrics(bodyFont);
   const int flags = Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap;
   if (!result.header.isEmpty()) {
     const qreal measured = headerMetrics.boundingRect(
@@ -112,13 +111,16 @@ struct LiteralVisualLine {
   qsizetype start = 0;
   qsizetype length = 0;
   QRectF rect;
+  std::shared_ptr<TextLayout> layout;
+  TextLine line;
+  qreal cursorX(qsizetype offset) const { return line.isValid() ? line.cursorToX(int(offset - start) + line.textStart()) : 0; }
 };
 
 // Single-entry memoization for layoutLiteralVisualLines. It is a pure function of
 // (literal, font, width, lineHeight, wrap) — no member/theme state — but four helpers
 // (literalOffsetForPoint / literalCursorRectForOffset / literalSelectionRectsForRange /
 // literalTextHeight) call it for the SAME block within a single frame, each redoing the full
-// per-line QTextLayout (beginLayout/createLine/endLayout). Cache the most recent result: the
+// per-line TextLayout (beginLayout/createLine/endLayout). Cache the most recent result: the
 // common case (repeated calls for one block) is an O(1) hit because QString == short-circuits
 // on implicit-shared identity (the same literal_ object across calls shares its d-ptr). Full
 // input equality (no hash) means there is zero collision risk — a stale entry is impossible.
@@ -131,11 +133,14 @@ struct LiteralLayoutCache {
   bool wrap = false;
   QVector<LiteralVisualLine> visualLines;
   bool valid = false;
+  quint64 fontGeneration = 0;
 };
 LiteralLayoutCache g_literalLayoutCache;
 
 QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, const QFont& font, qreal width, qreal lineHeight, bool wrap) {
+  const auto fontGeneration = LayoutResources::instance().read(LayoutResources::fontKey()).geometry;
   if (g_literalLayoutCache.valid && g_literalLayoutCache.width == width &&
+      g_literalLayoutCache.fontGeneration == fontGeneration &&
       g_literalLayoutCache.lineHeight == lineHeight && g_literalLayoutCache.wrap == wrap &&
       g_literalLayoutCache.font == font && g_literalLayoutCache.literal == literal) {
     return g_literalLayoutCache.visualLines;
@@ -151,12 +156,13 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
   qsizetype globalStart = 0;
   for (const QString& sourceLine : physicalLines) {
     const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
-    QTextLayout layout(lineText, font);
+    auto owner = std::make_shared<TextLayout>(lineText, font);
+    auto& layout = *owner;
     layout.setTextOption(option);
     layout.beginLayout();
     bool producedLine = false;
     while (true) {
-      QTextLine textLine = layout.createLine();
+      TextLine textLine = layout.createLine();
       if (!textLine.isValid()) {
         break;
       }
@@ -167,7 +173,7 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
       visualLines.push_back(LiteralVisualLine{
           globalStart + textLine.textStart(),
           qMin<qsizetype>(textLine.textLength(), sourceLine.size() - textLine.textStart()),
-          QRectF(0.0, y, lineWidth, visualHeight)});
+          QRectF(0.0, y, lineWidth, visualHeight), owner, textLine});
       y += visualHeight;
     }
     layout.endLayout();
@@ -177,12 +183,11 @@ QVector<LiteralVisualLine> layoutLiteralVisualLines(const QString& literal, cons
     }
     globalStart += sourceLine.size() + 1;
   }
-  g_literalLayoutCache = {literal, font, width, lineHeight, wrap, visualLines, true};
+  g_literalLayoutCache = {literal, font, width, lineHeight, wrap, visualLines, true, fontGeneration};
   return visualLines;
 }
 
 qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const QFont& font, qreal width, qreal lineHeight, bool wrap, qreal xOffset) {
-  const QFontMetricsF metrics(font);
   // Map the view-space click x into content space. paintCodeFence draws the (NoWrap) line with
   // painter.translate(-offset), so a view-space x reveals content at advance (viewX + offset):
   // undoing that leftward shift means ADDING the offset, not subtracting. (Subtracting mapped a
@@ -208,7 +213,8 @@ qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const 
   qsizetype offset = lineEnd;
   qreal bestDistance = std::numeric_limits<qreal>::max();
   for (qsizetype candidate = lineStart; candidate <= lineEnd; ++candidate) {
-    const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, candidate - lineStart));
+    if (target->layout && !target->layout->isValidCursorPosition(int(candidate - target->start) + target->line.textStart())) continue;
+    const qreal x = target->cursorX(candidate);
     const qreal distance = std::abs(localPos.x() - x);
     if (distance <= bestDistance) {
       bestDistance = distance;
@@ -219,7 +225,6 @@ qsizetype literalOffsetForPoint(const QString& literal, QPointF localPos, const 
 }
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width, qreal lineHeight, bool wrap) {
-  const QFontMetricsF metrics(font);
   lineHeight = qMax<qreal>(14.0, lineHeight);
   offset = qBound<qsizetype>(0, offset, literal.size());
   const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, width, lineHeight, wrap);
@@ -235,7 +240,7 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
     return QRectF(origin.x(), origin.y(), 1.0, lineHeight);
   }
   const qsizetype localOffset = qBound<qsizetype>(target->start, offset, target->start + target->length);
-  const qreal x = metrics.horizontalAdvance(literal.mid(target->start, localOffset - target->start));
+  const qreal x = target->cursorX(localOffset);
   return QRectF(origin.x() + x, origin.y() + target->rect.top(), 1.0, qMax(lineHeight, target->rect.height()));
 }
 
@@ -291,18 +296,17 @@ QVector<QRectF> literalSelectionRectsForRange(
     return rects;
   }
 
-  const QFontMetricsF metrics(font);
   const QVector<LiteralVisualLine> lines = layoutLiteralVisualLines(literal, font, maxWidth, lineHeight, wrap);
   for (const LiteralVisualLine& line : lines) {
     const qsizetype lineEnd = line.start + line.length;
     const qsizetype rangeStart = qMax(startOffset, line.start);
     const qsizetype rangeEnd = qMin(endOffset, lineEnd);
     if (rangeStart < rangeEnd) {
-      const qreal x1 = metrics.horizontalAdvance(literal.mid(line.start, rangeStart - line.start));
-      const qreal x2 = metrics.horizontalAdvance(literal.mid(line.start, rangeEnd - line.start));
+      const qreal x1 = line.cursorX(rangeStart);
+      const qreal x2 = line.cursorX(rangeEnd);
       rects.push_back(QRectF(origin.x() + x1, origin.y() + line.rect.top(), qMax<qreal>(1.0, x2 - x1), line.rect.height()));
     } else if (endOffset > lineEnd && startOffset <= lineEnd && lineEnd < literal.size() && literal.at(lineEnd) == QLatin1Char('\n')) {
-      const qreal x = metrics.horizontalAdvance(literal.mid(line.start, line.length));
+      const qreal x = line.cursorX(line.start + line.length);
       rects.push_back(QRectF(origin.x() + x, origin.y() + line.rect.top(), qMax<qreal>(1.0, qMin<qreal>(24.0, maxWidth - x)), line.rect.height()));
     }
   }
@@ -508,7 +512,7 @@ void BlockLayout::layoutGeneratedContent(const MarkdownNode& node, const RenderT
         return rule->computed && rule->computed->length(QLatin1String(property)).status == CssLengthStatus::Valid;
       };
       if (!v.text.isEmpty() && !v.icon) {
-        auto text = std::make_shared<QTextLayout>(v.text, v.font);
+        auto text = std::make_shared<TextLayout>(v.text, v.font);
         QTextCharFormat format; format.setForeground(rule->color); format.setFont(v.font);
         text->setFormats({{0, int(v.text.size()), format}});
         QTextOption option; option.setWrapMode(QTextOption::WordWrap); text->setTextOption(option);
@@ -926,7 +930,7 @@ BlockLayout::LiteralLayoutParams BlockLayout::literalLayoutParams(const RenderTh
   params.wrap = type_ == BlockType::CodeFence ? codeBlockWrapEnabled() : true;
   if (type_ == BlockType::MathBlock) {
     params.font = theme.mathFont();
-    params.lineHeight = qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height());
+    params.lineHeight = qMax<qreal>(14.0, TextFontMetrics(theme.mathFont()).height());
   } else {
     params.font = literalFont();
     params.lineHeight = literalLineHeight();
@@ -1100,7 +1104,7 @@ QRectF BlockLayout::definitionCursorRectForSourceOffset(qsizetype sourceOffset, 
 
   const qsizetype slotSourceStart = target->sourceStart >= 0 ? target->sourceStart : 0;
   const qsizetype localOffset = qBound<qsizetype>(0, sourceOffset - slotSourceStart, target->text.size());
-  const QFontMetricsF metrics(theme.paragraphFont());
+  const TextFontMetrics metrics(theme.paragraphFont());
   const qreal cursorX = target->rect.left() + metrics.horizontalAdvance(target->text.left(localOffset));
   return QRectF(cursorX, rect_.top(), 1.0, rect_.height());
 }
@@ -1144,7 +1148,7 @@ const QVector<BlockLayout::TocEntryLayout>& BlockLayout::tocEntries() const {
 
 QRectF BlockLayout::taskCheckboxRect(const RenderTheme& theme) const {
   const qreal markerX = rect_.left() + theme.listIndent() * 0.45;
-  const QFontMetricsF metrics(theme.paragraphFont());
+  const TextFontMetrics metrics(theme.paragraphFont());
   qreal top = rect_.top() + qMax<qreal>(2.0, (metrics.height() - 13.0) / 2.0);
   if (inlineLayout_) {
     const qreal firstBaseline = inlineLayout_->firstLineBaselineY();
@@ -1379,7 +1383,7 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
       painter.save();
       painter.setFont(theme.paragraphFont());
       painter.setPen(theme.textColor());
-      const QFontMetricsF metrics(painter.font());
+      const TextFontMetrics metrics(painter.font());
       // Baseline of the first text line, including the line-height centering
       // offset — markers must ride this baseline or they drift above the text
       // (and the caret) under a large theme line-height.
@@ -1405,7 +1409,7 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
         // Right-align the number to the content gutter so wide multi-digit markers
         // (e.g. "34.", "100.") never overlap the content or the caret.
         const qreal orderedX = contentX - markerGap - metrics.horizontalAdvance(listMarker_);
-        painter.drawText(QPointF(orderedX, viewRect.top() + firstBaseline), listMarker_);
+        drawDocumentText(painter, QPointF(orderedX, viewRect.top() + firstBaseline), listMarker_);
       } else {
         QPointF markerCenter(markerX + metrics.horizontalAdvance(QStringLiteral("0")) * 0.35, viewRect.top() + firstBaseline - metrics.xHeight() * 0.45);
         // Non-regressive clamp: with a small indent the default marker column
@@ -1431,7 +1435,7 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
       // Align with the first text line's baseline (line-height aware) so the
       // placeholder sits where the caret and typed text will, not at the raw
       // block top + ascent.
-      painter.drawText(QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
+      drawDocumentText(painter, QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
       painter.restore();
     }
 
@@ -1466,7 +1470,7 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
     const QRectF previewRect = mathPreviewContentRect(theme).translated(0, -scrollY);
     const QMarginsF padding = LayoutBox::insets(cssBoxGeometry_.usedBox);
     const QFont codeFont = literalFont();
-    const QFontMetricsF codeMetrics(codeFont);
+    const TextFontMetrics codeMetrics(codeFont);
     const qreal markerHeight = qMax<qreal>(14.0, codeMetrics.height());
     const qreal sourcePanelBottom = sourceRect.bottom() + markerHeight + padding.bottom();
     const QRectF sourcePanel(viewRect.left(), viewRect.top(), viewRect.width(), qMax<qreal>(1.0, sourcePanelBottom - viewRect.top()));
@@ -1480,9 +1484,9 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     const QString openMarker = mathOpeningDelimiter(mathDelimiter_);
     const QString closeMarker = mathClosingDelimiter(mathDelimiter_);
-    painter.drawText(QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
+    drawDocumentText(painter, QPointF(sourceRect.left(), viewRect.top() + padding.top() + codeMetrics.ascent()), openMarker);
     paintLiteralSource(painter, theme, sourceRect, highlightMathTex(literal_), true);
-    painter.drawText(QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
+    drawDocumentText(painter, QPointF(sourceRect.left(), sourceRect.bottom() + codeMetrics.ascent()), closeMarker);
     painter.setPen(QPen(theme.codeBorderColor(), 1));
     const qreal dividerY = sourcePanel.bottom() + 0.5;
     painter.drawLine(QPointF(viewRect.left(), dividerY), QPointF(viewRect.right(), dividerY));
@@ -1496,7 +1500,7 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
     painter.setFont(theme.mathFont());
     QTextOption option;
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    painter.drawText(viewRect.marginsRemoved(LayoutBox::insets(cssBoxGeometry_.usedBox)), literal_, option);
+    drawDocumentText(painter, viewRect.marginsRemoved(LayoutBox::insets(cssBoxGeometry_.usedBox)), literal_, option);
   } else {
     const QRectF contentRect = viewRect.marginsRemoved(LayoutBox::insets(cssBoxGeometry_.usedBox));
     const qreal x = contentRect.left() + qMax<qreal>(0.0, (contentRect.width() - mathLayout_->size.width()) / 2.0);
@@ -1626,7 +1630,7 @@ void BlockLayout::paintMermaidDiagnostic(
   iconFont.setBold(true);
   painter.setFont(iconFont);
   painter.setPen(Qt::white);
-  painter.drawText(iconRect, Qt::AlignCenter, QStringLiteral("!"));
+  drawDocumentText(painter, iconRect, Qt::AlignCenter, QStringLiteral("!"));
 
   const QRectF textRect(
       iconRect.right() + padding, panel.top() + padding,
@@ -1643,13 +1647,13 @@ void BlockLayout::paintMermaidDiagnostic(
   headerFont.setBold(true);
   painter.setFont(headerFont);
   painter.setPen(accent);
-  painter.drawText(
+  drawDocumentText(painter,
       QRectF(textRect.left(), textTop, textRect.width(), text.headerHeight),
       textFlags, text.header);
   if (text.bodyHeight > 0.0) {
     painter.setFont(font);
     painter.setPen(theme.textColor());
-    painter.drawText(
+    drawDocumentText(painter,
         QRectF(textRect.left(), textTop + text.headerHeight + text.gap,
                textRect.width(), text.bodyHeight),
         textFlags, text.body);
@@ -1971,7 +1975,7 @@ QVector<QRectF> BlockLayout::literalSelectionRects(qsizetype startOffset, qsizet
 
 QRectF BlockLayout::mathEditorSourceRect(const RenderTheme& theme) const {
   const QMarginsF padding = LayoutBox::insets(cssBoxGeometry_.usedBox);
-  const QFontMetricsF metrics(literalFont());
+  const TextFontMetrics metrics(literalFont());
   const qreal markerHeight = qMax<qreal>(14.0, metrics.height());
   const qreal contentWidth = qMax<qreal>(1.0, rect_.width() - padding.left() - padding.right());
   return QRectF(rect_.left() + padding.left(), rect_.top() + padding.top() + markerHeight, contentWidth,
@@ -1983,7 +1987,7 @@ QRectF BlockLayout::mathPreviewContentRect(const RenderTheme& theme) const {
     return rect_.marginsRemoved(LayoutBox::insets(cssBoxGeometry_.usedBox));
   }
   const QMarginsF padding = LayoutBox::insets(cssBoxGeometry_.usedBox);
-  const QFontMetricsF metrics(literalFont());
+  const TextFontMetrics metrics(literalFont());
   const qreal markerHeight = qMax<qreal>(14.0, metrics.height());
   const QRectF sourceRect = mathEditorSourceRect(theme);
   const qreal previewTop = sourceRect.bottom() + markerHeight + padding.bottom() + padding.top();
@@ -2056,10 +2060,8 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
   const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
   QTextCharFormat baseFormat;
   baseFormat.setForeground(theme.textColor());
-  QTextOption option;
-  option.setWrapMode(wrap ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
-
-  qreal y = contentRect.top();
+  const auto visualLines = layoutLiteralVisualLines(literal_, literalFont(), contentRect.width(), literalLineHeight(), wrap);
+  qsizetype visualIndex = 0;
   qsizetype lineStartOffset = 0;
   // spans is sorted by start (TreeSitterHighlighter::normalizeSpans sorts tree-sitter output;
   // highlightMathTex walks the text monotonically). Walk it with a two-pointer so each span is
@@ -2067,15 +2069,14 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
   // line — O(spans×lines) → O(spans+lines). Long code fences are repainted on every scroll/
   // caret/hover, so this matters on big blocks.
   qsizetype spanIdx = 0;
-  const qreal codeLineHeight = literalLineHeight();
   const auto [diagnosticStart, diagnosticEnd] =
       mermaidState_ == MermaidState::Error
           ? mermaidHighlightRange(mermaidDiagnostic_, literal_)
           : QPair<qsizetype, qsizetype>{-1, -1};
   for (const QString& sourceLine : lines) {
-    const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
-    QTextLayout layout(lineText, literalFont());
-    layout.setTextOption(option);
+    if (visualIndex >= visualLines.size()) break;
+    const auto layout = visualLines[visualIndex].layout;
+    while (visualIndex < visualLines.size() && visualLines[visualIndex].layout == layout) ++visualIndex;
 
     const qsizetype lineEndOffset = lineStartOffset + sourceLine.size();
     // Drop spans that ended at/before this line's start — once end <= lineStart they can't
@@ -2125,23 +2126,9 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
       range.format = format;
       formats.push_back(range);
     }
-    layout.setFormats(formats);
-
-    layout.beginLayout();
-    qreal lineY = 0;
-    while (true) {
-      QTextLine textLine = layout.createLine();
-      if (!textLine.isValid()) {
-        break;
-      }
-      textLine.setLineWidth(qMax<qreal>(1.0, contentRect.width()));
-      const qreal visualHeight = qMax<qreal>(codeLineHeight, textLine.height());
-      textLine.setPosition(QPointF(0, lineY + (visualHeight - textLine.height()) * 0.5));
-      lineY += visualHeight;
-    }
-    layout.endLayout();
-    layout.draw(&painter, QPointF(contentRect.left(), y));
-    y += qMax<qreal>(lineY, codeLineHeight);
+    // Highlighting is paint-only. Reuse exactly the shaped lines consumed by
+    // caret/selection geometry instead of reshaping at colour boundaries.
+    if (layout) layout->draw(&painter, contentRect.topLeft(), formats);
     lineStartOffset += sourceLine.size() + 1;
   }
 }
@@ -2149,7 +2136,7 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
 void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& theme, const QRectF& codeRect) const {
   const QStringList lines = literal_.isEmpty() ? QStringList{QString()} : literal_.split(QLatin1Char('\n'));
   const QFont codeFont = literalFont();
-  const QFontMetricsF metrics(codeFont);
+  const TextFontMetrics metrics(codeFont);
   const qreal codeLineHeight = literalLineHeight();
   const qreal digitWidth = metrics.horizontalAdvance(QStringLiteral("8"));
   QTextOption option;
@@ -2166,12 +2153,12 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
     // Mirror paintLiteralSource's per-line layout so a number stays aligned to its source line even
     // when that line soft-wraps across multiple visual lines.
     const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
-    QTextLayout layout(lineText, codeFont);
+    TextLayout layout(lineText, codeFont);
     layout.setTextOption(option);
     layout.beginLayout();
     qreal lineY = 0;
     while (true) {
-      QTextLine textLine = layout.createLine();
+      TextLine textLine = layout.createLine();
       if (!textLine.isValid()) {
         break;
       }
@@ -2184,7 +2171,7 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
     const qreal slotHeight = qMax<qreal>(lineY, codeLineHeight);
     const QString num = QString::number(number++);
     const qreal numWidth = metrics.horizontalAdvance(num);
-    painter.drawText(QRectF(numRightX - numWidth, y, numWidth, slotHeight), Qt::AlignVCenter | Qt::AlignRight, num);
+    drawDocumentText(painter, QRectF(numRightX - numWidth, y, numWidth, slotHeight), Qt::AlignVCenter | Qt::AlignRight, num);
     y += slotHeight;
   }
 }
@@ -2410,7 +2397,7 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
 void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
   painter.save();
   const QFont font = theme.paragraphFont();
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   painter.setFont(font);
 
   for (const DefinitionTokenLayout& token : definitionTokens_) {
@@ -2421,7 +2408,7 @@ void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, Q
     painter.setPen(slotToken && !token.text.isEmpty() ? theme.textColor() : theme.mutedTextColor());
     const QString text = slotToken && token.text.isEmpty() ? token.placeholder : token.text;
     if (!text.isEmpty()) {
-      painter.drawText(QPointF(token.rect.left(), viewRect.top() + metrics.ascent()), text);
+      drawDocumentText(painter, QPointF(token.rect.left(), viewRect.top() + metrics.ascent()), text);
     }
   }
 
@@ -2440,12 +2427,12 @@ void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, Q
     painter.setPen(theme.mutedTextColor());
     QTextOption option;
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    QTextLayout layout(literal_, font);
+    TextLayout layout(literal_, font);
     layout.setTextOption(option);
     layout.beginLayout();
     qreal lineY = continuationTop;
     while (true) {
-      QTextLine textLine = layout.createLine();
+      TextLine textLine = layout.createLine();
       if (!textLine.isValid()) {
         break;
       }
@@ -2472,7 +2459,7 @@ void BlockLayout::paintToc(QPainter& painter, const RenderTheme& theme, QRectF v
   painter.save();
   const QFont font = theme.paragraphFont();
   painter.setFont(font);
-  const QFontMetricsF fm(font);
+  const TextFontMetrics fm(font);
   const QColor linkColor = theme.linkColor();
   const qreal indentStep = theme.listIndent();
   const qreal topInset = 2.0;
@@ -2487,7 +2474,7 @@ void BlockLayout::paintToc(QPainter& painter, const RenderTheme& theme, QRectF v
       title = fm.elidedText(title, Qt::ElideRight, avail);
     }
     painter.setPen(linkColor);
-    painter.drawText(QPointF(textX, baselineY), title);
+    drawDocumentText(painter, QPointF(textX, baselineY), title);
     if (theme.linkUnderlined()) {
       const qreal w = fm.horizontalAdvance(title);
       const qreal underlineY = baselineY + 1.0;
@@ -2504,7 +2491,7 @@ HitTestResult BlockLayout::hitDefinition(QPointF documentPos, const RenderTheme&
   result.blockRect = rect_;
   result.zone = HitTestResult::Zone::Text;
 
-  const QFontMetricsF metrics(theme.paragraphFont());
+  const TextFontMetrics metrics(theme.paragraphFont());
   const qsizetype sourceStart = definition_.sourceRange.isValid()
                                     ? definition_.sourceRange.start
                                     : definition_.markerRange.start;
@@ -2556,7 +2543,7 @@ HitTestResult BlockLayout::hitDefinition(QPointF documentPos, const RenderTheme&
   qsizetype localOffset = 0;
   qreal cursorX = target->rect.left();
   if (!text.isEmpty()) {
-    const QFontMetricsF metrics(theme.paragraphFont());
+    const TextFontMetrics metrics(theme.paragraphFont());
     qreal best = std::numeric_limits<qreal>::max();
     for (qsizetype i = 0; i <= text.size(); ++i) {
       const qreal x = target->rect.left() + metrics.horizontalAdvance(text.left(i));
@@ -2590,7 +2577,7 @@ QVector<QRectF> BlockLayout::definitionSelectionRects(qsizetype startOffset, qsi
   const qsizetype blockStart = definition_.markerRange.start;
   const qsizetype sourceStart = blockStart + qMin(startOffset, endOffset);
   const qsizetype sourceEnd = blockStart + qMax(startOffset, endOffset);
-  const QFontMetricsF metrics(theme.paragraphFont());
+  const TextFontMetrics metrics(theme.paragraphFont());
   for (const DefinitionSlotLayout& slot : definitionSlots_) {
     const qsizetype rangeStart = qMax(sourceStart, slot.sourceStart);
     const qsizetype rangeEnd = qMin(sourceEnd, slot.sourceEnd);

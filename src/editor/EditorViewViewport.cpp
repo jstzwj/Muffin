@@ -8,7 +8,7 @@
 #include "render/DocumentLayout.h"
 
 #include <QEasingCurve>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLoggingCategory>
 #include <QPair>
 #include <QPropertyAnimation>
@@ -422,7 +422,7 @@ bool EditorView::scrollCodeFenceHorizontally(QWheelEvent* event, bool horizontal
     return false;  // not scrollable (wrap on, or no overflowing line)
   }
   const int delta = horizontal ? event->angleDelta().x() : event->angleDelta().y();
-  const qreal step = QFontMetricsF(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 3.0;
+  const qreal step = TextFontMetrics(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 3.0;
   const qreal current = codeFenceScroll_->offsetFor(hit.blockId);
   const qreal maxOffset = qMax<qreal>(0.0, maxW - visibleW);
   codeFenceScroll_->setOffset(hit.blockId, qBound<qreal>(0.0, current - delta / 120.0 * step, maxOffset));
@@ -475,7 +475,7 @@ void EditorView::ensureCodeFenceCursorVisible() {
   }
   const qreal caretX = cursorHit_.cursorRect.left() - content.left();
   const qreal current = codeFenceScroll_->offsetFor(cursorHit_.blockId);
-  const qreal margin = QFontMetricsF(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 2.0;
+  const qreal margin = TextFontMetrics(theme_.codeFont()).horizontalAdvance(QLatin1Char('M')) * 2.0;
   qreal next = current;
   // Only scroll when the caret is genuinely OUTSIDE the visible window. The earlier margin-based
   // test (caretX < current+margin / caretX > current+visibleW-margin) also fired on a click whose

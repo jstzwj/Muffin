@@ -2,7 +2,7 @@
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QDir>
 #include <QPainterPath>
 #include <QPen>
@@ -252,7 +252,7 @@ QString HtmlLayoutResult::linkHrefAtTextLayout(const HtmlBox& box, QPointF local
 
   int cursor = -1;
   for (int i = 0; i < textLayout->layout->lineCount(); ++i) {
-    const QTextLine line = textLayout->layout->lineAt(i);
+    const TextLine line = textLayout->layout->lineAt(i);
     const auto bounds = i < int(textLayout->lineBoxes.size()) ? textLayout->lineBoxes[i] : QRectF(0, line.y(), 0, line.height());
     if (localPos.y() >= bounds.top() && localPos.y() < bounds.bottom()) {
       cursor = line.xToCursor(localPos.x(), QTextLine::CursorOnCharacter);
@@ -366,7 +366,7 @@ void HtmlLayoutResult::paintListMarker(QPainter& painter, const HtmlBox& box, co
   painter.save();
   painter.setFont(box.style().font);
   painter.setPen(box.style().color.isValid() ? box.style().color : palette_.text);
-  QFontMetricsF metrics(box.style().font);
+  TextFontMetrics metrics(box.style().font);
   // Place the marker inside the list's left padding (40px from <ul>/<ol> defaults),
   // right-aligned just before the content area.
   const qreal markerWidth = 24.0;
@@ -376,7 +376,7 @@ void HtmlLayoutResult::paintListMarker(QPainter& painter, const HtmlBox& box, co
       contentRect.top(),
       markerWidth,
       qMax<qreal>(contentRect.height(), metrics.height()));
-  painter.drawText(markerRect, Qt::AlignRight | Qt::AlignTop, box.listMarker());
+  drawDocumentText(painter, markerRect, Qt::AlignRight | Qt::AlignTop, box.listMarker());
   painter.restore();
 }
 
@@ -408,7 +408,7 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
       painter.drawImage(QRectF(ix, iy, kIconSize, kIconSize), icon);
     } else {
       painter.setPen(palette_.muted);
-      painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
+      drawDocumentText(painter, QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
                        box.alt().isEmpty() ? QStringLiteral("[image]") : box.alt());
     }
     painter.restore();
@@ -433,7 +433,7 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
       painter.drawImage(QRectF(ix, iy, kIconSize, kIconSize), icon);
     } else {
       painter.setPen(QColor(200, 50, 50));
-      painter.drawText(QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
+      drawDocumentText(painter, QRectF(origin, QSizeF(w, h)), Qt::AlignCenter,
                        box.alt().isEmpty() ? QStringLiteral("[broken image]") : box.alt());
     }
     painter.restore();

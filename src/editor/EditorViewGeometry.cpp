@@ -2,9 +2,8 @@
 
 #include "unicode/WordBoundary.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QSettings>
-#include <QTextLayout>
 #include <QTextOption>
 #include <QStringList>
 
@@ -20,7 +19,7 @@ bool codeBlockWrapEnabled() {
 namespace editor_geometry {
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin) {
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   const qreal lineHeight = qMax<qreal>(14.0, metrics.height());
   offset = qBound<qsizetype>(0, offset, literal.size());
 
@@ -33,13 +32,18 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
     }
   }
 
-  const qreal x = metrics.horizontalAdvance(literal.mid(lineStart, offset - lineStart));
+  const qsizetype physicalEnd = literal.indexOf(QLatin1Char('\n'), lineStart);
+  TextLayout shaped(literal.mid(lineStart, physicalEnd < 0 ? -1 : physicalEnd - lineStart), font);
+  shaped.beginLayout();
+  auto shapedLine = shaped.createLine();
+  if (shapedLine.isValid()) shapedLine.setLineWidth(1e9);
+  shaped.endLayout();
+  const qreal x = shapedLine.isValid() ? shapedLine.cursorToX(int(offset - lineStart)) : 0;
   return QRectF(origin.x() + x, origin.y() + line * lineHeight, 1.0, lineHeight);
 }
 
 QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, const QFont& font, QPointF origin, qreal width,
                                   qreal lineHeight, bool wrap) {
-  const QFontMetricsF metrics(font);
   const qreal fallbackHeight = qMax<qreal>(14.0, lineHeight);
   offset = qBound<qsizetype>(0, offset, literal.size());
 
@@ -54,12 +58,12 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
 
   for (const QString& sourceLine : physicalLines) {
     const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
-    QTextLayout layout(lineText, font);
+    TextLayout layout(lineText, font);
     layout.setTextOption(option);
     layout.beginLayout();
     bool producedLine = false;
     while (true) {
-      QTextLine textLine = layout.createLine();
+      TextLine textLine = layout.createLine();
       if (!textLine.isValid()) {
         break;
       }
@@ -70,10 +74,10 @@ QRectF literalCursorRectForOffset(const QString& literal, qsizetype offset, cons
       const qsizetype visualStart = globalStart + textLine.textStart();
       const qsizetype visualLength = qMin<qsizetype>(textLine.textLength(), sourceLine.size() - textLine.textStart());
       const qsizetype visualEnd = visualStart + visualLength;
-      fallback = QRectF(origin.x() + metrics.horizontalAdvance(sourceLine), origin.y() + y, 1.0, height);
+      fallback = QRectF(origin.x() + textLine.cursorToX(textLine.textStart() + textLine.textLength()), origin.y() + y, 1.0, height);
       if (offset >= visualStart && offset <= visualEnd) {
         const qsizetype localOffset = qBound<qsizetype>(visualStart, offset, visualEnd);
-        const qreal x = metrics.horizontalAdvance(literal.mid(visualStart, localOffset - visualStart));
+        const qreal x = textLine.cursorToX(int(localOffset - globalStart));
         layout.endLayout();
         return QRectF(origin.x() + x, origin.y() + y, 1.0, height);
       }

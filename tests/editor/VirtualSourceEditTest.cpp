@@ -1,26 +1,29 @@
-#include "editor/VirtualSourceEdit.h"
-#include "document/DocumentSession.h"
-
-#include "../TestUtils.h"
-
 #include <QApplication>
 #include <QFocusEvent>
+#include <QFontDatabase>
 #include <QImage>
 #include <QInputMethodEvent>
+#include <QJsonDocument>
 #include <QPainter>
 #include <QScrollBar>
+
+#include "../TestUtils.h"
+#include "../theme/BrowserLayoutFont.h"
+#include "document/DocumentSession.h"
+#include "editor/VirtualSourceEdit.h"
 
 using namespace muffin;
 
 namespace {
+QFont fixtureSourceFont;
 
 void testReplacementRetiresSourceHistory() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("abc"), false);
   VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
   edit.bindSession(&session);
-  QObject::connect(&session, &DocumentSession::documentTextChanged, &edit,
-                   [&] { edit.syncFromSession(); });
+  QObject::connect(&session, &DocumentSession::documentTextChanged, &edit, [&] { edit.syncFromSession(); });
   edit.insertText(QStringLiteral("X"));
   require(edit.canUndo(), "source edit must create history");
   session.replaceDocument(QStringLiteral("12345"));
@@ -41,6 +44,7 @@ void testEmptyReplacementDeletesSelection() {
   for (const bool bound : {false, true}) {
     DocumentSession session;
     VirtualSourceEdit edit;
+    edit.setSourceFont(fixtureSourceFont);
     if (bound) {
       session.setMarkdownText(QStringLiteral("abc"), false);
       edit.bindSession(&session);
@@ -66,6 +70,7 @@ void testEmptyReplacementDeletesSelection() {
     require(edit.text() == QStringLiteral("ac"), "read-only replacement must remain blocked");
   }
   VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
   edit.setStandaloneText(QStringLiteral("abc"));
   edit.insertText(QString());
   require(edit.text() == QStringLiteral("abc") && !edit.canUndo(), "empty insertion without selection must be a no-op");
@@ -75,6 +80,7 @@ void testWrappedSourceEditingPreservesViewport() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("word ").repeated(2000), false);
   VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
   edit.bindSession(&session);
   QObject::connect(&session, &DocumentSession::documentLocallyEdited, &edit,
                    [&edit](qsizetype, qsizetype, const QString&) { edit.notifyDocumentChanged(); });
@@ -95,8 +101,7 @@ void testWrappedSourceEditingPreservesViewport() {
     require(qAbs(edit.verticalScrollBar()->value() - before) < 50,
             "source editing should preserve the viewport inside a wrapped paragraph");
     const QRect caret = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
-    require(caret.top() >= 0 && caret.bottom() <= edit.viewport()->height(),
-            "source caret should remain visible after editing");
+    require(caret.top() >= 0 && caret.bottom() <= edit.viewport()->height(), "source caret should remain visible after editing");
   };
   edit.insertText(QStringLiteral("x"));
   requireStable();
@@ -112,9 +117,7 @@ void testWrappedSourceEditingPreservesViewport() {
   requireStable();
 }
 
-QImage captureEdit(VirtualSourceEdit& edit) {
-  return edit.grab().toImage();
-}
+QImage captureEdit(VirtualSourceEdit& edit) { return edit.grab().toImage(); }
 
 // The composition must render with an underline, NOT overlap the following text, and NOT be
 // blink-gated (the old code drew the preedit only while the caret blink was "on").
@@ -123,6 +126,7 @@ void testSourcePreeditRendersWithoutOverlap() {
   QApplication::setApplicationName(QStringLiteral("VirtualSourceEditTest"));
 
   VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
   edit.setStandaloneText(QStringLiteral("alpha beta gamma"));
   edit.resize(600, 300);
   edit.show();
@@ -147,8 +151,7 @@ void testSourcePreeditRendersWithoutOverlap() {
       }
     }
   }
-  require(differingPixels > 100,
-          "the composition should paint visible pixels (glyphs + underline) at the caret");
+  require(differingPixels > 100, "the composition should paint visible pixels (glyphs + underline) at the caret");
 
   // "beta" (previously starting at the caret x) must have shifted right by the preedit advance —
   // sample the column at the preedit's start: it must now hold composition glyphs, not "beta"'s.
@@ -188,6 +191,7 @@ void testSourcePreeditRendersWithoutOverlap() {
 // Focus-out clears the composition (no stale preedit).
 void testSourcePreeditClearsOnFocusOut() {
   VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
   edit.setStandaloneText(QStringLiteral("hello"));
   edit.resize(600, 300);
   edit.show();
@@ -206,6 +210,7 @@ void testSourcePreeditClearsOnFocusOut() {
   const QImage after = captureEdit(edit);
   const QImage fresh = [] {
     VirtualSourceEdit plain;
+    plain.setSourceFont(fixtureSourceFont);
     plain.setStandaloneText(QStringLiteral("hello"));
     plain.resize(600, 300);
     plain.show();
@@ -232,6 +237,14 @@ int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
+  QFile reference(QStringLiteral(MUFFIN_SOURCE_DIR "/tests/fixtures/theme/real-theme-browser.json"));
+  require(reference.open(QIODevice::ReadOnly), "source editor font reference");
+  const auto latin = browserLayoutFont(QJsonDocument::fromJson(reference.readAll()).object()).value("muffinfixturesans");
+  const int id = QFontDatabase::addApplicationFont(QStringLiteral(MUFFIN_BINARY_DIR "/text-fixture-fonts/han.ttf"));
+  require(id >= 0, "source editor CJK fixture font");
+  fixtureSourceFont.setFamilies({latin, QFontDatabase::applicationFontFamilies(id).value(0)});
+  fixtureSourceFont.setPointSizeF(13);
+
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testReplacementRetiresSourceHistory);
   RUN_TEST(testEmptyReplacementDeletesSelection);

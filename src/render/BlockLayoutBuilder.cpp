@@ -16,7 +16,7 @@
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QFileInfo>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLoggingCategory>
 #include <QSettings>
 #include <QScopedValueRollback>
@@ -25,7 +25,6 @@
 #include <QCryptographicHash>
 #include <QStringList>
 #include <QStringView>
-#include <QTextLayout>
 #include <QTextOption>
 
 #include <functional>
@@ -139,7 +138,7 @@ bool omitVirtualEmptyParagraphInRenderFlow(const MarkdownNode& node, const Selec
 // (so the gutter scales with zoom). (digits + 1) glyph widths: the digits plus a half-glyph gap on
 // each side, matching how paintCodeLineNumbers right-aligns numbers just left of the code text.
 qreal codeLineNumberGutterWidth(const QString& literal, const RenderTheme& theme) {
-  const QFontMetricsF metrics(theme.codeFont());
+  const TextFontMetrics metrics(theme.codeFont());
   const int lineCount = literal.isEmpty() ? 1 : int(literal.count(QLatin1Char('\n'))) + 1;
   int digits = 1;
   for (int n = lineCount; n >= 10; n /= 10) {
@@ -168,7 +167,7 @@ SmartPunctRenderOptions smartPunctRenderOptions() {
 // Pixel width of the widest physical line in `literal` under `font`. Drives whether a code fence is
 // horizontally scrollable (wrap off) and the scrollbar thumb ratio.
 qreal maxLiteralLineWidth(const QString& literal, const QFont& font) {
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   qreal max = 1.0;
   qsizetype start = 0;
   while (start <= literal.size()) {
@@ -228,7 +227,7 @@ std::function<bool(QStringView)> spellMisspelledPredicate() {
 }
 
 qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width) {
-  QTextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
+  TextLayout layout(text.isEmpty() ? QStringLiteral(" ") : text, font);
   QTextOption option;
   option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
   layout.setTextOption(option);
@@ -236,7 +235,7 @@ qreal layoutTextHeight(const QString& text, const QFont& font, qreal lineHeight,
 
   qreal height = 0;
   while (true) {
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (!line.isValid()) {
       break;
     }
@@ -1050,7 +1049,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(const MarkdownN
 
   const QString elementKey = QStringLiteral("p");
   const QFont font = theme.textFontForElement(elementKey, &node);
-  const QFontMetricsF fm(font);
+  const TextFontMetrics fm(font);
   qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, &node);
   if (multiplier <= 0.0) {
     multiplier = 1.0;
@@ -1122,7 +1121,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   if (children.empty()) {
     height = quoteBox && omittedOnlyRenderChildren
                  ? qborder.top() + qpad.top() + qpad.bottom() + qborder.bottom()
-                 : qborder.top() + qpad.top() + QFontMetricsF(theme.paragraphFont()).height() + qpad.bottom() + qborder.bottom();
+                 : qborder.top() + qpad.top() + TextFontMetrics(theme.paragraphFont()).height() + qpad.bottom() + qborder.bottom();
   } else {
     const qreal trailingChildMargin = lastChildMarginCollapses ? 0.0 : spacingAfterInFlow(*previousChild, theme, false, childWidth);
     height = cursorY + trailingChildMargin + qpad.bottom() + qborder.bottom() - y;
@@ -1155,7 +1154,7 @@ BlockLayoutBuilder::ListMarkerLayout BlockLayoutBuilder::listMarkerLayout(const 
     listMarkerLayouts_.insert(child->id(), {marker, theme.listIndent()});
   }
   if (hasOrderedMarker) {
-    const QFontMetricsF metrics(theme.paragraphFont());
+    const TextFontMetrics metrics(theme.paragraphFont());
     qreal widest = 0;
     for (const auto id : items) widest = qMax(widest, metrics.horizontalAdvance(listMarkerLayouts_.value(id).marker.text));
     for (const auto id : items) {
@@ -1216,7 +1215,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   }
   layout->setInlineLayout(std::move(inlineLayout));
 
-  const qreal inlineHeight = layout->inlineLayout() ? layout->inlineLayout()->height() : QFontMetricsF(theme.paragraphFont()).height();
+  const qreal inlineHeight = layout->inlineLayout() ? layout->inlineLayout()->height() : TextFontMetrics(theme.paragraphFont()).height();
   qreal flowBottom = y + inlineHeight;
   std::vector<std::unique_ptr<BlockLayout>> children;
 
@@ -1289,7 +1288,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   const QFont codeFont = theme.textFontForElement(styleKey, &node);
   const qreal codeLineHeight = resolvedStyle && resolvedStyle->text.lineHeight > 0
                                    ? codeFont.pointSizeF() * 96.0 / 72.0 * resolvedStyle->text.lineHeight
-                                   : QFontMetricsF(codeFont).height();
+                                   : TextFontMetrics(codeFont).height();
   const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
                               (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
@@ -1318,7 +1317,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   {
     BuildAccumTimer t(literalTextNs_, perfEnabled_);
     height = textHeight(layout->literal(), node.type() == BlockType::MathBlock ? theme.mathFont() : codeFont,
-                        node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : codeLineHeight,
+                        node.type() == BlockType::MathBlock ? qMax<qreal>(14.0, TextFontMetrics(theme.mathFont()).height()) : codeLineHeight,
                         width - lineNumberGutter, padding, codeWrap);
   }
   height += reservedStrip;
@@ -1454,7 +1453,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
   }
 
   if (rowCount == 0 || columnCount == 0) {
-    layout->setRect(QRectF(x, y, width, QFontMetricsF(theme.paragraphFont()).height()));
+    layout->setRect(QRectF(x, y, width, TextFontMetrics(theme.paragraphFont()).height()));
     return layout;
   }
 
@@ -1522,7 +1521,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       const auto* style = theme.elementStyle(QStringLiteral("td"));
       cell.box = LayoutBox::place(QStringLiteral("td"), style ? *style : ThemeElementStyle{}, usedBox, {},
                                   theme.textFontForElement(QStringLiteral("td")));
-      rowHeight = qMax(rowHeight, QFontMetricsF(cell.box.font).height() + padding.top() + padding.bottom());
+      rowHeight = qMax(rowHeight, TextFontMetrics(cell.box.font).height() + padding.top() + padding.bottom());
       cells.push_back(std::move(cell));
       cellX += columnWidth;
       ++column;
@@ -1579,7 +1578,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
   const bool definitionFocused = selection_.isCollapsed() && selection_.focus.blockId == node.id();
 
   const QFont font = theme.paragraphFont();
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   const qreal lineHeight = std::ceil(metrics.height() * kLineHeightFactor);
   qreal cursorX = x;
   QVector<BlockLayout::DefinitionTokenLayout> definitionTokens;
@@ -1991,7 +1990,7 @@ bool inlinesContainSizedContent(const QVector<InlineNode>& inlines) {
 }
 
 // Estimate wrapped line count from plain text and an average characters-per-line capacity,
-// respecting explicit newlines (a trailing '\n' yields one extra line, matching QTextLayout).
+// respecting explicit newlines (a trailing '\n' yields one extra line, matching TextLayout).
 qreal estimateWrappedLines(QStringView text, qreal charsPerLine) {
   if (text.isEmpty()) {
     return 1.0;
@@ -2029,8 +2028,8 @@ qreal estimateWrappedLinesFromCharCount(qsizetype charCount, qreal charsPerLine)
 }  // namespace
 
 qreal BlockLayoutBuilder::estimateLineHeight(const QFont& font) const {
-  // Matches InlineLayout's fallback per-line height: ceil(QFontMetricsF::height() * 1.16).
-  return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
+  // Matches InlineLayout's fallback per-line height: ceil(TextFontMetrics::height() * 1.16).
+  return std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
 }
 
 qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elementKey, BlockType type,
@@ -2040,7 +2039,7 @@ qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elem
   if (multiplier > 0.0) {
     return cssLineHeightPx(font.pointSizeF(), multiplier);
   }
-  return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
+  return std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
 }
 
 qreal BlockLayoutBuilder::avgCharWidthForText(QStringView text, const QFont& font) const {
@@ -2052,7 +2051,7 @@ qreal BlockLayoutBuilder::avgCharWidthForText(QStringView text, const QFont& fon
     wideAdvance = it.value().first;
     narrowAdvance = it.value().second;
   } else {
-    const QFontMetricsF metrics(font);
+    const TextFontMetrics metrics(font);
     // One representative wide (fullwidth/CJK) glyph and an ASCII average; cached per font so the
     // estimate pass never measures full block text.
     wideAdvance = metrics.horizontalAdvance(QChar(0x5B57));    // '字' (CJK ideograph)
@@ -2090,7 +2089,7 @@ qreal BlockLayoutBuilder::avgCharWidthForFont(const QFont& font) const {
   avgCharWidthForText(QStringView(), font);
   const auto cached = fontMetricsCache_.constFind(key);
   return cached != fontMetricsCache_.constEnd() ? cached.value().second
-                                                : QFontMetricsF(font).horizontalAdvance(QLatin1Char('n'));
+                                                : TextFontMetrics(font).horizontalAdvance(QLatin1Char('n'));
 }
 
 qreal BlockLayoutBuilder::cachedEstimateLineHeight(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel) const {
@@ -2188,7 +2187,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
     return {estimateLineHeight(theme.paragraphFont()), true};
   }
   if (node.children().empty()) {
-    return {QFontMetricsF(theme.paragraphFont()).height(), false};
+    return {TextFontMetrics(theme.paragraphFont()).height(), false};
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
   const bool quoteBox = isQuote;
@@ -2220,7 +2219,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateContainer(const M
     total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true, childWidth);
   }
   total += qpad.bottom() + qborder.bottom();
-  if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) { total += QFontMetricsF(theme.paragraphFont()).height(); }
+  if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) { total += TextFontMetrics(theme.paragraphFont()).height(); }
   return {total, mustMeasure};
 }
 
@@ -2232,7 +2231,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateListItem(const Ma
     // O(1) marker width: an ordered marker is at most "<itemCount>.", so its digit count bounds the
     // width. The old loop measured EVERY sibling's marker here (O(N) per item, and estimateContainer
     // calls this once per item → O(N²) per list — ~5s on the dense-file estimate).
-    const QFontMetricsF metrics(theme.paragraphFont());
+    const TextFontMetrics metrics(theme.paragraphFont());
     const qsizetype itemCount = listParent->children().size();
     const int digits = itemCount <= 0 ? 1 : static_cast<int>(std::log10(static_cast<qreal>(itemCount))) + 1;
     const qreal widestMarker =
@@ -2280,7 +2279,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateLiteralBlock(cons
   const QString literal = displayLiteralFor(node);
   const bool isMath = node.type() == BlockType::MathBlock;
   const QFont font = isMath ? theme.mathFont() : theme.codeFont();
-  const qreal lineHeight = isMath ? std::max<qreal>(14.0, QFontMetricsF(theme.mathFont()).height()) : theme.codeLineHeight();
+  const qreal lineHeight = isMath ? std::max<qreal>(14.0, TextFontMetrics(theme.mathFont()).height()) : theme.codeLineHeight();
   const QMarginsF padding = LayoutBox::insets(theme.elementBoxStyle(QStringLiteral("pre"), nullptr, width));
   const qreal lineNumberGutter =
       (node.type() == BlockType::CodeFence && showLineNumbers_) ? codeLineNumberGutterWidth(literal, theme) : 0.0;
@@ -2323,7 +2322,7 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateTable(const Markd
     columnCount = std::max(columnCount, static_cast<int>(row->children().size()));
   }
   if (rowCount == 0 || columnCount == 0) {
-    return {QFontMetricsF(theme.paragraphFont()).height(), false};
+    return {TextFontMetrics(theme.paragraphFont()).height(), false};
   }
   // O(1) per cell: equal-split column widths + each cell's source char count, instead of
   // tableColumnWidths (which materializes every cell's inline text) and per-cell plainTextForInlines.

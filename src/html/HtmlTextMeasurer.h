@@ -7,7 +7,7 @@
 #include <QRectF>
 #include <QSizeF>
 #include <QString>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 
 #include <memory>
 #include <vector>
@@ -35,7 +35,7 @@ struct TextFormatSpan {
   qreal lineHeight = 0;
 };
 
-// Holds a pre-built QTextLayout for a text-containing box.
+// Holds a pre-built TextLayout for a text-containing box.
 struct HtmlTextLayout {
   struct TextSourceSpan {
     int start = 0, length = 0, textStart = 0;
@@ -53,13 +53,13 @@ struct HtmlTextLayout {
   QString text;
   QFont font;
   qreal lineHeight = 0;
-  std::unique_ptr<QTextLayout> layout;
+  std::unique_ptr<TextLayout> layout;
   struct LinkSpan {
     int start = 0;
     int length = 0;
     QString href;
   };
-  // These ranges address text; QTextLayout formats and links address its buffer,
+  // These ranges address text; TextLayout formats and links address its buffer,
   // which additionally contains zero-content spacers for inline box edges.
   std::vector<TextFormatSpan> formatSpans;
   std::vector<LayoutBox> inlineBoxes;
@@ -69,7 +69,7 @@ struct HtmlTextLayout {
   qreal height = 0;
 };
 
-// Measures text using QTextLayout, used as Yoga measurement callback.
+// Measures text using TextLayout, used as Yoga measurement callback.
 class HtmlTextMeasurer {
 public:
  using AtomicLayout = std::function<HtmlTextLayout::AtomicInline(HtmlBox&, qreal)>;

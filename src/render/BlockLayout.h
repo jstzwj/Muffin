@@ -323,7 +323,7 @@ private:
     std::array<LayoutBox, 4> boxes;
     std::array<PseudoElementRule, 4> rules;
     std::array<QRectF, 4> icons;
-    std::array<std::shared_ptr<QTextLayout>, 4> texts;
+    std::array<std::shared_ptr<TextLayout>, 4> texts;
   };
   std::vector<PositionedPseudoFragment> positionedPseudos_;
   std::array<quint64, 8> positionedPseudoFingerprints_{};

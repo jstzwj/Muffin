@@ -15,7 +15,7 @@
 #include <QHash>
 #include <QPair>
 #include <QStringView>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <memory>
 
 namespace muffin {
@@ -70,7 +70,7 @@ public:
   // text height). No-op when muffin.perf debug is disabled.
   void dumpBuildBreakdown() const;
 
-  // Cheap height estimate WITHOUT QTextLayout / tree-sitter / math / html rendering.
+  // Cheap height estimate WITHOUT TextLayout / tree-sitter / math / html rendering.
   // Used by the lazy layout to size offscreen blocks so the scrollbar/scroll mapping
   // stay valid before a block is promoted to full detail. mustMeasure=true means the
   // rendered size is not cheaply knowable (math/html rendered blocks, or text blocks
@@ -178,7 +178,7 @@ public:
   const PieceTable& md() const;
   qreal textHeight(const QString& text, const QFont& font, qreal lineHeight, qreal width, const QMarginsF& padding, bool wrap = true) const;
 
-  // Height-estimate helpers mirroring the build* dispatch. Never touch QTextLayout.
+  // Height-estimate helpers mirroring the build* dispatch. Never touch TextLayout.
   EstimateResult estimateParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal width) const;
   EstimateResult estimateContainer(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const;
   EstimateResult estimateListItem(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const;
@@ -194,10 +194,10 @@ public:
   // inline-text materialization (see estimateParagraphLike). Exact for ASCII; CJK imprecision is
   // acceptable since the estimate is only a scrollbar placeholder.
   qreal avgCharWidthForFont(const QFont& font) const;
-  // Cached estimateLineHeightForElement per element key — avoids re-creating QFont + QFontMetricsF
+  // Cached estimateLineHeightForElement per element key — avoids re-creating QFont + TextFontMetrics
   // every block (~14µs/block otherwise, dominating the estimate loop on 250k-block docs).
   qreal cachedEstimateLineHeight(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel) const;
-  // Cached avgCharWidthForFont per element key — avoids creating QFont + QFontMetricsF per block.
+  // Cached avgCharWidthForFont per element key — avoids creating QFont + TextFontMetrics per block.
   qreal cachedAvgCharWidthForElement(const RenderTheme& theme, const QString& elementKey, bool isHeading, int headingLevel) const;
 
   QString documentPath_;

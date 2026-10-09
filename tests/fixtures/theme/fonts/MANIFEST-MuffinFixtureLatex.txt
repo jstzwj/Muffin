@@ -1,0 +1,23 @@
+MuffinFixtureLatex: modified test-only Latin Modern Roman 10 v2.004
+
+Original copyright: 2003, 2009 B. Jackowski and J. M. Nowacki, on behalf of
+TeX users groups. Original license: GUST Font License, incorporating LPPL 1.3c
+or later. See Latin-Modern-LICENSE.txt and LPPL-1.3c.txt in this directory.
+
+These are modified, renamed ASCII subsets maintained by the Muffin project,
+not by the original font authors. They retain the original copyright/license
+metadata. Glyph outlines and advance tables are subset without redesign;
+family/PostScript/CFF names are changed to MuffinFixtureLatex, and the delivery
+format is WOFF2. They are test fixtures and are not application fonts.
+
+Source directory (CTAN mirror):
+https://mirrors.mit.edu/CTAN/fonts/lm/fonts/opentype/public/lm/
+
+Modified file          Original file              Original SHA-256
+latex-regular.woff2    lmroman10-regular.otf       1aa18cfefa58132c52ce5de70db1fd1154201c19cd2b2cdaffba4906a33e6852
+latex-bold.woff2       lmroman10-bold.otf          102fe06c430a8b681b2bf6876b7cd967ae4d47b4b6b41d915eb7913b726d9fb1
+latex-italic.woff2     lmroman10-italic.otf        c1fce25075567bb8dbf2151658c3b442690041db17a2d49fc9e55905ea5b7169
+latex-bolditalic.woff2 lmroman10-bolditalic.otf    c37a28eed7a6e03f792b98b5e5f637b2fcda378bb4855f99284f1a88fe35f124
+
+Reproduce with scripts/subset_text_fixture_fonts.py --latex <source-directory>;
+that directory uses the short face names documented in README.md.

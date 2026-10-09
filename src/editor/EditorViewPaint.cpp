@@ -14,13 +14,12 @@
 #include <QColor>
 #include <QCoreApplication>
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLoggingCategory>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPen>
 #include <QSet>
-#include <QTextLayout>
 
 #include <algorithm>
 
@@ -66,7 +65,7 @@ struct PerfTimer : diag::ScopedPerfProbe {
 
 void EditorView::paintLoadingOverlay(QPainter& painter) const {
   const QFont font = theme_.headingFont(1);
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   const QString text = QCoreApplication::translate("muffin::EditorView", "Loading…");
 
   const QRectF rect = viewport()->rect();
@@ -455,10 +454,10 @@ void EditorView::paintPreedit(QPainter& painter) const {
   // it as an overlay at the caret (the original approach).
   const QRectF caretView = caretDoc.translated(0, -scrollY());  // document -> viewport coords
 
-  QTextLayout layout(preedit_, preeditFont(), painter.device());
+  TextLayout layout(preedit_, preeditFont());
   layout.setFormats(preeditFormats_);
   layout.beginLayout();
-  QTextLine line = layout.createLine();
+  TextLine line = layout.createLine();
   line.setLineWidth(qMax<qreal>(1.0, viewport()->width() - caretView.left() - 4.0));
   line.setPosition(QPointF(0, 0));
   layout.endLayout();

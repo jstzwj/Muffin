@@ -30,7 +30,7 @@
 #include <QDropEvent>
 #include <QElapsedTimer>
 #include <QFileInfo>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QList>
 #include <QMimeData>
 #include <QPainter>
@@ -44,8 +44,6 @@
 #include <QMouseEvent>
 #include <QInputMethodEvent>
 #include <QTextCharFormat>
-#include <QTextLayout>
-#include <QFontMetricsF>
 #include <QUrl>
 #include <QKeyEvent>
 
@@ -1372,11 +1370,11 @@ EditorView::HeadingBadge EditorView::headingBadgeForBlock(NodeId blockId) const 
   const int level = block->headingLevel();
   QFont badgeFont = theme_.paragraphFont();
   badgeFont.setPointSizeF(badgeFont.pointSizeF() * 0.8);
-  const QFontMetricsF metrics(badgeFont);
+  const TextFontMetrics metrics(badgeFont);
   const qreal badgeWidth = metrics.horizontalAdvance(QStringLiteral("H%1").arg(level)) + 6.0;
   const qreal badgeHeight = metrics.height() + 2.0;
   const QRectF blockRect = block->rect();
-  const QFontMetricsF headingMetrics(theme_.headingFont(level));
+  const TextFontMetrics headingMetrics(theme_.headingFont(level));
   const qreal lineCenterY = blockRect.top() + headingMetrics.height() / 2.0;
   const qreal badgeY = lineCenterY - badgeHeight / 2.0 - scrollY();
   return HeadingBadge{topId, QRectF(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight), level};

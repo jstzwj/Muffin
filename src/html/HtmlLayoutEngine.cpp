@@ -5,7 +5,7 @@
 
 #include <yoga/Yoga.h>
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QMap>
 #include <QVector>
 #include <QScopeGuard>
@@ -40,7 +40,7 @@ YGSize measureTextCallback(YGNodeConstRef nodeRef, float width, YGMeasureMode wi
   const qreal measuredWidth =
       widthMode == YGMeasureModeExactly || widthMode == YGMeasureModeAtMost ? qMin<qreal>(textWidth, width) : textWidth;
 
-  QFontMetricsF fm(box->style().font);
+  TextFontMetrics fm(box->style().font);
   qreal minHeight = fm.height();
 
   return {
@@ -926,7 +926,7 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(
     contentHeight = y;
   }
 
-  const qreal totalHeight = qMax<qreal>(contentHeight + verticalBoxExtent(style), QFontMetricsF(style.font).height());
+  const qreal totalHeight = qMax<qreal>(contentHeight + verticalBoxExtent(style), TextFontMetrics(style.font).height());
   box.geometry().width = width;
   box.geometry().height = totalHeight;
   return totalHeight;
