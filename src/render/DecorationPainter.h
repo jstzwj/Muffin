@@ -12,8 +12,7 @@ class QPainter;
 namespace muffin {
 
 // Paints captured CSS decorations (element background gradients, ::before/::after
-// rules, #write texture overlay) against host rects. Positioning is heuristic —
-// Muffin has no CSS box model — anchored to the host block's existing rect.
+// rules, #write texture overlay) against the host layout's box geometry.
 namespace DecorationPainter {
 
 // Context for pseudo-element positioning (what the host is and where its text
@@ -25,6 +24,7 @@ struct PaintContext {
   QPointF textEnd = QPointF(-1.0, -1.0);    // where heading text ends (for an ::after icon)
   QPointF textStart = QPointF(-1.0, -1.0);  // where heading text starts (for a ::before icon)
   QRectF textBounds;                        // visual text bounds after QTextLayout alignment
+  QRectF lastLineBox;                       // CSS line box containing a trailing generated inline
   qreal contentLeftX = -1.0;                // heading content-box left (inline ::before marker zone start)
   // Resolved ::before text for headings (e.g. "1. " from `content: counter(h1) ". "`),
   // computed by the layout pass against the live counter state. Empty ⇒ fall back to

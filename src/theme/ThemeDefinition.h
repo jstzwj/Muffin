@@ -18,6 +18,7 @@
 namespace muffin {
 
 class CssThemeSheet;  // forward-decl; full type lives in CssThemeParser.h
+class CssComputedStyle;
 
 // Every colour the UI can theme, in one place. This is the single source of
 // truth that the editor (via RenderTheme), the chrome (menu bar, sidebar,
@@ -244,11 +245,6 @@ struct GradientSpec {
   qreal conicStartDeg = 0.0;                    // conic: CSS `from <angle>` (0=12 o'clock, clockwise)
 };
 
-// One `::before`/`::after` rule, resolved to a paint recipe against its host
-// element. Muffin has no CSS box model, so positioning is heuristic (anchored to
-// the host's existing rect); see the decoration painters. `present` marks a rule
-// that the theme actually declared (so callers can tell "no ::after" from
-// "::after with empty content + a background").
 // A parsed piece of a CSS `content` value: a literal run, or a counter() call.
 // `counter(name[, style])` / `counters(name, sep[, style])` are resolved at layout
 // time against the live counter state (the implicit `list-item` counter for lists;
@@ -262,6 +258,9 @@ struct ContentToken {
 };
 
 struct PseudoElementRule {
+  // Immutable result of the common cascade. Resolve box-relative lengths and
+  // image geometry against the host at used-value time, without another cascade.
+  std::shared_ptr<const CssComputedStyle> computed;
   QString host;           // "h2","blockquote","a","#write","li","pre",…
   QString pseudo;         // "before" | "after"
   QString content;        // literal text / "" / "attr(data-language)"

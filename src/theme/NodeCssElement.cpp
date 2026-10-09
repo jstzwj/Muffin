@@ -90,7 +90,7 @@ const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) const 
   CssElement* element = makeOwned();
   element->tag = cssTagForNode(node);
   element->navigator = this;
-  if (node.type() == BlockType::CodeFence) { element->classes << QStringLiteral("md-fences"); }
+  addDocumentHostClasses(*element);
   if (node.type() == BlockType::Document) {
     element->id = QStringLiteral("write");
     element->tag = QStringLiteral("div");

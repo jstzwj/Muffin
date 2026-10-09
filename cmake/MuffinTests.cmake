@@ -282,6 +282,8 @@ muffin_add_test(NAME MuffinDocumentStyleConformanceTest SOURCE tests/theme/Docum
 target_compile_definitions(MuffinDocumentStyleConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinTypographyConformanceTest SOURCE tests/theme/TypographyConformanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 target_compile_definitions(MuffinTypographyConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+muffin_add_test(NAME MuffinRealThemeRegressionTest SOURCE tests/theme/RealThemeRegressionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+target_compile_definitions(MuffinRealThemeRegressionTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
   set_property(TEST MuffinTypographyConformanceTest APPEND PROPERTY ENVIRONMENT_MODIFICATION
     "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")

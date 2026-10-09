@@ -5,6 +5,7 @@
 
 #include <QCryptographicHash>
 #include <QDate>
+#include <QDateTime>
 #include <QFile>
 #include <QGuiApplication>
 #include <QJsonArray>
@@ -116,7 +117,9 @@ int main(int argc, char** argv) {
     field(QStringLiteral("titleColor"), scene->style.titleColor);
   }
 
-  const QDate today = QDate::currentDate();
+  // Date-only Gantt input is parsed as UTC. Local yesterday/today can already
+  // be behind the current instant on runners west of UTC (especially at night).
+  const QDate today = QDateTime::currentDateTimeUtc().date();
   const QString todaySource = QStringLiteral(
       "gantt\ndateFormat YYYY-MM-DD\ntodayMarker "
       "stroke:#123456,stroke-width:3px,opacity:0.4\n"

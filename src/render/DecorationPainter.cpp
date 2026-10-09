@@ -2,6 +2,8 @@
 
 #include "render/Blur.h"
 #include "theme/CssThemeMapper.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssValueParser.h"
 #include "render/Filter.h"
 #include "render/GradientPainter.h"
 #include "theme/ThemeDefinition.h"
@@ -15,10 +17,12 @@
 #include <QPixmap>
 #include <QTransform>
 #include <QRectF>
+#include <QRegularExpression>
 #include <QSvgRenderer>
 #include <QtMath>
 
 #include <memory>
+#include <cmath>
 
 namespace muffin {
 namespace DecorationPainter {
@@ -99,6 +103,74 @@ const HoverEffect* hoverEffectFor(const RenderTheme& theme, const QString& host)
   return nullptr;
 }
 
+qreal pseudoLength(const PseudoElementRule& rule, const QString& property, qreal basis, qreal fallback, qreal zoom) {
+  if (rule.computed) {
+    const auto length = rule.computed->length(property);
+    if (length.status == CssLengthStatus::Valid) return length.px * zoom + length.fraction * basis;
+  }
+  return fallback * zoom;
+}
+
+QRectF positionedPseudo(const PseudoElementRule& rule, QRectF host, QRectF box, qreal zoom) {
+  if (!rule.computed) return box;
+  const auto& style = *rule.computed;
+  const auto valid = [&](const char* name) { return style.length(QLatin1String(name)).status == CssLengthStatus::Valid; };
+  if (valid("left")) box.moveLeft(host.left() + pseudoLength(rule, "left", host.width(), 0, zoom));
+  else if (valid("right")) box.moveRight(host.right() - pseudoLength(rule, "right", host.width(), 0, zoom));
+  if (valid("top")) box.moveTop(host.top() + pseudoLength(rule, "top", host.height(), 0, zoom));
+  else if (valid("bottom")) box.moveBottom(host.bottom() - pseudoLength(rule, "bottom", host.height(), 0, zoom));
+  const CssLengthContext context{style.fontSizePx * style.textScale, style.rootFontSizePx * style.textScale,
+                               style.fontSizePx * .5, style.fontSizePx * .5, style.viewportPx};
+  static const QRegularExpression translations(QStringLiteral(R"(translate(x|y)?\(([^()]*(?:\([^()]*\)[^()]*)*)\))"));
+  auto matches = translations.globalMatch(style.resolvedValue("transform").toLower());
+  while (matches.hasNext()) {
+    const auto match = matches.next();
+    auto arguments = match.captured(2); arguments.replace(',', ' ');
+    const auto parts = splitTopLevelSpaces(arguments);
+    if (parts.isEmpty()) continue;
+    const auto used = [&](const QString& value, qreal basis) {
+      const auto length = parseCssLengthPercentage(QStringView(value), context);
+      return length.status == CssLengthStatus::Valid ? length.px * zoom + length.fraction * basis : 0;
+    };
+    if (match.captured(1) == "y") box.translate(0, used(parts[0], box.height()));
+    else {
+      const qreal y = match.captured(1).isEmpty() && parts.size() > 1 ? used(parts[1], box.height()) : 0;
+      box.translate(used(parts[0], box.width()), y);
+    }
+  }
+  return box;
+}
+
+void paintPseudoIcon(QPainter& painter, const PseudoElementRule& rule, QRectF box, QColor tint, qreal zoom) {
+  QRectF image = box;
+  if (rule.svgFromMask && rule.computed) {
+    const auto& style = *rule.computed;
+    auto size = style.resolvedValue("mask-size");
+    if (size.isEmpty()) size = style.resolvedValue("-webkit-mask-size");
+    const auto parts = splitTopLevelSpaces(size);
+    const CssLengthContext context{style.fontSizePx * style.textScale, style.rootFontSizePx * style.textScale,
+                                 style.fontSizePx * .5, style.fontSizePx * .5, style.viewportPx};
+    if (!parts.isEmpty()) {
+      const auto used = [&](const QString& value, qreal basis) {
+        const auto length = parseCssLengthPercentage(QStringView(value), context);
+        return length.status == CssLengthStatus::Valid ? length.px * zoom + length.fraction * basis : basis;
+      };
+      image.setWidth(used(parts[0], box.width()));
+      image.setHeight(used(parts.size() > 1 ? parts[1] : "auto", box.height()));
+    }
+    auto position = style.resolvedValue("mask-position");
+    if (position.isEmpty()) position = style.resolvedValue("-webkit-mask-position");
+    if (position.contains("center")) image.moveCenter(box.center());
+    else {
+      if (position.contains("right")) image.moveRight(box.right());
+      if (position.contains("bottom")) image.moveBottom(box.bottom());
+    }
+  }
+  painter.save(); painter.setClipRect(box, Qt::IntersectClip);
+  paintIcon(painter, rule.svgData, image, tint, rule.svgFromMask);
+  painter.restore();
+}
+
 }  // namespace
 
 void paintIcon(QPainter& painter, const QByteArray& svgData, const QRectF& target, const QColor& tint, bool recolour) {
@@ -168,7 +240,8 @@ void paintShapeBox(QPainter& painter, const PseudoElementRule& rule, QRectF box)
 void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const QString& host, const QRectF& rect, const PaintContext& ctx) {
   const bool isHeading = ctx.headingLevel >= 1 && ctx.headingLevel <= 6;
   const QFontMetricsF fm(ctx.font);
-  const qreal em = fm.height();
+  const qreal em = ctx.font.pointSizeF() * 96.0 / 72.0;
+  const qreal zoom = theme.zoomPercent() / 100.0;
   const qreal vCenter = ctx.textBounds.isValid() ? ctx.textBounds.center().y() : rect.center().y();
 
   if (const PseudoElementRule* before = pseudoRule(theme, host, QStringLiteral("before"))) {
@@ -179,11 +252,9 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
         // height against the HOST rect when the CSS used a `%` (phycat's `height:
         // 61%` is 61% of the rendered heading, not 0.61em — the map-time value in
         // `size` is em-relative and made the bar too short).
-        const qreal w = !before->sizeRawWidth.isEmpty() ? CssThemeMapper::resolveLengthPx(before->sizeRawWidth, {}, em, rect.width())
-                                                        : (before->size.width() > 0.0 ? before->size.width() : qMax<qreal>(2.0, em * 0.25));
-        const qreal h = !before->sizeRawHeight.isEmpty() ? CssThemeMapper::resolveLengthPx(before->sizeRawHeight, {}, em, rect.height())
-                                                         : (before->size.height() > 0.0 ? before->size.height() : em);
-        paintShapeBox(painter, *before, QRectF(rect.left() + before->insets.left(), vCenter - h / 2.0, w, h));
+        const qreal w = pseudoLength(*before, "width", rect.width(), before->size.width() > 0 ? before->size.width() : 4, zoom);
+        const qreal h = pseudoLength(*before, "height", rect.height(), before->size.height() > 0 ? before->size.height() : em / zoom, zoom);
+        paintShapeBox(painter, *before, positionedPseudo(*before, rect, QRectF(rect.left(), vCenter - h / 2, w, h), zoom));
       } else if (!before->svgData.isEmpty()) {
         // Legacy: an inline SVG ::before painted into the left margin (no advance).
         const QPointF anchor = ctx.textStart.x() >= 0 ? ctx.textStart : rect.topLeft();
@@ -237,13 +308,14 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       // Trailing mask icon (phycat h3-h6): immediately after the text, top-aligned
       // (vertical-align: top), sized to the rule's width/height.
       const QPointF anchor = ctx.textEnd.x() >= 0 ? ctx.textEnd : QPointF(rect.right(), rect.top());
-      const qreal w = after->size.width() > 0.0 ? after->size.width() : em;
-      const qreal h = after->size.height() > 0.0 ? after->size.height() : em;
-      const qreal top = ctx.textBounds.isValid() ? ctx.textBounds.top() : anchor.y();
+      const qreal w = pseudoLength(*after, "width", rect.width(), after->size.width() > 0 ? after->size.width() : em / zoom, zoom);
+      const qreal h = pseudoLength(*after, "height", rect.height(), after->size.height() > 0 ? after->size.height() : em / zoom, zoom);
+      const bool topAligned = after->computed && after->computed->resolvedValue("vertical-align") == "top";
+      const qreal top = topAligned && ctx.lastLineBox.isValid() ? ctx.lastLineBox.top() : anchor.y();
       const QColor tint = after->svgFromMask ? after->maskTint : after->color;
       painter.save();
       painter.setOpacity(after->opacity);
-      paintIcon(painter, after->svgData, QRectF(anchor.x() + after->marginLeft, top, w, h), tint, after->svgFromMask);
+      paintPseudoIcon(painter, *after, QRectF(anchor.x() + after->marginLeft * zoom, top, w, h), tint, zoom);
       painter.restore();
     } else if ((after->background.kind != GradientSpec::Kind::None || after->backgroundColor.isValid() ||
                 (after->borderBottomColor.isValid() && after->borderBottomWidth > 0.0)) &&
@@ -251,18 +323,25 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
       // ::after underline bar. Width/height come from the rule (e.g. Whitey's
       // h2::after border-bottom: 100px centred; phycat's h1::after gradient bar).
       const qreal borderW = after->borderBottomWidth > 0.0 ? after->borderBottomWidth : 0.0;
-      const qreal barH = (after->size.height() > 0 ? after->size.height() : qMax<qreal>(2.0, borderW));
-      qreal barW = (after->size.width() > 0 ? after->size.width() : (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()));
+      const qreal barH = pseudoLength(*after, "height", rect.height(), after->size.height() > 0 ? after->size.height() : qMax<qreal>(2, borderW), zoom);
+      qreal barW = pseudoLength(*after, "width", rect.width(), after->size.width() > 0 ? after->size.width() :
+                               (ctx.textBounds.isValid() ? ctx.textBounds.width() : rect.width()) / zoom, zoom);
       // Hover widens the bar toward its :hover width (phycat h1::after 40px → 100%),
       // animated by the HoverAnimator phase. Focus widens it toward its :focus
       // width next (same recipe, FocusAnimator phase). The centred anchor (textMid,
       // below) keeps it growing symmetrically from the middle, matching the reference.
       if (!after->hoverWidthRaw.isEmpty() && ctx.hoverPhase > 0.0) {
-        const qreal hoverW = CssThemeMapper::resolveLengthPx(after->hoverWidthRaw, {}, em, rect.width());
+        const CssLengthContext context{after->computed ? after->computed->fontSizePx * after->computed->textScale : em / zoom,
+                                       after->computed ? after->computed->rootFontSizePx * after->computed->textScale : 16};
+        const auto length = parseCssLengthPercentage(QStringView(after->hoverWidthRaw), context);
+        const qreal hoverW = length.status == CssLengthStatus::Valid ? length.px * zoom + length.fraction * rect.width() : barW;
         barW = barW + (qBound(0.0, hoverW, rect.width()) - barW) * ctx.hoverPhase;
       }
       if (!after->focusWidthRaw.isEmpty() && ctx.focusPhase > 0.0) {
-        const qreal focusW = CssThemeMapper::resolveLengthPx(after->focusWidthRaw, {}, em, rect.width());
+        const CssLengthContext context{after->computed ? after->computed->fontSizePx * after->computed->textScale : em / zoom,
+                                       after->computed ? after->computed->rootFontSizePx * after->computed->textScale : 16};
+        const auto length = parseCssLengthPercentage(QStringView(after->focusWidthRaw), context);
+        const qreal focusW = length.status == CssLengthStatus::Valid ? length.px * zoom + length.fraction * rect.width() : barW;
         barW = barW + (qBound(0.0, focusW, rect.width()) - barW) * ctx.focusPhase;
       }
       barW = qMin(barW, rect.width());
@@ -270,7 +349,8 @@ void paintPseudoDecorations(QPainter& painter, const RenderTheme& theme, const Q
           ctx.textBounds.isValid()
               ? ctx.textBounds.center().x()
               : (ctx.textStart.x() >= 0 && ctx.textEnd.x() >= 0 ? (ctx.textStart.x() + ctx.textEnd.x()) / 2.0 : rect.center().x());
-      const QRectF bar(textMid - barW / 2.0, rect.bottom() - barH, barW, barH);
+      const QRectF initial(textMid - barW / 2, rect.bottom() - barH, barW, barH);
+      const QRectF bar = after->absolute ? positionedPseudo(*after, rect, initial, zoom) : initial;
       painter.save();
       painter.setOpacity(after->opacity);
       if (after->background.kind != GradientSpec::Kind::None) {
@@ -384,7 +464,12 @@ void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius, c
   // a Gaussian, matching the text/filter blur path already used by Muffin.
   const int blurRadius = qMax(1, qRound(clampedBlur / 2.0));
   const qreal blurExtent = blurRadius * 3.0 + 2.0;
-  QRectF paintBounds = core.adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent);
+  // Raster coverage has finite subpixel precision. Equivalent eager/lazy sums
+  // can differ by 1e-13 at a coverage boundary; normalize only the raster mask,
+  // without changing the shared layout/caret geometry or relaxing pixel tests.
+  const auto snap = [](qreal value) { return std::round(value * 256) / 256; };
+  const QRectF rasterCore(QPointF(snap(core.left()), snap(core.top())), QPointF(snap(core.right()), snap(core.bottom())));
+  QRectF paintBounds = rasterCore.adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent);
   if (painter.hasClipping()) {
     paintBounds = paintBounds.intersected(painter.clipBoundingRect().adjusted(-blurExtent, -blurExtent, blurExtent, blurExtent));
   }
@@ -401,7 +486,7 @@ void paintBoxShadow(QPainter& painter, const QRectF& rect, qreal borderRadius, c
     maskPainter.translate(-imageBounds.topLeft());
     maskPainter.setPen(Qt::NoPen);
     maskPainter.setBrush(color);
-    maskPainter.drawRoundedRect(core, coreRadius, coreRadius);
+    maskPainter.drawRoundedRect(rasterCore, coreRadius, coreRadius);
   }
   boxBlur(shadow, blurRadius);
 

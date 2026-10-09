@@ -2123,16 +2123,16 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
 
 qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) const {
   if (offsetMap_.isEmpty()) {
-    return qBound<qsizetype>(0, displayOffset, plainText_.size());
+    return qBound<qsizetype>(0, displayOffset, projection_.visibleText().size());
   }
   displayOffset = qBound<qsizetype>(0, displayOffset, displayText_.size());
   for (const MathAtom& atom : mathAtoms_) {
-    if (displayOffset > atom.displayStart && displayOffset < atom.displayEnd) {
+    if (displayOffset > atom.displayStart && displayOffset <= atom.displayEnd) {
       return atom.visibleEnd;
     }
   }
   for (const ImageAtom& atom : imageAtoms_) {
-    if (displayOffset > atom.displayStart && displayOffset < atom.displayEnd) {
+    if (displayOffset > atom.displayStart && displayOffset <= atom.displayEnd) {
       return atom.visibleEnd;
     }
   }
@@ -2152,14 +2152,14 @@ qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) c
       return qBound<qsizetype>(entry.visibleStart, entry.visibleStart + delta, entry.visibleEnd);
     }
   }
-  return plainText_.size();
+  return projection_.visibleText().size();
 }
 
 qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) const {
   if (offsetMap_.isEmpty()) {
-    return qBound<qsizetype>(0, visibleOffset, plainText_.size());
+    return qBound<qsizetype>(0, visibleOffset, projection_.visibleText().size());
   }
-  visibleOffset = qBound<qsizetype>(0, visibleOffset, plainText_.size());
+  visibleOffset = qBound<qsizetype>(0, visibleOffset, projection_.visibleText().size());
   for (const MathAtom& atom : mathAtoms_) {
     if (visibleOffset > atom.visibleStart && visibleOffset < atom.visibleEnd) {
       return atom.displayEnd;

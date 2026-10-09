@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Heading theme selectors share Markdown host classes between prototypes and live nodes. Generated decorations resolve absolute offsets, percentages, translations and zoom from the common computed style; trailing SVG masks retain their own image size and use the allocated line box for top alignment.
+- Shadow masks normalize raster subpixel precision, preventing floating-point accumulation noise from changing full/lazy pixels on imported themes with fractional page dimensions.
+- Clicking the trailing edge of a collapsed inline formula or image maps to its full visible range, rather than the first source character inside the atom. Real theme regressions exercise original fonts, multiple text sizes, resizing, typing/deletion, caret/selection and full/lazy pixel consistency.
+- The Gantt current-date marker regression constructs its date range in the same UTC date domain as date-only tasks, avoiding timezone-dependent CI failures near midnight.
 - Document host styles supply heading/paragraph margins and an inherited base line height for imported themes. Markdown and HTML share CSS half-leading and inline box fragments; generated padding no longer creates line breaks, and wrapped formulas/images belong to their actual line.
 - CSS gradients retain length/percentage and `calc()` stops until painting, including hard edges, omitted/backwards stops and radial ellipse extents. Abyss's 1px texture dots no longer become diffuse halos; browser references cover real theme typography, keyboard wrapping and gradient pixels.
 - Resource layout pixel comparisons prime both Qt font raster paths before exact comparison, avoiding FreeType first-draw edge coverage differences for large headings. Geometry, caret and selection comparisons remain exact.

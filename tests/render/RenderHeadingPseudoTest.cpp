@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
+#include "render/DecorationPainter.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
@@ -13,6 +14,8 @@
 #include <QRgb>
 
 #include <functional>
+#include <cmath>
+#include <limits>
 
 #include "RenderTestUtils.h"
 
@@ -70,6 +73,64 @@ const std::function<bool(QRgb)> isBlack = [](QRgb p) {
 };
 
 const QString kBase = QStringLiteral("#write { color:#000000; }");
+
+QRect inkBounds(const QImage& image, const std::function<bool(QRgb)>& pred) {
+  QRect bounds;
+  for (int y = 0; y < image.height(); ++y)
+    for (int x = 0; x < image.width(); ++x)
+      if (pred(image.pixel(x, y))) bounds = bounds.united(QRect(x, y, 1, 1));
+  return bounds;
+}
+
+void testAbsolutePseudoUsesHostGeometryAndZoom() {
+  const QString css = kBase + QStringLiteral(
+      "h3{width:200px;font-size:20px;line-height:40px;padding:10px;box-sizing:border-box}"
+      "h3::before{content:'';position:absolute;left:25%;top:50%;width:1em;height:10px;"
+      "transform:translateY(-50%);background:#d00000}"
+      "h3::after{content:'';position:absolute;right:10%;bottom:5px;width:40px;height:4px;background:#0000d0}");
+  for (int zoom : {100, 200}) {
+    const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, "positioned", {}), zoom);
+    const auto image = renderHeadingImage(theme, "### Heading\n");
+    const auto red = inkBounds(image, isRed);
+    const auto blue = inkBounds(image, [](QRgb p) { return qBlue(p) > 150 && qRed(p) < 90 && qGreen(p) < 90; });
+    const int scale = zoom / 100;
+    require(red == QRect(50 * scale, 25 * scale, 20 * scale, 10 * scale), "absolute ::before resolves em, percentages and translate against the host");
+    require(blue == QRect(140 * scale, 51 * scale, 40 * scale, 4 * scale), "absolute ::after honors right/bottom at every zoom");
+  }
+}
+
+void testMaskImageHasItsOwnSize() {
+  const QString svg = QStringLiteral("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'>"
+                                     "<rect width='10' height='10'/></svg>\")");
+  const QString css = kBase + QStringLiteral(
+      "h3{font-size:20px;line-height:50px}h3.md-heading::after{content:'';display:inline-block;"
+      "width:2em;height:2em;vertical-align:top;mask-image:%1;mask-size:24px 24px;mask-position:center;mask-repeat:no-repeat;"
+      "background:#00d000}").arg(svg);
+  for (int zoom : {100, 200}) {
+    const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, "mask-size", {}), zoom);
+    const auto image = renderHeadingImage(theme, "### Hi\n");
+    const auto green = inkBounds(image, [](QRgb p) { return qGreen(p) > 150 && qRed(p) < 90 && qBlue(p) < 90; });
+    const int scale = zoom / 100;
+    require(green.size() == QSize(24 * scale, 24 * scale), "mask image does not stretch to the pseudo's 2em box");
+    require(green.top() == 8 * scale, "vertical-align:top uses the allocated CSS line box");
+  }
+}
+
+void testShadowCoverageIgnoresFloatingPointNoise() {
+  const auto paint = [](qreal top) {
+    QImage image(120, 90, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    DecorationPainter::paintBoxShadow(painter, QRectF(20, top, 50, 15.125), 2,
+        QColor(90, 120, 150, 100), 0, 2, 3, 1);
+    return image;
+  };
+  // Full and incremental layout can reach the same subpixel boundary from
+  // opposite floating-point directions (e.g. imported cm-based page padding).
+  const auto low = paint(std::nextafter(20.5, -std::numeric_limits<qreal>::infinity()));
+  const auto high = paint(std::nextafter(20.5, std::numeric_limits<qreal>::infinity()));
+  require(low == high, "equivalent used geometry gives identical shadow mask coverage");
+}
 
 // h3 `::before { position:absolute; left:0; … }` paints a bar at the heading's
 // left edge while the (padding-inset) text stays clear of it.
@@ -142,7 +203,7 @@ void testAfterIconPaintsRightOfText() {
   const QString svg = QStringLiteral("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'>"
                                      "<rect width='10' height='10' fill='%2300d000'/></svg>\")");
   const QString css = kBase + QStringLiteral(
-      "#write h3::after { content:''; width:10px; height:10px; margin-left:4px;"
+      "#write h3.md-heading::after { content:''; width:10px; height:10px; margin-left:4px;"
       "  -webkit-mask:%1 center/contain; mask:%1 center/contain; background-color:#00d000; }").arg(svg);
   const RenderTheme theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("after"), QString()));
   const QImage img = renderHeadingImage(theme, QStringLiteral("### Hi\n"));
@@ -199,6 +260,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineBeforeDashShiftsText);
   RUN_TEST(testInlineBeforeHollowRingShiftsText);
   RUN_TEST(testAfterIconPaintsRightOfText);
+  RUN_TEST(testAbsolutePseudoUsesHostGeometryAndZoom);
+  RUN_TEST(testMaskImageHasItsOwnSize);
+  RUN_TEST(testShadowCoverageIgnoresFloatingPointNoise);
   RUN_TEST(testContentNoneIsNotLiteralText);
 #undef RUN_TEST
   return 0;

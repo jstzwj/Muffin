@@ -143,6 +143,7 @@ std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles
     const auto& vars = sub.customProperties();
     const qreal emPx = sub.fontSizePx * sub.textScale;
     PseudoElementRule rule;
+    rule.computed = std::make_shared<const CssComputedStyle>(sub);
     rule.host = k.host;
     rule.pseudo = k.pseudo;
     rule.present = true;

@@ -10,6 +10,15 @@ namespace muffin {
 // defaults below them, without accumulating copies across viewport changes.
 CssThemeSheet documentStyleSheet(const CssThemeSheet& author);
 
+// Theme compatibility classes describe the Markdown host, rather than a
+// selector-matching exception. Prototypes and live nodes use this same contract.
+inline void addDocumentHostClasses(CssElement& element) {
+  if (element.tag.size() == 2 && element.tag[0] == QLatin1Char('h') &&
+      element.tag[1] >= QLatin1Char('1') && element.tag[1] <= QLatin1Char('6'))
+    element.classes << QStringLiteral("md-heading");
+  if (element.tag == QStringLiteral("pre")) element.classes << QStringLiteral("md-fences");
+}
+
 // The document host is shared by Markdown, HTML and theme previews. Elements
 // are owned for the lifetime of a style snapshot; synthetic table sections and
 // inline children use the same topology as their HTML counterparts.
@@ -67,8 +76,9 @@ class DocumentStylePrototypes {
       if (key == QStringLiteral("td")) parentKey = QStringLiteral("tbody tr");
       if (key == QStringLiteral("pre") || key == QStringLiteral(".md-fences")) {
         value->tag = QStringLiteral("pre");
-        value->classes << QStringLiteral("md-fences");
+        value->classes.clear();
       }
+      addDocumentHostClasses(*value);
       value->parent = &element(parentKey);
     }
     return *value;
