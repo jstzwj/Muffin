@@ -54,18 +54,6 @@ bool isInsideBlockquote(const MarkdownNode& node) {
   return false;
 }
 
-bool hasHeadingAfterDecoration(const RenderTheme& theme, int level) {
-  const QString host = QStringLiteral("h%1").arg(level);
-  for (const PseudoElementRule& rule : theme.decorations().pseudos) {
-    if (rule.host == host && rule.pseudo == QStringLiteral("after") &&
-        (rule.background.kind != GradientSpec::Kind::None || rule.backgroundColor.isValid() ||
-         (rule.borderBottomColor.isValid() && rule.borderBottomWidth > 0.0) || !rule.svgData.isEmpty())) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // `fast` skips the per-node structural CSS cascade (mirrors spacingBetweenBlocks' fast path): the
 // estimate path passes fast=true to resolve load-time PROTOTYPE margins (nullptr node → elementStyle,
 // O(1)) instead of elementStyleForNode (O(sibling chain) on github). estimateContainer/estimateListItem
@@ -530,40 +518,46 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(const MarkdownNode& node,
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                                             qreal width, int depth) {
-  const auto key = cssTagForNode(node);
-  const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
-  if (style && style->layout.display == "none") {
-    auto hidden = std::make_unique<BlockLayout>(node.id());
-    hidden->setType(node.type());
-    hidden->setRect({x, y, 0, 0});
-    return hidden;
-  }
-  if (style && style->layout.establishesFormattingContext() && !node.children().empty()) return buildFormattingContainer(node, theme, x, y, width, depth);
-  switch (node.type()) {
-    case BlockType::Paragraph:
-    case BlockType::Heading:
-      return buildParagraphLike(node, theme, x, y, width, depth);
-    case BlockType::BlockQuote:
-    case BlockType::List:
-      return buildContainer(node, theme, x, y, width, depth);
-    case BlockType::ListItem:
-      return buildListItem(node, theme, x, y, width, depth);
-    case BlockType::FrontMatter:
-    case BlockType::CodeFence:
-    case BlockType::HtmlBlock:
-    case BlockType::MathBlock:
-      return buildLiteralBlock(node, theme, x, y, width, depth);
-    case BlockType::Table:
-      return buildTable(node, theme, x, y, width, depth);
-    case BlockType::ThematicBreak:
-      return buildThematicBreak(node, theme, x, y, width, depth);
-    case BlockType::LinkDefinition:
-    case BlockType::FootnoteDefinition:
-      return buildDefinition(node, theme, x, y, width, depth);
-    case BlockType::Document:
-    default:
-      return buildContainer(node, theme, x, y, width, depth);
-  }
+  const auto build = [&]() -> std::unique_ptr<BlockLayout> {
+    const auto key = cssTagForNode(node);
+    const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
+    if (style && style->layout.display == "none") {
+      auto hidden = std::make_unique<BlockLayout>(node.id());
+      hidden->setType(node.type());
+      hidden->setRect({x, y, 0, 0});
+      return hidden;
+    }
+    if (style && style->layout.establishesFormattingContext() && !node.children().empty()) return buildFormattingContainer(node, theme, x, y, width, depth);
+    switch (node.type()) {
+      case BlockType::Paragraph:
+      case BlockType::Heading:
+        return buildParagraphLike(node, theme, x, y, width, depth);
+      case BlockType::BlockQuote:
+      case BlockType::List:
+        return buildContainer(node, theme, x, y, width, depth);
+      case BlockType::ListItem:
+        return buildListItem(node, theme, x, y, width, depth);
+      case BlockType::FrontMatter:
+      case BlockType::CodeFence:
+      case BlockType::HtmlBlock:
+      case BlockType::MathBlock:
+        return buildLiteralBlock(node, theme, x, y, width, depth);
+      case BlockType::Table:
+        return buildTable(node, theme, x, y, width, depth);
+      case BlockType::ThematicBreak:
+        return buildThematicBreak(node, theme, x, y, width, depth);
+      case BlockType::LinkDefinition:
+      case BlockType::FootnoteDefinition:
+        return buildDefinition(node, theme, x, y, width, depth);
+      case BlockType::Document:
+      default:
+        return buildContainer(node, theme, x, y, width, depth);
+    }
+  };
+  auto result = build();
+  if (result && result->rect().width() > 0)
+    result->layoutGeneratedContent(node, theme, headingCounterText_ ? headingCounterText_->value(node.id()) : QPair<QString, QString>());
+  return result;
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
@@ -831,10 +825,16 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
          << node.literal() << theme.zoomPercent() << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
   stream << theme.paragraphFont().key() << theme.codeFont().key();
   const auto key = cssTagForNode(node);
-  for (const auto& state : {QString(), QString(":hover"), QString(":focus"), QString("::before"), QString("::after")}) {
+  for (const auto& state : {QString(), QString(":hover"), QString(":focus")}) {
     const auto* style = theme.elementStyleForNode(node, key + state);
     stream << (style ? style->fingerprint : quint64(0));
   }
+  for (const auto& pseudo : {QStringLiteral("before"), QStringLiteral("after")})
+    for (int bits = 0; bits < 4; ++bits) {
+      CssElementState state; state.hover = bits & 1; state.focus = bits & 2;
+      const auto generated = theme.pseudoForElement(*theme.cssElementForNode(node), pseudo, state);
+      stream << (generated && generated->computed ? generated->computed->fingerprint() : quint64(0));
+    }
   const auto projection = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
   stream << projection.cursorSourceOffset << projection.cursorVisibleOffset << projection.revealMarkdownMarkers;
   if (projection.cursorSourceOffset >= 0 || projection.cursorVisibleOffset >= 0) {
@@ -856,6 +856,11 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
       const auto offset = inlineNode.contentRange().isValid() ? inlineNode.contentRange().start : inlineNode.sourceRange().start;
       stream << int(inlineNode.type()) << inlineNode.text() << inlineNode.href() << inlineNode.title() << inlineNode.alt()
              << theme.inlineStyleForNode(node, offset).fingerprint;
+      if (const auto* link = theme.cssInlineElement(node, offset, QStringLiteral("a")))
+        for (const auto& pseudo : {QStringLiteral("before"), QStringLiteral("after")}) {
+          const auto generated = theme.pseudoForElement(*link, pseudo);
+          stream << (generated && generated->computed ? generated->computed->fingerprint() : quint64(0));
+        }
       self(self, inlineNode.children());
     }
   };

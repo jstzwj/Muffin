@@ -376,20 +376,6 @@ struct AnimationDef {
 };
 
 // Pseudo-element decorations + hover effects + transitions (+ future @keyframes).
-// A nested-list guide line drawn from a `li::before { border-left: …; left;
-// top; height: calc(100% - Npx) }` rule (phycat's tree guide). Distinct from the
-// generic pseudo-element painter because it is a per-item vertical decoration,
-// not a marker/icon: each list item draws its own segment, and nesting depth
-// (each item's indented left edge) produces the stacked tree automatically.
-struct ListGuide {
-  QColor color;
-  qreal width = 0.0;       // border-left width; 0 ⇒ no line
-  qreal leftOffset = 0.0;  // li-relative X offset of the line (may be negative)
-  qreal topInset = 0.0;    // px below the item's top where the line begins
-  qreal bottomInset = 0.0; // px above the item's bottom where the line ends
-  bool present = false;    // a usable guide (valid colour + positive width)
-};
-
 struct ThemeDecorations {
   std::vector<PseudoElementRule> pseudos;     // ::before/::after, host-keyed
   std::vector<ElementBackground> backgrounds;  // element own background, host-keyed
@@ -397,7 +383,6 @@ struct ThemeDecorations {
   std::vector<TransitionSpec> transitions;     // transition duration, host-keyed
   std::vector<KeyframesDef> keyframes;         // @keyframes defs, name-keyed
   std::vector<AnimationDef> animations;        // host → animation binding
-  ListGuide listGuide;                         // nested-list guide line, host=li::before
   // `li::marker { content: … counter(list-item) … }` parsed into tokens. Non-empty
   // ⇒ the marker text is content-driven (counter resolved per item at layout time),
   // overriding list-style-type.

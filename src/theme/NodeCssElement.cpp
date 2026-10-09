@@ -120,21 +120,8 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node, const Q
   const auto* parent = ensure(node);
   const auto pseudoSeparator = key.indexOf(QStringLiteral("::"));
   if (pseudoSeparator >= 0) {
-    auto& pseudos = synthetic_[&node];
     const auto pseudo = key.mid(pseudoSeparator + 2).section(QLatin1Char(':'), 0, 0);
-    const auto pseudoKey = QStringLiteral("::") + pseudo;
-    if (!pseudos.contains(pseudoKey)) {
-      auto* element = makeOwned();
-      const auto identity = element->cacheId;
-      *element = *parent;
-      element->cacheId = identity;
-      element->inlineDeclarations.clear();
-      element->pseudoElement = pseudo;
-      element->originatingElement = parent;
-      nodes_.insert(element, &node);
-      pseudos.insert(pseudoKey, element);
-    }
-    return pseudos.value(pseudoKey);
+    return buildPseudo(*parent, pseudo);
   }
   const QString tag = key.section(QLatin1Char(' '), -1).section(QLatin1Char(':'), 0, 0);
   if (tag == parent->tag || tag.startsWith(QLatin1Char('#'))) return parent;
@@ -146,6 +133,22 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node, const Q
     children.insert(tag, child);
   }
   return children.value(tag);
+}
+
+const CssElement* NodeCssElementBuilder::buildPseudo(const CssElement& origin, const QString& pseudo) const {
+  auto& pseudos = pseudos_[&origin];
+  if (!pseudos.contains(pseudo)) {
+    auto* element = makeOwned();
+    const auto identity = element->cacheId;
+    *element = origin;
+    element->cacheId = identity;
+    element->inlineDeclarations.clear();
+    element->pseudoElement = pseudo;
+    element->originatingElement = &origin;
+    if (const auto* node = nodeFor(origin)) nodes_.insert(element, node);
+    pseudos.insert(pseudo, element);
+  }
+  return pseudos.value(pseudo);
 }
 
 const CssElement* NodeCssElementBuilder::buildInline(const MarkdownNode& owner, qsizetype offset) const {
@@ -191,6 +194,7 @@ const CssElement* NodeCssElementBuilder::buildInline(const MarkdownNode& owner, 
                 auto* child = childElement(htmlParents.back(), box.cssTag);
                 child->id = box.cssId;
                 child->classes = box.cssClasses;
+                if (!box.href().isEmpty()) child->attributes.insert(QStringLiteral("href"), box.href());
                 child->inlineDeclarations = CssThemeParser::parseDeclarations(box.cssInlineStyle);
                 element = child;
                 const auto tag = child->tag;
@@ -201,7 +205,11 @@ const CssElement* NodeCssElementBuilder::buildInline(const MarkdownNode& owner, 
           }
         } else {
           const QString tag = cssTagForInline(node.type());
-          if (!tag.isEmpty()) element = childElement(htmlParents.back(), tag);
+          if (!tag.isEmpty()) {
+            auto* child = childElement(htmlParents.back(), tag);
+            if (node.type() == InlineType::Link) child->attributes.insert(QStringLiteral("href"), node.href());
+            element = child;
+          }
         }
         views.push_back({node.sourceStart(), node.sourceEnd(), element});
         append(node.children(), element);
@@ -242,6 +250,18 @@ const CssElement* NodeCssElementBuilder::buildInline(const MarkdownNode& owner, 
 
 qsizetype NodeCssElementBuilder::materializedElementCount() const {
   return static_cast<qsizetype>(pool_.size()) + 2;  // shared html/body host
+}
+
+const CssElement* NodeCssElementBuilder::linkForSourceRange(const MarkdownNode& owner, qsizetype start,
+                                                          qsizetype end, const QString& href) const {
+  buildInline(owner, start);
+  const auto& views = inlineTrees_.constFind(&owner).value();
+  for (const auto& view : views) {
+    if (view.end <= start || view.start >= end) continue;
+    for (const auto* origin = view.element; origin; origin = origin->parent)
+      if (origin->tag == "a" && origin->attributes.value("href") == href) return origin;
+  }
+  return nullptr;
 }
 
 const MarkdownNode* NodeCssElementBuilder::nodeFor(const CssElement& element) const {

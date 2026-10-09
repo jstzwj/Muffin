@@ -408,16 +408,6 @@ QString RenderTheme::listStyleTypeForItem(bool ordered) const {
   return !type.isEmpty() ? type : liListStyleType_;
 }
 
-ListGuide RenderTheme::listGuide() const {
-  // Scale the CSS-px geometry to the current zoom; colour and `present` pass through.
-  ListGuide g = decorations_.listGuide;
-  g.width = scaled(g.width);
-  g.leftOffset = scaled(g.leftOffset);
-  g.topInset = scaled(g.topInset);
-  g.bottomInset = scaled(g.bottomInset);
-  return g;
-}
-
 qreal RenderTheme::blockQuoteIndent() const {
   return scaled(16.0);
 }
@@ -639,14 +629,48 @@ const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& no
 }
 
 std::optional<PseudoElementRule> RenderTheme::pseudoForNode(const MarkdownNode& node, const QString& pseudo) const {
-  const auto host = cssTagForNode(node);
+  return pseudoForElement(*cssElementForNode(node), pseudo);
+}
+
+const CssElement* RenderTheme::cssInlineElement(const MarkdownNode& owner, qsizetype sourceOffset, const QString& tag) const {
+  if (!styleTree_) styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
+  const auto* element = styleTree_->buildInline(owner, sourceOffset);
+  if (tag.isEmpty()) return element;
+  while (element && element->tag != tag) element = element->parent;
+  return element;
+}
+
+const CssElement* RenderTheme::cssLinkInSourceRange(const MarkdownNode& owner, qsizetype start, qsizetype end, const QString& href) const {
+  if (!styleTree_) styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
+  return styleTree_->linkForSourceRange(owner, start, end, href);
+}
+
+std::optional<PseudoElementRule> RenderTheme::pseudoForElement(const CssElement& origin, const QString& pseudo,
+                                                             CssElementState state) const {
+  const auto host = origin.id == QStringLiteral("write") ? QStringLiteral("#write") : origin.tag;
   const auto key = host + QStringLiteral("::") + pseudo;
   if (styleEngine_) {
+    if (!styleEngine_->mayGeneratePseudo(origin, pseudo)) return {};
+    if (!origin.cacheId) {
+      // Standalone renderers may supply a temporary semantic tree. Never
+      // retain its addresses in the document adapter or snapshot cache.
+      CssElement element = origin;
+      element.inlineDeclarations.clear();
+      element.pseudoElement = pseudo;
+      element.originatingElement = &origin;
+      const auto rules = extractPseudoRules({{key, styleEngine_->styleFor(element, state)}});
+      return rules.empty() ? std::nullopt : std::optional<PseudoElementRule>(rules.front());
+    }
     if (!styleTree_) styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
-    const auto* element = styleTree_->build(node, key);
-    const auto rules = extractPseudoRules({{key, styleEngine_->styleFor(*element)}});
-    if (!rules.empty()) return rules.front();
-    return {};
+    const auto* element = styleTree_->buildPseudo(origin, pseudo);
+    const auto cacheKey = QString::number(element->cacheId) + QLatin1Char('/') +
+        QString::number(int(state.hover) | (int(state.focus) << 1) | (int(state.active) << 2) |
+                        (int(state.visited) << 3) | (int(state.mdFocus) << 4));
+    if (const auto cached = pseudoStyleCache_.constFind(cacheKey); cached != pseudoStyleCache_.cend()) return cached.value();
+    const auto rules = extractPseudoRules({{key, styleEngine_->styleFor(*element, state)}});
+    const std::optional<PseudoElementRule> result = rules.empty() ? std::nullopt : std::optional<PseudoElementRule>(rules.front());
+    pseudoStyleCache_.insert(cacheKey, result);
+    return result;
   }
   for (const auto& rule : decorations_.pseudos)
     if (rule.host == host && rule.pseudo == pseudo) return rule;
@@ -655,6 +679,7 @@ std::optional<PseudoElementRule> RenderTheme::pseudoForNode(const MarkdownNode& 
 
 void RenderTheme::invalidateDocumentStyles() const {
   nodeStyleCache_.clear();
+  pseudoStyleCache_.clear();
   ++styleGeneration_;
   if (styleEngine_) styleEngine_->clearCache();
   prototypeFontCache_.clear();

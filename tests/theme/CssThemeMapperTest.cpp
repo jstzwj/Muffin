@@ -2,6 +2,7 @@
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/CssThemeParser.h"
+#include "theme/CssComputedStyleEngine.h"
 #include "theme/ThemeManager.h"
 #include "render/KeyframeSampler.h"
 
@@ -1033,8 +1034,7 @@ void testBlockquoteBeforeAbsoluteGeometry() {
 }
 
 // phycat draws the nested-list guide line via `li::before { border-left; left;
-// top; height: calc(100% - Npx) }`. It must map to a ListGuide decoration, not a
-// generic pseudo marker.
+// top; height: calc(100% - Npx) }`. It uses the common generated box model.
 void testListGuideExtraction() {
   const QString css = QStringLiteral(
       ":root { --guide: #3db8bf; }"
@@ -1042,13 +1042,14 @@ void testListGuideExtraction() {
       "li::before { content: \"\"; border-left: .5px solid var(--guide); "
       "left: -12.5px; top: 35px; height: calc(100% - 45px); }");
   const ThemeDefinition d = CssThemeMapper::fromCss(css, QStringLiteral("t"), QString());
-  const ListGuide g = d.decorations.listGuide;
-  require(g.present, QStringLiteral("li::before border-left should produce a guide"));
-  require(g.color == QColor(QStringLiteral("#3db8bf")), QStringLiteral("guide colour from border-left via var"));
-  require(qAbs(g.width - 0.5) < 0.01, QStringLiteral("guide width .5px from border-left"));
-  require(qAbs(g.leftOffset - (-12.5)) < 0.01, QStringLiteral("guide leftOffset -12.5px"));
-  require(qAbs(g.topInset - 35.0) < 0.01, QStringLiteral("guide topInset 35px"));
-  require(qAbs(g.bottomInset - 45.0) < 0.01, QStringLiteral("guide bottomInset 45px from calc(100% - 45px)"));
+  const auto found = std::find_if(d.decorations.pseudos.begin(), d.decorations.pseudos.end(),
+      [](const auto& rule) { return rule.host == "li" && rule.pseudo == "before"; });
+  require(found != d.decorations.pseudos.end() && found->computed, "list guide uses the common computed pseudo style");
+  const auto& style = *found->computed;
+  require(style.resolvedValue("border-left-color") == "#3db8bf", "guide colour resolves custom properties");
+  require(qAbs(style.length("border-left-width").px - .5) < .01, "guide border width");
+  require(qAbs(style.length("left").px + 12.5) < .01 && qAbs(style.length("top").px - 35) < .01, "guide offsets");
+  require(style.length("height").fraction == 1 && style.length("height").px == -45, "guide calc stays deferred until layout");
 }
 
 // #write::before texture overlay: background-color + mask-image + opacity + mask-size.

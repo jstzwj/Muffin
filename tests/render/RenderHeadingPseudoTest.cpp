@@ -442,6 +442,62 @@ void testSyntheticBoldPreservesCssAdvances() {
   }
 }
 
+void testLivePositionedPseudosAndInvalidation() {
+  const auto reference = QJsonDocument::fromJson(readFixture(
+      QStringLiteral(MUFFIN_SOURCE_DIR "/tests/fixtures/theme/live-pseudos-browser.json")).toUtf8()).object();
+  const auto family = browserLayoutFont(reference).value("muffinfixturesans");
+  QJsonObject entry;
+  for (const auto value : reference["cases"].toArray()) if (value.toObject()["id"] == "absolute-structural") entry = value.toObject();
+  auto css = entry["css"].toString(); css.replace("MuffinFixtureSans", family);
+  for (int zoom : {100, 125, 200}) {
+    const qreal scale = zoom / 100., width = entry["width"].toDouble() * scale;
+    const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, "live-positioned", {}), zoom);
+    DocumentSession session; session.setMarkdownText(entry["markdown"].toString() + '\n', false);
+    DocumentLayout layout; layout.rebuild(session.document(), theme, width);
+    const auto& nodes = session.document().root().children();
+    const auto firstId = nodes[0]->id(), secondId = nodes[1]->id();
+    const auto* first = layout.block(firstId); const auto* second = layout.block(secondId);
+    require(first->positionedPseudoRects().size() == 1 && second->positionedPseudoRects().size() == 1, "positioned pseudos use live structural selectors");
+    auto rect = first->positionedPseudoRects()[0].translated(-first->cssBoxGeometry().paddingBox.topLeft());
+    require(qAbs(rect.x() - 3 * scale) < .01 && qAbs(rect.y() - 4 * scale) < .01 &&
+        qAbs(rect.width() - 2 * scale) < .01 && qAbs(rect.height() - 16 * scale) < .01, "positioned percentage geometry uses its layout containing box");
+    const auto suffix = second->positionedPseudoRects()[0];
+    require(qAbs(suffix.right() - (second->cssBoxGeometry().paddingBox.right() - 3 * scale)) < .01 &&
+        qAbs(suffix.bottom() - (second->cssBoxGeometry().paddingBox.bottom() - 2 * scale)) < .01,
+        "absolute generated text honors right/bottom and inherited font geometry");
+    require(first->visualOverflowRect().contains(first->positionedPseudoRects()[0]), "generated overflow participates in the host snapshot");
+    require(first->stylesMatch(theme, session.document()), "positioned style snapshot matches before editing");
+    require(session.applyTextDelta(0, 0, "#### Inserted\n\n", true, {{firstId, 0, BlockType::Heading}}), "insert preceding heading");
+    theme.invalidateDocumentStyles();
+    require(!first->stylesMatch(theme, session.document()), "structural edits invalidate positioned pseudo snapshots");
+    layout.rebuild(session.document(), theme, width, {}, {}, DocumentLayout::BuildPolicy::Lazy); layout.buildAll(theme);
+    const auto* moved = layout.block(firstId);
+    require(moved && moved->positionedPseudoRects().size() == 1 &&
+        layout.block(secondId)->positionedPseudoRects().isEmpty(), "positioned fragments follow their live hosts after insertion");
+    const auto before = moved->positionedPseudoRects()[0];
+    const_cast<BlockLayout*>(layout.block(firstId))->translate(7, 11);
+    require(layout.block(firstId)->positionedPseudoRects()[0] == before.translated(7, 11), "cached translation keeps positioned geometry attached");
+  }
+  // State endpoints inherit from the active originating element, and the
+  // painter consumes their interpolated used geometry without another cascade.
+  const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(kBase +
+      "h4{position:relative;width:200px;line-height:24px;color:red}h4:hover{color:blue}"
+      "h4::after{content:'';position:absolute;left:0;top:0;width:10px;height:4px;background:currentColor}"
+      "h4:hover::after{width:50%}h4:focus::after{width:25%}", "state-endpoints", {}));
+  DocumentSession session; session.setMarkdownText("#### Heading\n", false); DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800);
+  const auto* block = layout.block(session.document().root().children()[0]->id());
+  const auto raster = [&](qreal phase) {
+    QImage image(220, 50, QImage::Format_ARGB32_Premultiplied); image.fill(Qt::white);
+    QPainter painter(&image); painter.translate(-block->rect().topLeft());
+    BlockLayout::BlockPaintState state; state.hoverActive = true; state.hoverPhase = phase;
+    block->paint(painter, theme, 0, nullptr, state); return image;
+  };
+  const auto base = inkBounds(raster(0), isRed), hovered = inkBounds(raster(1),
+      [](QRgb p) { return qBlue(p) > 150 && qRed(p) < 90 && qGreen(p) < 90; });
+  require(base.width() >= 10 && hovered.width() == 100, QString("hover endpoint uses live inherited color and percentage width base=%1 hover=%2").arg(base.width()).arg(hovered.width()));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -468,6 +524,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testBrowserInlinePseudoGeometryAndEditing);
   RUN_TEST(testPseudoStructuralCascadeAndCache);
   RUN_TEST(testSyntheticBoldPreservesCssAdvances);
+  RUN_TEST(testLivePositionedPseudosAndInvalidation);
 #undef RUN_TEST
   return 0;
 }

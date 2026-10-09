@@ -40,7 +40,7 @@ QImage paint(const DocumentLayout& layout, const RenderTheme& theme, int width, 
       ? QPen(theme.pageBorderColor(), theme.pageBorderWidth()) : QPen(Qt::NoPen));
   painter.drawRoundedRect(page, theme.pageBorderRadius(), theme.pageBorderRadius());
   painter.save(); painter.setClipRect(page);
-  DecorationPainter::paintWriteTexture(painter, theme, page);
+  DecorationPainter::paintWriteTexture(painter, theme, page, layout.documentPseudo(theme, QStringLiteral("before")));
   painter.restore();
   BlockLayout::BlockPaintState state;
   state.focusActive = focus;

@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 
 namespace muffin {
 class MarkdownDocument;
@@ -146,6 +147,9 @@ public:
   QRectF cssBorderBox() const;
   QPointF inlineTextOrigin() const;
   QRectF visualOverflowRect() const;
+  void layoutGeneratedContent(const MarkdownNode& node, const RenderTheme& theme,
+                              QPair<QString, QString> resolvedText = {});
+  QVector<QRectF> positionedPseudoRects() const;
   bool stylesMatch(const RenderTheme& theme, const MarkdownDocument& document) const;
   void translate(qreal dx, qreal dy);
   void shiftSourceOffsets(qsizetype delta);
@@ -315,6 +319,16 @@ public:
   QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
 private:
+  struct PositionedPseudoFragment {
+    std::array<LayoutBox, 4> boxes;
+    std::array<PseudoElementRule, 4> rules;
+    std::array<QRectF, 4> icons;
+    std::array<std::shared_ptr<QTextLayout>, 4> texts;
+  };
+  std::vector<PositionedPseudoFragment> positionedPseudos_;
+  std::array<quint64, 8> positionedPseudoFingerprints_{};
+  bool generatedContentLaidOut_ = false;
+  void paintPositionedPseudos(QPainter& painter, QPointF origin, qreal hover, qreal focus) const;
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const;
   // per-type paint dispatch targets (paintSelf switches over these). viewRect is the
   // scrollY-translated block rect computed once in paintSelf.

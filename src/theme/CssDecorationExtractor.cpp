@@ -1,6 +1,5 @@
 #include "theme/CssDecorationExtractor.h"
 
-
 #include "theme/CssContent.h"
 #include "theme/CssThemeParser.h"
 #include "theme/CssValueParser.h"
@@ -62,24 +61,6 @@ qreal opacityValue(const QString& raw, const QHash<QString, QString>& vars) {
   return ok ? qBound(0.0, v, 1.0) : 1.0;
 }
 
-// Minimal `calc(100% - <len>)` parser for a li::before guide-line height, where
-// the line spans the item minus a fixed inset (phycat's `height: calc(100% - 45px)`
-// ⇒ bottom inset 45px). Returns the inset in px; any other calc/% form ⇒ 0
-// (line spans the full item). Full calc() is out of scope for this one use.
-qreal parseCalcPercentMinusPx(const QString& value, const QHash<QString, QString>& vars, qreal emPx) {
-  const QString v = CssThemeParser::resolveVars(value, vars).trimmed();
-  static const QRegularExpression re(QStringLiteral("calc\\(\\s*100%\\s*-\\s*([0-9.]+)(px|em|rem)?\\s*\\)"),
-                                     QRegularExpression::CaseInsensitiveOption);
-  const QRegularExpressionMatch m = re.match(v);
-  if (!m.hasMatch()) { return 0.0; }
-  bool ok = false;
-  qreal n = m.captured(1).toDouble(&ok);
-  if (!ok) { return 0.0; }
-  const QString unit = m.captured(2).toLower();
-  if (unit == QStringLiteral("em") || unit == QStringLiteral("rem")) { n *= emPx; }
-  return n;
-}
-
 qreal transitionMs(const QString& raw) {
   // Match a duration with optional leading dot (.3s, 0.3s, 300ms, 2s).
   static const QRegularExpression re(QStringLiteral("(\\d*\\.?\\d+)(s|ms)"));
@@ -100,29 +81,11 @@ QString propertyValue(const CssComputedStyle& style, std::initializer_list<QStri
   return {};
 }
 QColor propertyColor(const CssComputedStyle& style, std::initializer_list<QString> properties) {
-  return extractColor(propertyValue(style, properties), style.customProperties());
+  auto value = propertyValue(style, properties);
+  if (value.compare(QStringLiteral("currentColor"), Qt::CaseInsensitive) == 0) value = style.resolvedValue(QStringLiteral("color"));
+  return extractColor(value, style.customProperties());
 }
 }  // namespace
-
-// Nested-list guide line from a `li::before { border-left: …; left; top; height:
-// calc(100% - Npx) }` rule. phycat draws the per-item vertical tree line this way;
-// it is a list decoration rather than a generic pseudo marker, so it gets its own
-// model. present ⇒ the theme styled it (valid colour + positive width).
-ListGuide extractListGuide(const CssComputedStyle& sub) {
-  const auto& vars = sub.customProperties();
-  const qreal bodyPx = sub.fontSizePx * sub.textScale;
-  ListGuide g;
-  const QString blColorRaw = sub.resolvedValue(QStringLiteral("border-left-color"));
-  const QString blWidthRaw = sub.resolvedValue(QStringLiteral("border-left-width"));
-  g.color = extractColor(blColorRaw, vars);
-  g.width = borderWidthPx(blWidthRaw, vars, bodyPx);
-  g.leftOffset = lengthToPx(propertyValue(sub, {QStringLiteral("left")}), vars, bodyPx);
-  const QString topRaw = propertyValue(sub, {QStringLiteral("top")});
-  if (!topRaw.isEmpty()) { g.topInset = lengthToPx(topRaw, vars, bodyPx); }
-  g.bottomInset = parseCalcPercentMinusPx(propertyValue(sub, {QStringLiteral("height")}), vars, bodyPx);
-  g.present = g.color.isValid() && g.width > 0.0;
-  return g;
-}
 
 std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles& styles) {
   std::vector<PseudoElementRule> out;
@@ -137,7 +100,6 @@ std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles
     };
     const Key k{key.left(split), key.mid(split + 2)};
     if (k.pseudo != QStringLiteral("before") && k.pseudo != QStringLiteral("after")) continue;
-    if (k.host == QStringLiteral("li") && k.pseudo == QStringLiteral("before")) continue;
     const auto& sub = styles.constFind(key).value();
     if (!sub.hasProperty(QStringLiteral("content"))) continue;
     const auto& vars = sub.customProperties();

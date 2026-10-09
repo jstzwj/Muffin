@@ -289,7 +289,10 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   static const std::vector<QString> bgProps = {QStringLiteral("background-color"), QStringLiteral("background")};
   const auto styleColor = [&](const std::vector<QString>& properties) {
     for (const QString& property : properties) {
-      const QColor c = extractColor(style.resolvedValue(property), style.customProperties());
+      auto raw = style.resolvedValue(property);
+      if (raw.compare(QStringLiteral("currentColor"), Qt::CaseInsensitive) == 0 && property != QStringLiteral("color"))
+        raw = style.resolvedValue(QStringLiteral("color"));
+      const QColor c = extractColor(raw, style.customProperties());
       if (c.isValid()) { return c; }
     }
     return QColor();
@@ -716,7 +719,6 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& source, const QSt
   d.decorations.keyframes = extractKeyframes(sheet, vars);
   d.decorations.animations = extractAnimations(styles);
   d.decorations.pseudos = extractPseudoRules(styles);
-  d.decorations.listGuide = extractListGuide(style(QStringLiteral("li::before")));
   for (int level = 1; level <= 6; ++level) {
     const QString host = QStringLiteral("h%1").arg(level);
     const auto h = project(host);

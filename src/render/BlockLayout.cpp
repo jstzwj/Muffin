@@ -13,6 +13,9 @@
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/state/StateScenePainter.h"
 #include "render/DecorationPainter.h"
+#include "render/GeneratedContent.h"
+#include "render/CssFormattingContext.h"
+#include "render/InlineFormatting.h"
 
 #include <QFontMetricsF>
 #include <QPainter>
@@ -466,11 +469,128 @@ void BlockLayout::setCssBoxGeometry(CssBoxGeometry geometry) { cssBoxGeometry_ =
 BlockLayout::CssBoxGeometry BlockLayout::cssBoxGeometry() const { return cssBoxGeometry_; }
 QRectF BlockLayout::cssBorderBox() const { return cssBoxGeometry_.borderBox; }
 QPointF BlockLayout::inlineTextOrigin() const { return cssBoxGeometry_.inlineTextOrigin; }
-QRectF BlockLayout::visualOverflowRect() const { return cssBoxGeometry_.visualOverflow; }
+QRectF BlockLayout::visualOverflowRect() const {
+  auto bounds = cssBoxGeometry_.visualOverflow;
+  for (const auto& pseudo : positionedPseudos_)
+    for (const auto& box : pseudo.boxes)
+      if (box.valid) bounds = bounds.united(box.visualOverflow.translated(rect_.topLeft()));
+  return bounds;
+}
+
+QVector<QRectF> BlockLayout::positionedPseudoRects() const {
+  QVector<QRectF> result;
+  for (const auto& pseudo : positionedPseudos_)
+    if (pseudo.boxes[0].valid) result.push_back(pseudo.boxes[0].borderBox.translated(rect_.topLeft()));
+  return result;
+}
+
+void BlockLayout::layoutGeneratedContent(const MarkdownNode& node, const RenderTheme& theme, QPair<QString, QString> resolvedText) {
+  positionedPseudos_.clear();
+  generatedContentLaidOut_ = true;
+  const auto* origin = theme.cssElementForNode(node);
+  const auto containing = cssBoxGeometry_.paddingBox.translated(-rect_.topLeft());
+  const qreal zoom = theme.zoomPercent() / 100.;
+  int pseudoIndex = 0;
+  for (const auto& name : {QStringLiteral("before"), QStringLiteral("after")}) {
+    PositionedPseudoFragment fragment;
+    bool present = false;
+    for (int stateIndex = 0; stateIndex < 4; ++stateIndex) {
+      CssElementState state; state.hover = stateIndex & 1; state.focus = stateIndex & 2;
+      const auto rule = theme.pseudoForElement(*origin, name, state);
+      positionedPseudoFingerprints_[pseudoIndex * 4 + stateIndex] = rule && rule->computed ? rule->computed->fingerprint() : 0;
+      if (!rule || !rule->absolute || !containing.isValid()) continue;
+      const auto value = generatedContentStyle(theme, *rule, cssBoxGeometry_.font, containing.size(),
+          pseudoIndex == 0 ? resolvedText.first : resolvedText.second);
+      if (!value) continue;
+      auto v = *value;
+      const auto inset = LayoutBox::insets(v.used);
+      const auto valid = [&](const char* property) {
+        return rule->computed && rule->computed->length(QLatin1String(property)).status == CssLengthStatus::Valid;
+      };
+      if (!v.text.isEmpty() && !v.icon) {
+        auto text = std::make_shared<QTextLayout>(v.text, v.font);
+        QTextCharFormat format; format.setForeground(rule->color); format.setFont(v.font);
+        text->setFormats({{0, int(v.text.size()), format}});
+        QTextOption option; option.setWrapMode(QTextOption::WordWrap); text->setTextOption(option);
+        const auto natural = intrinsicTextWidths(*text, false, false);
+        qreal width = valid("width") ? qMax<qreal>(0, v.width - inset.left() - inset.right())
+            : qMin(natural.maxContent, containing.width() - inset.left() - inset.right());
+        if (!valid("width") && valid("left") && valid("right")) {
+          const auto left = rule->computed->length("left"), right = rule->computed->length("right");
+          width = containing.width() - (left.px + right.px) * zoom - (left.fraction + right.fraction) * containing.width()
+              - inset.left() - inset.right() - v.used.margin.left() - v.used.margin.right();
+        }
+        text->beginLayout(); qreal y = 0;
+        for (;;) {
+          auto line = text->createLine(); if (!line.isValid()) break;
+          line.setLineWidth(qMax<qreal>(0, width));
+          InlineLineBox lineBox(v.font, cssLineHeightPx(v.font.pointSizeF(), v.style.text.lineHeight));
+          y += lineBox.placeLine(line, y);
+        }
+        text->endLayout();
+        if (!valid("width")) v.width = qMax<qreal>(0, width) + inset.left() + inset.right();
+        if (!valid("height")) v.height = y + inset.top() + inset.bottom();
+        fragment.texts[stateIndex] = std::move(text);
+      }
+      auto staticOrigin = cssBoxGeometry_.contentBox.topLeft() - rect_.topLeft();
+      if (inlineLayout_) {
+        const auto caret = inlineLayout_->cursorRect(pseudoIndex == 0 ? 0 : inlineLayout_->visibleText().size());
+        staticOrigin = caret.topLeft() + inlineTextOrigin() - rect_.topLeft();
+      }
+      const auto rect = positionGeneratedContent(v, containing, QRectF(staticOrigin, QSizeF(v.width, v.height)), zoom);
+      auto& box = fragment.boxes[stateIndex];
+      box = LayoutBox::place(v.style.key, v.style, v.used, rect, v.font);
+      if (v.icon && rule->svgFromMask) box.style.paint.backgroundColor = QColor();
+      fragment.rules[stateIndex] = *rule;
+      fragment.icons[stateIndex] = generatedIconRect(v, box.contentBox, zoom);
+      if (fragment.texts[stateIndex]) box.visualOverflow = box.visualOverflow.united(
+          fragment.texts[stateIndex]->boundingRect().translated(box.inlineTextOrigin));
+      present = true;
+    }
+    if (present) positionedPseudos_.push_back(std::move(fragment));
+    ++pseudoIndex;
+  }
+}
+
+void BlockLayout::paintPositionedPseudos(QPainter& painter, QPointF origin, qreal hover, qreal focus) const {
+  const auto blend = [](const QRectF& a, const QRectF& b, qreal phase) {
+    return QRectF(a.topLeft() + (b.topLeft() - a.topLeft()) * phase,
+                  a.size() + (b.size() - a.size()) * phase);
+  };
+  const auto geometry = [&](const std::array<LayoutBox, 4>& boxes) {
+    return blend(blend(boxes[0].borderBox, boxes[1].borderBox, hover),
+                 blend(boxes[2].borderBox, boxes[3].borderBox, hover), focus);
+  };
+  for (const auto& fragment : positionedPseudos_) {
+    const int state = (hover > .5 ? 1 : 0) | (focus > .5 ? 2 : 0);
+    const auto& snapshot = fragment.boxes[state];
+    if (!snapshot.valid) continue;
+    // Animation interpolates already laid-out endpoints; no CSS is evaluated here.
+    auto box = LayoutBox::place(snapshot.hostKey, snapshot.style, snapshot.usedBox, geometry(fragment.boxes), snapshot.font);
+    paintLayoutBox(painter, box, origin);
+    const auto& rule = fragment.rules[state];
+    painter.save(); painter.setOpacity(painter.opacity() * rule.opacity);
+    if (!rule.svgData.isEmpty()) {
+      painter.setClipRect(box.contentBox.translated(origin), Qt::IntersectClip);
+      auto icon = fragment.icons[state]; icon.translate(box.contentBox.topLeft() - snapshot.contentBox.topLeft() + origin);
+      DecorationPainter::paintIcon(painter, rule.svgData, icon, rule.svgFromMask ? rule.maskTint : rule.color, rule.svgFromMask);
+    } else if (fragment.texts[state]) fragment.texts[state]->draw(&painter, box.inlineTextOrigin + origin);
+    painter.restore();
+  }
+}
 
 bool BlockLayout::stylesMatch(const RenderTheme& theme, const MarkdownDocument& document) const {
   const auto* node = document.node(id_);
   if (!node) return false;
+  if (generatedContentLaidOut_) {
+    int index = 0;
+    for (const auto& pseudo : {QStringLiteral("before"), QStringLiteral("after")})
+      for (int bits = 0; bits < 4; ++bits) {
+        CssElementState state; state.hover = bits & 1; state.focus = bits & 2;
+        const auto rule = theme.pseudoForElement(*theme.cssElementForNode(*node), pseudo, state);
+        if ((rule && rule->computed ? rule->computed->fingerprint() : quint64(0)) != positionedPseudoFingerprints_[index++]) return false;
+      }
+  }
   const auto matches = [&](const LayoutBox& box, const MarkdownNode& owner) {
     const auto* style = theme.elementStyleForNode(owner, box.hostKey);
     return style && style->fingerprint == box.style.fingerprint;
@@ -1241,6 +1361,8 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
         paintLayoutBox(painter, cssBoxGeometry_, QPointF(0, -scrollY));
       break;
   }
+  paintPositionedPseudos(painter, rect_.topLeft() + QPointF(0, -scrollY),
+      hover.hoverActive ? hover.hoverPhase : 0, hover.focusActive ? hover.focusPhase : 0);
 }
 
 void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY, BlockPaintState hover) const {
@@ -1296,24 +1418,6 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
         paintUnorderedListMarker(painter, listMarkerKind_, markerCenter, metrics.height(), markerColor);
       }
       painter.restore();
-      // Nested-list guide line (phycat's li::before border-left). Each item
-      // draws its own vertical segment at the CSS-declared `left` offset from
-      // the item's left edge (the li padding box == viewRect.left()); deeper
-      // nesting shifts each item's left edge right by one indent, so the
-      // per-item segments stack into the tree automatically. No-op when the
-      // theme styled no li::before guide.
-      const ListGuide guide = theme.listGuide();
-      if (guide.present) {
-        const qreal lineX = viewRect.left() + guide.leftOffset;
-        const qreal y1 = viewRect.top() + guide.topInset;
-        const qreal y2 = viewRect.bottom() - guide.bottomInset;
-        if (y2 > y1) {
-          painter.save();
-          painter.setPen(QPen(guide.color, guide.width));
-          painter.drawLine(QPointF(lineX, y1), QPointF(lineX, y2));
-          painter.restore();
-        }
-      }
       inlineLayout_->paint(painter, QPointF(contentX, viewRect.top()), hoverPhase, focusPhase);
     } else {
       const QPointF textOrigin = inlineTextOrigin() + QPointF(0, -scrollY);
@@ -1330,22 +1434,7 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
       painter.drawText(QPointF(textOrigin.x(), textOrigin.y() + inlineLayout_->firstLineBaselineY()), placeholderText_);
       painter.restore();
     }
-    if (type_ == BlockType::Heading) {
-      // CSS ::before/::after decorations: a trailing SVG icon after the heading
-      // text, an underline-gradient bar, etc.
-      DecorationPainter::PaintContext dctx;
-      dctx.headingLevel = headingLevel_;
-      dctx.font = cssBoxGeometry_.font;
-      const BlockLayout::CssBoxGeometry box = cssBoxGeometry();
-      const QPointF textOrigin = box.inlineTextOrigin + QPointF(0, -scrollY);
-      const QRectF hostRect = box.paddingBox.translated(0, -scrollY);
-      const QRectF textBounds = inlineLayout_->visualTextBounds().translated(textOrigin);
-      dctx.textBounds = textBounds;
-      dctx.hoverPhase = hoverPhase;
-      dctx.focusPhase = focusPhase;
-      DecorationPainter::paintPseudoDecorations(
-          painter, theme, QStringLiteral("h%1").arg(headingLevel_), hostRect, dctx);
-    }
+
   }
 }
 
@@ -1364,11 +1453,7 @@ void BlockLayout::paintBlockQuote(QPainter& painter, const RenderTheme& theme, Q
     painter.drawRoundedRect(QRectF(viewRect.left(), viewRect.top() + 3.0, 4.0, viewRect.height() - 6.0),
                             2.0, 2.0);
   } else {
-    const QRectF boxRect = cssBorderBox().translated(0, -scrollY);
     paintLayoutBox(painter, cssBoxGeometry_, QPointF(0, -scrollY));
-    DecorationPainter::PaintContext qctx;
-    qctx.font = cssBoxGeometry_.font;
-    DecorationPainter::paintPseudoDecorations(painter, theme, QStringLiteral("blockquote"), boxRect, qctx);
   }
   painter.restore();
 }

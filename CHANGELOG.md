@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Link and heading generated content share live pseudo styles and inline layout. Positioned decorations use stored used geometry and state snapshots; the link-icon, list-guide and paint-time pseudo positioning paths have been removed. Compiled selector subjects skip unrelated pseudo-state computation in long documents.
+- CI compares bundled Newsprint/Night page, heading, baseline and component geometry with fixed-font browser references, alongside generated-link editing and full/lazy/incremental consistency checks.
 - Viewport changes reuse compiled CSS selectors and theme projections while the active media rules and viewport-dependent values stay unchanged. Fixed-width prose columns retain their layout when only their horizontal position changes; lazy paragraph estimates share used-box and wrapping parameters within each pass.
 - Images, font database changes and Mermaid results carry separate paint/geometry resource versions. Editor resource notifications update affected blocks, preserve same-size image layout and coalesce asynchronous completions.
 - Incremental layout reuses nested native blocks and validates the measurements consumed by cached Flex/Grid track solutions. Equal contributions stop size invalidation at container boundaries; resource and real-theme regressions compare fresh and lazy rendering.
@@ -26,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pseudo selectors retain the originating element's attributes, structural position and active-state inheritance. Inline HTML link ranges survive format-data transfer, and generated link content preserves click targets and editable boundary coordinates.
+- `currentColor` backgrounds use the computed foreground color, including inherited hover/focus pseudo styles.
 - Generated heading `::before`/`::after` content participates in text measurement, wrapping, line boxes and overflow; painting, clicking and selection consume the same layout. The former heading-width reservation and guessed inline paint positions have been removed.
 - Live pseudo selectors inherit from their originating element and share structural style invalidation. CSS font configuration compensates verified Windows synthetic-bold advance inflation without changing real bold faces or dropping bold ink.
 - Heading theme selectors share Markdown host classes between prototypes and live nodes. Generated decorations resolve absolute offsets, percentages, translations and zoom from the common computed style; trailing SVG masks retain their own image size and use the allocated line box for top alignment.

@@ -1,0 +1,525 @@
+{
+  "browser": "148.0.7778.96",
+  "font": {
+    "family": "MuffinFixtureSans",
+    "files": {
+      "github/open-sans-v17-latin-ext_latin-regular.woff2": "537d46273fe124bbced2f098f26222fa3155741e9d76f906c3c39e7fa09bf6a8",
+      "github/open-sans-v17-latin-ext_latin-italic.woff2": "8ddc89881ca5f355826d20b2229266c56a2c8d7be69ff9533b1891b55dc15825",
+      "github/open-sans-v17-latin-ext_latin-700.woff2": "59a3166f7bacce6a65bf901ad20f141b619bca39a1318ea5efbdaa587b48a800",
+      "github/open-sans-v17-latin-ext_latin-700italic.woff2": "a250cc9c90a94d628301cbeaca7d8aa6276cda73c8a32af07d3ede513447931a"
+    }
+  },
+  "cases": [
+    {
+      "id": "adjacent-links",
+      "width": 90,
+      "markdown": "[one](https://one.test)[two](https://two.test)",
+      "css": "html,body{margin:0}#write{width:90px;padding:0;margin:0;max-width:none;font-family:MuffinFixtureSans;font-size:16px;line-height:24px}p,h4{margin:0;font-weight:400;font-size:16px;line-height:24px}strong{font-weight:700}a[href$=\"one.test\"]::before{content:\"1:\"}a:not([href$=\"one.test\"])::after{content:\":2\"}",
+      "expected": {
+        "height": 24,
+        "characters": [
+          {
+            "text": "o",
+            "x": 13.40625,
+            "y": 1,
+            "width": 9.671875
+          },
+          {
+            "text": "n",
+            "x": 23.0625,
+            "y": 1,
+            "width": 9.828125
+          },
+          {
+            "text": "e",
+            "x": 32.890625,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "text": "t",
+            "x": 41.875,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "text": "w",
+            "x": 47.515625,
+            "y": 1,
+            "width": 12.453125
+          },
+          {
+            "text": "o",
+            "x": 59.96875,
+            "y": 1,
+            "width": 9.671875
+          }
+        ]
+      }
+    },
+    {
+      "id": "html-link",
+      "width": 130,
+      "markdown": "prefix <a href=\"https://one.test\">first</a> suffix",
+      "css": "html,body{margin:0}#write{width:130px;padding:0;margin:0;max-width:none;font-family:MuffinFixtureSans;font-size:16px;line-height:24px}p,h4{margin:0;font-weight:400;font-size:16px;line-height:24px}strong{font-weight:700}a:is([href$=\"one.test\"])::before{content:\"[\"}a::after{content:\"]\"}",
+      "expected": {
+        "height": 48,
+        "characters": [
+          {
+            "text": "p",
+            "x": 0,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "text": "r",
+            "x": 9.796875,
+            "y": 1,
+            "width": 6.546875
+          },
+          {
+            "text": "e",
+            "x": 16.328125,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "text": "f",
+            "x": 25.3125,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "i",
+            "x": 30.046875,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "x",
+            "x": 34.78125,
+            "y": 1,
+            "width": 8.390625
+          },
+          {
+            "text": " ",
+            "x": 43.15625,
+            "y": 1,
+            "width": 4.171875
+          },
+          {
+            "text": "f",
+            "x": 52.59375,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "i",
+            "x": 57.328125,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "r",
+            "x": 62.0625,
+            "y": 1,
+            "width": 6.53125
+          },
+          {
+            "text": "s",
+            "x": 68.59375,
+            "y": 1,
+            "width": 7.640625
+          },
+          {
+            "text": "t",
+            "x": 76.21875,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "text": " ",
+            "x": 0,
+            "y": 25,
+            "width": 0
+          },
+          {
+            "text": "s",
+            "x": 0,
+            "y": 25,
+            "width": 7.640625
+          },
+          {
+            "text": "u",
+            "x": 7.625,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "text": "f",
+            "x": 17.453125,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "f",
+            "x": 22.421875,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "i",
+            "x": 27.390625,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "x",
+            "x": 32.359375,
+            "y": 25,
+            "width": 8.390625
+          }
+        ]
+      }
+    },
+    {
+      "id": "link-both",
+      "width": 170,
+      "markdown": "prefix [first](https://one.test) [**second**](https://two.test) suffix",
+      "css": "html,body{margin:0}#write{width:170px;padding:0;margin:0;max-width:none;font-family:MuffinFixtureSans;font-size:16px;line-height:24px}p,h4{margin:0;font-weight:400;font-size:16px;line-height:24px}strong{font-weight:700}a::before{content:\"[\";color:red}a::after{content:\"]\";color:blue}",
+      "expected": {
+        "height": 48,
+        "characters": [
+          {
+            "text": "p",
+            "x": 0,
+            "y": 1,
+            "width": 9.8125
+          },
+          {
+            "text": "r",
+            "x": 9.796875,
+            "y": 1,
+            "width": 6.546875
+          },
+          {
+            "text": "e",
+            "x": 16.328125,
+            "y": 1,
+            "width": 8.984375
+          },
+          {
+            "text": "f",
+            "x": 25.3125,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "i",
+            "x": 30.046875,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "x",
+            "x": 34.78125,
+            "y": 1,
+            "width": 8.390625
+          },
+          {
+            "text": " ",
+            "x": 43.15625,
+            "y": 1,
+            "width": 4.171875
+          },
+          {
+            "text": "f",
+            "x": 52.59375,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "i",
+            "x": 57.328125,
+            "y": 1,
+            "width": 4.734375
+          },
+          {
+            "text": "r",
+            "x": 62.0625,
+            "y": 1,
+            "width": 6.53125
+          },
+          {
+            "text": "s",
+            "x": 68.59375,
+            "y": 1,
+            "width": 7.640625
+          },
+          {
+            "text": "t",
+            "x": 76.21875,
+            "y": 1,
+            "width": 5.65625
+          },
+          {
+            "text": " ",
+            "x": 87.140625,
+            "y": 1,
+            "width": 4.15625
+          },
+          {
+            "text": "s",
+            "x": 96.5625,
+            "y": 1,
+            "width": 7.953125
+          },
+          {
+            "text": "e",
+            "x": 104.515625,
+            "y": 1,
+            "width": 9.453125
+          },
+          {
+            "text": "c",
+            "x": 113.96875,
+            "y": 1,
+            "width": 8.234375
+          },
+          {
+            "text": "o",
+            "x": 122.1875,
+            "y": 1,
+            "width": 9.921875
+          },
+          {
+            "text": "n",
+            "x": 132.09375,
+            "y": 1,
+            "width": 10.53125
+          },
+          {
+            "text": "d",
+            "x": 142.609375,
+            "y": 1,
+            "width": 10.140625
+          },
+          {
+            "text": " ",
+            "x": 0,
+            "y": 25,
+            "width": 0
+          },
+          {
+            "text": "s",
+            "x": 0,
+            "y": 25,
+            "width": 7.640625
+          },
+          {
+            "text": "u",
+            "x": 7.625,
+            "y": 25,
+            "width": 9.828125
+          },
+          {
+            "text": "f",
+            "x": 17.453125,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "f",
+            "x": 22.421875,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "i",
+            "x": 27.390625,
+            "y": 25,
+            "width": 4.984375
+          },
+          {
+            "text": "x",
+            "x": 32.359375,
+            "y": 25,
+            "width": 8.390625
+          }
+        ]
+      }
+    },
+    {
+      "id": "link-structural",
+      "width": 130,
+      "markdown": "[first](https://one.test) [second](https://two.test)",
+      "css": "html,body{margin:0}#write{width:130px;padding:0;margin:0;max-width:none;font-family:MuffinFixtureSans;font-size:16px;line-height:24px}p,h4{margin:0;font-weight:400;font-size:16px;line-height:24px}strong{font-weight:700}a{font-size:20px}a:first-of-type::before{content:\"\";display:inline-block;width:12px;height:12px;margin-right:8px;background:red}a:nth-of-type(2)::after{content:\" end\";font-size:50%;color:blue}",
+      "expected": {
+        "height": 54,
+        "characters": [
+          {
+            "text": "f",
+            "x": 20,
+            "y": -2,
+            "width": 5.921875
+          },
+          {
+            "text": "i",
+            "x": 25.90625,
+            "y": -2,
+            "width": 5.9375
+          },
+          {
+            "text": "r",
+            "x": 31.828125,
+            "y": -2,
+            "width": 8.171875
+          },
+          {
+            "text": "s",
+            "x": 40,
+            "y": -2,
+            "width": 9.546875
+          },
+          {
+            "text": "t",
+            "x": 49.53125,
+            "y": -2,
+            "width": 7.078125
+          },
+          {
+            "text": " ",
+            "x": 56.609375,
+            "y": 2,
+            "width": 4.15625
+          },
+          {
+            "text": "s",
+            "x": 60.765625,
+            "y": -2,
+            "width": 9.546875
+          },
+          {
+            "text": "e",
+            "x": 70.296875,
+            "y": -2,
+            "width": 11.234375
+          },
+          {
+            "text": "c",
+            "x": 81.515625,
+            "y": -2,
+            "width": 9.546875
+          },
+          {
+            "text": "o",
+            "x": 91.046875,
+            "y": -2,
+            "width": 12.09375
+          },
+          {
+            "text": "n",
+            "x": 103.125,
+            "y": -2,
+            "width": 12.28125
+          },
+          {
+            "text": "d",
+            "x": 115.390625,
+            "y": -2,
+            "width": 12.28125
+          }
+        ]
+      }
+    },
+    {
+      "id": "absolute-structural",
+      "width": 170,
+      "markdown": "#### Heading\n\n#### Second",
+      "css": "html,body{margin:0}#write{width:170px;padding:0;margin:0;max-width:none;font-family:MuffinFixtureSans;font-size:16px;line-height:24px}p,h4{margin:0;font-weight:400;font-size:16px;line-height:24px}strong{font-weight:700}h4{position:relative;padding:4px 8px}h4:first-child::before{content:\"\";position:absolute;left:3px;top:4px;width:2px;height:50%;background:red}h4:nth-of-type(2)::after{content:\"!\";position:absolute;right:3px;bottom:2px;color:blue}",
+      "expected": {
+        "height": 64,
+        "characters": [
+          {
+            "text": "H",
+            "x": 8,
+            "y": 5,
+            "width": 11.8125
+          },
+          {
+            "text": "e",
+            "x": 19.796875,
+            "y": 5,
+            "width": 8.984375
+          },
+          {
+            "text": "a",
+            "x": 28.78125,
+            "y": 5,
+            "width": 8.90625
+          },
+          {
+            "text": "d",
+            "x": 37.671875,
+            "y": 5,
+            "width": 9.8125
+          },
+          {
+            "text": "i",
+            "x": 47.484375,
+            "y": 5,
+            "width": 4.046875
+          },
+          {
+            "text": "n",
+            "x": 51.53125,
+            "y": 5,
+            "width": 9.828125
+          },
+          {
+            "text": "g",
+            "x": 61.34375,
+            "y": 5,
+            "width": 8.78125
+          },
+          {
+            "text": "S",
+            "x": 8,
+            "y": 37,
+            "width": 8.78125
+          },
+          {
+            "text": "e",
+            "x": 16.78125,
+            "y": 37,
+            "width": 8.984375
+          },
+          {
+            "text": "c",
+            "x": 25.75,
+            "y": 37,
+            "width": 7.625
+          },
+          {
+            "text": "o",
+            "x": 33.375,
+            "y": 37,
+            "width": 9.671875
+          },
+          {
+            "text": "n",
+            "x": 43.03125,
+            "y": 37,
+            "width": 9.828125
+          },
+          {
+            "text": "d",
+            "x": 52.859375,
+            "y": 37,
+            "width": 9.8125
+          }
+        ]
+      }
+    }
+  ]
+}

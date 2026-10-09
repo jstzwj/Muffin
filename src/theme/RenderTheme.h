@@ -4,6 +4,7 @@
 #include "document/NodeId.h"
 #include "render/CodeHighlight.h"
 #include "theme/ThemeDefinition.h"
+#include "theme/CssComputedStyleEngine.h"
 
 #include <QColor>
 #include <QFont>
@@ -70,7 +71,6 @@ public:
  // Nested-list guide line with geometry scaled to the current zoom (colour and
  // the `present` flag pass through unchanged). Invalid when the theme styled no
  // li::before guide; painters should no-op in that case.
- ListGuide listGuide() const;
  QColor viewportBackgroundColor() const;
  QColor pageBackgroundColor() const;
  QColor pageBorderColor() const;
@@ -107,6 +107,10 @@ public:
  const CssElement* cssParentForInlineHtml(const MarkdownNode& owner, qsizetype sourceOffset) const;
  const ThemeElementStyle* elementStyleForNode(const MarkdownNode& node, const QString& key) const;
  std::optional<PseudoElementRule> pseudoForNode(const MarkdownNode& node, const QString& pseudo) const;
+ std::optional<PseudoElementRule> pseudoForElement(const CssElement& origin, const QString& pseudo,
+                                                 CssElementState state = {}) const;
+ const CssElement* cssInlineElement(const MarkdownNode& owner, qsizetype sourceOffset, const QString& tag = {}) const;
+ const CssElement* cssLinkInSourceRange(const MarkdownNode& owner, qsizetype start, qsizetype end, const QString& href) const;
  // Drop resolved styles and the sparse live-tree adapter. Recreating the adapter
  // is proportional to the selector paths queried, so every edit gets fresh data.
  void invalidateDocumentStyles() const;
@@ -227,6 +231,7 @@ private:
  // so RenderTheme remains copyable; reset with the computed style cache on edits.
  mutable std::shared_ptr<NodeCssElementBuilder> styleTree_;
  mutable QHash<QString, std::shared_ptr<const ThemeElementStyle>> nodeStyleCache_;
+ mutable QHash<QString, std::optional<PseudoElementRule>> pseudoStyleCache_;
  mutable quint64 styleGeneration_ = 1;
  // Prototype (load-time) QFont per element key, used by the Lazy estimate path so it doesn't
  // rebuild a QFont per block (~80µs each on Windows). Cleared by invalidateDocumentStyles() since

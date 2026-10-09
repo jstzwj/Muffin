@@ -180,6 +180,8 @@ struct ParsedSelector {
 struct CssSelectorFeatures {
   bool hasStructuralRules = false;
   bool needsTypeIndex = false;
+  // Conservative rightmost tag/id subjects, derived from compiled selectors.
+  QHash<QString, QVector<QPair<QString, QString>>> generatedPseudoSubjects;
 };
 
 class CssComputedStyleEngine {
@@ -197,6 +199,14 @@ public:
  CssComputedStyle styleFor(const CssElement& element, const CssElementState& state, const std::vector<CssDeclaration>& inlineDeclarations,
                            const std::vector<CssDeclaration>& presentationDeclarations) const;
  const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
+ bool mayGeneratePseudo(const CssElement& origin, const QString& pseudo) const {
+   const auto candidates = selectorFeatures_.generatedPseudoSubjects.constFind(pseudo);
+   if (candidates == selectorFeatures_.generatedPseudoSubjects.cend()) return false;
+   for (const auto& subject : *candidates)
+     if ((subject.first.isEmpty() || subject.first == origin.tag.toLower()) &&
+         (subject.second.isEmpty() || subject.second == origin.id)) return true;
+   return false;
+ }
  void clearCache() const {
    computedCache_.clear();
    cascadeCache_.clear();

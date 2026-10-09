@@ -28,6 +28,9 @@ public:
   const CssElement* build(const MarkdownNode& node);
   const CssElement* build(const MarkdownNode& node, const QString& key);
   const CssElement* buildInline(const MarkdownNode& owner, qsizetype sourceOffset) const;
+  const CssElement* buildPseudo(const CssElement& origin, const QString& pseudo) const;
+  const CssElement* linkForSourceRange(const MarkdownNode& owner, qsizetype start, qsizetype end,
+                                      const QString& href) const;
   qsizetype materializedElementCount() const;
 
   const CssElement* previousSibling(const CssElement& element) const override;
@@ -46,6 +49,7 @@ private:
   mutable QHash<const MarkdownNode*, CssElement*> cache_;
   mutable QHash<const CssElement*, const MarkdownNode*> nodes_;
   mutable QHash<const MarkdownNode*, QHash<QString, CssElement*>> synthetic_;
+  mutable QHash<const CssElement*, QHash<QString, CssElement*>> pseudos_;
   struct InlineView {
     qsizetype start, end;
     const CssElement* element;

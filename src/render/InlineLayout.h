@@ -138,6 +138,7 @@ public:
   // Painted rects (document space, origin-relative) of the inline math atoms — the same rects
   // paintTextLayoutMathAtoms draws. Exposed so tests can verify atoms shift with the spliced preedit.
   QVector<QRectF> mathAtomRects(QPointF origin) const;
+  QVector<QRectF> generatedPseudoRects() const;
   QVector<QRectF> htmlAtomRects() const {
     QVector<QRectF> result;
     for (const auto& atom : htmlAtoms_) result.push_back(atom.rect);
@@ -225,17 +226,6 @@ private:
     bool valid = false;
   };
 
-  // Phase 3c: a flow-reserved placeholder for `a::before` generated content. The
-  // placeholder char lives in displayText_ (so QTextLayout measures/wraps it),
-  // is painted transparent and widened to the icon size via letter spacing, and
-  // maps to the link run's start source offset (zero-width, non-editable) — the
-  // same trick math/image atoms use.
-  struct LinkBeforeAtom {
-    qsizetype displayStart = 0;
-    qsizetype displayEnd = 0;
-    qsizetype visibleStart = 0;  // link run's first visible offset (caret target)
-  };
-
   struct GeneratedPseudoAtom {
     enum class Kind { Text, Shape, Icon };
     qsizetype rangeStart = 0, rangeEnd = 0;
@@ -249,8 +239,11 @@ private:
     qreal baseline = 0.0;
     QRectF rect;
     LayoutBox box;
+    QRectF iconRect;
     bool block = false;
     bool before = false;
+    qsizetype visibleAnchor = 0;
+    QString href;
     Kind kind = Kind::Shape;
     QString text;
     PseudoElementRule rule;
@@ -277,7 +270,6 @@ private:
   };
 
   void buildOffsetMapFromProjection();
-  void buildLinkBeforeAtoms();
   struct HtmlInlineBoxRun {
     qsizetype start = 0, end = 0;
     LayoutBox box;
@@ -290,7 +282,8 @@ private:
   void insertGeneratedPseudoText(const QString& text, const PseudoElementRule& rule,
                                  GeneratedPseudoAtom::Kind kind, const QFont& font,
                                  qreal width, qreal height, qreal marginLeft, qreal marginRight,
-                                 bool before);
+                                 bool before, qsizetype projectionAnchor, qsizetype visibleAnchor,
+                                 QString href = {});
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
@@ -348,17 +341,13 @@ private:
   QVector<QRectF> lineBoxes_;
   QHash<qsizetype, std::shared_ptr<const LayoutBox>> spanStyles_;
   void buildInlineBoxes();
-  // CSS inline decorations (Phase 3). link ::before icon (mask-tinted SVG) +
-  // mark background-image gradient. Empty/None → nothing painted.
-  QByteArray linkBeforeIcon_;
-  QColor linkBeforeIconTint_;
-  bool linkBeforeIconFromMask_ = false;
-  QSizeF linkBeforeIconSize_;       // CSS width/height (invalid → 1em)
-  qreal linkBeforeIconMarginRight_ = 0.0;  // CSS margin-right gap before the link text
-  qreal linkBeforeIconAdvance_ = 0.0;      // reserved flow width (icon + margin)
-  qreal linkBeforeIconHeight_ = 0.0;       // paint height (vertical centering)
-  QVector<LinkBeforeAtom> linkBeforeAtoms_;
   QVector<GeneratedPseudoAtom> generatedPseudoAtoms_;
+  struct InlinePseudoFingerprint {
+    qsizetype sourceOffset = 0;
+    QString tag, pseudo;
+    quint64 fingerprint = 0;
+  };
+  QVector<InlinePseudoFingerprint> inlinePseudoFingerprints_;
   quint64 pseudoBeforeFingerprint_ = 0, pseudoAfterFingerprint_ = 0;
   QVector<QTextLayout::FormatRange> generatedPseudoFormats_;
   GradientSpec markGradient_;

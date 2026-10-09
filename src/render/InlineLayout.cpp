@@ -1,11 +1,13 @@
 #include "render/InlineLayout.h"
 #include "render/CssFormattingContext.h"
 #include "render/CssSizing.h"
+#include "render/GeneratedContent.h"
 #include "render/RenderMetrics.h"
 #include "render/InlineFormatting.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/CssContent.h"
+#include "theme/DocumentStyleTree.h"
 
 #include "document/ImageSyntaxOps.h"
 #include "editor/ResourceUrl.h"
@@ -37,7 +39,6 @@ namespace {
 
 constexpr QChar kInlineMathPlaceholder(0x00a0);
 constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
-constexpr QChar kLinkBeforePlaceholder(0xe000);  // PUA: flow-reserved slot for a::before icons
 // Reserve atomic boxes with an ink-free glyph, including font fallback paths.
 constexpr QChar kGeneratedPseudoPlaceholder(0x00a0);
 constexpr QChar kTabIndentSourceChar(0x200b);
@@ -166,6 +167,7 @@ void InlineLayout::build(
   displayOffsetMap_.clear();
   generatedPseudoAtoms_.clear();
   generatedPseudoFormats_.clear();
+  inlinePseudoFingerprints_.clear();
   displayText_.clear();
   layoutText_.clear();
   lineBoxes_.clear();
@@ -180,22 +182,7 @@ void InlineLayout::build(
     return sharedSnapshot(style ? *style : ThemeElementStyle{}, theme.textFontForElement(key, options.styleNode));
   };
   codeStyle_ = snapshot(QStringLiteral("code"));
-  // CSS inline decorations: link ::before icon (mask-tinted SVG) + mark gradient.
-  linkBeforeIcon_.clear();
-  linkBeforeIconTint_ = QColor();
-  linkBeforeIconFromMask_ = false;
-  linkBeforeIconSize_ = QSizeF();
-  linkBeforeIconMarginRight_ = 0.0;
   markGradient_ = GradientSpec{};
-  for (const PseudoElementRule& r : theme.decorations().pseudos) {
-    if (r.host == QStringLiteral("a") && r.pseudo == QStringLiteral("before") && !r.svgData.isEmpty()) {
-      linkBeforeIcon_ = r.svgData;
-      linkBeforeIconFromMask_ = r.svgFromMask;
-      linkBeforeIconTint_ = r.color.isValid() ? r.color : r.backgroundColor;
-      linkBeforeIconSize_ = r.size;
-      linkBeforeIconMarginRight_ = r.marginRight;
-    }
-  }
   for (const ElementBackground& eb : theme.decorations().backgrounds) {
     if (eb.host == QStringLiteral("mark")) { markGradient_ = eb.gradient; }
   }
@@ -241,16 +228,6 @@ void InlineLayout::build(
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width, options.documentPath);
   buildHtmlAtoms(width, baseFont, options.documentPath);
-  // Phase 3c: reserve inline flow for `a::before` icons (must run before the
-  // HTML-span / text-layout passes, which consume the shifted offset maps).
-  {
-    const QFontMetricsF metrics(baseFont);
-    const qreal em = qMax<qreal>(1.0, metrics.height());
-    linkBeforeIconHeight_ = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.height() > 0.0 ? linkBeforeIconSize_.height() : em;
-    const qreal iconW = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.width() > 0.0 ? linkBeforeIconSize_.width() : em;
-    linkBeforeIconAdvance_ = !linkBeforeIcon_.isEmpty() ? (iconW + linkBeforeIconMarginRight_) : 0.0;
-  }
-  buildLinkBeforeAtoms();
   buildHtmlFormatSpans(theme, width);
   buildInlineBoxSpacing();
   buildGeneratedPseudoAtoms(theme, baseFont, width, options);
@@ -274,6 +251,11 @@ bool InlineLayout::stylesMatch(const RenderTheme& theme, const MarkdownNode& own
   };
   if (fingerprint(QStringLiteral("before")) != pseudoBeforeFingerprint_ ||
       fingerprint(QStringLiteral("after")) != pseudoAfterFingerprint_) return false;
+  for (const auto& stored : inlinePseudoFingerprints_) {
+    const auto* origin = theme.cssInlineElement(owner, stored.sourceOffset, stored.tag);
+    const auto rule = origin ? theme.pseudoForElement(*origin, stored.pseudo) : std::nullopt;
+    if ((rule && rule->computed ? rule->computed->fingerprint() : quint64(0)) != stored.fingerprint) return false;
+  }
   // Embedded HTML has its own descendant tree. Until that tree is retained,
   // conservatively rebuild promoted HTML fragments after structural edits.
   if (!projection_.htmlFormatData().isEmpty()) return false;
@@ -462,7 +444,7 @@ QRectF InlineLayout::hitTestCursorRect(QPointF localPos) const {
   const auto display = hit.displayOffset;
   for (const auto& atom : generatedPseudoAtoms_)
     if (display >= atom.rangeStart && display <= atom.rangeEnd)
-      return cursorRect(atom.before ? 0 : projection_.visibleText().size());
+      return cursorRect(atom.visibleAnchor);
   return hit.cursorRect;
 }
 
@@ -470,7 +452,18 @@ QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
   for (const auto& atom : htmlAtoms_)
     if (atom.rect.contains(localPos)) return atom.layout->hitTest(localPos - atom.rect.topLeft() + atom.crop.topLeft()).linkHref;
   if (!textLayout_) return {};
+  // A click in the right half of the last generated glyph can resolve to its
+  // ending caret. Use the painted fragment geometry for the link target.
+  for (const auto& atom : generatedPseudoAtoms_) {
+    if (atom.href.isEmpty()) continue;
+    if (atom.kind != GeneratedPseudoAtom::Kind::Text) {
+      if (atom.box.borderBox.contains(localPos)) return atom.href;
+    } else for (const auto& rect : selectionRectsForDisplayOffsets(atom.displayStart, atom.displayEnd))
+      if (rect.contains(localPos)) return atom.href;
+  }
   const qsizetype layoutOffset = textLayoutDisplayOffsetForPoint(localPos);
+  for (const auto& atom : generatedPseudoAtoms_)
+    if (layoutOffset >= atom.rangeStart && layoutOffset < atom.rangeEnd && !atom.href.isEmpty()) return atom.href;
   const qsizetype projOffset = projectionDisplayOffsetForLayoutOffset(layoutOffset, InlineProjectionBias::Backward);
   return projection_.linkHrefAtDisplayOffset(projOffset);
 }
@@ -748,8 +741,7 @@ QVector<QTextLayout::FormatRange> InlineLayout::debugTextFormats(const RenderThe
 void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF origin) const {
   if (!textLayout_) { return; }
   const bool hasMark = markGradient_.kind != GradientSpec::Kind::None;
-  const bool hasLinkIcon = !linkBeforeIcon_.isEmpty();
-  if (!hasMark && !hasLinkIcon) { return; }
+  if (!hasMark) return;
 
   // mark background-image gradient, per occupied line (mirrors code-span rects).
   if (hasMark) {
@@ -775,33 +767,6 @@ void InlineLayout::paintTextLayoutInlineDecorations(QPainter& painter, QPointF o
     painter.restore();
   }
 
-  // link ::before icon, painted over its flow-reserved placeholder (Phase 3c).
-  // The placeholder already participates in QTextLayout advance/wrap, so the icon
-  // sits at a real inline position and the link text follows after the gap — no
-  // more hanging off the left edge of a line-start link.
-  if (hasLinkIcon) {
-    const qreal iconH = linkBeforeIconHeight_;
-    const qreal iconW = linkBeforeIconSize_.isValid() && linkBeforeIconSize_.width() > 0.0
-                            ? linkBeforeIconSize_.width() : iconH;
-    for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
-      if (atom.displayEnd <= atom.displayStart) { continue; }
-      for (int i = 0; i < textLayout_->lineCount(); ++i) {
-        const QTextLine line = textLayout_->lineAt(i);
-        if (!line.isValid()) { continue; }
-        const int lineStart = line.textStart();
-        const int lineEnd = lineStart + line.textLength();
-        const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-        const int atomEnd = toLayoutOffset(static_cast<int>(atom.displayEnd));
-        if (atomStart < lineStart || atomStart >= lineEnd) { continue; }
-        const qreal x1 = line.cursorToX(atomStart);
-        const qreal x2 = line.cursorToX(atomEnd);
-        const QRectF target(origin.x() + qMin(x1, x2),
-                            origin.y() + line.y() + (line.height() - iconH) / 2.0, iconW, iconH);
-        DecorationPainter::paintIcon(painter, linkBeforeIcon_, target, linkBeforeIconTint_, linkBeforeIconFromMask_);
-        break;  // one icon per link run, on its first line
-      }
-    }
-  }
 }
 
 void InlineLayout::paintTextLayoutHtmlBackgrounds(QPainter& painter, QPointF origin) const {
@@ -881,119 +846,6 @@ void InlineLayout::buildOffsetMapFromProjection() {
   for (const InlineProjectionSpan& span : projection_.spans()) {
     offsetMap_.push_back(OffsetMapEntry{span.displayStart, span.displayEnd, span.visibleStart, span.visibleEnd});
     displayOffsetMap_.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, span.displayStart, span.displayEnd});
-  }
-}
-
-void InlineLayout::buildLinkBeforeAtoms() {
-  linkBeforeAtoms_.clear();
-  if (linkBeforeIcon_.isEmpty() || linkBeforeIconAdvance_ <= 0.0) { return; }
-  if (displayText_.isEmpty() || offsetMap_.isEmpty()) { return; }
-
-  // Collect link-run starts in PROJECTION display space: the first content span
-  // of each contiguous link run (markers/hidden/atoms are skipped so the icon
-  // leads the link's first visible character).
-  QVector<qsizetype> projRunStarts;
-  {
-    qsizetype lastLinkEnd = -1;
-    for (const InlineProjectionSpan& span : projection_.spans()) {
-      if (!span.link || span.displayEnd <= span.displayStart) { continue; }
-      if (span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
-          span.kind == InlineSpanKind::HiddenSyntax || span.kind == InlineSpanKind::EmptyContentSlot ||
-          span.kind == InlineSpanKind::Atom) {
-        continue;
-      }
-      if (span.displayStart != lastLinkEnd) { projRunStarts.push_back(span.displayStart); }
-      lastLinkEnd = span.displayEnd;
-    }
-  }
-  if (projRunStarts.isEmpty()) { return; }
-
-  // Map each projection run-start to a layout offset in the current (post-atom)
-  // display text. Placeholders insert at span boundaries, which align with
-  // offsetMap_ entry boundaries, so no entry is ever split.
-  QVector<qsizetype> insertAt;
-  insertAt.reserve(projRunStarts.size());
-  for (qsizetype p : projRunStarts) {
-    insertAt.push_back(layoutDisplayOffsetForProjectionOffset(p, InlineProjectionBias::Backward));
-  }
-  std::sort(insertAt.begin(), insertAt.end());
-
-  // Insert the placeholder char (descending so earlier offsets stay valid).
-  QString newText = displayText_;
-  for (auto it = insertAt.rbegin(); it != insertAt.rend(); ++it) {
-    newText.insert(qBound<qsizetype>(0, *it, newText.size()), kLinkBeforePlaceholder);
-  }
-
-  // Rebuild both offset maps in lockstep: emit placeholders (zero-width on the
-  // source/visible side, mapping to the following link entry's start) before the
-  // entry whose displayStart they precede, and shift every subsequent entry.
-  QVector<OffsetMapEntry> newOffset;
-  newOffset.reserve(offsetMap_.size() + static_cast<int>(insertAt.size()));
-  qsizetype shift = 0;
-  size_t nextInsert = 0;
-  for (const OffsetMapEntry& e : offsetMap_) {
-    while (nextInsert < insertAt.size() && insertAt[nextInsert] == e.displayStart) {
-      const qsizetype pos = e.displayStart + shift;
-      newOffset.push_back(OffsetMapEntry{pos, pos + 1, e.visibleStart, e.visibleStart});
-      // The placeholder's caret target is the link run's first visible offset,
-      // which is exactly this following entry's visibleStart.
-      linkBeforeAtoms_.push_back(LinkBeforeAtom{pos, pos + 1, e.visibleStart});
-      shift += 1;
-      ++nextInsert;
-    }
-    newOffset.push_back(OffsetMapEntry{e.displayStart + shift, e.displayEnd + shift, e.visibleStart, e.visibleEnd});
-  }
-  // Rebuild displayOffsetMap_ with the same shift, matching placeholders against
-  // entry layout boundaries (projection↔layout is non-1:1 for atom spans, so it
-  // must be walked on its own layoutStart field, identical to offsetMap_ order).
-  QVector<DisplayOffsetMapEntry> newDisplay;
-  newDisplay.reserve(displayOffsetMap_.size() + static_cast<int>(insertAt.size()));
-  {
-    qsizetype dshift = 0;
-    size_t dnext = 0;
-    for (const DisplayOffsetMapEntry& e : displayOffsetMap_) {
-      while (dnext < insertAt.size() && insertAt[dnext] == e.layoutStart) {
-        const qsizetype pos = e.layoutStart + dshift;
-        newDisplay.push_back(DisplayOffsetMapEntry{e.projectionStart, e.projectionStart, pos, pos + 1});
-        dshift += 1;
-        ++dnext;
-      }
-      newDisplay.push_back(DisplayOffsetMapEntry{e.projectionStart, e.projectionEnd, e.layoutStart + dshift, e.layoutEnd + dshift});
-    }
-  }
-
-  displayText_ = std::move(newText);
-  offsetMap_ = std::move(newOffset);
-  displayOffsetMap_ = std::move(newDisplay);
-
-  // The inserted `a::before` placeholders now live in displayText_, so the
-  // math/image atoms — built earlier with display offsets into the
-  // pre-insertion text — must be shifted by the same accumulated amount the
-  // maps received above. Without this, each preceding link's icon leaves an
-  // atom's displayStart one icon-width too far left, so cursorToX() (paint)
-  // and the force-width format (textLayoutFormats) both resolve at a stale
-  // index: the real placeholder is never widened and the atom paints over the
-  // preceding text (e.g. inline math covering the 'h' of an adjacent word).
-  // Mirrors the offset-map entry shift exactly: an entry at displayStart v is
-  // shifted by the count of insertions at positions <= v.
-  const auto atomShift = [&insertAt](qsizetype start) {
-    return static_cast<qsizetype>(
-        std::count_if(insertAt.begin(), insertAt.end(), [start](qsizetype p) { return p <= start; }));
-  };
-  for (MathAtom& atom : mathAtoms_) {
-    const qsizetype s = atomShift(atom.displayStart);
-    atom.displayStart += s;
-    atom.displayEnd += s;
-  }
-  for (ImageAtom& atom : imageAtoms_) {
-    const qsizetype s = atomShift(atom.displayStart);
-    atom.displayStart += s;
-    atom.displayEnd += s;
-  }
-  for (auto& atom : htmlAtoms_) {
-    const auto s = atomShift(atom.displayStart);
-    atom.displayStart += s;
-    atom.displayEnd += s;
   }
 }
 
@@ -1088,16 +940,13 @@ void InlineLayout::buildInlineBoxSpacing() {
     atom.displayEnd = before(atom.displayEnd);
     atom.displayStart = after(atom.displayStart);
   }
-  for (auto& atom : linkBeforeAtoms_) {
-    atom.displayEnd = before(atom.displayEnd);
-    atom.displayStart = after(atom.displayStart);
-  }
 }
 
 void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoElementRule& rule,
                                              GeneratedPseudoAtom::Kind kind, const QFont& font,
                                              qreal width, qreal height, qreal marginLeft,
-                                             qreal marginRight, bool before) {
+                                             qreal marginRight, bool before, qsizetype projectionAnchor,
+                                             qsizetype visibleAnchor, QString href) {
   if (text.isEmpty()) return;
   QString inserted = text;
   const bool leftSpacer = kind == GeneratedPseudoAtom::Kind::Text && !qFuzzyIsNull(marginLeft);
@@ -1110,14 +959,15 @@ void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoEl
   // calibrated glyph and explicitly supply the atomic box's UAX #14 break
   // opportunity at its adjoining text edge instead of joining it to a word.
   if (atomicBreak) {
-    if (before) inserted.append(QChar(0x200b));
-    else inserted.prepend(QChar(0x200b));
+    inserted.append(QChar(0x200b));
+    inserted.prepend(QChar(0x200b));
   }
   if (block) {
     if (before) inserted.append(QChar::LineSeparator);
     else inserted.prepend(QChar::LineSeparator);
   }
-  const qsizetype position = before ? 0 : displayText_.size();
+  const qsizetype position = layoutDisplayOffsetForProjectionOffset(projectionAnchor,
+      before ? InlineProjectionBias::Forward : InlineProjectionBias::Backward);
   const qsizetype length = inserted.size();
 
   const auto shift = [&](qsizetype& start, qsizetype& end) {
@@ -1128,12 +978,27 @@ void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoEl
       end += length;
     }
   };
-  for (auto& entry : offsetMap_) shift(entry.displayStart, entry.displayEnd);
-  for (auto& entry : displayOffsetMap_) shift(entry.layoutStart, entry.layoutEnd);
+  QVector<OffsetMapEntry> offsets;
+  for (auto entry : offsetMap_) {
+    if (entry.displayStart < position && position < entry.displayEnd) {
+      const auto anchor = entry.visibleStart + (entry.visibleEnd - entry.visibleStart) *
+          (position - entry.displayStart) / (entry.displayEnd - entry.displayStart);
+      offsets.push_back({entry.displayStart, position, entry.visibleStart, anchor});
+      offsets.push_back({position + length, entry.displayEnd + length, anchor, entry.visibleEnd});
+    } else { shift(entry.displayStart, entry.displayEnd); offsets.push_back(entry); }
+  }
+  offsetMap_ = std::move(offsets);
+  QVector<DisplayOffsetMapEntry> displayOffsets;
+  for (auto entry : displayOffsetMap_) {
+    if (entry.layoutStart < position && position < entry.layoutEnd) {
+      displayOffsets.push_back({entry.projectionStart, projectionAnchor, entry.layoutStart, position});
+      displayOffsets.push_back({projectionAnchor, entry.projectionEnd, position + length, entry.layoutEnd + length});
+    } else { shift(entry.layoutStart, entry.layoutEnd); displayOffsets.push_back(entry); }
+  }
+  displayOffsetMap_ = std::move(displayOffsets);
   for (auto& atom : mathAtoms_) shift(atom.displayStart, atom.displayEnd);
   for (auto& atom : imageAtoms_) shift(atom.displayStart, atom.displayEnd);
   for (auto& atom : htmlAtoms_) shift(atom.displayStart, atom.displayEnd);
-  for (auto& atom : linkBeforeAtoms_) shift(atom.displayStart, atom.displayEnd);
   for (auto& atom : generatedPseudoAtoms_) {
     shift(atom.displayStart, atom.displayEnd);
     shift(atom.rangeStart, atom.rangeEnd);
@@ -1146,9 +1011,7 @@ void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoEl
   }
 
   displayText_.insert(position, inserted);
-  const qsizetype visibleAnchor = before ? 0 : projection_.visibleText().size();
   offsetMap_.push_back({position, position + length, visibleAnchor, visibleAnchor});
-  const qsizetype projectionAnchor = before ? 0 : projection_.displayText().size();
   displayOffsetMap_.push_back({projectionAnchor, projectionAnchor, position, position + length});
   std::stable_sort(offsetMap_.begin(), offsetMap_.end(), [](const auto& a, const auto& b) {
     return a.displayStart < b.displayStart;
@@ -1160,7 +1023,7 @@ void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoEl
   GeneratedPseudoAtom atom;
   atom.rangeStart = position;
   atom.rangeEnd = position + length;
-  atom.displayStart = position + (leftSpacer ? 1 : 0) + ((block || atomicBreak) && !before ? 1 : 0);
+  atom.displayStart = position + (leftSpacer ? 1 : 0) + ((block && !before) || atomicBreak ? 1 : 0);
   atom.displayEnd = atom.displayStart + text.size();
   atom.advance = kind != GeneratedPseudoAtom::Kind::Text ? width + marginLeft + marginRight : 0.0;
   atom.width = width;
@@ -1174,6 +1037,8 @@ void InlineLayout::insertGeneratedPseudoText(const QString& text, const PseudoEl
   atom.font = font;
   atom.block = block;
   atom.before = before;
+  atom.visibleAnchor = visibleAnchor;
+  atom.href = std::move(href);
 
   QTextCharFormat format;
   if (kind == GeneratedPseudoAtom::Kind::Text) {
@@ -1201,59 +1066,93 @@ void InlineLayout::buildGeneratedPseudoAtoms(const RenderTheme& theme, const QFo
                                              const BuildOptions& options) {
   pseudoBeforeFingerprint_ = options.pseudoBefore && options.pseudoBefore->computed ? options.pseudoBefore->computed->fingerprint() : 0;
   pseudoAfterFingerprint_ = options.pseudoAfter && options.pseudoAfter->computed ? options.pseudoAfter->computed->fingerprint() : 0;
-  const qreal zoom = theme.zoomPercent() / 100.0;
-  const qreal em = qMax<qreal>(1.0, QFontMetricsF(baseFont).height());
-  const auto add = [&](const PseudoElementRule* rule, const QString& resolvedText, bool before) {
-    if (!rule || !rule->present || rule->absolute) return;
-    if (rule->computed) {
-      const auto content = rule->computed->resolvedValue("content").trimmed().toLower();
-      if (content == "none" || content == "normal" || rule->computed->resolvedValue("display") == "none") return;
-    }
-    const bool icon = !rule->svgData.isEmpty();
-    const bool shape = rule->backgroundColor.isValid() || rule->background.kind != GradientSpec::Kind::None ||
-                       rule->borderWidth > 0.0 || rule->borderBottomWidth > 0.0;
-    QString text = resolvedText;
-    if (text.isEmpty() && !rule->content.isEmpty()) {
-      if (rule->computed) {
-        const auto tokens = parseContentTokens(rule->computed->resolvedValue("content"));
-        if (std::all_of(tokens.begin(), tokens.end(), [](const auto& token) { return token.kind == ContentToken::Kind::Literal; }))
-          for (const auto& token : tokens) text += token.text;
-      } else text = rule->content;
-    }
-    const bool sized = rule->computed && (rule->computed->hasProperty("width") || rule->computed->hasProperty("height"));
-    if (!icon && !shape && !sized && text.isEmpty()) return;
-
-    QFont font = baseFont;
-    ThemeElementStyle style;
-    if (rule->computed) {
-      style = CssThemeMapper::projectComputedStyle(rule->host + "::" + rule->pseudo, *rule->computed);
-      font = theme.fontForStyle(style, font);
-    }
-    else if (rule->fontSizePx > 0.0) font.setPointSizeF(rule->fontSizePx * zoom * 72.0 / 96.0);
-    const bool block = rule->computed && rule->computed->resolvedValue("display") == "block";
-    const qreal fallbackW = rule->size.width() > 0.0 ? rule->size.width() : block ? width / zoom : icon ? em / zoom : 0;
-    const qreal fallbackH = rule->size.height() > 0.0 ? rule->size.height() : icon ? em / zoom : 0;
-    auto used = theme.usedBoxForStyle(style, width);
-    const auto inset = LayoutBox::insets(used);
-    qreal w = DecorationPainter::pseudoUsedLength(*rule, QStringLiteral("width"), width, fallbackW, zoom);
-    qreal h = DecorationPainter::pseudoUsedLength(*rule, QStringLiteral("height"), em, fallbackH, zoom);
-    if (!used.borderBox) { w += inset.left() + inset.right(); h += inset.top() + inset.bottom(); }
-    const qreal ml = used.margin.left(), mr = used.margin.right();
-    const bool atomic = icon || text.isEmpty();
-    if (atomic) {
+  const auto add = [&](const PseudoElementRule* rule, const QString& resolvedText, bool before,
+                       qsizetype projectionAnchor, qsizetype visibleAnchor, const QString& href = QString()) {
+    if (!rule || rule->absolute) return;
+    const auto value = generatedContentStyle(theme, *rule, baseFont, {width, -1}, resolvedText);
+    if (!value) return;
+    const auto& v = *value;
+    const auto inset = LayoutBox::insets(v.used);
+    if (v.atomic) {
       insertGeneratedPseudoText(QString(kGeneratedPseudoPlaceholder), *rule,
-                                icon ? GeneratedPseudoAtom::Kind::Icon : GeneratedPseudoAtom::Kind::Shape,
-                                font, qMax<qreal>(0.0, w), qMax<qreal>(0.0, h), ml, mr, before);
+          v.icon ? GeneratedPseudoAtom::Kind::Icon : GeneratedPseudoAtom::Kind::Shape,
+          v.font, v.width, v.height, v.used.margin.left(), v.used.margin.right(), before,
+          projectionAnchor, visibleAnchor, href);
     } else {
-      insertGeneratedPseudoText(text, *rule, GeneratedPseudoAtom::Kind::Text, font, 0.0, 0.0,
-                                ml + inset.left(), mr + inset.right(), before);
+      insertGeneratedPseudoText(v.text, *rule, GeneratedPseudoAtom::Kind::Text, v.font, 0, 0,
+          v.used.margin.left() + inset.left(), v.used.margin.right() + inset.right(), before,
+          projectionAnchor, visibleAnchor, href);
     }
     auto& atom = generatedPseudoAtoms_.last();
-    atom.box = LayoutBox::place(style.key, style, used, {}, font);
-    if (icon && rule->svgFromMask) atom.box.style.paint.backgroundColor = QColor();
+    atom.box = LayoutBox::place(v.style.key, v.style, v.used, {}, v.font);
+    if (v.icon && rule->svgFromMask) atom.box.style.paint.backgroundColor = QColor();
   };
-  add(options.pseudoBefore ? &*options.pseudoBefore : nullptr, options.pseudoBeforeText, true);
-  add(options.pseudoAfter ? &*options.pseudoAfter : nullptr, options.pseudoAfterText, false);
+
+  struct LinkRun {
+    const CssElement* origin;
+    qsizetype start, end, source;
+    QString href;
+  };
+  QVector<LinkRun> links;
+  const auto collect = [&](qsizetype start, qsizetype end, qsizetype source, const QString& href,
+                           const CssElement* knownOrigin = nullptr) {
+    if (end <= start || href.isEmpty()) return;
+    const auto* origin = knownOrigin ? knownOrigin : options.styleNode ? theme.cssInlineElement(*options.styleNode, source, QStringLiteral("a")) : nullptr;
+    for (auto& link : links) {
+      if (origin ? link.origin == origin : link.end == start && link.href == href) {
+        link.start = qMin(link.start, start); link.end = qMax(link.end, end); return;
+      }
+    }
+    links.push_back({origin, start, end, source, href});
+  };
+  for (const auto& span : projection_.spans()) {
+    if (!span.link || span.kind == InlineSpanKind::OpenMarker || span.kind == InlineSpanKind::CloseMarker ||
+        span.kind == InlineSpanKind::HiddenSyntax || span.kind == InlineSpanKind::EmptyContentSlot) continue;
+    collect(span.displayStart, span.displayEnd, span.contentSourceStart + styleSourceBase_,
+            projection_.linkHrefAtDisplayOffset(span.displayStart));
+  }
+  for (const auto& html : projection_.htmlFormatData()) {
+    if (!html.atomicHtml.isEmpty()) continue;
+    for (const auto& link : html.links) {
+      qsizetype source = 0;
+      const auto start = html.displayStart + link.start;
+      if (projection_.sourceOffsetForDisplayOffset(start, InlineProjectionBias::Forward, source)) {
+        const CssElement* origin = nullptr;
+        if (options.styleNode) for (const auto& span : projection_.spans())
+          if (span.displayStart <= start && start < span.displayEnd)
+            origin = theme.cssLinkInSourceRange(*options.styleNode, span.sourceStart + styleSourceBase_,
+                span.sourceEnd + styleSourceBase_, link.href);
+        collect(start, start + link.length, source + styleSourceBase_, link.href, origin);
+      }
+    }
+  }
+  // Insert at stable projection boundaries, in reverse order. Source spans
+  // remain untouched even when a link contains nested emphasis, math or HTML.
+  std::sort(links.begin(), links.end(), [](const auto& a, const auto& b) { return a.start > b.start; });
+  for (const auto& link : links) {
+    for (const auto& pseudo : {QStringLiteral("after"), QStringLiteral("before")}) {
+      std::optional<PseudoElementRule> rule;
+      if (link.origin) rule = theme.pseudoForElement(*link.origin, pseudo);
+      else {
+        DocumentStylePrototypes prototypes;
+        CssElement origin;
+        origin.tag = QStringLiteral("a");
+        origin.attributes.insert(QStringLiteral("href"), link.href);
+        origin.parent = &prototypes.element(QStringLiteral("p"));
+        rule = theme.pseudoForElement(origin, pseudo);
+      }
+      inlinePseudoFingerprints_.push_back({link.source, QStringLiteral("a"), pseudo,
+          rule && rule->computed ? rule->computed->fingerprint() : quint64(0)});
+      const bool before = pseudo == "before";
+      const auto anchor = before ? link.start : link.end;
+      const auto local = layoutDisplayOffsetForProjectionOffset(anchor,
+          before ? InlineProjectionBias::Forward : InlineProjectionBias::Backward);
+      add(rule ? &*rule : nullptr, {}, before, anchor, visibleOffsetForDisplayOffset(local), link.href);
+    }
+  }
+  add(options.pseudoBefore ? &*options.pseudoBefore : nullptr, options.pseudoBeforeText, true, 0, 0);
+  add(options.pseudoAfter ? &*options.pseudoAfter : nullptr, options.pseudoAfterText, false,
+      projection_.displayText().size(), projection_.visibleText().size());
 }
 
 void InlineLayout::buildHtmlFormatSpans(const RenderTheme& theme, qreal width) {
@@ -1696,8 +1595,10 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   // Tab-indent projection markers use U+200B too, but generated object breaks
   // must remain zero-width breaks rather than becoming indentation NBSPs.
   for (const auto& atom : generatedPseudoAtoms_)
-    if (!atom.block && atom.kind != GeneratedPseudoAtom::Kind::Text)
-      layoutText_[atom.before ? atom.displayEnd : atom.displayStart - 1] = QChar(0x200b);
+    if (!atom.block && atom.kind != GeneratedPseudoAtom::Kind::Text) {
+      layoutText_[atom.displayEnd] = QChar(0x200b);
+      layoutText_[atom.displayStart - 1] = QChar(0x200b);
+    }
   QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
 
   // Splice the active IME preedit into layoutText_ at the caret so following text shifts/wraps
@@ -1901,6 +1802,8 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
           atom.rect.moveTopLeft({x, height + atom.box.usedBox.margin.top()});
         }
         atom.box = LayoutBox::place(atom.box.hostKey, atom.box.style, atom.box.usedBox, atom.rect, atom.font);
+        GeneratedContentStyle generated; generated.rule = atom.rule;
+        atom.iconRect = generatedIconRect(generated, atom.box.contentBox, zoomScale_);
       }
     }
     height += allocatedHeight;
@@ -2043,7 +1946,6 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
 
 void InlineLayout::paintGeneratedPseudoAtoms(QPainter& painter, QPointF origin) const {
   if (!textLayout_) return;
-  const qreal zoom = zoomScale_;
   for (const GeneratedPseudoAtom& atom : generatedPseudoAtoms_) {
     if (atom.kind == GeneratedPseudoAtom::Kind::Text) continue;
     const int start = toLayoutOffset(static_cast<int>(atom.displayStart));
@@ -2058,12 +1960,23 @@ void InlineLayout::paintGeneratedPseudoAtoms(QPainter& painter, QPointF origin) 
         const QColor tint = atom.rule.svgFromMask ? atom.rule.maskTint : atom.rule.color;
         painter.save();
         painter.setOpacity(painter.opacity() * atom.rule.opacity);
-        DecorationPainter::paintPseudoIconBox(painter, atom.rule, atom.box.contentBox.translated(origin), tint, zoom);
+        painter.setClipRect(atom.box.contentBox.translated(origin), Qt::IntersectClip);
+        DecorationPainter::paintIcon(painter, atom.rule.svgData, atom.iconRect.translated(origin), tint, atom.rule.svgFromMask);
         painter.restore();
       }
       break;
     }
   }
+}
+
+QVector<QRectF> InlineLayout::generatedPseudoRects() const {
+  QVector<QRectF> result;
+  for (const auto& atom : generatedPseudoAtoms_) {
+    if (atom.kind == GeneratedPseudoAtom::Kind::Text)
+      result += selectionRectsForDisplayOffsets(atom.displayStart, atom.displayEnd);
+    else if (atom.box.borderBox.isValid()) result.push_back(atom.box.borderBox);
+  }
+  return result;
 }
 
 void InlineLayout::paintImagePreview(QPainter& painter, QPointF origin) const {
@@ -2276,25 +2189,6 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     format.setForeground(Qt::transparent);
     formats.push_back({static_cast<int>(atom.displayStart), 1, format});
   }
-  // Phase 3c: `a::before` flow-reserved placeholders. Transparent (the icon is
-  // painted over them) and widened to the icon advance via letter spacing, so
-  // QTextLayout reserves real horizontal flow and wraps accordingly.
-  for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
-    if (atom.displayEnd <= atom.displayStart) { continue; }
-    QFont placeholderFont = baseFont;
-    const QFontMetricsF placeholderMetrics(placeholderFont);
-    const qreal placeholderAdvance = qMax<qreal>(1.0, placeholderMetrics.horizontalAdvance(kLinkBeforePlaceholder));
-    placeholderFont.setLetterSpacing(QFont::AbsoluteSpacing, linkBeforeIconAdvance_ - placeholderAdvance);
-    QTextCharFormat format = baseFormat;
-    format.setFont(placeholderFont);
-    format.setForeground(QColor(Qt::transparent));
-    QTextLayout::FormatRange range;
-    range.start = static_cast<int>(atom.displayStart);
-    range.length = static_cast<int>(atom.displayEnd - atom.displayStart);
-    range.format = format;
-    formats.push_back(range);
-  }
-
   // Apply HTML inline format spans (from <b>, <i>, <span style="...">, etc.)
   for (const HtmlFormatSpan& hs : htmlFormatSpans_) {
     if (hs.layoutEnd <= hs.layoutStart) {
@@ -2410,13 +2304,6 @@ qsizetype InlineLayout::visibleOffsetForDisplayOffset(qsizetype displayOffset) c
       return atom.visibleEnd;
     }
   }
-  // Phase 3c: a click inside a flow-reserved link-icon placeholder lands the
-  // caret at the link run's first visible offset.
-  for (const LinkBeforeAtom& atom : linkBeforeAtoms_) {
-    if (displayOffset >= atom.displayStart && displayOffset <= atom.displayEnd) {
-      return atom.visibleStart;
-    }
-  }
   for (const OffsetMapEntry& entry : offsetMap_) {
     if (displayOffset <= entry.displayEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
@@ -2444,10 +2331,8 @@ qsizetype InlineLayout::displayOffsetForVisibleOffset(qsizetype visibleOffset) c
       return atom.displayEnd;
     }
   }
-  // Phase 3c: link-icon placeholders have no visible extent (they map to the
-  // link run's start), so an interior visible offset has no placeholder display
-  // range to return — fall through to the proportional map below.
   for (const OffsetMapEntry& entry : offsetMap_) {
+    if (visibleOffset == entry.visibleEnd && visibleOffset < projection_.visibleText().size()) continue;
     if (visibleOffset <= entry.visibleEnd) {
       if (entry.visibleEnd <= entry.visibleStart || entry.displayEnd <= entry.displayStart) {
         continue;
@@ -2498,6 +2383,11 @@ qsizetype InlineLayout::layoutDisplayOffsetForProjectionOffset(qsizetype project
     if (projectionOffset < entry.projectionStart || projectionOffset > entry.projectionEnd) {
       continue;
     }
+    // Shared boundaries belong to the following editable run, beyond its
+    // zero-source spacers/prefix. Apply this for source selections as well as
+    // carets; the bias still controls positions inside collapsed atoms.
+    if (projectionOffset == entry.projectionEnd &&
+        projectionOffset < projection_.displayText().size()) continue;
     if (entry.projectionEnd <= entry.projectionStart) {
       // Generated content has no source extent. Prefer the adjacent editable
       // range for both caret bias and selections; only an empty source needs

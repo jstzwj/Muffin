@@ -28,6 +28,9 @@ class DocumentLayout {
   // tests and print. Lazy builds only cheap estimated heights up front and promotes blocks to
   // full detail on demand (ensureBuilt) as they scroll into view.
   enum class BuildPolicy { Eager, Lazy };
+  std::optional<PseudoElementRule> documentPseudo(const RenderTheme& theme, const QString& pseudo) const {
+    return document_ ? theme.pseudoForNode(document_->root(), pseudo) : std::nullopt;
+  }
 
   struct BlockRebuildResult {
     bool rebuilt = false;

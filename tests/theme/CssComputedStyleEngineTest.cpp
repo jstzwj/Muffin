@@ -402,6 +402,49 @@ void testModernMediaConditions() {
     require(!CssThemeSheet::mediaMatches(query, env), "inactive/unknown/invalid-unit media condition must not leak");
 }
 
+void testPseudoOriginSelectorsAndStateInheritance() {
+  const auto sheet = CssThemeParser::parse(
+      "#write>a:is(.chosen):not(.excluded)::before{content:'yes';font-size:50%}"
+      "a{font-size:20px;color:red}a:hover{color:blue;--label:'hover'}"
+      "a:hover::after{content:var(--label)}", {});
+  CssComputedStyleEngine engine(sheet);
+  CssElement parent; parent.tag = "div"; parent.id = "write";
+  CssElement origin; origin.tag = "a"; origin.classes = {"chosen"}; origin.parent = &parent;
+  CssElement pseudo = origin; pseudo.pseudoElement = "before"; pseudo.originatingElement = &origin;
+  auto style = engine.styleFor(pseudo);
+  require(style.resolvedValue("content") == "'yes'" && style.fontSizePx == 10,
+          "functional selectors inspect the pseudo's origin, whose parent remains the selector parent");
+  CssElementState state; state.hover = true;
+  require(engine.styleFor(pseudo, state).resolvedValue("color") == "blue", "pseudo inherits the active host state");
+  pseudo.pseudoElement = "after";
+  require(engine.styleFor(pseudo, state).resolvedValue("content") == "'hover'", "host-state custom properties inherit before pseudo computation");
+  origin.classes << "excluded"; pseudo.classes = origin.classes; pseudo.pseudoElement = "before";
+  require(!engine.styleFor(pseudo).hasProperty("content"), "not() excludes the originating element");
+}
+
+void testGeneratedPseudoCandidatesAcrossMedia() {
+  const auto sheet = CssThemeParser::parse(
+      "#write::before{content:''}h4:hover::after{content:'!'}"
+      "@media(min-width:800px){:is(a,h2)::before{content:'+'}}", {});
+  CssEnvironment environment; environment.viewportWidth = 600;
+  CssComputedStyleEngine engine(sheet, environment);
+  CssElement paragraph; paragraph.tag = "p";
+  CssElement write; write.tag = "div"; write.id = "write";
+  CssElement heading; heading.tag = "h4";
+  require(!engine.mayGeneratePseudo(paragraph, "before") && !engine.mayGeneratePseudo(paragraph, "after"),
+      "unrelated paragraphs need no generated-style snapshots");
+  require(engine.mayGeneratePseudo(write, "before") && engine.mayGeneratePseudo(heading, "after"),
+      "id-qualified and inactive interactive selectors stay candidates");
+  environment.viewportWidth = 900;
+  const auto wide = engine.withEnvironment(environment);
+  require(wide->mayGeneratePseudo(paragraph, "before"), "functional subjects remain conservative after media activation");
+  require(!engine.mayGeneratePseudo(paragraph, "before"), "media snapshots keep independent candidate indexes");
+  CssElement link; link.tag = "a";
+  CssElement pseudo = link; pseudo.originatingElement = &link; pseudo.pseudoElement = "before";
+  require(wide->mayGeneratePseudo(link, "before") && wide->styleFor(pseudo).resolvedValue("content") == "'+'",
+      "candidate filtering preserves the shared functional-selector cascade");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -425,6 +468,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testCacheLifetimeAndGeneration);
   RUN_TEST(testEnvironmentSnapshots);
   RUN_TEST(testModernMediaConditions);
+  RUN_TEST(testPseudoOriginSelectorsAndStateInheritance);
+  RUN_TEST(testGeneratedPseudoCandidatesAcrossMedia);
 #undef RUN_TEST
   return 0;
 }

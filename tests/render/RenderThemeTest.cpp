@@ -968,7 +968,8 @@ void testDecoratedThemePaints(const MarkdownDocument& document) {
   QImage img(QSize(800, qCeil(layout.totalHeight()) + 20), QImage::Format_ARGB32);
   img.fill(QColor(QStringLiteral("#0f111a")).rgba());
   QPainter p(&img);
-  DecorationPainter::paintWriteTexture(p, theme, QRectF(0, 0, 800, layout.totalHeight()));
+  DecorationPainter::paintWriteTexture(p, theme, QRectF(0, 0, 800, layout.totalHeight()),
+      layout.documentPseudo(theme, QStringLiteral("before")));
   for (const BlockLayout* blk : layout.promotedBlocks()) {
     blk->paint(p, theme, 0.0, nullptr);
   }

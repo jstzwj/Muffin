@@ -1207,6 +1207,11 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
     appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::HtmlContent, openStart, closeEnd,
                    openEnd, closeNodeStart, rendered.text, true);
 
+    // Record link hit ranges before moving the renderer's data into the
+    // projection snapshot. A moved-from vector silently lost HTML link targets.
+    for (const auto& link : rendered.links) {
+      state.linkRanges.push_back({contentDisplayStart + link.start, contentDisplayStart + link.start + link.length, link.href});
+    }
     // Register format data
     if (!rendered.formatSpans.empty() || !rendered.links.empty() || !rendered.atomicHtml.isEmpty()) {
       HtmlInlineFormatData data;
@@ -1218,10 +1223,6 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
       htmlFormatData.push_back(std::move(data));
     }
 
-    // Register link ranges
-    for (const auto& link : rendered.links) {
-      state.linkRanges.push_back({contentDisplayStart + link.start, contentDisplayStart + link.start + link.length, link.href});
-    }
   }
 
   // Advance searchFrom past the entire consumed group

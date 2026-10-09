@@ -368,12 +368,13 @@ bool hasClass(const CssElement& element, const QString& className, bool directCh
 
 bool simpleMatches(const SimpleSelector& simple, const CssElement& element, const CssElementState& state) {
   if (!stateMatches(simple, state)) { return false; }
+  const auto& subject = element.originatingElement ? *element.originatingElement : element;
   for (const auto& group : simple.alternatives) {
-    if (std::none_of(group.begin(), group.end(), [&](const auto& selector) { return selectorMatches(selector, element, state); }))
+    if (std::none_of(group.begin(), group.end(), [&](const auto& selector) { return selectorMatches(selector, subject, state); }))
       return false;
   }
   for (const auto& selector : simple.exclusions)
-    if (selectorMatches(selector, element, state)) return false;
+    if (selectorMatches(selector, subject, state)) return false;
   const QString tag = element.tag.toLower();
   const QString id = element.id;
   const QString pseudo = element.pseudoElement.toLower();
@@ -563,6 +564,12 @@ CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet, CssEn
       const bool supported = std::none_of(ps.parts.cbegin(), ps.parts.cend(),
                                           [](const SelectorPart& part) { return part.simple.unsupported; });
       if (!rule.darkScope && ps.valid && supported && !ps.exportOnly && !ps.editorOnly) {
+        const auto& subject = ps.parts.back().simple;
+        if (subject.pseudoElement == QLatin1String("before") || subject.pseudoElement == QLatin1String("after")) {
+          const auto key = qMakePair(subject.tag == QLatin1String("*") ? QString() : subject.tag, subject.id);
+          auto& candidates = selectorFeatures_.generatedPseudoSubjects[subject.pseudoElement];
+          if (!candidates.contains(key)) candidates.push_back(key);
+        }
         std::function<void(const ParsedSelector&)> features = [&](const ParsedSelector& selector) {
           for (const SelectorPart& part : selector.parts) {
             const SimpleSelector& simple = part.simple;
@@ -1277,7 +1284,7 @@ CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, con
     }
   }
   const auto* inheritanceParent = element.originatingElement ? element.originatingElement : element.parent;
-  CssComputedStyle parent = parentStyleFor(inheritanceParent);
+  CssComputedStyle parent = element.originatingElement ? styleFor(*element.originatingElement, state) : parentStyleFor(inheritanceParent);
   if (!inheritanceParent && element.tag.compare(QLatin1String("html"), Qt::CaseInsensitive) == 0) parent.customProperties_.clear();
   CssComputedStyle style;
   style.customProperties_ = parent.customProperties_;

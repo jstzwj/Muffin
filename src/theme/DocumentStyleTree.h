@@ -54,11 +54,9 @@ class DocumentStylePrototypes {
     const qsizetype pseudo = key.indexOf(QStringLiteral("::"));
     if (pseudo >= 0) {
       const auto& parent = element(key.left(pseudo));
-      value->tag = parent.tag;
-      value->id = parent.id;
-      value->classes = parent.classes;
+      *value = parent;
       value->pseudoElement = key.mid(pseudo + 2);
-      value->parent = &parent;
+      value->originatingElement = &parent;
     } else {
       const qsizetype space = key.lastIndexOf(QLatin1Char(' '));
       value->tag = key.mid(space + 1);

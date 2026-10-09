@@ -72,6 +72,21 @@ padding and border width in the text layout. Their generated layout spacers map
 to zero source and visible-text length, so they affect wrapping and cursor
 coordinates without entering copy or saved Markdown. Format ranges address the
 layout buffer, which can include these spacers and collapsed math/image atoms.
+
+Generated `::before`/`::after` styles use the same stable originating-element
+views for Markdown hosts and inline Markdown/HTML links. Attribute and structural
+selectors navigate the origin's DOM position; inheritance includes its active
+state. `GeneratedContentStyle` projects the live computed result once for flow
+and positioned fragments. Flow text/icons participate in wrapping and source
+mapping; positioned fragments retain relative used geometry and normal/hover/
+focus endpoints. Painting only consumes these snapshots. Cached block translation
+moves the containing origin, and structural style fingerprints invalidate stale
+generated content. Link icons and list guides have no separate runtime recipe.
+The compiled selector index conservatively filters pseudo subjects by their
+rightmost tag/id before allocating snapshots; unrelated prose pays no per-state
+pseudo cascade cost. Functional selectors remain candidates, and active media
+changes replace the index with the engine's new environment snapshot.
+
 Code blocks read `pre` typography and line height; inline code reads `code`.
 Table header/body cells use actual `th`/`td` styles, including their individual
 fonts, line heights, borders and padding. Inline HTML code/keyboard boxes preserve

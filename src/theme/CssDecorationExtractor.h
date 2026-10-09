@@ -3,7 +3,6 @@
 #include "theme/ThemeDefinition.h"
 namespace muffin {
 using ComputedDecorationStyles = QHash<QString, CssComputedStyle>;
-ListGuide extractListGuide(const CssComputedStyle& style);
 std::vector<PseudoElementRule> extractPseudoRules(const ComputedDecorationStyles& styles);
 std::vector<ElementBackground> extractElementBackgrounds(const ComputedDecorationStyles& styles);
 std::vector<HoverEffect> extractHoverEffects(const ComputedDecorationStyles& styles);

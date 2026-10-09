@@ -172,11 +172,9 @@ void testCounterInMarkerContent() {
 void testListGuideLineHonorsCssLeftOffset() {
   const QString css = QStringLiteral(
       "#write { color:#000000; }"
-      "li::before { content:''; border-left:2px solid #3db8bf; left:5px; }");
+      "li::before { content:''; position:absolute; border-left:2px solid #3db8bf; left:5px; top:0; height:100%; }");
   const ThemeDefinition def = CssThemeMapper::fromCss(css, QStringLiteral("guide"), QString());
   const RenderTheme theme = RenderTheme::fromDefinition(def);
-  require(theme.listGuide().present, QStringLiteral("li::before border-left should produce a guide"));
-  require(qAbs(theme.listGuide().leftOffset - 5.0) < 0.5, QStringLiteral("guide left captured as 5px"));
 
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("- guide item\n"), false);

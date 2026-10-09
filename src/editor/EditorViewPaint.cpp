@@ -157,7 +157,7 @@ void EditorView::paintEvent(QPaintEvent* event) {
   // painted over the card, clipped to it, under the text.
   painter.save();
   painter.setClipRect(page);
-  DecorationPainter::paintWriteTexture(painter, theme_, page);
+  DecorationPainter::paintWriteTexture(painter, theme_, page, layout_->documentPseudo(theme_, QStringLiteral("before")));
   painter.restore();
   painter.restore();
 

@@ -284,6 +284,7 @@ target_compile_definitions(MuffinDocumentStyleConformanceTest PRIVATE MUFFIN_SOU
 muffin_add_test(NAME MuffinTypographyConformanceTest SOURCE tests/theme/TypographyConformanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 target_compile_definitions(MuffinTypographyConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 muffin_add_test(NAME MuffinRealThemeRegressionTest SOURCE tests/theme/RealThemeRegressionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRealThemeBrowserGeometryTest SOURCE tests/theme/RealThemeBrowserGeometryTest.cpp LINK MuffinUi RESOURCE_LOCK)
 target_compile_definitions(MuffinRealThemeRegressionTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
   set_property(TEST MuffinTypographyConformanceTest APPEND PROPERTY ENVIRONMENT_MODIFICATION
@@ -293,9 +294,10 @@ muffin_add_test(NAME MuffinCssFlexLayoutTest SOURCE tests/theme/CssFlexLayoutTes
 target_compile_definitions(MuffinCssFlexLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinCssGridLayoutTest SOURCE tests/theme/CssGridLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
 target_compile_definitions(MuffinCssGridLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest MuffinRenderHeadingPseudoTest)
+foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest MuffinRenderHeadingPseudoTest MuffinRenderLinkBeforeFlowTest MuffinRealThemeBrowserGeometryTest)
   muffin_use_theme_fonts(${_browser_layout_test})
   target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+  target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
   if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
     # Scope this oracle's matching environment to the tests that require it.
     # Unrelated raster fixtures keep their established font environment.
@@ -303,6 +305,10 @@ foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest Muf
       "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")
   endif()
 endforeach()
+# Opt-in diagnostic: compare actual Qt font backends without changing the
+# editor's layout device. Its JSON and raster output belong in build/.
+add_executable(MuffinFontBackendProbe EXCLUDE_FROM_ALL scripts/font_backend_probe.cpp)
+target_link_libraries(MuffinFontBackendProbe PRIVATE MuffinUi)
 muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} FIXTURE tests/fixtures/theme/mist-blue.css)
 muffin_add_test(NAME MuffinThemeAccessibilityTest SOURCE tests/theme/ThemeAccessibilityTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC})
 
