@@ -1,3 +1,4 @@
+#include "render/TextLayout.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include "mermaid/MermaidFontRegistry.h"
@@ -352,11 +353,11 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
       painter.setBrush(color(scene.style.actorFill));
       painter.drawEllipse(QPointF(number->position.x(), number->position.y() - 4.0), 6.0, 6.0);
       QFont font(scene.style.fontFamily);
-      font.setPixelSize(qRound(number->fontSize));
+      setTextPixelSize(font, number->fontSize);
       MermaidFontRegistry::configureFont(font, scene.style.fontFamily);
       painter.setFont(font);
       painter.setPen(color(scene.style.sequenceNumberColor));
-      painter.drawText(QRectF(number->position.x() - 10.0, number->position.y() - 10.0,
+      drawDocumentText(painter, QRectF(number->position.x() - 10.0, number->position.y() - 10.0,
                               20.0, 14.0), Qt::AlignCenter, number->text);
     }
   }

@@ -6,7 +6,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 
 #include <cmath>
 #include <utility>
@@ -130,7 +130,7 @@ CssLengthContext packetCssLengthContext(const QString& cssFamilies,
   if (families.size() > 1) font.setFamilies(families);
   font.setPixelSize(int(referencePx));
   font.setHintingPreference(QFont::PreferNoHinting);
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   const qreal scale = emPx / referencePx;
   return {emPx, 16.0, metrics.xHeight() * scale,
           metrics.horizontalAdvance(QChar('0')) * scale,

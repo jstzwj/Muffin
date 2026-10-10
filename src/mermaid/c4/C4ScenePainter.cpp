@@ -7,7 +7,7 @@
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QByteArray>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QImage>
 #include <QPainter>
 #include <QPolygonF>
@@ -75,7 +75,7 @@ void drawText(QPainter& painter, const C4Primitive& primitive,
   if (primitive.text.isEmpty() || !(fontSize > 0.0)) return;
   const editor::CssPixelFont font = primitiveFont(primitive);
   if (!(font.scale > 0.0)) return;
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const QStringList textLines = lines(primitive.text);
   painter.save();
   painter.setFont(font.font);
@@ -100,10 +100,10 @@ void drawText(QPainter& painter, const C4Primitive& primitive,
       painter.save();
       painter.translate(x, y);
       painter.scale(primitive.forcedTextWidth / (advance * font.scale), 1.0);
-      painter.drawText(QPointF(0.0, 0.0), text);
+      drawDocumentText(painter, QPointF(0.0, 0.0), text);
       painter.restore();
     } else {
-      painter.drawText(QPointF(x, y), text);
+      drawDocumentText(painter, QPointF(x, y), text);
     }
   }
   painter.restore();

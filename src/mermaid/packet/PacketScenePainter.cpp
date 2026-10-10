@@ -5,7 +5,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QRegularExpression>
 
@@ -83,7 +83,7 @@ void drawPacketText(const PacketScene& scene, QPainter& painter,
   if (paint.none) return;
   const editor::CssPixelFont font = textFont(scene, text.fontSize);
   if (!(font.scale > 0.0)) return;
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const qreal advance = metrics.horizontalAdvance(visible) * font.scale;
   qreal x = 0.0;
   if (text.anchor == PacketTextAnchor::Middle) x = -advance / 2.0;
@@ -96,7 +96,7 @@ void drawPacketText(const PacketScene& scene, QPainter& painter,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(paint.color);
-  painter.drawText(QPointF(0.0, 0.0), visible);
+  drawDocumentText(painter, QPointF(0.0, 0.0), visible);
   painter.restore();
 }
 

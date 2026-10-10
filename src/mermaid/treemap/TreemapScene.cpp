@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/treemap/TreemapScenePainter.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -75,7 +75,7 @@ double advance(const TreemapSceneStyle &style, const QString &text,
                qreal size, bool bold = false, bool italic = false) {
   const QString visible = text::collapsedSvgText(text);
   const auto font = textFont(style, size, bold, italic);
-  const double qt = QFontMetricsF(font.font).horizontalAdvance(visible) * font.scale;
+  const double qt = TextFontMetrics(font.font).horizontalAdvance(visible) * font.scale;
   const double shaped =
       textmetrics::harfBuzzAdvance(visible, style.fontFamily, size).value_or(qt);
   // Blink's synthetic-bold shaping expands each glyph advance by 1/60em when
@@ -95,7 +95,7 @@ QRectF textBounds(const TreemapSceneStyle &style, const QString &text,
   if (text.isEmpty() || !(size > 0.0))
     return {};
   const auto font = textFont(style, size, bold, italic);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const QString visible = text::collapsedSvgText(text);
   const double shapedAdvance = advance(style, visible, size, bold, italic);
   QRectF ink = metrics.boundingRect(visible);

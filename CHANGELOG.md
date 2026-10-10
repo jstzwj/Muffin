@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Mermaid labels and editor measurements share the document text backend, including FlowLabel wrapping/prepared glyphs and Gantt/C4/Journey/Venn/Mindmap painting. Glyph positions, raw font sizes and decoration metrics use logical pixels; native rendering remains the default, with fractional-size, mixed-script, zoom and full/lazy layout regressions.
 - Link and heading generated content share live pseudo styles and inline layout. Positioned decorations use stored used geometry and state snapshots; the link-icon, list-guide and paint-time pseudo positioning paths have been removed. Compiled selector subjects skip unrelated pseudo-state computation in long documents.
 - CI compares bundled Newsprint/Night page, heading, baseline and component geometry with fixed-font browser references, alongside generated-link editing and full/lazy/incremental consistency checks.
 - Viewport changes reuse compiled CSS selectors and theme projections while the active media rules and viewport-dependent values stay unchanged. Fixed-width prose columns retain their layout when only their horizontal position changes; lazy paragraph estimates share used-box and wrapping parameters within each pass.

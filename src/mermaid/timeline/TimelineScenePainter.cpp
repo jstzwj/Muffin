@@ -4,7 +4,7 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/timeline/TimelineScene.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLinearGradient>
 #include <QPainter>
 #include <QPainterPath>
@@ -336,7 +336,7 @@ void paintNode(const TimelineScene& scene, const TimelineNodeGeometry& node,
         painter.save();
         painter.translate(node.textOffset + line.baseline);
         painter.scale(font.scale, font.scale);
-        painter.drawText(QPointF(-font.horizontalAdvance(line.visibleText) /
+        drawDocumentText(painter, QPointF(-font.horizontalAdvance(line.visibleText) /
                                      (2.0 * font.scale),
                                  0.0),
                          line.visibleText);
@@ -429,7 +429,7 @@ void paintTitle(const TimelineScene& scene, QPainter& painter) {
   painter.setPen(fill.color);
   painter.translate(title.baseline);
   painter.scale(font.scale, font.scale);
-  painter.drawText(QPointF(0.0, 0.0), title.text);
+  drawDocumentText(painter, QPointF(0.0, 0.0), title.text);
   painter.restore();
 }
 

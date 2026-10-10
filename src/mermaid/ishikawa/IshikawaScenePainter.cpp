@@ -5,7 +5,7 @@
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPolygonF>
 
@@ -88,7 +88,7 @@ void drawText(const IshikawaScene& scene, const IshikawaTextGeometry& text,
                  QColor(Qt::black));
   if (fill.none || !fill.color.isValid() || !(text.fontSize > 0.0)) return;
   const editor::CssPixelFont font = textFont(scene, text);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   painter.save();
   painter.setFont(font.font);
   QColor used = fill.color;
@@ -114,7 +114,7 @@ void drawText(const IshikawaScene& scene, const IshikawaTextGeometry& text,
     painter.save();
     painter.translate(x, baseline);
     painter.scale(font.scale, font.scale);
-    painter.drawText(QPointF(), visible);
+    drawDocumentText(painter, QPointF(), visible);
     painter.restore();
   }
   painter.restore();

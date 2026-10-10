@@ -5,7 +5,7 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/treemap/TreemapScene.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 
 #include <algorithm>
@@ -106,7 +106,7 @@ void drawText(QPainter &painter, const TreemapScene &scene,
       editor::firstFontFamily(family), fontSize);
   font.font.setWeight(bold ? QFont::Bold : QFont::Normal);
   font.font.setItalic(italic);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const qreal width = metrics.horizontalAdvance(text.text) * font.scale;
   qreal x = text.position.x();
   if (text.anchor == QLatin1String("middle")) x -= width / 2.0;
@@ -124,7 +124,7 @@ void drawText(QPainter &painter, const TreemapScene &scene,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(penColor);
-  painter.drawText(QPointF(0.0, 0.0), text.text);
+  drawDocumentText(painter, QPointF(0.0, 0.0), text.text);
   painter.restore();
 }
 

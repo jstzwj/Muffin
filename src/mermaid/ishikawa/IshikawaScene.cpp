@@ -5,7 +5,7 @@
 #include "mermaid/ishikawa/IshikawaScenePainter.h"
 #include "mermaid/text/LabelText.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRawFont>
@@ -155,7 +155,7 @@ QRectF textBounds(const IshikawaTextGeometry& text,
                                                     : text.fontFamily;
   const editor::CssPixelFont font =
       textFont(family, text.fontSize, text.weight, text.fontStyle);
-  const QFontMetricsF qmetrics(font.font);
+  const TextFontMetrics qmetrics(font.font);
   const flowchart::FlowLabelFontMetrics metrics =
       flowchart::flowLabelFontBoundingMetrics(
           metricFamily(family, text.fontSize, text.weight, text.fontStyle),
@@ -177,12 +177,12 @@ QRectF textBounds(const IshikawaTextGeometry& text,
     if (text.fontStyle != QFont::StyleNormal) {
       const editor::CssPixelFont regular =
           textFont(family, text.fontSize, QFont::Normal, QFont::StyleNormal);
-      QTextLayout regularLayout(visible, regular.font);
+      TextLayout regularLayout(visible, regular.font);
       QTextOption regularOption;
       regularOption.setUseDesignMetrics(true);
       regularLayout.setTextOption(regularOption);
       regularLayout.beginLayout();
-      QTextLine regularLine = regularLayout.createLine();
+      TextLine regularLine = regularLayout.createLine();
       if (regularLine.isValid())
         regularLine.setLineWidth(std::numeric_limits<qreal>::max());
       regularLayout.endLayout();

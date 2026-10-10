@@ -5,7 +5,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QRegularExpression>
 
@@ -78,7 +78,7 @@ void drawText(const RailroadScene& scene, QPainter& painter,
   if (fill.none) return;
   const editor::CssPixelFont font = textFont(scene, primitive);
   if (!(font.scale > 0.0)) return;
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const QString visible = text::collapsedSvgText(primitive.text);
   qreal x = primitive.position.x();
   if (primitive.middleAnchor)
@@ -92,7 +92,7 @@ void drawText(const RailroadScene& scene, QPainter& painter,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(withOpacity(fill.color, cssOpacity(primitive.css)));
-  painter.drawText(QPointF(0.0, 0.0), visible);
+  drawDocumentText(painter, QPointF(0.0, 0.0), visible);
   painter.restore();
 }
 

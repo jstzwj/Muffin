@@ -6,7 +6,7 @@
 #include "mermaid/text/ChromiumTextMetrics.h"
 #include "mermaid/text/LabelText.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -137,7 +137,7 @@ qreal textAdvance(const CynefinSceneStyle &style, const QString &source,
   if (!(size > 0.0)) return 0.0;
   const QString text = text::collapsedSvgText(source);
   const auto font = textFont(style, size, bold, italic);
-  const qreal qt = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
+  const qreal qt = TextFontMetrics(font.font).horizontalAdvance(text) * font.scale;
   qreal shaped = textmetrics::harfBuzzAdvance(text, style.fontFamily, size)
                      .value_or(qt);
   if (bold)

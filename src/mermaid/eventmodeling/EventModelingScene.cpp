@@ -7,7 +7,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QRegularExpression>
 
 #include <algorithm>
@@ -74,11 +74,11 @@ qreal literalWidth(const QString& text) {
   const auto designWidth = flowchart::measureOpenTypeDesignAdvance(
       document, QStringLiteral("Trebuchet MS"), kTextFontSize);
   return qRound(designWidth.value_or(
-      QFontMetricsF(literalFont()).horizontalAdvance(visible)));
+      TextFontMetrics(literalFont()).horizontalAdvance(visible)));
 }
 
 qreal literalLineHeight() {
-  return qRound(QFontMetricsF(literalFont()).height());
+  return qRound(TextFontMetrics(literalFont()).height());
 }
 
 QStringList splitRenderedLines(const QString& text) {

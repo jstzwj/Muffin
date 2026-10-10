@@ -12,7 +12,7 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QSizeF>
 #include <QString>
 #include <QTextCharFormat>
@@ -154,7 +154,7 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
   // Per-row height model: the mermaid requirementBox measures each row at the
   // standard mermaid line-height (fontSize × 1.5) by default. Commit 3 resolves a
   // per-node text style (line-height / font-size) from the node's labelStyle:
-  //   - line-height:normal -> the font's natural height (QFontMetricsF::height()).
+  //   - line-height:normal -> the font's natural height (TextFontMetrics::height()).
   //   - line-height:<length>/<number> -> the resolved px (number is a multiplier).
   //   - unset/invalid -> fontSize × 1.5 (the deterministic oracle default).
   // The per-row WIDTH is measured with the same prepared markdown document the
@@ -217,7 +217,7 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
         if (style.lineHeightNormal) {
           const QFont f = flowchart::makeFlowLabelFont(
               effFamily, effSize, style.fontWeight, style.fontStyle);
-          effLineHeight = QFontMetricsF(f).height();
+          effLineHeight = TextFontMetrics(f).height();
         } else {
           effLineHeight = style.lineHeightPx >= 0.0
               ? style.lineHeightPx : effSize * 1.5;

@@ -1,3 +1,4 @@
+#include "render/TextLayout.h"
 #include "mermaid/mindmap/MindmapScenePainter.h"
 
 #include "mermaid/mindmap/MindmapScene.h"
@@ -118,12 +119,12 @@ void paintMindmapScene(const MindmapScene& scene, QPainter& painter,
           anchorFont.setUnderline(true);
           painter.setFont(anchorFont);
           painter.setPen(QColor(QStringLiteral("#0000ee")));
-          const QFontMetricsF metrics(anchorFont);
+          const TextFontMetrics metrics(anchorFont);
           for (const MindmapAnchorGeometry& anchor : node.anchors) {
             const qreal baseline = anchor.bounds.top()
                 + (anchor.bounds.height() - metrics.height()) / 2.0
                 + metrics.ascent();
-            painter.drawText(QPointF(anchor.bounds.left(), baseline), anchor.label);
+            drawDocumentText(painter, QPointF(anchor.bounds.left(), baseline), anchor.label);
           }
         }
       }

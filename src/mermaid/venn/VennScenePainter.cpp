@@ -6,9 +6,8 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/venn/VennScene.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
-#include <QTextLayout>
 
 #include <cmath>
 
@@ -42,7 +41,7 @@ void paintText(const VennScene& scene, const VennTextGeometry& text,
   if (fill.none) return;
   const editor::CssPixelFont font = textFont(
       scene, text.fontSize, text.fontFamily, text.fontWeight, text.fontStyle);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   painter.save();
   painter.setOpacity(text.opacity);
   painter.setFont(font.font);
@@ -58,7 +57,7 @@ void paintText(const VennScene& scene, const VennTextGeometry& text,
     painter.save();
     painter.translate(x, baseline);
     painter.scale(font.scale, font.scale);
-    painter.drawText(QPointF(), line);
+    drawDocumentText(painter, QPointF(), line);
     painter.restore();
   }
   painter.restore();
@@ -97,13 +96,13 @@ void paintTextNode(const VennScene& scene, const VennTextNodeGeometry& node,
   QTextOption option;
   option.setAlignment(Qt::AlignHCenter);
   option.setWrapMode(QTextOption::WordWrap);
-  QTextLayout layout(node.source, font.font);
+  TextLayout layout(node.source, font.font);
   layout.setTextOption(option);
   layout.beginLayout();
-  QVector<QTextLine> lines;
+  QVector<TextLine> lines;
   qreal height = 0.0;
   for (;;) {
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (!line.isValid()) break;
     line.setLineWidth(node.box.width() / font.scale);
     line.setPosition(QPointF(0.0, height));
@@ -134,7 +133,7 @@ void paintVennScene(const VennScene& scene, QPainter& painter,
   if (!scene.titleText.lines.isEmpty()) {
     VennTextGeometry title = scene.titleText;
     const editor::CssPixelFont font = textFont(scene, title.fontSize);
-    const QFontMetricsF metrics(font.font);
+    const TextFontMetrics metrics(font.font);
     title.firstDyEm = metrics.xHeight() * font.scale /
                         (2.0 * title.fontSize);
     paintText(scene, title, painter);

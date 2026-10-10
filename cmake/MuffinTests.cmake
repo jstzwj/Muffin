@@ -4,6 +4,13 @@
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
 
+muffin_add_test(NAME MuffinMermaidTextBackendTest SOURCE tests/mermaid/MermaidTextBackendTest.cpp LINK MuffinUi RESOURCE_LOCK)
+set_property(TEST MuffinMermaidTextBackendTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "MUFFIN_TEXT_LAYOUT_BACKEND=set:native")
+add_test(NAME MuffinMermaidFractionalTextBackendTest COMMAND $<TARGET_FILE:MuffinMermaidTextBackendTest>)
+set_tests_properties(MuffinMermaidFractionalTextBackendTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional"
+  RESOURCE_LOCK MuffinQtGui)
+
 # --- perf benchmark (pure MuffinCore, no GUI lock; defaults are a fast smoke — override
 #     MUFFIN_BENCH_SIZE_MB / MUFFIN_BENCH_ITERS for a real measurement run) ---
 muffin_add_test(NAME MuffinTypingPerfBench SOURCE tests/perf/TypingPerfBench.cpp LINK MuffinCore)

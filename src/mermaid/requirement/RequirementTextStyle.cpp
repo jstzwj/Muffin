@@ -15,7 +15,7 @@
 #include <QChar>
 #include <QColor>
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QSizeF>
 #include <QString>
@@ -105,7 +105,7 @@ bool isValidFontWeight(const QString& text) {
 // font-metric ex/ch of `metricFont` (the layer's actual font). viewport/rem are
 // layer-invariant; emPx/exPx/chPx are parent-coupled in the font-size loop.
 CssLengthContext layerCtx(qreal emPx, const QFont& metricFont) {
-  const QFontMetricsF m(metricFont);
+  const TextFontMetrics m(metricFont);
   return CssLengthContext{emPx, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')),
                           kMmdcViewport};
 }

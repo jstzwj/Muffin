@@ -16,7 +16,7 @@
 #include <QRawFont>
 #include <QRegularExpression>
 #include <QTextCharFormat>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <QTextOption>
 
 #include <hb.h>
@@ -639,12 +639,12 @@ qreal qtSvgAdvanceWidth(const flowchart::FlowLabelDocument& document,
 
   qreal maximum = 0.0;
   for (const auto& lineRange : lines) {
-    QTextLayout layout(document.text.mid(lineRange.start, lineRange.length), font);
+    TextLayout layout(document.text.mid(lineRange.start, lineRange.length), font);
     QTextOption option;
     option.setUseDesignMetrics(true);
     option.setTextDirection(document.direction);
     layout.setTextOption(option);
-    QVector<QTextLayout::FormatRange> formats;
+    QVector<TextLayout::FormatRange> formats;
     const qsizetype lineEnd = lineRange.start + lineRange.length;
     for (const auto& source : document.formats) {
       const qsizetype begin = std::max<qsizetype>(source.start, lineRange.start);
@@ -658,7 +658,7 @@ qreal qtSvgAdvanceWidth(const flowchart::FlowLabelDocument& document,
     }
     layout.setFormats(formats);
     layout.beginLayout();
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (line.isValid()) line.setLineWidth(std::numeric_limits<qreal>::max());
     layout.endLayout();
     if (line.isValid()) maximum = std::max(maximum, line.naturalTextWidth());
@@ -685,7 +685,7 @@ QRectF chromiumSvgTextBounds(
   const qreal cellWidth = rounded / 64.0;
   const bool syntheticStyle = std::any_of(
       document.formats.cbegin(), document.formats.cend(),
-      [](const QTextLayout::FormatRange& range) {
+      [](const TextLayout::FormatRange& range) {
         return range.format.fontWeight() > QFont::Normal ||
             range.format.fontItalic();
       });
@@ -709,12 +709,12 @@ QRectF chromiumSvgTextBounds(
     const QFont font = flowchart::makeFlowLabelFont(
         family, fontSize, document.baseWeight, document.baseStyle,
         document.letterSpacingPx, document.wordSpacingPx);
-    QTextLayout layout(document.text, font);
+    TextLayout layout(document.text, font);
     QTextOption option;
     option.setUseDesignMetrics(true);
     layout.setTextOption(option);
     layout.beginLayout();
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (line.isValid()) line.setLineWidth(std::numeric_limits<qreal>::max());
     layout.endLayout();
     const QList<QGlyphRun> runs = line.isValid()

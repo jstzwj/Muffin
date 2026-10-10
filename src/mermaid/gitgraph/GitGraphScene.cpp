@@ -4,7 +4,7 @@
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -111,7 +111,7 @@ qreal textAdvance(const TextFont& spec, const QString& text) {
 QRectF directTextBounds(const TextFont& spec, const QString& text,
                         bool bold = false, bool expandBoldRight = true) {
   const editor::CssPixelFont css = font(spec);
-  const QRectF ink = QFontMetricsF(css.font).boundingRect(text);
+  const QRectF ink = TextFontMetrics(css.font).boundingRect(text);
   qreal inkLeft = ink.left() * css.scale;
   qreal inkRight = ink.right() * css.scale;
   if (const auto hb = textmetrics::harfBuzzInkBounds(

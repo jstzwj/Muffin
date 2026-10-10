@@ -10,7 +10,7 @@
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QPointF>
@@ -39,8 +39,8 @@ void drawCenteredBaseline(QPainter& painter, const editor::CssPixelFont& font,
   painter.translate(anchor);
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
-  const qreal advance = QFontMetricsF(font.font).horizontalAdvance(text);
-  painter.drawText(QPointF(-advance / 2.0, 0.0), text);
+  const qreal advance = TextFontMetrics(font.font).horizontalAdvance(text);
+  drawDocumentText(painter, QPointF(-advance / 2.0, 0.0), text);
   painter.restore();
 }
 
@@ -50,7 +50,7 @@ void drawLeftBaseline(QPainter& painter, const editor::CssPixelFont& font,
   painter.translate(anchor);
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
-  painter.drawText(QPointF(0.0, 0.0), text);
+  drawDocumentText(painter, QPointF(0.0, 0.0), text);
   painter.restore();
 }
 

@@ -8,7 +8,7 @@
 
 #include <QJsonObject>
 #include <QJsonValue>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QRawFont>
 #include <QRegularExpression>
 #include <QStringList>
@@ -390,7 +390,7 @@ CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
   QFont f(families.first());
   if (families.size() > 1) f.setFamilies(families);
   f.setPixelSize(int(kReferencePx));
-  const QFontMetricsF m(f);
+  const TextFontMetrics m(f);
   const qreal scale = emPx / kReferencePx;
   // viewport = mmdc default raster profile (RequirementScene.cpp:46).
   return {emPx, 16.0, m.xHeight() * scale,
@@ -504,7 +504,7 @@ qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
 }
 
 qreal CssPixelFont::horizontalAdvance(const QString& text) const {
-  return QFontMetricsF(font).horizontalAdvance(text) * scale;
+  return TextFontMetrics(font).horizontalAdvance(text) * scale;
 }
 
 CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize) {
@@ -512,6 +512,10 @@ CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize) {
   result.font = QFont(family);
   if (!(pixelSize > 0.0) || !std::isfinite(pixelSize)) {
     result.scale = 0.0;
+    return result;
+  }
+  if (documentTextBackend() == TextBackend::Fractional) {
+    setTextPixelSize(result.font, pixelSize);
     return result;
   }
   const qreal integral = std::floor(pixelSize);
@@ -701,9 +705,9 @@ QRectF mermaidClientBox(const std::shared_ptr<const MermaidScene>& scene,
   QRectF clientBox = clientViewBox;
   if (metadata.hasVisibleTitle()) {
     QFont titleFace(metadata.fontFamily);
-    titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
-    const qreal ascent = qRound(QFontMetricsF(titleFace).ascent());
-    const qreal descent = qRound(QFontMetricsF(titleFace).descent());
+    setTextPixelSize(titleFace, metadata.titleFontSize);
+    const qreal ascent = qRound(TextFontMetrics(titleFace).ascent());
+    const qreal descent = qRound(TextFontMetrics(titleFace).descent());
     const qreal titleWidth = measureMermaidTitleWidth(metadata);
     const qreal padding = metadata.titleBandPadding >= 0.0
         ? metadata.titleBandPadding : metadata.diagramPadding;
@@ -736,8 +740,8 @@ void finalizeReadyEntry(MermaidRenderEntry& entry,
                               qMax(1, qRound(clientBox.height())));
     if (metadata.hasVisibleTitle()) {
       QFont titleFace(metadata.fontFamily);
-      titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
-      const qreal ascent = QFontMetricsF(titleFace).ascent();
+      setTextPixelSize(titleFace, metadata.titleFontSize);
+      const qreal ascent = TextFontMetrics(titleFace).ascent();
       const qreal bandPadding = metadata.titleBandPadding >= 0.0
           ? metadata.titleBandPadding : metadata.diagramPadding;
       // Integer titleHeight for the paint-time title strip; the BASELINE
@@ -760,8 +764,8 @@ void finalizeReadyEntry(MermaidRenderEntry& entry,
     // family padding above the union — a 25+19+8 = 52px strip for the
     // default state/flowchart geometry.
     QFont titleFace(metadata.fontFamily);
-    titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
-    const qreal ascent = QFontMetricsF(titleFace).ascent();
+    setTextPixelSize(titleFace, metadata.titleFontSize);
+    const qreal ascent = TextFontMetrics(titleFace).ascent();
     const qreal bandPadding = metadata.titleBandPadding >= 0.0
         ? metadata.titleBandPadding : metadata.diagramPadding;
     metadata.titleHeight = qCeil(

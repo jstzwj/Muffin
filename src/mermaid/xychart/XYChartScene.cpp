@@ -4,7 +4,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/xychart/XYChartScenePainter.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -29,7 +29,7 @@ Dimension textDimension(const QStringList& texts, qreal size,
   const editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(family, usedSize);
   if (!(font.scale > 0.0)) return {};
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   Dimension result;
   for (const QString& raw : texts) {
     const QString text = text::collapsedSvgText(raw);

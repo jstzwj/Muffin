@@ -7,7 +7,7 @@
 #include <QHash>
 #include <QFont>
 #include <QFontDatabase>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QFileInfo>
 #include <QQueue>
 #include <QSet>
@@ -892,7 +892,7 @@ qreal cytoscapeLabelWidth(const QString& text) {
                     QStringLiteral("Arial"), QStringLiteral("sans-serif")});
   font.setPixelSize(16);
   font.setHintingPreference(QFont::PreferNoHinting);
-  return std::ceil(QFontMetricsF(font).horizontalAdvance(text));
+  return std::ceil(TextFontMetrics(font).horizontalAdvance(text));
 }
 
 QRectF initialNodeHorizontalBounds(const GraphModel& model,

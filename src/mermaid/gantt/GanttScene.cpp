@@ -4,7 +4,7 @@
 #include "mermaid/gantt/GanttScenePainter.h"
 #include "mermaid/text/LabelText.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -436,7 +436,7 @@ GanttTaskTextPlacement ganttTaskTextPlacement(const GanttTask& task,
   };
   const editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(measureFamily, measureSize);
-  QFontMetricsF metrics(font.font);
+  TextFontMetrics metrics(font.font);
   out.textWidth =
       metrics.horizontalAdvance(text::collapsedSvgText(task.task)) * font.scale;
 

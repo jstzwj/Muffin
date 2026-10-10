@@ -4,7 +4,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/treeview/TreeViewScenePainter.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -100,7 +100,7 @@ qreal textInkWidth(const QString& text, const TreeViewSceneStyle& style,
           : (italic ? QFont::StyleItalic : QFont::StyleNormal);
   const QFont font = flowchart::makeFlowLabelFont(
       family, fontSize, weight, fontStyle);
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   flowchart::FlowLabelDocument document;
   document.text = text;
   document.baseWeight = weight;
@@ -180,7 +180,7 @@ QRectF textInkBounds(const QString& text, const QPointF& position,
       resolvedStyle != QFont::StyleNormal
           ? resolvedStyle
           : (italic ? QFont::StyleItalic : QFont::StyleNormal));
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   // SVG dominant-baseline: middle positions the alphabetic baseline half an
   // x-height below the requested center line.  Centering the full font cell
   // (ascent - descent) puts Noto Sans text about 2 px too low at 16 px.

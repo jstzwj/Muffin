@@ -99,8 +99,8 @@ qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx);
 
 // A CSS-pixel font descriptor that preserves fractional sizes although Qt's
 // QFont::setPixelSize accepts only integers. Integer sizes keep scale=1 (the
-// existing byte-stable path); fractional sizes use a nearby integer font and a
-// painter/metric scale. Callers measure via horizontalAdvance() and apply
+// existing byte-stable path); the native backend scales a nearby integer font,
+// while the fractional backend shapes the exact size through TextLayout. Callers measure via horizontalAdvance() and apply
 // `painter.scale(scale, scale)` around their text anchor before drawing.
 struct CssPixelFont {
   QFont font;

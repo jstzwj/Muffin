@@ -1,3 +1,4 @@
+#include "render/TextLayout.h"
 // Native quadrantChart painter. See QuadrantScenePainter.h.
 
 #include "mermaid/quadrant/QuadrantScenePainter.h"
@@ -35,7 +36,7 @@ void drawScaledText(QPainter& painter, const editor::CssPixelFont& font,
   painter.translate(rect.topLeft());
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
-  painter.drawText(QRectF(0.0, 0.0, rect.width() / font.scale,
+  drawDocumentText(painter, QRectF(0.0, 0.0, rect.width() / font.scale,
                           rect.height() / font.scale),
                    alignment | Qt::TextDontClip, text);
   painter.restore();

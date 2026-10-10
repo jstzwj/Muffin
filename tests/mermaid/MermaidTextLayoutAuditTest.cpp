@@ -1,8 +1,10 @@
 #include <QDebug>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QStringList>
+#include <QRegularExpression>
 
 #include <cstdlib>
 
@@ -37,6 +39,21 @@ int main(int argc, char** argv) {
   const QString painter = readSource(sourceRoot.filePath(
       QStringLiteral("src/mermaid/scene/FlowScenePainter.cpp")));
   const QString combined = flow + sequence + layout + painter;
+
+  // Specialized MathML/OpenType shaping keeps its own backend. Diagram labels
+  // and editor measurements must enter the shared logical-pixel facade.
+  QDirIterator sources(sourceRoot.filePath(QStringLiteral("src/mermaid")),
+                       {QStringLiteral("*.cpp")}, QDir::Files, QDirIterator::Subdirectories);
+  const QRegularExpression directLayout(QStringLiteral(R"(\bQTextLayout\s+\w+\s*\()"));
+  const QRegularExpression directPaint(QStringLiteral(R"(\bpainter\.drawText\s*\()"));
+  while (sources.hasNext()) {
+    const QString path = QDir::fromNativeSeparators(sources.next());
+    if (path.contains(QStringLiteral("/mermaid/math/"))) continue;
+    const QString source = readSource(path);
+    require(!source.contains(QStringLiteral("#include <QFontMetricsF>")) &&
+                !directLayout.match(source).hasMatch() && !directPaint.match(source).hasMatch(),
+            QStringLiteral("Mermaid label bypassed TextLayout: %1").arg(path));
+  }
 
   const QStringList forbidden = {
       QStringLiteral("chromiumFallbackWidth"),

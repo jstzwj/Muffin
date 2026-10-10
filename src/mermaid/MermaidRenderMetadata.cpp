@@ -4,7 +4,7 @@
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 
 #include <cmath>
@@ -20,7 +20,7 @@ QString singleLineTitle(QString title) {
 
 QFont titleFont(const MermaidRenderMetadata& metadata) {
   QFont font(metadata.fontFamily);
-  font.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
+  setTextPixelSize(font, metadata.titleFontSize);
   font.setWeight(QFont::Normal);
   return font;
 }
@@ -38,14 +38,14 @@ qreal measureMermaidTitleWidth(const MermaidRenderMetadata& metadata) {
   if (!metadata.hasVisibleTitle()) return 0.0;
   const QString text = singleLineTitle(metadata.title);
   // getComputedTextLength parity: the browser's title bbox width is the
-  // LayoutUnit-quantized design advance (ceil to 1/64), not QFontMetricsF's
+  // LayoutUnit-quantized design advance (ceil to 1/64), not TextFontMetrics's
   // hinted advance (which drifts ~1.6px for an 18px title).
   flowchart::FlowLabelDocument document;
   document.text = text;
   const qreal advance = flowchart::measureOpenTypeDesignAdvance(
                             document, metadata.fontFamily,
                             metadata.titleFontSize)
-                            .value_or(QFontMetricsF(titleFont(metadata))
+                            .value_or(TextFontMetrics(titleFont(metadata))
                                           .horizontalAdvance(text));
   return std::ceil(advance * 64.0 - 1e-9) / 64.0;
 }
@@ -63,7 +63,7 @@ void paintMermaidTitle(const MermaidRenderMetadata& metadata,
   const QString text = singleLineTitle(metadata.title);
   const qreal baseline = titleRect.bottom() - metadata.titleTopMargin;
   const qreal advance = measureMermaidTitleWidth(metadata);
-  painter.drawText(QPointF(titleRect.center().x() - advance / 2.0, baseline),
+  drawDocumentText(painter, QPointF(titleRect.center().x() - advance / 2.0, baseline),
                    text);
   painter.restore();
 }

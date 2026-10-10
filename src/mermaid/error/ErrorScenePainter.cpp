@@ -10,7 +10,7 @@
 #include <QFontDatabase>
 #include <QFontInfo>
 #include <QHash>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPen>
 
@@ -62,7 +62,7 @@ QFont::Weight cssWeight(const QString& weight) {
 // Chromium's getComputedTextLength parity for the centered anchor: shape in
 // OpenType design units when the face is available (the same helper the
 // eventmodeling family uses for its literal trebuchet measurement), else
-// unhinted QFontMetricsF.
+// unhinted TextFontMetrics.
 qreal textAdvance(const QString& text, const QString& firstFamily,
                   const QFont& font, qreal fontScale, qreal pixelSize,
                   QFont::Weight weight) {
@@ -72,7 +72,7 @@ qreal textAdvance(const QString& text, const QString& firstFamily,
   const auto design = flowchart::measureOpenTypeDesignAdvance(
       document, firstFamily, pixelSize);
   if (design) return *design;
-  return QFontMetricsF(font).horizontalAdvance(text) * fontScale;
+  return TextFontMetrics(font).horizontalAdvance(text) * fontScale;
 }
 
 QColor withOpacity(QColor color, qreal opacity) {
@@ -166,7 +166,7 @@ void paintErrorScene(const ErrorScene& scene, QPainter& painter) {
                          geometry.anchor.y() / font.scale);
     if (!fill.none) {
       painter.setPen(QPen(withOpacity(fill.color, css.opacity)));
-      painter.drawText(origin, geometry.text);
+      drawDocumentText(painter, origin, geometry.text);
     }
     if (!stroke.none && css.strokeWidthPx > 0.0) {
       QPainterPath outlined;

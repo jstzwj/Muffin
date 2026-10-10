@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QRegularExpression>
 #include <QStringList>
@@ -180,7 +180,7 @@ void paintText(QPainter &painter, const CynefinScene &scene,
   font.font.setWeight(bold ? QFont::Bold : QFont::Normal);
   font.font.setItalic(italic);
   const QString visible = text::collapsedSvgText(text.text);
-  qreal width = QFontMetricsF(font.font).horizontalAdvance(visible) * font.scale;
+  qreal width = TextFontMetrics(font.font).horizontalAdvance(visible) * font.scale;
   qreal x = std::isfinite(text.position.x()) ? text.position.x() : 0.0;
   if (text.anchor == QLatin1String("middle")) x -= width / 2.0;
   else if (text.anchor == QLatin1String("end")) x -= width;
@@ -199,7 +199,7 @@ void paintText(QPainter &painter, const CynefinScene &scene,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(penColor);
-  painter.drawText(QPointF(0.0, 0.0), visible);
+  drawDocumentText(painter, QPointF(0.0, 0.0), visible);
   painter.restore();
 }
 

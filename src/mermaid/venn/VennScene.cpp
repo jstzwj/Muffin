@@ -5,7 +5,7 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/venn/VennScenePainter.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMap>
@@ -143,7 +143,7 @@ QStringList wrapLabel(const QString& label, qreal radius,
   if (words.isEmpty()) return {QString()};
   const qreal minimumCharacters = qreal(label.size() + words.size()) / 3.0;
   const editor::CssPixelFont font = fontFor(style, fontSize);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   QStringList lines;
   QStringList line{words.takeFirst()};
   while (!words.isEmpty()) {

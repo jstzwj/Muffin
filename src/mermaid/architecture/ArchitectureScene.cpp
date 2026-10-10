@@ -5,7 +5,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QPainter>
@@ -48,7 +48,7 @@ QRectF textBounds(const QString& text, const QString& family, qreal fontSize,
   if (!families.isEmpty()) font.setFamilies(families);
   if (bold) font.setWeight(QFont::Bold);
   // getComputedTextLength parity: the browser's LayoutUnit-quantized design
-  // advance, not QFontMetricsF's hinted per-glyph sum (which drifts ~0.05px
+  // advance, not TextFontMetrics's hinted per-glyph sum (which drifts ~0.05px
   // per string and shows up in the setupGraphViewbox union).
   flowchart::FlowLabelDocument document;
   document.text = text;
@@ -56,7 +56,7 @@ QRectF textBounds(const QString& text, const QString& family, qreal fontSize,
   const qreal advance = flowchart::measureOpenTypeDesignAdvance(
                             document, family, fontSize)
                             .value_or(
-                                QFontMetricsF(font).horizontalAdvance(text) *
+                                TextFontMetrics(font).horizontalAdvance(text) *
                                 cssFont.scale);
   const qreal width = std::ceil(advance * 64.0 - 1e-9) / 64.0;
   const auto metrics = flowchart::flowLabelFontBoundingMetrics(

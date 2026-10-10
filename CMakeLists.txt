@@ -489,6 +489,7 @@ qt_add_resources(MUFFIN_CORE_QRC_SOURCES
 )
 
 set(MUFFIN_CORE_SOURCES
+  src/render/TextLayout.cpp
   src/render/LayoutResources.cpp
   src/render/LayoutResources.h
   ${MUFFIN_CORE_QRC_SOURCES}
@@ -1286,7 +1287,6 @@ set(MUFFIN_UI_SOURCES
   src/render/ImageLoader.h
   src/render/ImagePlaceholder.cpp
   src/render/ImagePlaceholder.h
-  src/render/TextLayout.cpp
   src/render/InlineLayout.cpp
   src/render/InlineFormatting.h
   src/render/InlineLayout.h

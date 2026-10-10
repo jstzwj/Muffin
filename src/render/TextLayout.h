@@ -14,6 +14,8 @@ namespace muffin {
 enum class TextBackend { Native, Fractional };
 TextBackend documentTextBackend();
 qreal textBackendScale(TextBackend backend);
+void setTextPixelSize(QFont& font, qreal pixels, TextBackend backend = documentTextBackend());
+qreal textFontPixelSize(const QFont& font);
 
 // Every coordinate exposed here is in logical document pixels. No caller may
 // observe the larger shaping device used by the experimental backend.
@@ -33,6 +35,10 @@ class TextLine {
   qreal horizontalAdvance() const { return line_.horizontalAdvance() / scale_; }
   QRectF naturalTextRect() const;
   QRectF rect() const;
+  // Glyph indices/string indices stay unchanged; positions, bounds and the
+  // raw font's size use logical pixels, including on the fractional device.
+  QList<QGlyphRun> glyphRuns(int from = -1, int length = -1,
+                            QTextLayout::GlyphRunRetrievalFlags flags = QTextLayout::RetrieveAll) const;
   QPointF position() const { return line_.position() / scale_; }
   void setPosition(QPointF position) { line_.setPosition(position * scale_); }
   void setLineWidth(qreal width) {
@@ -111,9 +117,14 @@ class TextFontMetrics {
   qreal lineSpacing() const { return metrics_.lineSpacing() / scale_; }
   qreal xHeight() const { return metrics_.xHeight() / scale_; }
   qreal averageCharWidth() const { return metrics_.averageCharWidth() / scale_; }
+  qreal lineWidth() const { return metrics_.lineWidth() / scale_; }
+  qreal underlinePos() const { return metrics_.underlinePos() / scale_; }
+  qreal overlinePos() const { return metrics_.overlinePos() / scale_; }
+  qreal strikeOutPos() const { return metrics_.strikeOutPos() / scale_; }
   qreal horizontalAdvance(const QString& text) const { return metrics_.horizontalAdvance(text) / scale_; }
   qreal horizontalAdvance(QChar text) const { return metrics_.horizontalAdvance(text) / scale_; }
   QRectF boundingRect(const QString& text) const;
+  QRectF tightBoundingRect(const QString& text) const;
   QRectF boundingRect(QRectF rect, int flags, const QString& text) const;
   QString elidedText(const QString& text, Qt::TextElideMode mode, qreal width) const {
     return metrics_.elidedText(text, mode, width * scale_);

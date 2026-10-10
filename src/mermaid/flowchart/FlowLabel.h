@@ -4,7 +4,7 @@
 #include <QGlyphRun>
 #include <QSizeF>
 #include <QString>
-#include <QTextLayout>
+#include "render/TextLayout.h"
 #include <QVector>
 
 #include <memory>
@@ -67,7 +67,7 @@ enum class FlowLabelBreakBehavior {
 
 struct FlowLabelDocument {
   QString text;
-  QVector<QTextLayout::FormatRange> formats;
+  QVector<TextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
   QVector<FlowLabelDomItem> domItems;
   // Optional visual lines produced by the layout/wrap stage. They reference
@@ -129,7 +129,7 @@ struct FlowLabelVisualRun {
   qreal fontAscent = 0.0;
   qreal fontDescent = 0.0;
   // Full-line shaping payload, including the synthetic style face selected by
-  // QTextLayout. Positions are local to x and retain the shaped baseline, so
+  // TextLayout. Positions are logical pixels local to x and retain the shaped baseline, so
   // painters must not reshape the source slice.
   QGlyphRun preparedGlyphs;
   qreal preparedGlyphWidth = 0.0;
@@ -248,7 +248,7 @@ QRectF measureChromiumSvgTextLayoutBounds(
     qreal fontPixelSize, qreal deviceScale = 1.0);
 
 // The font used for every text metric/advance/paint in FlowLabel: the
-// MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, the
+// MermaidFontRegistry family stack, backend pixel size, PreferNoHinting, the
 // base weight and style, and letter/word spacing — all applied at once. Exposed
 // so other scene builders resolve font-relative CSS units (ex/ch) against the
 // EXACT font the text is measured/painted with — never construct a QFont ad hoc

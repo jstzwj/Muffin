@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QRegularExpression>
 
@@ -55,7 +55,7 @@ void drawText(QPainter& painter, const ArchitectureScene& scene,
   auto font = editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);
   if (bold) font.font.setWeight(QFont::Bold);
-  const qreal advance = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
+  const qreal advance = TextFontMetrics(font.font).horizontalAdvance(text) * font.scale;
   const auto metrics = flowchart::flowLabelFontBoundingMetrics(
       familyExpression, size, bold ? QFont::Bold : QFont::Normal,
       QFont::StyleNormal);
@@ -68,7 +68,7 @@ void drawText(QPainter& painter, const ArchitectureScene& scene,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(color);
-  painter.drawText(QPointF(x / font.scale, metrics.ascent / font.scale), text);
+  drawDocumentText(painter, QPointF(x / font.scale, metrics.ascent / font.scale), text);
   painter.restore();
 }
 

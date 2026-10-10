@@ -35,8 +35,32 @@ TextBackend documentTextBackend() {
   return backend;
 }
 qreal textBackendScale(TextBackend backend) { return backend == TextBackend::Fractional ? 64 : 1; }
+void setTextPixelSize(QFont& font, qreal pixels, TextBackend backend) {
+  if (backend == TextBackend::Fractional)
+    font.setPointSizeF(std::max<qreal>(pixels, 1. / 64.) * .75);
+  else
+    font.setPixelSize(std::max(1, qRound(pixels)));
+}
+qreal textFontPixelSize(const QFont& font) { return font.pixelSize() > 0 ? font.pixelSize() : font.pointSizeF() / .75; }
 QRectF TextLine::naturalTextRect() const { return scaledRect(line_.naturalTextRect(), 1 / scale_); }
 QRectF TextLine::rect() const { return scaledRect(line_.rect(), 1 / scale_); }
+QList<QGlyphRun> TextLine::glyphRuns(int from, int length, QTextLayout::GlyphRunRetrievalFlags flags) const {
+  auto runs = line_.glyphRuns(from, length, flags);
+  if (scale_ == 1) return runs;
+  for (auto& run : runs) {
+    const QRectF bounds = scaledRect(run.boundingRect(), 1 / scale_);
+    auto positions = run.positions();
+    for (auto& position : positions) position /= scale_;
+    auto font = run.rawFont();
+    // QRawFont accepts qreal pixel sizes; unlike QFont::setPixelSize this
+    // retains the fractional size when callers paint prepared glyphs/paths.
+    font.setPixelSize(font.pixelSize() / scale_);
+    run.setRawFont(font);
+    run.setPositions(positions);
+    run.setBoundingRect(bounds);
+  }
+  return runs;
+}
 
 TextLayout::TextLayout(const QString& text, const QFont& font, TextBackend backend)
     : backend_(backend),
@@ -115,6 +139,7 @@ QList<QRectF> TextLayout::selectionRects(int start, int end) const {
 TextFontMetrics::TextFontMetrics(const QFont& font, TextBackend backend)
     : scale_(textBackendScale(backend)), metrics_(deviceFont(font, backend), shapingDevice(backend)) {}
 QRectF TextFontMetrics::boundingRect(const QString& text) const { return scaledRect(metrics_.boundingRect(text), 1 / scale_); }
+QRectF TextFontMetrics::tightBoundingRect(const QString& text) const { return scaledRect(metrics_.tightBoundingRect(text), 1 / scale_); }
 QRectF TextFontMetrics::boundingRect(QRectF rect, int flags, const QString& text) const {
   return scaledRect(metrics_.boundingRect(scaledRect(rect, scale_), flags, text), 1 / scale_);
 }

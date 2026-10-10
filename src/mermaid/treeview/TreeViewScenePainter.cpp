@@ -5,7 +5,7 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/treeview/TreeViewScene.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QPen>
@@ -53,13 +53,13 @@ void paintText(QPainter& painter, const TreeViewScene& scene,
   const QFont font = flowchart::makeFlowLabelFont(
       text.fontFamily.isEmpty() ? scene.style.fontFamily : text.fontFamily,
       text.fontSize, text.fontWeight, text.fontStyle);
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   painter.save();
   painter.setOpacity(text.opacity);
   painter.setFont(font);
   painter.setPen(fill.color);
   painter.setBrush(Qt::NoBrush);
-  painter.drawText(QPointF(text.position.x(),
+  drawDocumentText(painter, QPointF(text.position.x(),
                            text.position.y() + metrics.xHeight() / 2.0),
                    text.text);
   painter.restore();

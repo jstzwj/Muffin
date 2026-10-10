@@ -7,7 +7,7 @@
 
 #include <QFont>
 #include <QByteArray>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QGlyphRun>
 #include <QDir>
 #include <QFile>
@@ -54,7 +54,7 @@ QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
                         qreal letterSpacingPx, qreal wordSpacingPx) {
   QFont font(fontFamily);
   MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  setTextPixelSize(font, fontPixelSize);
   font.setHintingPreference(QFont::PreferNoHinting);
   font.setWeight(weight);
   font.setStyle(style);
@@ -566,7 +566,7 @@ public:
       hb_font_t* hbFont = hb_font_create(hbFace);
       hb_ot_font_set_funcs(hbFont);
       const int hbScale = std::max(
-          1, int(std::round(font.pixelSize() * mapped->scale * 128.0)));
+          1, int(std::round(textFontPixelSize(font) * mapped->scale * 128.0)));
       hb_font_set_scale(hbFont, hbScale, hbScale);
       // The run's resolved direction feeds the buffer, exactly like the
       // browser shapes each bidi run. The per-glyph ADVANCE SUM is invariant
@@ -849,12 +849,12 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
   ShapedTextMetrics result;
   if (length <= 0) return result;
   const QString text = label.text.mid(start, length);
-  QTextLayout layout(text, font);
+  TextLayout layout(text, font);
   QTextOption option;
   option.setUseDesignMetrics(true);
   option.setTextDirection(label.direction);
   layout.setTextOption(option);
-  QVector<QTextLayout::FormatRange> formats;
+  QVector<TextLayout::FormatRange> formats;
   for (const auto& range : label.formats) {
     const qsizetype rangeStart = range.start;
     const qsizetype rangeEnd = range.start + range.length;
@@ -877,7 +877,7 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
   }
   layout.setFormats(formats);
   layout.beginLayout();
-  QTextLine line = layout.createLine();
+  TextLine line = layout.createLine();
   if (line.isValid()) line.setLineWidth(1e9);
   layout.endLayout();
   if (!line.isValid()) return result;
@@ -893,7 +893,7 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
     const auto positions = run.positions();
     if (indexes.isEmpty() || glyphs.isEmpty() || positions.isEmpty()) continue;
     const auto advances = run.rawFont().advancesForGlyphIndexes(glyphs);
-    const OpenTypeHorizontalMetrics fontMetrics(run.rawFont(), font.pixelSize());
+    const OpenTypeHorizontalMetrics fontMetrics(run.rawFont(), textFontPixelSize(font));
     qreal runLeft = std::numeric_limits<qreal>::max();
     qreal runRight = std::numeric_limits<qreal>::lowest();
     qreal runInkLeft = std::numeric_limits<qreal>::max();
@@ -991,7 +991,7 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
       visual.fontItalic = run.rawFont().style() != QFont::StyleNormal;
       visual.fontFamily = run.rawFont().familyName();
       const FlowLabelFontMetrics vertical = openTypeFontBoundingMetrics(
-          run.rawFont(), font.pixelSize());
+          run.rawFont(), textFontPixelSize(font));
       visual.fontAscent = vertical.ascent;
       visual.fontDescent = vertical.descent;
       for (QPointF& position : preparedGlyphPositions)
@@ -1009,7 +1009,7 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
     for (auto& run : result.runs) run.x -= left;
 
     // QGlyphRun::stringIndexes() may be local to a fallback-font subrun on
-    // DirectWrite. Reconstruct source ranges from QTextLine cursor geometry so
+    // DirectWrite. Reconstruct source ranges from TextLine cursor geometry so
     // visual runs retain document-relative logical indexes across fallback
     // fonts and bidi reordering.
     QVector<qsizetype> logicalMinimum(
@@ -1133,7 +1133,7 @@ qreal styledRangeWidth(const FlowLabelDocument& label, qsizetype start,
     // Regular face. The document's BASE weight/style stack underneath the
     // format flags (base italic + markdown bold).
     QFont styled(font.family());
-    styled.setPixelSize(font.pixelSize());
+    setTextPixelSize(styled, textFontPixelSize(font));
     styled.setWeight(font.weight());
     styled.setStyle(font.style());
     if (font.letterSpacing() != 0.0)
@@ -1158,7 +1158,7 @@ qreal styledRangeWidth(const FlowLabelDocument& label, qsizetype start,
     // "A"+U+0301 gains exactly one letter unit.
     qreal letter = styled.letterSpacing();
     if (styled.letterSpacingType() == QFont::PercentageSpacing)
-      letter = styled.pixelSize() * letter / 100.0;
+      letter = textFontPixelSize(styled) * letter / 100.0;
     width += design + letter * qreal(graphemeClusterCount(segment)) +
              styled.wordSpacing() *
                  qreal(segment.count(QLatin1Char(' ')) +
@@ -1180,7 +1180,7 @@ ShapedTextMetrics shapeTextRange(const FlowLabelDocument& label,
       label, start, length, font, true);
   const bool hasSyntheticStyle = std::any_of(
       label.formats.cbegin(), label.formats.cend(),
-      [start, length](const QTextLayout::FormatRange& range) {
+      [start, length](const TextLayout::FormatRange& range) {
         const bool overlaps = range.start < start + length &&
                               range.start + range.length > start;
         return overlaps &&
@@ -1207,7 +1207,7 @@ ShapedTextMetrics shapeTextRange(const FlowLabelDocument& label,
       if (design >= 0.0) {
         qreal letter = font.letterSpacing();
         if (font.letterSpacingType() == QFont::PercentageSpacing)
-          letter = font.pixelSize() * letter / 100.0;
+          letter = textFontPixelSize(font) * letter / 100.0;
         painted.width = design +
             letter * qreal(graphemeClusterCount(segment)) +
             font.wordSpacing() *
@@ -1246,7 +1246,7 @@ void appendFormatted(FlowLabelDocument& result, const QString& text,
     result.text += text;
     return;
   }
-  QTextLayout::FormatRange range;
+  TextLayout::FormatRange range;
   range.start = result.text.size();
   range.length = text.size();
   range.format = format;
@@ -1484,7 +1484,7 @@ qsizetype prepareFlowLabelMath(FlowLabelDocument& label,
 qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetype length,
                        const QFont& font) {
   if (length <= 0) return 0.0;
-  QTextLayout layout(label.text.mid(start, length), font);
+  TextLayout layout(label.text.mid(start, length), font);
   QTextOption option;
   // Chromium lays out foreignObject text next to block MathML with raster
   // advances. Sequence SVG text and ordinary flowchart labels retain design
@@ -1495,7 +1495,7 @@ qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetyp
   option.setUseDesignMetrics(useDesignMetrics);
   option.setTextDirection(label.direction);
   layout.setTextOption(option);
-  QVector<QTextLayout::FormatRange> ranges;
+  QVector<TextLayout::FormatRange> ranges;
   for (const auto& range : label.formats) {
     const qsizetype overlapStart = std::max<qsizetype>(range.start, start);
     const qsizetype overlapEnd = std::min<qsizetype>(range.start + range.length, start + length);
@@ -1507,7 +1507,7 @@ qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetyp
   }
   layout.setFormats(ranges);
   layout.beginLayout();
-  QTextLine line = layout.createLine();
+  TextLine line = layout.createLine();
   if (line.isValid()) line.setLineWidth(1e9);
   layout.endLayout();
   return line.isValid() ? line.naturalTextWidth() : 0.0;
@@ -1876,7 +1876,7 @@ qreal measureChromiumInlineLayoutWidth(
   for (const FlowLabelLineRange& line : lines) {
     const qsizetype lineEnd = line.start + line.length;
     QVector<qsizetype> boundaries{line.start, lineEnd};
-    for (const QTextLayout::FormatRange& range : label.formats) {
+    for (const TextLayout::FormatRange& range : label.formats) {
       boundaries.append(std::clamp<qsizetype>(range.start, line.start,
                                                lineEnd));
       boundaries.append(std::clamp<qsizetype>(range.start + range.length,
@@ -1893,7 +1893,7 @@ qreal measureChromiumInlineLayoutWidth(
       if (length <= 0) continue;
 
       FlowLabelDocument segment = label;
-      for (const QTextLayout::FormatRange& range : label.formats) {
+      for (const TextLayout::FormatRange& range : label.formats) {
         if (range.start > start ||
             range.start + range.length < start + length)
           continue;
@@ -1922,7 +1922,7 @@ QRectF measureChromiumSvgTextLayoutBounds(const FlowLabelDocument& label,
   const QRectF metrics =
       measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
   const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  const qreal fallback = QFontMetricsF(font).horizontalAdvance(label.text);
+  const qreal fallback = TextFontMetrics(font).horizontalAdvance(label.text);
   const qreal measured = measureOpenTypeDesignAdvanceImpl(
       label, 0, label.text.size(), fontFamily, fontPixelSize, false, nullptr,
       nullptr, deviceScale).value_or(fallback);
@@ -1943,13 +1943,13 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
   if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
   QRectF result = measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
   const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  QTextLayout layout(label.text, font);
+  TextLayout layout(label.text, font);
   QTextOption option;
   option.setUseDesignMetrics(true);
   option.setTextDirection(label.direction);
   layout.setTextOption(option);
   layout.beginLayout();
-  QTextLine line = layout.createLine();
+  TextLine line = layout.createLine();
   if (line.isValid()) line.setLineWidth(std::numeric_limits<qreal>::max());
   layout.endLayout();
   if (!line.isValid()) return result;
@@ -2103,7 +2103,7 @@ FlowLabelFontMetrics flowLabelFontBoundingMetrics(
   const FlowLabelFontMetrics metrics =
       openTypeFontBoundingMetrics(raw, fontPixelSize);
   if (metrics.height() > 0.0) return metrics;
-  const QFontMetricsF fallback(font);
+  const TextFontMetrics fallback(font);
   return {std::round(fallback.ascent()), std::round(fallback.descent()),
           fallback.xHeight()};
 }
@@ -2156,14 +2156,14 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
         label, line.start, line.length, font);
     const bool syntheticBold = std::any_of(
         label.formats.cbegin(), label.formats.cend(),
-        [&](const QTextLayout::FormatRange& range) {
+        [&](const TextLayout::FormatRange& range) {
           return range.start < line.start + line.length &&
               range.start + range.length > line.start &&
               range.format.fontWeight() > QFont::Normal;
         });
     const bool syntheticItalic = std::any_of(
         label.formats.cbegin(), label.formats.cend(),
-        [&](const QTextLayout::FormatRange& range) {
+        [&](const TextLayout::FormatRange& range) {
           return range.start < line.start + line.length &&
               range.start + range.length > line.start &&
               range.format.fontItalic();
@@ -2249,7 +2249,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
     return wrapped;
 
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  QTextLayout layout(label.text, font);
+  TextLayout layout(label.text, font);
   QTextOption option;
   option.setUseDesignMetrics(true);
   option.setTextDirection(label.direction);
@@ -2258,7 +2258,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
   layout.setFormats(label.formats);
   layout.beginLayout();
   while (true) {
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (!line.isValid()) break;
     line.setLineWidth(maximumLineWidth);
     qsizetype length = line.textLength();
@@ -2276,7 +2276,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  const QFontMetricsF metrics(font);
+  const TextFontMetrics metrics(font);
   const QRectF inkMetrics = metrics.tightBoundingRect(QStringLiteral("Mg"));
   // Canvas TextMetrics reports the pixel-aligned ink box used by Chromium's
   // foreignObject labels. Qt exposes the fractional outline box; align its top
@@ -2442,27 +2442,6 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       result.lines.push_back(std::move(measured));
       continue;
     }
-    QTextLayout layout(line, font);
-    QTextOption option;
-    option.setUseDesignMetrics(true);
-    option.setTextDirection(label.direction);
-    layout.setTextOption(option);
-    QVector<QTextLayout::FormatRange> ranges;
-    for (const auto& range : label.formats) {
-      const int start = std::max<int>(range.start, offset);
-      const int end = std::min<int>(range.start + range.length, offset + line.size());
-      if (end > start) {
-        auto local = range;
-        local.start = start - offset;
-        local.length = end - start;
-        ranges.push_back(local);
-      }
-    }
-    layout.setFormats(ranges);
-    layout.beginLayout();
-    QTextLine textLine = layout.createLine();
-    if (textLine.isValid()) textLine.setLineWidth(1e9);
-    layout.endLayout();
     const auto shaped = shapeTextRange(label, offset, line.size(), font);
     measured.width = shaped.width;
     measured.height = lineHeight;
@@ -2506,7 +2485,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
   const FlowLabelLayoutMetrics layoutMetrics =
       layoutFlowLabel(paintedLabel, fontFamily, fontPixelSize, lineHeight);
   const QSizeF measured = layoutMetrics.size;
-  const QFontMetricsF fontMetrics(font);
+  const TextFontMetrics fontMetrics(font);
   const qreal fallbackAscent = fontMetrics.ascent();
   qreal lineTop = centerVertically
                       ? rect.top() + std::max<qreal>(0.0, (rect.height() - measured.height()) / 2.0)

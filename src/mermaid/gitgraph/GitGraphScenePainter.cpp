@@ -1,3 +1,4 @@
+#include "render/TextLayout.h"
 #include "mermaid/gitgraph/GitGraphScene.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
@@ -108,7 +109,7 @@ void GitGraphScene::paint(QPainter& painter, const MermaidPaintOptions&) const {
       painter.setPen(paintColor(fillValue, rootFill));
       painter.translate(value.position);
       painter.scale(css.scale, css.scale);
-      QFontMetricsF fm(css.font);
+      TextFontMetrics fm(css.font);
       const QStringList lines = value.textLines.isEmpty()
           ? QStringList{value.text} : value.textLines;
       for (qsizetype i = 0; i < lines.size(); ++i) {
@@ -118,7 +119,7 @@ void GitGraphScene::paint(QPainter& painter, const MermaidPaintOptions&) const {
           x = -fm.horizontalAdvance(line) / 2;
         else if (value.anchor == QLatin1String("end"))
           x = -fm.horizontalAdvance(line);
-        painter.drawText(QPointF(x, size * i), line);
+        drawDocumentText(painter, QPointF(x, size * i), line);
       }
       break;
     }

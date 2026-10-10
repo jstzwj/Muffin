@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QLinearGradient>
 #include <QPainter>
 #include <QPainterPath>
@@ -39,7 +39,7 @@ void drawLabel(const SankeyScene &scene, const SankeyLabelGeometry &label,
   if (!(font.scale > 0.0))
     return;
   const QString text = text::collapsedSvgText(label.text);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const qreal qtAdvance = metrics.horizontalAdvance(text) * font.scale;
   const qreal advance =
       std::ceil(textmetrics::harfBuzzAdvance(text, family, label.fontSize,
@@ -72,7 +72,7 @@ void drawLabel(const SankeyScene &scene, const SankeyLabelGeometry &label,
     painter.setPen(withOpacity(
         paintColor(label.fill, paintColor(scene.style.textColor)),
         label.opacity));
-    painter.drawText(QPointF(0, 0), text);
+    drawDocumentText(painter, QPointF(0, 0), text);
   }
   painter.restore();
 }

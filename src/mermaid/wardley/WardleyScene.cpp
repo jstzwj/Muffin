@@ -5,7 +5,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/text/LabelText.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -45,7 +45,7 @@ QRectF textBounds(const WardleySceneStyle &style, const QString &source,
   auto cssFont = editor::makeUnhintedCssPixelFont(stack.first(), size);
   if (stack.size() > 1) cssFont.font.setFamilies(stack);
   cssFont.font.setWeight(bold ? QFont::Bold : QFont::Normal);
-  const QFontMetricsF qtMetrics(cssFont.font);
+  const TextFontMetrics qtMetrics(cssFont.font);
   const qreal advance = qtMetrics.horizontalAdvance(text) * cssFont.scale;
   const QRectF ink = QRectF(qtMetrics.boundingRect(text).topLeft() * cssFont.scale,
                             qtMetrics.boundingRect(text).size() * cssFont.scale);

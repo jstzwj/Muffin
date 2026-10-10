@@ -5,7 +5,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QRegularExpression>
@@ -127,7 +127,7 @@ void drawAnchoredText(QPainter& painter, const QString& family, qreal pixelSize,
       editor::makeUnhintedCssPixelFont(family, pixelSize);
   font.font.setWeight(weight);
   if (!(font.scale > 0.0)) return;
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const qreal advance = metrics.horizontalAdvance(visibleText);
   qreal x = anchor.x();
   if (horizontal == RadarTextAnchor::Middle) x -= advance * font.scale / 2.0;
@@ -142,7 +142,7 @@ void drawAnchoredText(QPainter& painter, const QString& family, qreal pixelSize,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(value);
-  painter.drawText(QPointF(0.0, 0.0), visibleText);
+  drawDocumentText(painter, QPointF(0.0, 0.0), visibleText);
   painter.restore();
 }
 

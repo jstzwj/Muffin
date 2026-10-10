@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -89,7 +89,7 @@ QRectF labelBounds(const SankeyLabelGeometry &label,
   const auto font = editor::makeUnhintedCssPixelFont(family, label.fontSize);
   QFont weighted = font.font;
   weighted.setWeight(label.fontWeight);
-  const QFontMetricsF metrics(weighted);
+  const TextFontMetrics metrics(weighted);
   const QString visible = text::collapsedSvgText(label.text);
   const double qtWidth = metrics.horizontalAdvance(visible) * font.scale;
   const double shaped =

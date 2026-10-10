@@ -5,7 +5,7 @@
 #include "mermaid/gantt/GanttScene.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 
@@ -104,7 +104,7 @@ void drawText(QPainter& painter, const GanttScene& scene,
   qfont.setItalic(fontStyle.isEmpty() ? text.italic
                                       : fontStyle == QLatin1String("italic"));
   const GanttTextAnchor anchor = cssAnchor(text.css.textAnchor, text.anchor);
-  QFontMetricsF metrics(qfont);
+  TextFontMetrics metrics(qfont);
   QColor pen = paintColor(text.css.fill.isEmpty() ? text.fill : text.css.fill);
   const qreal opacity = text.css.opacity >= 0.0 ? text.css.opacity : text.opacity;
   pen.setAlphaF(std::clamp(pen.alphaF() * opacity, 0.0, 1.0));
@@ -118,7 +118,7 @@ void drawText(QPainter& painter, const GanttScene& scene,
     painter.scale(font.scale, font.scale);
     painter.setFont(qfont);
     painter.setPen(pen);
-    painter.drawText(QPointF(0.0, 0.0), value);
+    drawDocumentText(painter, QPointF(0.0, 0.0), value);
     painter.restore();
   };
   if (text.lines.isEmpty()) {

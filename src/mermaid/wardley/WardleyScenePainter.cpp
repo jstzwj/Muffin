@@ -6,7 +6,7 @@
 #include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QRegularExpression>
 
@@ -66,7 +66,7 @@ void paintText(QPainter &painter, const WardleyScene &scene,
   if (stack.size() > 1) font.font.setFamilies(stack);
   font.font.setWeight(primitive.bold ? QFont::Bold : QFont::Normal);
   const QString text = text::collapsedSvgText(primitive.text);
-  const qreal advance = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
+  const qreal advance = TextFontMetrics(font.font).horizontalAdvance(text) * font.scale;
   qreal x = 0.0;
   if (primitive.anchor == QLatin1String("middle")) x -= advance / 2.0;
   else if (primitive.anchor == QLatin1String("end")) x -= advance;
@@ -83,7 +83,7 @@ void paintText(QPainter &painter, const WardleyScene &scene,
   painter.scale(font.scale, font.scale);
   painter.setFont(font.font);
   painter.setPen(fill.color);
-  painter.drawText(QPointF(x / font.scale, baseline / font.scale), text);
+  drawDocumentText(painter, QPointF(x / font.scale, baseline / font.scale), text);
   painter.restore();
 }
 

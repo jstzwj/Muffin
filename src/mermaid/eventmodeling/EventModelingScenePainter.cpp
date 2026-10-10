@@ -4,7 +4,7 @@
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygonF>
@@ -57,7 +57,7 @@ void drawSwimlaneLabel(const EventModelingScene& scene, QPainter& painter,
   const qreal opacity = css.opacity >= 0.0 ? css.opacity : 1.0;
   pen.setAlphaF(std::clamp(pen.alphaF() * opacity, 0.0, 1.0));
   painter.setPen(pen);
-  painter.drawText(lane.labelPosition, lane.label);
+  drawDocumentText(painter, lane.labelPosition, lane.label);
   painter.restore();
 }
 

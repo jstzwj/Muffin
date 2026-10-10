@@ -8,7 +8,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QRegularExpression>
 #include <QRawFont>
 
@@ -178,12 +178,12 @@ TextFont styleFont(const TimelineSceneStyle& style) {
 QRectF titleInkBounds(const editor::CssPixelFont& font, const QString& text,
                        QPointF baseline,
                        const flowchart::FlowLabelFontMetrics& vertical) {
-  QRectF ink = QFontMetricsF(font.font).boundingRect(text);
+  QRectF ink = TextFontMetrics(font.font).boundingRect(text);
   ink = QRectF(ink.x() * font.scale, ink.y() * font.scale,
                ink.width() * font.scale, ink.height() * font.scale);
   // SVG getBBox includes negative side-bearing and right overhang, but its
   // horizontal box never starts after the text anchor or ends before the
-  // advance. QFontMetricsF::boundingRect alone omits those anchor/advance
+  // advance. TextFontMetrics::boundingRect alone omits those anchor/advance
   // edges for ordinary glyphs such as the leading P in the canonical title.
   const qreal left = std::min<qreal>(0.0, ink.left());
   const qreal right = std::max(font.horizontalAdvance(text), ink.right());

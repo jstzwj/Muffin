@@ -6,11 +6,10 @@
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QRegularExpression>
-#include <QTextLayout>
 #include <QTextOption>
 
 #include <algorithm>
@@ -91,7 +90,7 @@ void drawBaseline(QPainter& painter, const editor::CssPixelFont& font,
   if (!(font.scale > 0.0) || text.isEmpty()) return;
   QFont qfont = font.font;
   if (bold) qfont.setWeight(QFont::Bold);
-  const QFontMetricsF metrics(qfont);
+  const TextFontMetrics metrics(qfont);
   qreal x = 0.0;
   if (centered) x = -metrics.horizontalAdvance(text) / 2.0;
   painter.save();
@@ -99,7 +98,7 @@ void drawBaseline(QPainter& painter, const editor::CssPixelFont& font,
   painter.scale(font.scale, font.scale);
   painter.setFont(qfont);
   painter.setPen(color);
-  painter.drawText(QPointF(x, 0.0), text);
+  drawDocumentText(painter, QPointF(x, 0.0), text);
   painter.restore();
 }
 
@@ -111,16 +110,16 @@ void drawCenteredFo(QPainter& painter, const editor::CssPixelFont& font,
   const qreal scale = font.scale;
   const QRectF logicalRect(rect.x() / scale, rect.y() / scale,
                            rect.width() / scale, rect.height() / scale);
-  QTextLayout layout(text, font.font);
+  TextLayout layout(text, font.font);
   QTextOption option;
   option.setAlignment(Qt::AlignHCenter);
   option.setWrapMode(QTextOption::WordWrap);
   layout.setTextOption(option);
   layout.beginLayout();
-  QVector<QTextLine> lines;
+  QVector<TextLine> lines;
   qreal totalHeight = 0.0;
   while (true) {
-    QTextLine line = layout.createLine();
+    TextLine line = layout.createLine();
     if (!line.isValid()) break;
     line.setLineWidth(logicalRect.width());
     lines.append(line);
@@ -131,7 +130,7 @@ void drawCenteredFo(QPainter& painter, const editor::CssPixelFont& font,
   // at the foreignObject's top edge and is clipped there.
   qreal y = logicalRect.y() +
             std::max<qreal>(0.0, (logicalRect.height() - totalHeight) / 2.0);
-  for (QTextLine& line : lines) {
+  for (TextLine& line : lines) {
     line.setPosition(QPointF(logicalRect.x(), y));
     y += line.height();
   }
@@ -189,7 +188,7 @@ void drawJourneyLabel(QPainter& painter, const JourneyScene& scene,
       Qt::KeepEmptyParts);
   const editor::CssPixelFont font = editor::makeUnhintedCssPixelFont(
       scene.config.taskFontFamily, scene.config.taskFontSize);
-  const QFontMetricsF metrics(font.font);
+  const TextFontMetrics metrics(font.font);
   const PaintState white{false, Qt::white};
   const PaintState paint = elementSvgFill(
       effectiveCss(svgText.fill,

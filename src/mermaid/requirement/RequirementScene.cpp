@@ -14,7 +14,7 @@
 #include "theme/CssCalc.h"
 
 #include <QFont>
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -371,7 +371,7 @@ RequirementScene buildRequirementScene(
   // viewportPx = mmdc default raster profile (passed explicitly — see above).
   const QFont lengthFont =
       flowchart::makeFlowLabelFont(scene.style.fontFamily, scene.style.fontSize);
-  const QFontMetricsF lengthMetrics(lengthFont);
+  const TextFontMetrics lengthMetrics(lengthFont);
   const CssLengthContext lengthCtx{scene.style.fontSize, 16.0, lengthMetrics.xHeight(),
                                    lengthMetrics.horizontalAdvance(QChar('0')),
                                    kMmdcDefaultCssViewport};
@@ -504,7 +504,7 @@ RequirementScene buildRequirementScene(
       qreal effLineHeight = -1.0;
       if (effSize != 0.0) {
         if (rowStyle.lineHeightNormal) {
-          effLineHeight = QFontMetricsF(flowchart::makeFlowLabelFont(
+          effLineHeight = TextFontMetrics(flowchart::makeFlowLabelFont(
               effFamily, effSize, rowStyle.fontWeight,
               rowStyle.fontStyle)).height();
         } else {

@@ -1,3 +1,4 @@
+#include "render/TextLayout.h"
 #include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/MermaidFontRegistry.h"
 
@@ -186,7 +187,7 @@ QFont labelFont(const FlowSceneLabel& label, const QString& fontFamily) {
   const QString family = label.fontFamily.isEmpty() ? fontFamily : label.fontFamily;
   QFont font(family);
   MermaidFontRegistry::configureFont(font, family);
-  font.setPixelSize(static_cast<int>(std::round(pxSize(label.fontSize.isEmpty() ? QStringLiteral("16px") : label.fontSize))));
+  setTextPixelSize(font, pxSize(label.fontSize.isEmpty() ? QStringLiteral("16px") : label.fontSize));
   const QString weight = label.fontWeight.trimmed().toLower();
   if (weight == QLatin1String("bold") || weight == QLatin1String("bolder")) {
     font.setWeight(QFont::Bold);
@@ -203,12 +204,12 @@ void drawLabel(QPainter& painter, const FlowSceneLabel& label, const QRectF& rec
                const QString& fontFamily, bool center, PaintMode mode) {
   if (label.text.isEmpty() || !label.visible) return;
   const QFont font = labelFont(label, fontFamily);
-  const qreal lineHeight = (font.pixelSize() > 0 ? font.pixelSize() : 16.0) * 1.5;
+  const qreal lineHeight = textFontPixelSize(font) * 1.5;
   const QColor color = mode == PaintMode::CategoryMask
                            ? QColor(kCatText)
                            : qcolor(label.color.isEmpty() ? QStringLiteral("#333333")
                                                           : label.color);
-  flowchart::paintFlowLabel(painter, label.richText, rect, font.family(), font.pixelSize(),
+  flowchart::paintFlowLabel(painter, label.richText, rect, font.family(), textFontPixelSize(font),
                             lineHeight, color, center);
 }
 

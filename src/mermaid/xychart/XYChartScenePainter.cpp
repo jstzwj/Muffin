@@ -6,7 +6,7 @@
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/xychart/XYChartScene.h"
 
-#include <QFontMetricsF>
+#include "render/TextLayout.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QRegularExpression>
@@ -70,7 +70,7 @@ void drawText(QPainter& painter, const XYChartSceneStyle& style,
   editor::CssPixelFont weightedFont = font;
   weightedFont.font.setWeight(text.fontWeight);
   if (!(weightedFont.scale > 0.0)) return;
-  const QFontMetricsF metrics(weightedFont.font);
+  const TextFontMetrics metrics(weightedFont.font);
   const qreal advance = metrics.horizontalAdvance(visible) * weightedFont.scale;
   qreal localX = 0.0;
   if (text.anchor == XYChartTextAnchor::Middle) localX -= advance / 2.0;
@@ -92,7 +92,7 @@ void drawText(QPainter& painter, const XYChartSceneStyle& style,
   painter.scale(weightedFont.scale, weightedFont.scale);
   painter.setFont(weightedFont.font);
   painter.setPen(withOpacity(fill.color, text.opacity));
-  painter.drawText(QPointF(0.0, 0.0), visible);
+  drawDocumentText(painter, QPointF(0.0, 0.0), visible);
   painter.restore();
 }
 

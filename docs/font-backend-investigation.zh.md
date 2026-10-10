@@ -121,3 +121,33 @@ Windows／Qt 6.11.1、Release、offscreen，两个后端分别启动独立进程
 CTest 还以分数字号配置重跑源代码／输入法、代码选区、点击、标题和链接生成内容的
 五个编辑回归。输入法测试固定真实拉丁、中文与假名字形，避免 headless 平台缺失系统
 字体时，用占位方框误判提交前后的文字落位。
+
+## Mermaid 接入
+
+`TextLayout.cpp` 归入 `MuffinCore`，文档和 Mermaid 复用同一实现。FlowLabel 的换行、
+格式范围、基线、装饰线和字形读取，以及普通图形标签的测量／绘制，都经过公共入口。
+`TextLine::glyphRuns()` 保留字形索引、源文字索引和方向，并将位置、边界及 `QRawFont`
+字号转换为逻辑像素；`QRawFont::setPixelSize(qreal)` 保留分数尺寸，准备好的字形可以
+直接绘制或转为轮廓。调用方不能把高 DPI 塑形设备的坐标当成场景坐标。
+
+原生后端保留整数字号及 `CssPixelFont` 的既有缩放方式；分数后端直接塑形 CSS 字号，
+不再先取整后缩放。FlowLabel 中一次没有消费结果的重复塑形已删除。数学公式和
+OpenType 专用计算继续使用原后端，只通过公共外层布局交付坐标。`FlowSceneCompare`
+的整数墨迹边界属于像素对照工具，不是文档排版；普通 UI 的文字绘制也无需替换。
+
+`MuffinMermaidTextBackendTest`／`MuffinMermaidFractionalTextBackendTest` 在两个独立进程
+检查原生兼容性、字形坐标、固定 Noto 中英／阿拉伯文字体回退、长标签、合成粗体／斜体、
+数学外层尺寸、80%／100%／125%／200% 缩放，以及 Flowchart、Gantt、C4、Journey、Venn、
+Mindmap 在窄／宽视口下的缓存复用和完整／惰性排版。既有 Mermaid 浏览器几何／像素
+参考继续约束默认后端；这些一致性测试不表示分数后端已经达到浏览器像素等价。
+
+剩余直接 Qt 调用按用途保留：
+
+| 位置 | 用途 |
+| --- | --- |
+| `render/TextLayout.cpp` | 原生后端的委托实现 |
+| `math/`、`mermaid/math/` | 数学字形、OpenType 塑形和公式内部排版 |
+| `mermaid/scene/FlowSceneCompare.cpp` | 浏览器像素对照中的整数墨迹边界 |
+| `app/StatusBarWidget.cpp`、`PreferencesPage.cpp` | 状态栏和设置图标 |
+| `editor/VirtualSourceEdit.cpp` | 固定侧栏的行号；可编辑源码正文已走 `TextLayout` |
+| `editor/EditorViewPaint.cpp`、`HtmlBlockHoverController.cpp`、`TableToolbar.cpp` | 加载提示、标题级别标记、HTML 悬浮按钮和表格工具栏 |
