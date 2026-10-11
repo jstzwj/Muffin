@@ -1,0 +1,16 @@
+/* Representative typography from the imported LaTeX theme, with its Latin
+   Modern Roman 10 faces and explicit test Han fallback. This is a fixture,
+   not a replacement for the full third-party theme. */
+:root { --base-font-size: 9.5pt; --base-line-height: 1.618em; --title-font-size: 1.9em; }
+#write {
+  font-family: MuffinFixtureLatex, MuffinFixtureHan;
+  font-size: var(--base-font-size);
+  max-width: 21cm;
+  counter-reset: heading-h2;
+}
+#write p { margin-top: 1em; margin-bottom: 1em; text-align: left; line-height: var(--base-line-height); }
+#write h1, #write h2 { font-weight: bold; }
+#write h1 { text-align: center; font-size: var(--title-font-size); counter-reset: heading-h2; }
+#write h2 { font-size: 1.5em; }
+#write h2::before { content: counter(heading-h2); counter-increment: heading-h2; margin-right: 1.2em; }
+#write code, #write kbd { font-family: MuffinFixtureLatex, MuffinFixtureHan; }

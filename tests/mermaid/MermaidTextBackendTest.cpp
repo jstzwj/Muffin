@@ -1,5 +1,6 @@
 #include "../TestUtils.h"
 #include "document/DocumentSession.h"
+#include "diagnostics/ProcessMemory.h"
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
@@ -123,6 +124,25 @@ void flowLabels() {
     require(std::isfinite(measured.size.width()) && measured.size.width() > 0 && measured.size.height() > 0,
             "math outer layout shares finite logical coordinates");
   }
+
+  // FlowLabel scenes are immutable after construction, but the same label is
+  // painted repeatedly during Mermaid zoom and expose events.  The layout
+  // cache must reuse its prepared glyph runs while still invalidating on a
+  // public document mutation.
+  auto cachedLabel = parseFlowLabel(QStringLiteral("cached FlowLabel label"),
+                                    QStringLiteral("markdown"));
+  resetFlowLabelLayoutCacheStats();
+  const auto first = layoutFlowLabel(cachedLabel, family, 18.4, 27.6);
+  const auto second = layoutFlowLabel(cachedLabel, family, 18.4, 27.6);
+  const auto cacheAfterHit = flowLabelLayoutCacheStats();
+  require(first.size == second.size && first.lines.size() == second.lines.size(),
+          "FlowLabel cached metrics match the initial layout");
+  require(cacheAfterHit.misses == 1 && cacheAfterHit.hits >= 1,
+          "FlowLabel repeats reuse the immutable layout cache");
+  cachedLabel.text += QStringLiteral(" changed");
+  layoutFlowLabel(cachedLabel, family, 18.4, 27.6);
+  require(flowLabelLayoutCacheStats().misses == 2,
+          "FlowLabel content mutation invalidates cached metrics");
 }
 
 QStringList diagramSources() {
@@ -186,6 +206,66 @@ void cacheAndDocument() {
     }
   }
 }
+
+void benchmark() {
+  if (!qEnvironmentVariableIsSet("MUFFIN_TEXT_BENCH")) return;
+  const auto family = MermaidFontRegistry::cssFamilyStack();
+  QVector<FlowLabelDocument> labels;
+  QElapsedTimer timer;
+  const auto before = diag::workingSetBytes();
+  timer.start();
+  for (int i = 0; i < 300; ++i) {
+    auto label = parseFlowLabel(QString::fromUtf8("Label %1 **bold** *italic* 中文标签 office fi more words").arg(i), "markdown");
+    label.letterSpacingPx = .7;
+    label.wordSpacingPx = .3;
+    labels.push_back(wrapFlowLabel(label, family, 28.8, 260));
+    require(layoutFlowLabel(labels.back(), family, 28.8, 43.2).size.width() > 0, "benchmark label layout");
+  }
+  const auto shapeMs = timer.elapsed(), measured = diag::workingSetBytes();
+  QImage image(900, 500, QImage::Format_ARGB32_Premultiplied);
+  const auto paint = [&](qreal zoom) {
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.scale(zoom, zoom);
+    for (const auto& label : labels)
+      paintFlowLabel(painter, label, {20, 20, 260, 200}, family, 28.8, 43.2, Qt::black, false, FlowLabelAlign::Left);
+  };
+  timer.restart();
+  paint(1);
+  const auto coldMs = timer.elapsed(), cold = diag::workingSetBytes();
+  timer.restart();
+  paint(1);
+  const auto warmMs = timer.elapsed(), warm = diag::workingSetBytes();
+  const auto zoomPass = [&] { for (int i = 0; i < 24; ++i) paint(.8 + i * 1.2 / 23); };
+  timer.restart();
+  zoomPass();
+  const auto firstZoomMs = timer.elapsed(), firstZoomMemory = diag::workingSetBytes();
+  timer.restart();
+  zoomPass();
+  const auto secondZoomMs = timer.elapsed(), secondZoomMemory = diag::workingSetBytes();
+  MermaidRenderCache cache;
+  QVector<mermaid_editor::MermaidRenderKey> keys;
+  QVector<mermaid_editor::MermaidRenderEntry> scenes;
+  const auto sources = diagramSources();
+  timer.restart();
+  for (const auto& source : sources) {
+    keys.push_back(MermaidRenderCache::makeKey(source));
+    scenes.push_back(cache.getSync(keys.back(), source));
+    require(bool(scenes.back().scene), "benchmark scene builds");
+  }
+  const auto sceneMs = timer.elapsed();
+  timer.restart();
+  for (int repeat = 0; repeat < 1000; ++repeat)
+    for (int i = 0; i < sources.size(); ++i)
+      require(cache.getSync(keys[i], sources[i]).scene == scenes[i].scene, "cached scene reused without rebuilding");
+  require(cache.size() == sources.size(), "scene cache bounded for repeated requests");
+  std::fprintf(stdout,
+      "[mermaid-bench] backend=%s labels=300 shapeMs=%lld coldPaintMs=%lld warmPaintMs=%lld zoomFrames=24 firstZoomMs=%lld secondZoomMs=%lld "
+      "memoryBefore=%lld measured=%lld cold=%lld warm=%lld firstZoomMemory=%lld secondZoomMemory=%lld scenes=6 sceneMs=%lld cacheRequests=6000 cacheMs=%lld\n",
+      documentTextBackend() == TextBackend::Native ? "native" : "fractional", (long long)shapeMs, (long long)coldMs, (long long)warmMs,
+      (long long)firstZoomMs, (long long)secondZoomMs, (long long)before, (long long)measured, (long long)cold, (long long)warm,
+      (long long)firstZoomMemory, (long long)secondZoomMemory, (long long)sceneMs, (long long)timer.elapsed());
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -201,5 +281,6 @@ int main(int argc, char** argv) {
   runTest("glyphCoordinates", glyphCoordinates);
   runTest("flowLabels", flowLabels);
   runTest("cacheAndDocument", cacheAndDocument);
+  benchmark();
   return 0;
 }

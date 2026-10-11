@@ -1,0 +1,37 @@
+/* Representative typography from the imported Phycat Abyss theme. The font
+   names are pinned test aliases; effects and application UI are out of scope. */
+html { font-size: 16px; }
+#write {
+  font-family: MuffinFixtureAbyss, MuffinFixtureHan;
+  font-size: 16px;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 15px;
+  line-height: 2.25;
+  letter-spacing: 1.1px;
+  overflow-wrap: break-word;
+}
+#write p { margin: 0 10px; font-size: 1rem; word-spacing: 2px; }
+#write h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 15px auto;
+  position: relative;
+  width: fit-content;
+  min-width: 120px;
+  min-height: 1.4em;
+  padding-bottom: 12px;
+  border-bottom: none;
+}
+#write h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  transform: translateX(-50%);
+  background: #00e7eb;
+}
+#write h2 { font-size: 1.4rem; width: fit-content; margin: 1rem 0; padding: 0 10px; }
+#write code, #write kbd { font-family: MuffinFixtureAbyss, MuffinFixtureHan; }

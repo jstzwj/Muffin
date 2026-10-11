@@ -107,8 +107,8 @@ void testFractionalBrowserGeometry() {
     font.setPointSizeF(size * .75);
     font.setBold(entry["bold"].toBool());
     font.setItalic(entry["italic"].toBool());
-    font_rendering::configureCssFont(font, entry["letterSpacing"].toDouble(), entry["wordSpacing"].toDouble());
     for (auto backend : {TextBackend::Native, TextBackend::Fractional}) {
+      font_rendering::configureCssFont(font, entry["letterSpacing"].toDouble(), entry["wordSpacing"].toDouble(), backend);
       TextLayout layout(text, font, backend);
       QTextOption option;
       option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
@@ -145,10 +145,10 @@ void testFractionalBrowserGeometry() {
                                      {"sameWrap", sameWrap},
                                      {"maxCaretError", maxError}});
       if (backend == TextBackend::Native) continue;
-      if (!entry["diagnosticOnly"].toBool()) require(sameWrap, id + " browser wrap");
-      // These are bounded advance regressions, not pixel equality. Wide italic
-      // text remains a measured diagnostic until the shaper residual is fixed.
-      if (!entry["italic"].toBool()) requireNear(maxError, 0, id + " browser caret error", 2);
+      require(sameWrap, id + " browser wrap");
+      // Includes real/synthetic bold and italic, wide and narrow lines. Qt's
+      // Han-adjacent space classification still accounts for up to .3px here.
+      requireNear(maxError, 0, id + " browser caret error", .4);
       bool hanRun = false;
       for (const auto& run : layout.backendGlyphRuns()) {
         const auto actualFamily = run.rawFont().familyName();
@@ -157,7 +157,8 @@ void testFractionalBrowserGeometry() {
         hanRun |= actualFamily == families.value("MuffinFixtureHan");
         requireNear(run.rawFont().pixelSize() / textBackendScale(backend), size, id + " fractional glyph size", 1. / 64);
       }
-      if (entry["family"].toString() != "MuffinFixtureAbyss") require(hanRun, id + " explicit Chinese fallback");
+      if (entry["family"].toString() != "MuffinFixtureAbyss" && text.contains(QStringLiteral("中文")))
+        require(hanRun, id + " explicit Chinese fallback");
       const auto intrinsic = intrinsicTextWidths(layout);
       require(intrinsic.minContent > 0 && intrinsic.maxContent >= intrinsic.minContent, id + " intrinsic widths");
       require(!layout.selectionRects(0, text.size()).isEmpty(), id + " selection");
@@ -204,7 +205,9 @@ void testFractionalPainting() {
   QImage device(1, 1, QImage::Format_ARGB32_Premultiplied);
   device.setDotsPerMeterX(qRound(96 * 64 / .0254));
   device.setDotsPerMeterY(device.dotsPerMeterX());
-  QTextLayout referenceLayout(text, font, &device);
+  auto deviceFont = font;
+  deviceFont.setWordSpacing(font.wordSpacing() * 64);
+  QTextLayout referenceLayout(text, deviceFont, &device);
   common.beginLayout();
   referenceLayout.beginLayout();
   auto line = common.createLine();
@@ -239,6 +242,82 @@ void testFractionalPainting() {
   for (int y = 0; y < a.height(); ++y)
     for (int x = 0; x < a.width(); ++x) hasInk |= a.pixel(x, y) != qRgb(255, 255, 255);
   require(hasInk, "fractional text paints visible glyphs");
+}
+void testSpacingConversion() {
+  const QString text = QStringLiteral("AV office fi words");
+  for (auto backend : {TextBackend::Native, TextBackend::Fractional}) {
+    QFont base(families.value("MuffinFixtureSans"));
+    setTextPixelSize(base, 28.8, backend);
+    setTextLetterSpacing(base, -.7, backend);
+    const auto make = [&](const QFont& font, const QList<TextLayout::FormatRange>& formats = {}) {
+      auto layout = std::make_unique<TextLayout>(text, font, backend);
+      layout->setFormats(formats);
+      // A second update must not multiply already converted values again.
+      layout->setFormats(layout->formats());
+      layout->beginLayout();
+      auto line = layout->createLine();
+      line.setLineWidth(1000);
+      layout->endLayout();
+      return layout;
+    };
+    const auto plain = make(base);
+    for (qreal spacing : {-2.25, .3, 2.25}) {
+      auto spacedFont = base;
+      spacedFont.setWordSpacing(spacing);
+      auto spaced = make(spacedFont);
+      requireNear(spaced->lineAt(0).horizontalAdvance() - plain->lineAt(0).horizontalAdvance(), 3 * spacedFont.wordSpacing(),
+                  "word spacing uses logical pixels", .002);
+      requireNear(TextFontMetrics(spacedFont, backend).horizontalAdvance(text), spaced->lineAt(0).horizontalAdvance(),
+                  "word spacing metrics and shaping agree", .002);
+      TextLayout::FormatRange range;
+      range.start = 0;
+      range.length = text.size();
+      range.format.setFontWordSpacing(spacedFont.wordSpacing());
+      auto formatted = make(base, {range});
+      requireNear(formatted->lineAt(0).horizontalAdvance(), spaced->lineAt(0).horizontalAdvance(), "format word spacing conversion", .002);
+      requireNear(formatted->formats()[0].format.fontWordSpacing(), spacedFont.wordSpacing(), "public format stays logical");
+      for (int i = 0; i <= text.size(); ++i)
+        requireNear(formatted->cursorRect(i).x(), spaced->cursorRect(i).x(), "formatted spacing caret", .002);
+    }
+    if (backend == TextBackend::Fractional) {
+      QFont expected(families.value("MuffinFixtureSans"));
+      setTextPixelSize(expected, 28.8, backend);
+      expected.setWordSpacing(2.25);
+      TextLayout::FormatRange range;
+      range.start = 0;
+      range.length = text.size();
+      range.format.setProperty(QTextFormat::FontPixelSize, 28.8);
+      range.format.setFontWordSpacing(2.25);
+      auto formatted = make(QFont(families.value("MuffinFixtureSans")), {range});
+      auto direct = make(expected);
+      requireNear(formatted->lineAt(0).horizontalAdvance(), direct->lineAt(0).horizontalAdvance(), "fractional pixel format size", .002);
+
+      // Qt treats spaces in Han shaping items as inter-character
+      // opportunities and therefore skips QFont::wordSpacing.  CSS still
+      // applies word-spacing at a Chinese/Latin boundary, so the shared
+      // TextLayout must retain the extra advance and caret position there.
+      const QString cjkText = QString::fromUtf8("\xE4\xB8\xAD\xE6\x96\x87 \xE6\xB7\xB7\xE6\x8E\x92");
+      QFont cjkPlain(families.value("MuffinFixtureSans"));
+      setTextPixelSize(cjkPlain, 18.4, backend);
+      QFont cjkSpaced = cjkPlain;
+      cjkSpaced.setWordSpacing(2.25);
+      const auto makeSingle = [&](const QFont& font) {
+        auto result = std::make_unique<TextLayout>(cjkText, font, backend);
+        result->beginLayout();
+        auto line = result->createLine();
+        line.setLineWidth(1000);
+        result->endLayout();
+        return result;
+      };
+      const auto cjkBase = makeSingle(cjkPlain);
+      const auto cjkWithSpacing = makeSingle(cjkSpaced);
+      requireNear(cjkWithSpacing->lineAt(0).horizontalAdvance() -
+                      cjkBase->lineAt(0).horizontalAdvance(),
+                  cjkSpaced.wordSpacing(), "CJK boundary word spacing", .002);
+      requireNear(cjkWithSpacing->cursorRect(3).x() - cjkBase->cursorRect(3).x(),
+                  cjkSpaced.wordSpacing(), "CJK boundary spacing caret", .002);
+    }
+  }
 }
 void testEditingAndCaches() {
   const QString css = QString(
@@ -294,6 +373,140 @@ void testEditingAndCaches() {
   const auto stack = font_rendering::cssFamilyList("MuffinAlias\nMuffinFixtureHan\nsans-serif", font_rendering::sansFamily(),
                                                    {{"muffinalias", families.value("MuffinFixtureSans")}});
   require(stack[0] == families.value("MuffinFixtureSans") && stack[1] == families.value("MuffinFixtureHan"), "CSS fallback order/alias");
+}
+void testSharedDocumentFallbackStack() {
+  const auto tail = font_rendering::documentFallbackTail();
+  const auto resolvedFamilies = font_rendering::cssFamilyList(
+      QStringLiteral("MuffinFixtureSans, sans-serif"), tail);
+  require(!resolvedFamilies.isEmpty() &&
+              resolvedFamilies.front().compare(QStringLiteral("MuffinFixtureSans"),
+                                       Qt::CaseInsensitive) == 0,
+          "shared CSS fallback keeps the declared Latin family first");
+  require(resolvedFamilies.contains(QStringLiteral("Noto Sans CJK SC"), Qt::CaseInsensitive),
+          "shared CSS fallback registers the bundled CJK face");
+
+  QFont font;
+  font.setFamilies(resolvedFamilies);
+  setTextPixelSize(font, 18.4, TextBackend::Fractional);
+  TextLayout layout(QString::fromUtf8("中文混排"), font,
+                    TextBackend::Fractional);
+  layout.beginLayout();
+  auto line = layout.createLine();
+  line.setLineWidth(300);
+  layout.endLayout();
+  bool cjkFallback = false;
+  for (const auto& run : layout.backendGlyphRuns()) {
+    const auto family = run.rawFont().familyName();
+    cjkFallback |= family.contains(QStringLiteral("Noto Sans CJK SC"),
+                                   Qt::CaseInsensitive);
+  }
+  require(cjkFallback,
+          "shared fractional layout selects the deterministic CJK fallback");
+}
+void testThemeTypography() {
+  const auto read = [](const QString& path) {
+    QFile file(QStringLiteral(MUFFIN_SOURCE_DIR "/") + path);
+    require(file.open(QIODevice::ReadOnly), "theme typography fixture " + path);
+    auto text = QString::fromUtf8(file.readAll());
+    return text.replace("\r\n", "\n");
+  };
+  const auto fixture = QJsonDocument::fromJson(read("tests/fixtures/theme/theme-typography-browser.json").toUtf8()).object();
+  const auto sources = fixture["sources"].toObject();
+  for (auto it = sources.begin(); it != sources.end(); ++it)
+    require(QString::fromLatin1(QCryptographicHash::hash(read(it.key()).toUtf8(), QCryptographicHash::Sha256).toHex()) == it.value().toString(),
+            "theme typography source changed; regenerate browser reference: " + it.key());
+  for (const auto value : fixture["cases"].toArray()) {
+    const auto entry = value.toObject();
+    const auto context = entry["id"].toString();
+    auto css = read(entry["cssFile"].toString());
+    for (auto it = families.begin(); it != families.end(); ++it) css.replace(it.key(), it.value());
+    auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, context, {}));
+    qreal width = entry["width"].toDouble();
+    theme.updateForViewport(width, 1000);
+    DocumentSession session;
+    session.setMarkdownText(fixture["markdown"].toString(), false);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, width);
+    // The browser retains fractional sizes. Native rendering is checked for
+    // compatibility and editing consistency separately, not falsely certified
+    // against a browser with different used font sizes.
+    if (documentTextBackend() == TextBackend::Fractional) {
+      const auto expected = entry["expected"].toObject();
+      const auto page = expected["page"].toArray();
+      requireNear(layout.pageOuterLeft(), page[0].toDouble(), context + " page left", .1);
+      requireNear(layout.pageOuterWidth(), page[2].toDouble(), context + " page width", .1);
+      const auto box = [&](QRectF actual, QJsonArray expectedRect, const QString& label) {
+        requireNear(actual.x(), expectedRect[0].toDouble(), context + label + " x", 1.2);
+        requireNear(actual.y(), expectedRect[1].toDouble(), context + label + " y", 1.2);
+        requireNear(actual.width(), expectedRect[2].toDouble(), context + label + " width", 1.2);
+        requireNear(actual.height(), expectedRect[3].toDouble(), context + label + " height", 1.2);
+      };
+      const auto blocks = expected["blocks"].toArray();
+      for (int i = 0; i < blocks.size(); ++i) {
+        const auto* block = layout.block(session.document().root().children()[i]->id());
+        const auto expectedBlock = blocks[i].toObject();
+        box(block->cssBorderBox(), expectedBlock["border"].toArray(), QString(" block %1").arg(i));
+        const auto* text = block->inlineLayout();
+        require(text, context + " inline layout");
+        requireNear(text->firstLineBaselineY() + block->inlineTextOrigin().y(), expectedBlock["firstBaseline"].toDouble(), context + " first baseline", 1.2);
+        requireNear(text->lastLineBaselineY() + block->inlineTextOrigin().y(), expectedBlock["lastBaseline"].toDouble(), context + " last baseline", 1.2);
+        const auto chars = expectedBlock["characters"].toArray();
+        require(chars.size() == text->visibleText().size(), context + " character count");
+        for (int j = 0; j < chars.size(); ++j) {
+          if (text->visibleText()[j].isSpace()) continue;
+          const auto caret = text->cursorRect(j);
+          requireNear(caret.x() + block->inlineTextOrigin().x(), chars[j].toObject()["x"].toDouble(), context + " character x", 1.2);
+          require(text->hitTestTextOffset({caret.x(), caret.center().y()}) == j, context + " caret/click");
+        }
+        const auto components = expectedBlock["components"].toArray();
+        // Heading inline boxes also contain generated counter text. DOM
+        // querySelectorAll returns only the authored code/keyboard elements.
+        if (session.document().root().children()[i]->type() == BlockType::Paragraph)
+          require(components.size() == text->inlineBoxes().size(), context + " authored component count");
+        for (int j = 0; j < components.size(); ++j)
+          box(text->inlineBoxes()[j].borderBox.translated(block->inlineTextOrigin()), components[j].toObject()["border"].toArray(), " component");
+      }
+    }
+    QString phase = "initial";
+    const auto consistent = [&] {
+      for (auto policy : {DocumentLayout::BuildPolicy::Eager, DocumentLayout::BuildPolicy::Lazy}) {
+        DocumentLayout fresh;
+        fresh.rebuild(session.document(), theme, width, {}, {}, policy);
+        fresh.buildAll(theme);
+        requireNear(layout.totalHeight(), fresh.totalHeight(), context + " total height");
+        for (const auto& node : session.document().root().children()) {
+          const auto* a = layout.block(node->id());
+          const auto* b = fresh.block(node->id());
+          require(a && b, context + " materialized block");
+          const auto rectangle = [](QRectF r) { return QString("(%1,%2 %3x%4)").arg(r.x(), 0, 'g', 16).arg(r.y(), 0, 'g', 16).arg(r.width(), 0, 'g', 16).arg(r.height(), 0, 'g', 16); };
+          require(a->rect() == b->rect(), context + " " + phase + " full/lazy/incremental box " + rectangle(a->rect()) + " vs " + rectangle(b->rect()));
+          if (!a->inlineLayout()) continue;
+          const auto* x = a->inlineLayout();
+          const auto* y = b->inlineLayout();
+          require(x->selectionRects(0, x->visibleText().size()) == y->selectionRects(0, y->visibleText().size()), context + " selection");
+          for (int j = 0; j <= x->visibleText().size(); ++j) require(x->cursorRect(j) == y->cursorRect(j), context + " caret");
+        }
+      }
+    };
+    consistent();
+    const auto id = session.document().root().children().front()->id();
+    require(session.applyTextDelta(2, 0, "Edited ", true, {{id, 2, BlockType::Heading}}), context + " edit");
+    const auto range = session.lastLocalTopLevelRangeChange();
+    if (range.isValid()) layout.rebuildTopLevelRange(range, session.document(), theme, {});
+    else layout.rebuildBlock(id, session.document(), theme, {});
+    phase = "edit";
+    consistent();
+    width += 37;
+    theme.updateForViewport(width, 1000);
+    if (!layout.relayoutForViewportWidth(theme, width)) layout.rebuild(session.document(), theme, width);
+    phase = "resize";
+    consistent();
+    theme.setZoomPercent(125);
+    theme.updateForViewport(width, 1000);
+    if (!layout.relayoutForViewportWidth(theme, width)) layout.rebuild(session.document(), theme, width);
+    phase = "zoom";
+    consistent();
+  }
 }
 void benchmark() {
   if (!qEnvironmentVariableIsSet("MUFFIN_TEXT_BENCH")) return;
@@ -363,6 +576,37 @@ void benchmark() {
     document.rebuildBlock(id, session.document(), theme, {});
   std::fprintf(stdout, "[document-bench] blocks=3000 initialMs=%lld editMs=%lld resident=%lld\n", (long long)documentMs,
                (long long)timer.elapsed(), (long long)diag::workingSetBytes());
+  std::vector<qint64> editTimes;
+  for (int i = 0; i < 12; ++i) {
+    timer.restart();
+    require(session.applyTextDelta(3, 0, "x", true, {{id, 3, BlockType::Heading}}), "repeated benchmark edit");
+    const auto changed = session.lastLocalTopLevelRangeChange();
+    if (changed.isValid()) document.rebuildTopLevelRange(changed, session.document(), theme, {});
+    else document.rebuildBlock(id, session.document(), theme, {});
+    editTimes.push_back(timer.elapsed());
+  }
+  std::sort(editTimes.begin(), editTimes.end());
+  DocumentLayout lazy;
+  lazy.rebuild(session.document(), theme, 900, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+  lazy.visibleBlocks({0, 0, 900, 900}, theme);
+  const auto resizePass = [&] {
+    for (int i = 0; i < 24; ++i) {
+      const qreal width = 640 + (i % 7) * 55;
+      theme.updateForViewport(width, 1000);
+      if (!lazy.relayoutForViewportWidth(theme, width)) lazy.rebuild(session.document(), theme, width, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+      lazy.visibleBlocks({0, 0, width, 900}, theme);
+    }
+  };
+  timer.restart();
+  resizePass();
+  const auto firstResizeMs = timer.elapsed(), firstResizeMemory = diag::workingSetBytes();
+  timer.restart();
+  resizePass();
+  std::fprintf(stdout,
+      "[document-interaction-bench] edits=12 editMedianMs=%lld editMaxMs=%lld resizeFrames=24 firstResizeMs=%lld secondResizeMs=%lld "
+      "firstResizeMemory=%lld secondResizeMemory=%lld promoted=%lld totalBlocks=%lld\n",
+      (long long)editTimes[editTimes.size() / 2], (long long)editTimes.back(), (long long)firstResizeMs, (long long)timer.elapsed(),
+      (long long)firstResizeMemory, (long long)diag::workingSetBytes(), (long long)lazy.promotedBlocks().size(), (long long)lazy.slotCount());
 }
 }  // namespace
 int main(int argc, char** argv) {
@@ -378,7 +622,10 @@ int main(int argc, char** argv) {
   runTest("fractionalBrowserGeometry", testFractionalBrowserGeometry);
   runTest("pixelFontsAndTabs", testPixelFontsAndTabs);
   runTest("fractionalPainting", testFractionalPainting);
+  runTest("spacingConversion", testSpacingConversion);
   runTest("editingAndCaches", testEditingAndCaches);
+  runTest("sharedDocumentFallbackStack", testSharedDocumentFallbackStack);
+  runTest("themeTypography", testThemeTypography);
   benchmark();
   return 0;
 }

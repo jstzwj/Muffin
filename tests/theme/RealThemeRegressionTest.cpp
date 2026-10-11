@@ -115,7 +115,7 @@ QJsonArray geometry(const DocumentSession& document, const DocumentLayout& layou
         {"resolvedPx", rawFont.pixelSize()}, {"requestedWeight", int(box.font.weight())},
         {"faceWeight", os2.size() >= 6 ? int(qFromBigEndian<quint16>(os2.constData()+4)) : -1},
         {"layoutLetterSpacing", box.font.letterSpacing()}, {"layoutWordSpacing", box.font.wordSpacing()},
-        {"advance", QFontMetricsF(box.font).horizontalAdvance(block->inlineLayout() ? block->inlineLayout()->visibleText() : QString())}};
+        {"advance", TextFontMetrics(box.font).horizontalAdvance(block->inlineLayout() ? block->inlineLayout()->visibleText() : QString())}};
     result.append(QJsonObject{{"type", int(node->type())}, {"headingLevel", node->headingLevel()}, {"rect", rect(block->rect())},
                              {"content", rect(box.contentBox)}, {"fontFamily", box.font.families().join(", ")},
                              {"resolvedFont", QFontInfo(box.font).family()}, {"fontMetrics", metrics}, {"fontSize", box.font.pointSizeF() * 96 / 72},
