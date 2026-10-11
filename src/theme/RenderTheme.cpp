@@ -386,7 +386,9 @@ QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* no
     if (it != prototypeFontCache_.constEnd()) return it.value();
   }
   QFont font;
-  font.setFamily(serifBody_ ? font_rendering::serifFamily() : font_rendering::sansFamily());
+  font.setFamilies(font_rendering::cssFamilyList(
+      serifBody_ ? QStringLiteral("serif") : QStringLiteral("sans-serif"),
+      font_rendering::documentFallbackTail()));
   font.setPointSizeF(scaledFont(12));
   const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   if (style)
@@ -434,7 +436,10 @@ QFont RenderTheme::fontForStyle(const ThemeElementStyle& style, QFont font) cons
   if (const auto found = computedFontCache_.constFind(cacheKey); found != computedFontCache_.cend()) return found.value();
   font.setStyleHint(style.text.fontFamily.split(QLatin1Char('\n')).contains(QStringLiteral("monospace")) ? QFont::Monospace
                                                                                                          : QFont::AnyStyle);
-  if (!style.text.fontFamily.isEmpty()) font.setFamilies(font_rendering::cssFamilyList(style.text.fontFamily, font_rendering::sansFamily(), fontAliases_));
+  if (!style.text.fontFamily.isEmpty())
+    font.setFamilies(font_rendering::cssFamilyList(style.text.fontFamily,
+                                                   font_rendering::documentFallbackTail(),
+                                                   fontAliases_));
   if (style.text.fontSizeSet || style.text.fontSizePx > 0) font.setPointSizeF(qMax<qreal>(.001, scaledFont(pxToPt(style.text.fontSizePx))));
   if (style.text.fontWeightSet) font.setWeight(static_cast<QFont::Weight>(style.text.fontWeight));
   if (style.text.italicSet) font.setItalic(style.text.italic);

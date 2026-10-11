@@ -34,6 +34,7 @@
 #endif
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -42,6 +43,109 @@
 #include <vector>
 
 namespace muffin::mermaid::flowchart {
+
+struct FlowLabelPreparedMath {
+  qreal fontPixelSize = 0.0;
+  qreal operationScale = 1.0;
+  muffin::math::MathCssBox box;
+  muffin::math::MathCssPaintOperation operation;
+};
+
+namespace {
+
+std::atomic<quint64> gFlowLabelLayoutCacheHits{0};
+std::atomic<quint64> gFlowLabelLayoutCacheMisses{0};
+
+void mixFlowLabelFingerprint(quint64& value, quint64 part) {
+  // A small, deterministic combiner is enough here: the key is only used to
+  // reject stale metrics after callers mutate the public document fields.
+  value ^= part + UINT64_C(0x9e3779b97f4a7c15) + (value << 6) + (value >> 2);
+}
+
+quint64 flowLabelQuantized(qreal value) {
+  if (!std::isfinite(value)) return UINT64_C(0xffffffffffffffff);
+  return static_cast<quint64>(qRound64(value * 4096.0));
+}
+
+quint64 flowLabelLayoutFingerprint(const FlowLabelDocument& label,
+                                   const QString& fontFamily,
+                                   qreal fontPixelSize, qreal lineHeight) {
+  quint64 key = UINT64_C(0xcbf29ce484222325);
+  mixFlowLabelFingerprint(key, qHash(label.text));
+  mixFlowLabelFingerprint(key, qHash(fontFamily));
+  mixFlowLabelFingerprint(key, flowLabelQuantized(fontPixelSize));
+  mixFlowLabelFingerprint(key, flowLabelQuantized(lineHeight));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.math.size()));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.formats.size()));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.visualLines.size()));
+  mixFlowLabelFingerprint(key, flowLabelQuantized(label.visualLineAdvance));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.formattingContext));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.breakBehavior));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.direction));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.baseWeight));
+  mixFlowLabelFingerprint(key, static_cast<quint64>(label.baseStyle));
+  mixFlowLabelFingerprint(key, flowLabelQuantized(label.letterSpacingPx));
+  mixFlowLabelFingerprint(key, flowLabelQuantized(label.wordSpacingPx));
+  mixFlowLabelFingerprint(key, label.underline ? 1 : 0);
+  mixFlowLabelFingerprint(key, label.strikeOut ? 1 : 0);
+  mixFlowLabelFingerprint(key, label.overline ? 1 : 0);
+  for (const auto& range : label.formats) {
+    mixFlowLabelFingerprint(key, static_cast<quint64>(range.start));
+    mixFlowLabelFingerprint(key, static_cast<quint64>(range.length));
+    mixFlowLabelFingerprint(key, qHash(range.format.font().toString()));
+    mixFlowLabelFingerprint(key, flowLabelQuantized(range.format.fontLetterSpacing()));
+    mixFlowLabelFingerprint(key, flowLabelQuantized(range.format.fontWordSpacing()));
+  }
+  for (const auto& line : label.visualLines) {
+    mixFlowLabelFingerprint(key, static_cast<quint64>(line.start));
+    mixFlowLabelFingerprint(key, static_cast<quint64>(line.length));
+  }
+  for (const auto& span : label.math) {
+    mixFlowLabelFingerprint(key, static_cast<quint64>(span.start));
+    mixFlowLabelFingerprint(key, static_cast<quint64>(span.length));
+    mixFlowLabelFingerprint(key, qHash(span.source));
+    if (span.prepared) {
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->fontPixelSize));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->operationScale));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.width));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.height));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.advance));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.baseline));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.inkTop));
+      mixFlowLabelFingerprint(key, flowLabelQuantized(span.prepared->box.inkBottom));
+    } else {
+      mixFlowLabelFingerprint(key, 0);
+    }
+  }
+  for (const auto& item : label.domItems) {
+    mixFlowLabelFingerprint(key, static_cast<quint64>(item.start));
+    mixFlowLabelFingerprint(key, static_cast<quint64>(item.length));
+    mixFlowLabelFingerprint(key, static_cast<quint64>(item.kind));
+  }
+  return key;
+}
+
+bool flowLabelNeedsMathPreparation(const FlowLabelDocument& label,
+                                   qreal fontPixelSize) {
+  return std::any_of(label.math.cbegin(), label.math.cend(),
+                     [fontPixelSize](const FlowLabelMathSpan& span) {
+                       return !span.prepared ||
+                              !qFuzzyCompare(span.prepared->fontPixelSize,
+                                             fontPixelSize);
+                     });
+}
+
+}  // namespace
+
+FlowLabelLayoutCacheStats flowLabelLayoutCacheStats() {
+  return {gFlowLabelLayoutCacheHits.load(std::memory_order_relaxed),
+          gFlowLabelLayoutCacheMisses.load(std::memory_order_relaxed)};
+}
+
+void resetFlowLabelLayoutCacheStats() {
+  gFlowLabelLayoutCacheHits.store(0, std::memory_order_relaxed);
+  gFlowLabelLayoutCacheMisses.store(0, std::memory_order_relaxed);
+}
 
 // Single source of truth for the QFont used across the FlowLabel measurement
 // chain (ink/advance, wrap, layout, bounding metrics, paint) and by other scene
@@ -62,18 +166,11 @@ QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
   // rendering must stay byte-identical, and an explicit AbsoluteSpacing(0) could
   // in principle differ from Qt's unset state on some platforms.
   if (letterSpacingPx != 0.0)
-    font.setLetterSpacing(QFont::AbsoluteSpacing, letterSpacingPx);
+    setTextLetterSpacing(font, letterSpacingPx);
   if (wordSpacingPx != 0.0)
     font.setWordSpacing(wordSpacingPx);
   return font;
 }
-
-struct FlowLabelPreparedMath {
-  qreal fontPixelSize = 0.0;
-  qreal operationScale = 1.0;
-  muffin::math::MathCssBox box;
-  muffin::math::MathCssPaintOperation operation;
-};
 
 namespace {
 
@@ -1587,6 +1684,8 @@ QFont flowLabelDocumentFont(const FlowLabelDocument& label,
 
 QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamily,
                         qreal fontPixelSize, qreal lineHeight) {
+  if (!flowLabelNeedsMathPreparation(label, fontPixelSize))
+    return layoutFlowLabel(label, fontFamily, fontPixelSize, lineHeight).size;
   FlowLabelDocument prepared = label;
   prepareFlowLabelMath(prepared, fontPixelSize);
   return layoutFlowLabel(prepared, fontFamily, fontPixelSize, lineHeight).size;
@@ -2275,6 +2374,13 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
+  const quint64 cacheKey =
+      flowLabelLayoutFingerprint(label, fontFamily, fontPixelSize, lineHeight);
+  if (label.cachedLayout && label.cachedLayoutKey == cacheKey) {
+    gFlowLabelLayoutCacheHits.fetch_add(1, std::memory_order_relaxed);
+    return *label.cachedLayout;
+  }
+  gFlowLabelLayoutCacheMisses.fetch_add(1, std::memory_order_relaxed);
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   const TextFontMetrics metrics(font);
   const QRectF inkMetrics = metrics.tightBoundingRect(QStringLiteral("Mg"));
@@ -2471,6 +2577,9 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                           (result.lines.size() - 1) *
                               visualLineAdvance);
   }
+  label.cachedLayout =
+      std::make_shared<const FlowLabelLayoutMetrics>(result);
+  label.cachedLayoutKey = cacheKey;
   return result;
 }
 
@@ -2480,8 +2589,14 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QColor& color, bool centerVertically,
                     FlowLabelAlign align, qreal alignMargin) {
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  FlowLabelDocument paintedLabel = label;
-  prepareFlowLabelMath(paintedLabel, fontPixelSize);
+  const FlowLabelDocument* paintedDocument = &label;
+  FlowLabelDocument preparedLabel;
+  if (flowLabelNeedsMathPreparation(label, fontPixelSize)) {
+    preparedLabel = label;
+    prepareFlowLabelMath(preparedLabel, fontPixelSize);
+    paintedDocument = &preparedLabel;
+  }
+  const FlowLabelDocument& paintedLabel = *paintedDocument;
   const FlowLabelLayoutMetrics layoutMetrics =
       layoutFlowLabel(paintedLabel, fontFamily, fontPixelSize, lineHeight);
   const QSizeF measured = layoutMetrics.size;

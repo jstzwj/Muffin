@@ -15,6 +15,7 @@ enum class TextBackend { Native, Fractional };
 TextBackend documentTextBackend();
 qreal textBackendScale(TextBackend backend);
 void setTextPixelSize(QFont& font, qreal pixels, TextBackend backend = documentTextBackend());
+void setTextLetterSpacing(QFont& font, qreal pixels, TextBackend backend = documentTextBackend());
 qreal textFontPixelSize(const QFont& font);
 
 // Every coordinate exposed here is in logical document pixels. No caller may

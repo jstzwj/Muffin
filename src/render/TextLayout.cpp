@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QTransform>
 #include <algorithm>
+#include <cmath>
 
 namespace muffin {
 namespace {
@@ -24,8 +25,91 @@ QPaintDevice* shapingDevice(TextBackend backend) {
 QFont deviceFont(QFont font, TextBackend backend) {
   // Pixel fonts ignore device DPI. Convert to points only on the fractional
   // device, preserving the old backend and the author's logical pixel size.
-  if (backend == TextBackend::Fractional && font.pixelSize() > 0) font.setPointSizeF(font.pixelSize() * .75);
+  if (backend == TextBackend::Fractional) {
+    if (font.pixelSize() > 0) font.setPointSizeF(font.pixelSize() * .75);
+    // Qt scales absolute letter spacing with font DPI, but word spacing is
+    // already in device units. Keep this conversion at the shaping boundary.
+    font.setWordSpacing(font.wordSpacing() * textBackendScale(backend));
+  }
   return font;
+}
+QList<QTextLayout::FormatRange> deviceFormats(QList<QTextLayout::FormatRange> formats, const QFont& base, TextBackend backend) {
+  if (backend == TextBackend::Native) return formats;
+  for (auto& range : formats) {
+    auto& format = range.format;
+    if (format.hasProperty(QTextFormat::FontPixelSize)) {
+      format.setFontPointSize(format.doubleProperty(QTextFormat::FontPixelSize) * .75);
+      format.clearProperty(QTextFormat::FontPixelSize);
+    }
+    if (format.hasProperty(QTextFormat::FontWordSpacing))
+      format.setFontWordSpacing(format.fontWordSpacing() * textBackendScale(backend));
+    const auto spacingType = format.hasProperty(QTextFormat::FontLetterSpacingType) ? format.fontLetterSpacingType() : base.letterSpacingType();
+    if (spacingType == QFont::AbsoluteSpacing && format.hasProperty(QTextFormat::FontLetterSpacing))
+      format.setFontLetterSpacing(std::round(format.fontLetterSpacing() * 64) / 64);
+  }
+  return formats;
+}
+bool isCjkWordSpacingCharacter(QChar character) {
+  switch (character.script()) {
+    case QChar::Script_Han:
+    case QChar::Script_Hiragana:
+    case QChar::Script_Katakana:
+    case QChar::Script_Bopomofo:
+      return true;
+    default:
+      return false;
+  }
+}
+qreal formatValueAt(const QList<QTextLayout::FormatRange>& formats,
+                    int position, QTextFormat::Property property,
+                    qreal fallback) {
+  qreal value = fallback;
+  for (const auto& range : formats) {
+    if (position < range.start || position >= range.start + range.length ||
+        !range.format.hasProperty(property))
+      continue;
+    if (property == QTextFormat::FontWordSpacing)
+      value = range.format.fontWordSpacing();
+    else if (property == QTextFormat::FontLetterSpacing)
+      value = range.format.fontLetterSpacing();
+  }
+  return value;
+}
+QList<QTextLayout::FormatRange> cjkWordSpacingFormats(
+  const QString& text, const QFont& base,
+    const QList<QTextLayout::FormatRange>& formats) {
+  QList<QTextLayout::FormatRange> result;
+  if (text.isEmpty()) return result;
+  for (int i = 0; i < text.size(); ++i) {
+    if (text.at(i) != QLatin1Char(' ') ||
+        (i > 0 && text.at(i - 1) == QLatin1Char(' ')))
+      continue;
+    int end = i + 1;
+    while (end < text.size() && text.at(end) == QLatin1Char(' ')) ++end;
+    const int last = end - 1;
+    const bool cjkAdjacent =
+        (i > 0 && isCjkWordSpacingCharacter(text.at(i - 1))) ||
+        (end < text.size() && isCjkWordSpacingCharacter(text.at(end)));
+    if (!cjkAdjacent) continue;
+    const qreal wordSpacing =
+        formatValueAt(formats, last, QTextFormat::FontWordSpacing,
+                      base.wordSpacing());
+    if (wordSpacing == 0.0) continue;
+    if (!qFuzzyIsNull(base.letterSpacing())) continue;
+    const qreal letterSpacing =
+        formatValueAt(formats, last, QTextFormat::FontLetterSpacing,
+                      base.letterSpacing());
+    QTextCharFormat correction;
+    // Qt classifies spaces in Han/Hiragana/Katakana/Bopomofo shaping items as
+    // inter-character opportunities, so QFont::wordSpacing is silently
+    // omitted.  Add the missing amount to the final space in the run.  This
+    // keeps the browser/CSS rule (one addition per collapsed space run) while
+    // reusing Qt's normal glyph placement, caret and wrapping machinery.
+    correction.setFontLetterSpacingType(QFont::AbsoluteSpacing);
+    correction.setFontLetterSpacing(letterSpacing + wordSpacing);
+    result.append({last, 1, correction});
+  }
+  return result;
 }
 QRectF scaledRect(QRectF rect, qreal factor) { return QTransform::fromScale(factor, factor).mapRect(rect); }
 }  // namespace
@@ -40,6 +124,11 @@ void setTextPixelSize(QFont& font, qreal pixels, TextBackend backend) {
     font.setPointSizeF(std::max<qreal>(pixels, 1. / 64.) * .75);
   else
     font.setPixelSize(std::max(1, qRound(pixels)));
+}
+void setTextLetterSpacing(QFont& font, qreal pixels, TextBackend backend) {
+  // QFont truncates to 1/64 logical px before Qt applies DPI. Round explicitly
+  // for the experimental backend; keep the native compatibility contract.
+  font.setLetterSpacing(QFont::AbsoluteSpacing, backend == TextBackend::Fractional ? std::round(pixels * 64) / 64 : pixels);
 }
 qreal textFontPixelSize(const QFont& font) { return font.pixelSize() > 0 ? font.pixelSize() : font.pointSizeF() / .75; }
 QRectF TextLine::naturalTextRect() const { return scaledRect(line_.naturalTextRect(), 1 / scale_); }
@@ -66,26 +155,28 @@ TextLayout::TextLayout(const QString& text, const QFont& font, TextBackend backe
     : backend_(backend),
       scale_(textBackendScale(backend)),
       font_(font),
-      layout_(std::make_unique<QTextLayout>(text, deviceFont(font, backend), shapingDevice(backend))) {}
+      layout_(std::make_unique<QTextLayout>(text, deviceFont(font, backend), shapingDevice(backend))) {
+  // Apply the same spacing correction even when a caller has no explicit
+  // character formats.  The default QTextLayout path otherwise bypasses
+  // setFormats(), which is precisely where Han-script word spacing is fixed.
+  setFormats({});
+}
 TextLayout::~TextLayout() = default;
 void TextLayout::setTextOption(const QTextOption& option) {
   option_ = option;
-  // Qt already applies the layout device's DPI to tab stops, just as it does
-  // to absolute letter/word spacing. Multiplying here would scale them twice.
+  // Qt already applies the layout device's DPI to tab stops and absolute
+  // letter spacing. Word spacing is converted separately in deviceFont.
   layout_->setTextOption(option);
 }
 void TextLayout::setFormats(const QList<FormatRange>& formats) {
   formats_ = formats;
-  auto deviceFormats = formats;
-  if (scale_ != 1) {
-    for (auto& range : deviceFormats) {
-      if (range.format.hasProperty(QTextFormat::FontPixelSize)) {
-        range.format.setFontPointSize(range.format.intProperty(QTextFormat::FontPixelSize) * .75);
-        range.format.clearProperty(QTextFormat::FontPixelSize);
-      }
-    }
+  auto device = deviceFormats(formats, font_, backend_);
+  if (backend_ == TextBackend::Fractional) {
+    const auto corrections = cjkWordSpacingFormats(layout_->text(), font_, formats);
+    const auto deviceCorrections = deviceFormats(corrections, font_, backend_);
+    device.append(deviceCorrections);
   }
-  layout_->setFormats(deviceFormats);
+  layout_->setFormats(device);
 }
 QRectF TextLayout::boundingRect() const { return scaledRect(layout_->boundingRect(), 1 / scale_); }
 void TextLayout::draw(QPainter* painter, QPointF origin, const QList<FormatRange>& selections, QRectF clip) const {
@@ -95,7 +186,7 @@ void TextLayout::draw(QPainter* painter, QPointF origin, const QList<FormatRange
   }
   painter->save();
   painter->scale(1 / scale_, 1 / scale_);
-  layout_->draw(painter, origin * scale_, selections, scaledRect(clip, scale_));
+  layout_->draw(painter, origin * scale_, deviceFormats(selections, font_, backend_), scaledRect(clip, scale_));
   painter->restore();
 }
 int TextLayout::hitTest(QPointF point, QTextLine::CursorPosition mode) const {

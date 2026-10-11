@@ -81,7 +81,9 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         if (style.paint.color.isValid()) target.color = style.paint.color;
         if (style.paint.backgroundColor.isValid()) target.backgroundColor = style.paint.backgroundColor;
         if (!style.text.fontFamily.isEmpty()) {
-          const auto families = font_rendering::cssFamilyList(style.text.fontFamily, font_rendering::sansFamily(), palette.fontAliases);
+          const auto families = font_rendering::cssFamilyList(
+              style.text.fontFamily, font_rendering::documentFallbackTail(),
+              palette.fontAliases);
           target.font.setFamilies(families);
           target.fontFamily = families.join(QStringLiteral(", "));
         }

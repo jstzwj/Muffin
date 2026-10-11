@@ -37,6 +37,10 @@ QPair<qreal, qreal> InlineLayout::intrinsicWidths() const {
 }
 namespace {
 
+// Use the same object-replacement code point as HTML inline atoms.  Its format
+// range supplies the measured math advance while keeping the formula
+// indivisible for wrapping, painting and hit testing; the normal space before
+// the atom remains the browser-compatible break opportunity.
 constexpr QChar kInlineMathPlaceholder(0x00a0);
 constexpr QChar kImagePlaceholder(0x2009);  // thin space, distinct from math placeholder
 // Reserve atomic boxes with an ink-free glyph, including font fallback paths.
@@ -2115,10 +2119,37 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     if (!layoutRange.valid || layoutRange.end > displayText_.size()) {
       continue;
     }
+    // The base range already covers ordinary prose.  Do not add an identical
+    // range for every projection span: splitting a shaping run at an
+    // otherwise invisible boundary changes kerning/advance (notably around
+    // generated counters).  A computed inline style still forces a range so
+    // an explicit normal value can reset inherited Markdown emphasis.
+    const auto computedStyleIt = spanStyles_.constFind(span.displayStart);
+    const bool hasComputedInlineStyle = computedStyleIt != spanStyles_.cend() &&
+                                         span.kind == InlineSpanKind::Text && span.type != InlineType::InlineMath &&
+                                         (computedStyleIt.value()->style.text.fontSizeSet ||
+                                          computedStyleIt.value()->style.text.fontWeightSet ||
+                                          computedStyleIt.value()->style.text.italicSet ||
+                                          computedStyleIt.value()->style.text.decorationLines != 0 ||
+                                          computedStyleIt.value()->style.text.letterSpacing != 0 ||
+                                          computedStyleIt.value()->style.text.wordSpacing != 0 ||
+                                          computedStyleIt.value()->style.text.textTransform != 0);
+    const bool authoredInlineElement = hasComputedInlineStyle && computedStyleIt.value()->style.key != QStringLiteral("p") &&
+                                       !computedStyleIt.value()->style.key.startsWith(QStringLiteral("h"));
+    const bool hasSpanOverride = hasComputedInlineStyle || span.bold || span.italic || span.strike || span.underline ||
+                                 span.highlight || span.subscript || span.superscript || span.link ||
+                                 span.kind != InlineSpanKind::Text || span.type != InlineType::Text;
+    if (!hasSpanOverride) continue;
     QTextLayout::FormatRange range;
     range.start = static_cast<int>(layoutRange.start);
     range.length = static_cast<int>(layoutRange.end - layoutRange.start);
     range.format = format;
+    if (!authoredInlineElement && span.kind == InlineSpanKind::Text && span.type == InlineType::Text && format.font() == baseFormat.font() &&
+        (!format.hasProperty(QTextFormat::ForegroundBrush) || format.foreground() == baseFormat.foreground()) &&
+        (!format.hasProperty(QTextFormat::BackgroundBrush) || format.background() == baseFormat.background()) &&
+        !format.fontUnderline() && !format.fontOverline() && !format.fontStrikeOut() &&
+        format.verticalAlignment() == QTextCharFormat::AlignNormal)
+      continue;
     formats.push_back(range);
   }
 
@@ -2285,7 +2316,20 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     format.setForeground(Qt::transparent);
     formats.push_back({static_cast<int>(spacer.start), 1, format});
   }
-  formats += generatedPseudoFormats_;
+  // Generated text inherits the surrounding font when its computed font is
+  // unchanged. Keeping a redundant format range here splits HarfBuzz runs at
+  // every pseudo-element boundary and loses kerning across `::before`/text/
+  // `::after`; the browser treats adjacent inline text with the same style as
+  // one shaping run. Preserve only ranges that actually override the base
+  // font or paint properties.
+  for (const auto& generated : generatedPseudoFormats_) {
+    const auto generatedFont = generated.format.font();
+    const bool sameFont = generatedFont == baseFormat.font();
+    const bool hasForeground = generated.format.hasProperty(QTextFormat::ForegroundBrush);
+    const bool hasBackground = generated.format.hasProperty(QTextFormat::BackgroundBrush);
+    if (sameFont && !hasForeground && !hasBackground) continue;
+    formats.push_back(generated);
+  }
   return formats;
 }
 

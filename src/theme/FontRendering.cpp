@@ -1,8 +1,10 @@
 #include "theme/FontRendering.h"
+#include "render/TextLayout.h"
 
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QRawFont>
+#include <QSet>
 #include <QtEndian>
 #include <QtGlobal>
 #include <cmath>
@@ -21,6 +23,9 @@ void muffin::font_rendering::configureForScreen(QFont& font) {
 }
 
 void muffin::font_rendering::configureCssFont(QFont& font, qreal letterSpacing, qreal wordSpacing) {
+  configureCssFont(font, letterSpacing, wordSpacing, documentTextBackend());
+}
+void muffin::font_rendering::configureCssFont(QFont& font, qreal letterSpacing, qreal wordSpacing, TextBackend backend) {
   configureForScreen(font);
   qreal correction = 0;
 #if defined(Q_OS_WIN)
@@ -58,7 +63,7 @@ void muffin::font_rendering::configureCssFont(QFont& font, qreal letterSpacing, 
     }
   }
 #endif
-  font.setLetterSpacing(QFont::AbsoluteSpacing, letterSpacing - correction);
+  setTextLetterSpacing(font, letterSpacing - correction, backend);
   // Whitespace isn't emboldened, so cancel the letter correction on spaces.
   font.setWordSpacing(wordSpacing + correction);
 }
@@ -66,6 +71,32 @@ void muffin::font_rendering::configureCssFont(QFont& font, qreal letterSpacing, 
 namespace muffin::font_rendering {
 namespace {
 QHash<QString, QString> defaultFamilies;
+QStringList& bundledFallbackFamilies() {
+  static QStringList families;
+  static const bool initialized = [] {
+    Q_INIT_RESOURCE(mermaid_fonts);
+    const QStringList resources = {
+        QStringLiteral(":/mermaid/fonts/NotoSans-Regular.ttf"),
+        QStringLiteral(":/mermaid/fonts/NotoSansCJKsc-Regular.otf"),
+        QStringLiteral(":/mermaid/fonts/NotoSansArabic-Regular.ttf"),
+        QStringLiteral(":/mermaid/fonts/NotoSansHebrew-Regular.ttf"),
+    };
+    QSet<QString> seen;
+    for (const QString& resource : resources) {
+      const int id = QFontDatabase::addApplicationFont(resource);
+      if (id < 0) continue;
+      for (const QString& family : QFontDatabase::applicationFontFamilies(id)) {
+        if (!seen.contains(family)) {
+          seen.insert(family);
+          families.append(family);
+        }
+      }
+    }
+    return true;
+  }();
+  Q_UNUSED(initialized);
+  return families;
+}
 const QStringList& availableDocumentFamilies() {
   static QStringList families = QFontDatabase::families();
   static const auto connection = QObject::connect(qGuiApp, &QGuiApplication::fontDatabaseChanged, qGuiApp, [] {
@@ -167,6 +198,31 @@ QString genericFamilyTail(const QString& generic) {
   return sansFamily();
 }
 
+QStringList splitCssFamilyExpression(const QString& raw) {
+  QStringList result;
+  QString token;
+  QChar quote;
+  for (const QChar character : raw) {
+    if (quote.isNull() && (character == QLatin1Char(',') || character == QLatin1Char('\n'))) {
+      const QString value = token.trimmed();
+      if (!value.isEmpty()) result.append(value);
+      token.clear();
+      continue;
+    }
+    if ((character == QLatin1Char('\'') || character == QLatin1Char('"'))) {
+      if (quote.isNull()) {
+        quote = character;
+      } else if (quote == character) {
+        quote = {};
+      }
+    }
+    token.append(character);
+  }
+  const QString value = token.trimmed();
+  if (!value.isEmpty()) result.append(value);
+  return result;
+}
+
 QString availableFamilyNamed(const QString& wanted, const QStringList& available) {
   for (const QString& family : available) {
     if (family.compare(wanted, Qt::CaseInsensitive) == 0) {
@@ -204,20 +260,30 @@ QString platformCssFamilyAlias(const QString& requested, const QStringList& avai
 }
 
 QStringList cssFamilyList(const QString& raw, const QString& platformTail, const QHash<QString, QString>& aliases) {
-  QStringList requested = raw.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+  // Themes historically stored one family per newline, while Mermaid and
+  // ordinary CSS use comma-separated stacks. Parse both forms here so every
+  // renderer applies the same ordering and quote handling.
+  QStringList requested = splitCssFamilyExpression(raw);
   for (QString& f : requested) {
     f = f.trimmed();
+    if (f.size() >= 2 && ((f.front() == QLatin1Char('\'') && f.back() == QLatin1Char('\'')) ||
+                          (f.front() == QLatin1Char('"') && f.back() == QLatin1Char('"')))) {
+      f = f.mid(1, f.size() - 2).trimmed();
+    }
   }
   requested.removeAll(QString());
 
-  QString genericTail;
+  QStringList genericTail;
   if (!requested.isEmpty()) {
     const QString last = requested.last().toLower();
     if (last == QStringLiteral("serif") || last == QStringLiteral("sans-serif") || last == QStringLiteral("monospace")) {
-      genericTail = genericFamilyTail(requested.takeLast());
+      genericTail.append(genericFamilyTail(requested.takeLast()));
     }
   }
 
+  // Register the deterministic application faces before taking the family
+  // snapshot. Otherwise a first CSS lookup can cache a system-only list.
+  bundledFallbackFamilies();
   const QStringList& availableFamilies = availableDocumentFamilies();
   QStringList out;
   for (const QString& family : requested) {
@@ -239,13 +305,34 @@ QStringList cssFamilyList(const QString& raw, const QString& platformTail, const
       out << resolved;
     }
   }
-  if (!genericTail.isEmpty() && !out.contains(genericTail, Qt::CaseInsensitive)) {
-    out << genericTail;
+  for (const QString& family : genericTail) {
+    if (!out.contains(family, Qt::CaseInsensitive)) out << family;
   }
-  if (!platformTail.isEmpty() && !out.contains(platformTail, Qt::CaseInsensitive)) {
-    out << platformTail;
+  for (QString family : splitCssFamilyExpression(platformTail)) {
+    family = family.trimmed();
+    if (family.compare(QStringLiteral("sans-serif"), Qt::CaseInsensitive) == 0) {
+      family = sansFamily();
+    } else if (family.compare(QStringLiteral("serif"), Qt::CaseInsensitive) == 0) {
+      family = serifFamily();
+    } else if (family.compare(QStringLiteral("monospace"), Qt::CaseInsensitive) == 0) {
+      family = codeFamily();
+    }
+    const QString resolved = platformCssFamilyAlias(family, availableFamilies);
+    if (!resolved.isEmpty() && !out.contains(resolved, Qt::CaseInsensitive)) out << resolved;
   }
   return out;
+}
+
+QString documentFallbackTail() {
+  const auto& bundled = bundledFallbackFamilies();
+  QStringList families = bundled;
+  const auto append = [&families](const QString& family) {
+    if (!family.isEmpty() && !families.contains(family, Qt::CaseInsensitive)) families.append(family);
+  };
+  append(sansFamily());
+  append(serifFamily());
+  append(codeFamily());
+  return families.join(QLatin1Char('\n'));
 }
 
 }  // namespace muffin::font_rendering

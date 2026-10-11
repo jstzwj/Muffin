@@ -17,6 +17,7 @@ class QRectF;
 namespace muffin::mermaid::flowchart {
 
 struct FlowLabelPreparedMath;
+struct FlowLabelLayoutMetrics;
 
 // Horizontal placement of a laid-out label inside its target rect. Flowchart
 // labels are always Center; sequence message/note labels honor the upstream
@@ -102,6 +103,14 @@ struct FlowLabelDocument {
   bool underline = false;
   bool strikeOut = false;
   bool overline = false;
+
+  // Layout metrics are immutable after publication and keyed by a fingerprint
+  // of the document plus the requested font parameters.  The document itself
+  // is copied into immutable Mermaid scenes, so a mutable cache here avoids
+  // reshaping the same label on every paint without exposing QTextLayout across
+  // threads or callers.
+  mutable std::shared_ptr<const FlowLabelLayoutMetrics> cachedLayout;
+  mutable quint64 cachedLayoutKey = 0;
 };
 
 enum class FlowLabelMathStructure {
@@ -153,6 +162,14 @@ struct FlowLabelLayoutMetrics {
   QSizeF size{0.0, 0.0};
   QVector<FlowLabelLineMetrics> lines;
 };
+
+struct FlowLabelLayoutCacheStats {
+  quint64 hits = 0;
+  quint64 misses = 0;
+};
+
+FlowLabelLayoutCacheStats flowLabelLayoutCacheStats();
+void resetFlowLabelLayoutCacheStats();
 
 struct FlowLabelFontMetrics {
   qreal ascent = 0.0;
