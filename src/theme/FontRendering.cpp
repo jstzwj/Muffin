@@ -10,6 +10,10 @@
 #include <cmath>
 #include <initializer_list>
 
+static void initMermaidFontsResource() {
+  Q_INIT_RESOURCE(mermaid_fonts);
+}
+
 void muffin::font_rendering::configureForScreen(QFont& font) {
 #if defined(Q_OS_WIN)
   // Qt 6.11 maps the default preference at DPR 1 to full horizontal hinting
@@ -74,7 +78,7 @@ QHash<QString, QString> defaultFamilies;
 QStringList& bundledFallbackFamilies() {
   static QStringList families;
   static const bool initialized = [] {
-    Q_INIT_RESOURCE(mermaid_fonts);
+    initMermaidFontsResource();
     const QStringList resources = {
         QStringLiteral(":/mermaid/fonts/NotoSans-Regular.ttf"),
         QStringLiteral(":/mermaid/fonts/NotoSansCJKsc-Regular.otf"),
