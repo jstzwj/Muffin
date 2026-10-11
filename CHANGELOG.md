@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fractional text layout preserves logical word spacing in base fonts, inline format ranges and selection painting. Absolute letter spacing rounds before Qt's fixed-point conversion; fixed-font regressions now enforce italic wrapping and advances, with representative Abyss/LaTeX page, component and editing checks.
 - Document text uses a shared logical-pixel layout and font-metrics interface across paragraphs, headings, HTML, code blocks, generated content and source/IME rendering. The existing backend remains the default; an opt-in fractional-size backend shares shaping, painting and editing coordinates, with pinned Latin/Chinese font regressions and performance probes.
 - Markdown and HTML share CSS font aliases, generic families and ordered fallback resolution. Code-block carets and selections consume shaped-line advances, preserving tabs and ligatures instead of measuring string prefixes independently.
 

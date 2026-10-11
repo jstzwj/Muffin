@@ -38,16 +38,27 @@ try {
   await client.send('DOM.enable'); await client.send('CSS.enable');
   const {root: documentRoot} = await client.send('DOM.getDocument');
   const {nodeId} = await client.send('DOM.querySelector', {nodeId: documentRoot.nodeId, selector: '#text'});
-  const cases = [];
+  const cases = [], requests = [];
   for (const [family, prefix] of [['MuffinFixtureAbyss', 'abyss'], ['MuffinFixtureSans', 'sans-han'],
                                 ['MuffinFixtureSerif', 'serif'], ['MuffinFixtureLatex', 'latex']]) {
     // The imported LaTeX theme uses 9.5pt body text and 1.5/1.9em headings.
     const sizes = prefix === 'latex' ? [9.5 * 96 / 72, 19, 9.5 * 96 / 72 * 1.9, 28.8] : [16, 18.4, 28.8, 32.4];
     for (const size of sizes) for (const bold of [false, true]) for (const italic of [false, true])
       for (const width of italic ? [240, 1000] : [240]) {
-      const entry = {id: `${prefix}-${size}-${bold}-${italic}-${width}`, family, size, bold, italic,
-        text: 'Muffin Markdown Example 中文混排 office fi', width, letterSpacing: .7, wordSpacing: .3,
-        diagnosticOnly: italic && width === 240};
+      requests.push({id: `${prefix}-${size}-${bold}-${italic}-${width}`, family, size, bold, italic,
+        text: 'Muffin Markdown Example 中文混排 office fi', width, letterSpacing: .7, wordSpacing: .3});
+    }
+  }
+  // Isolate spacing from Han itemization, including ligatures, negative values
+  // and word boundaries in real and synthesized style faces.
+  for (const family of ['MuffinFixtureAbyss', 'MuffinFixtureLatex'])
+    for (const bold of [false, true]) for (const italic of [false, true])
+      for (const [letterSpacing, wordSpacing] of [[0, 0], [0, 2.25], [.7, 0], [.7, 2.25], [-.3, -.5]])
+        for (const width of [130, 1000]) requests.push({
+          id: `${family}-spacing-${letterSpacing}-${wordSpacing}-${bold}-${italic}-${width}`,
+          family, size: 28.8, bold, italic, text: 'office fi AV Muffin words', width, letterSpacing, wordSpacing,
+        });
+  for (const entry of requests) {
       await page.locator('#text').evaluate(async (host, entry) => {
         host.style.cssText = `width:${entry.width}px;font-family:${entry.family},MuffinFixtureHan;font-size:${entry.size}px;font-weight:${entry.bold ? 700 : 400};font-style:${entry.italic ? 'italic' : 'normal'};letter-spacing:${entry.letterSpacing}px;word-spacing:${entry.wordSpacing}px;line-height:1.5`;
         host.textContent = entry.text;
@@ -72,7 +83,6 @@ try {
       expected.platformFonts = (await client.send('CSS.getPlatformFontsForNode', {nodeId})).fonts;
       if (expected.platformFonts.some(font => !font.isCustomFont)) throw new Error(`Unexpected OS fallback: ${entry.id}`);
       cases.push({...entry, expected});
-    }
   }
   const result = {browser: await browser.version(), fonts: fonts.map(({bytes, ...f}) => f), cases};
   fs.writeFileSync(path.join(root, 'tests/fixtures/theme/text-backend-browser.json'), JSON.stringify(result, null, 2) + '\n');

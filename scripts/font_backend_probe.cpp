@@ -14,6 +14,7 @@
 #include <cstdio>
 
 #include "theme/FontRendering.h"
+#include "render/TextLayout.h"
 
 int main(int argc, char** argv) {
   if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -42,7 +43,11 @@ int main(int argc, char** argv) {
             font.setPointSizeF(size * .75);
             font.setWeight(bold ? QFont::Bold : QFont::Normal);
             font.setItalic(italic);
-            muffin::font_rendering::configureCssFont(font, .7, .3);
+            muffin::font_rendering::configureCssFont(font, .7, .3,
+                precision == 1 ? muffin::TextBackend::Native : muffin::TextBackend::Fractional);
+            // This diagnostic deliberately constructs Qt's device directly.
+            // Match the shared backend's conversion (Qt scales letters, not words).
+            font.setWordSpacing(font.wordSpacing() * precision);
             if (!optionalLigatures) {
               font.setFeature(QFont::Tag("liga"), 0);
               font.setFeature(QFont::Tag("clig"), 0);
