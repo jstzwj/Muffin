@@ -98,6 +98,11 @@ public:
   // only scroll when it leaves the comfort margins (off).
   void setTypewriterCursorMiddle(bool enabled);
   void setFocusMode(bool enabled);
+  // 锁定编辑 (locked editing): stop showing the caret, suppress inline floating popups
+  // (table toolbar, code-fence language editor, HTML source toggle) and reject keyboard,
+  // IME and drop input. Mouse selection and the right-click context menu keep working.
+  void setEditingLocked(bool locked);
+  bool editingLocked() const { return editingLocked_; }
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
   // Direct layout lookup by node id (resolves nested blocks such as a list item,
   // unlike blockAtViewportPos which returns the innermost block under a point).
@@ -332,6 +337,7 @@ private:
   bool typewriterMode_ = false;
   bool typewriterCursorMiddle_ = true;
   bool focusMode_ = false;
+  bool editingLocked_ = false; // 锁定编辑: no caret, no inline popups, no text input
   QPropertyAnimation* scrollAnimation_ = nullptr;
   NodeId editingHtmlBlockId_;
   // Per-block coalesce of the per-keystroke double-refresh (immediate selection refresh + deferred

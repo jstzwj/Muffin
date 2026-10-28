@@ -96,6 +96,13 @@ public:
   bool commandOnLocalImage() const;
   CursorFormatState commandInlineFormats() const;
 
+  // 锁定编辑 (locked editing). Window-wide: the active tab's rendered view drops its
+  // caret and inline popups, the source view goes read-only, and the session rejects
+  // incremental edits. Mouse selection and context menus keep working.
+  void setEditingLocked(bool locked);
+  void toggleEditingLocked();
+  bool editingLocked() const { return editingLocked_; }
+
 protected:
   bool eventFilter(QObject* watched, QEvent* event) override;
   void closeEvent(QCloseEvent* event) override;
@@ -196,6 +203,8 @@ private:
   void buildMenuItems(QMenu* parent, const std::vector<MenuItem>& items);
 
   void updateTitle();
+  // Re-assert the window's 锁定编辑 state on one tab's views and session.
+  void applyEditingLockedTo(DocumentTab* document) const;
   void updateStatus();
   void updateCursorStatus(int line, int column);
   void updateRenderCursorStatus(const HitTestResult& hit);
@@ -429,6 +438,7 @@ private:
   mutable CommandContextSnapshot commandContextSnapshot_;
   bool focusMode_ = false;
   bool typewriterMode_ = false;
+  bool editingLocked_ = false; // 锁定编辑开关（窗口级，随标签页切换重新应用）
 };
 
 } // namespace muffin

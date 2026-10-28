@@ -370,7 +370,42 @@ void muffin::MainWindow::updateTitle() {
   const QString marker = tab_->session.document().isModified() ? QStringLiteral(" *") : QString();
   const QString name =
       tab_->pendingOpenPath.isEmpty() ? tab_->session.displayName() : QFileInfo(tab_->pendingOpenPath).fileName();
-  setWindowTitle(QStringLiteral("%1%2 - Muffin").arg(name, marker));
+  // 锁定编辑时，状态标记紧跟标题栏的 “Muffin”。
+  const QString lockMarker = editingLocked_ ? QStringLiteral(" (已锁定编辑)") : QString();
+  setWindowTitle(QStringLiteral("%1%2 - Muffin%3").arg(name, marker, lockMarker));
+}
+
+void muffin::MainWindow::setEditingLocked(bool locked) {
+  if (editingLocked_ == locked) {
+    return;
+  }
+  editingLocked_ = locked;
+  applyEditingLockedTo(tab_);
+  if (QAction* action = commands_.action(QStringLiteral("edit.lock_editing"))) {
+    action->setChecked(locked);
+    action->setText(locked ? tr("解锁编辑") : tr("锁定编辑"));
+  }
+  updateTitle();
+}
+
+void muffin::MainWindow::toggleEditingLocked() {
+  setEditingLocked(!editingLocked_);
+}
+
+// Push the window-level lock onto one tab: the rendered view hides its caret and
+// inline popups, the source view goes read-only, and the session rejects every
+// incremental edit (typing, paste, format, undo).
+void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
+  if (!document) {
+    return;
+  }
+  if (document->renderView) {
+    document->renderView->setEditingLocked(editingLocked_);
+  }
+  if (document->editor) {
+    document->editor->setReadOnly(editingLocked_);
+  }
+  document->session.setEditingReadOnly(editingLocked_);
 }
 
 void muffin::MainWindow::updateStatus() {

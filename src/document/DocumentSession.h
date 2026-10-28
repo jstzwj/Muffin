@@ -98,6 +98,11 @@ public:
   // the `parsed` signal). No-op (no re-parse) when unchanged, so callers can invoke unconditionally.
   void setParseOptions(ParseOptions options);
   void applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
+  // 锁定编辑 / locked editing: reject every incremental user edit (typing, IME commit, paste,
+  // drag, format/paragraph/table commands, undo) while open/parse/save flows keep working.
+  // Set by MainWindow's edit.lock_editing command.
+  void setEditingReadOnly(bool readOnly);
+  bool editingReadOnly() const { return editingReadOnly_; }
   bool applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText, bool modified,
                       QVector<LocalEditNodeHint> nodeHints = {});
   bool applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified);
@@ -146,6 +151,7 @@ private:
   // isRunning() does not cover that interval, so it cannot safely gate editing or saving.
   bool asyncParsePending_ = false;
   bool openConfirmationPending_ = false;
+  bool editingReadOnly_ = false; // 锁定编辑: incremental edits rejected
   quint64 parseGeneration_ = 0; // bumped on every parseAndStore + local edit; supersedes in-flight workers
   QString pendingText_;         // text held for the GUI-thread finish step
   bool pendingModified_ = false;
