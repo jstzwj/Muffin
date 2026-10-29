@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vX.Y.Z tag to rebuild and publish
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -52,11 +58,15 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
       - name: Validate release tag
         shell: bash
+        env:
+          REQUESTED_RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="$REQUESTED_RELEASE_TAG"
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release tags must use vX.X.X format, got: $tag" >&2
             exit 1
@@ -311,7 +321,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & ./build/installer-options-test/IntegrationOptionsTest.exe "./build/Muffin-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.msi"
+          $msiPath = (Resolve-Path -LiteralPath "./build/Muffin-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.msi").Path
+          & ./build/installer-options-test/IntegrationOptionsTest.exe $msiPath
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Sign Windows in-app update
@@ -363,8 +374,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Muffin ${{ github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: Muffin ${{ inputs.tag || github.ref_name }}
           files: |
             release-artifacts/**/*.7z
             release-artifacts/**/*.tar.gz

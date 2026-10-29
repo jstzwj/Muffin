@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
@@ -116,8 +117,13 @@ internal static class IntegrationOptionsTest
 
     private static void TestPackage(string path)
     {
+        // Windows Installer requires a full native path, while CI callers may
+        // pass a relative path with forward slashes from PowerShell or bash.
+        path = Path.GetFullPath(path);
+        Require(File.Exists(path), "MSI package exists: " + path);
         MsiSetInternalUI(2, IntPtr.Zero); // INSTALLUILEVEL_NONE: test failures must never open MSI dialogs
-        Require(MsiOpenPackageEx(path, 1, out var package) == 0, "open MSI without installing");
+        var opened = MsiOpenPackageEx(path, 1, out var package);
+        Require(opened == 0, "open MSI without installing (Windows Installer error " + opened + "): " + path);
         try
         {
             var database = MsiGetActiveDatabase(package);
