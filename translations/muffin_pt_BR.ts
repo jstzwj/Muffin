@@ -5917,108 +5917,108 @@ Arquivos editados depois ou com alterações não salvas serão ignorados.</tran
         <location filename="../src/app/WindowsUpdater.cpp" line="102"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
         <source>Update Muffin</source>
-        <translation type="unfinished"></translation>
+        <translation>Atualizar Muffin</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="165"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>A atualização foi cancelada ou não pôde ser instalada (código %1). Sua sessão foi restaurada. Você pode tentar novamente em Ajuda &gt; Verificar atualizações.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="113"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="151"/>
         <source>Downloading Muffin %1… You can continue writing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Baixando Muffin %1… Você pode continuar escrevendo.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="155"/>
         <source>Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin %1 está pronto. Seus documentos serão verificados quanto a alterações não salvas antes de reiniciar. O Windows pode solicitar permissão de administrador.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="157"/>
         <source>Preparing to restart…</source>
-        <translation type="unfinished"></translation>
+        <translation>Preparando para reiniciar…</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="161"/>
         <source>Muffin %1 is available. Download the update now?</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin %1 está disponível. Baixar a atualização agora?</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
         <source>Restart and Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiniciar e atualizar</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
         <source>Download Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Baixar atualização</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
         <source>Cancel Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancelar download</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
         <source>Later</source>
-        <translation type="unfinished">Depois</translation>
+        <translation>Depois</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="184"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível salvar a atualização baixada ou seu tamanho excedeu o esperado.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="192"/>
         <source>The update manifest is too large.</source>
-        <translation type="unfinished"></translation>
+        <translation>O manifesto da atualização é grande demais.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="205"/>
         <source>Could not download the update: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível baixar a atualização: %1</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="220"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A assinatura da atualização é inválida ou o pacote não é compatível com esta versão do Windows. Nada foi instalado.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="231"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="236"/>
         <source>Could not create the update download folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível criar a pasta de download da atualização.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="245"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A atualização baixada está incompleta ou foi modificada. Nada foi instalado.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Feche as outras instâncias do Muffin antes de atualizar. Somente versões instaladas podem ser atualizadas pelo aplicativo.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="313"/>
         <source>Could not save the session before updating.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível salvar a sessão antes de atualizar.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não foi possível iniciar o instalador da atualização. Sua versão atual não foi alterada.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="358"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>O instalador não ficou pronto. O Muffin permanecerá aberto; tente novamente.</translation>
     </message>
 </context>
 <context>

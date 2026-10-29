@@ -5903,108 +5903,108 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <location filename="../src/app/WindowsUpdater.cpp" line="102"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
         <source>Update Muffin</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin'i güncelle</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="165"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme iptal edildi veya yüklenemedi (kod %1). Oturumunuz geri yüklendi. Yardım &gt; Güncellemeleri Denetle bölümünden yeniden deneyebilirsiniz.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="113"/>
         <source>Cancel</source>
-        <translation type="unfinished">İptal</translation>
+        <translation>İptal</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="151"/>
         <source>Downloading Muffin %1… You can continue writing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin %1 indiriliyor… Yazmaya devam edebilirsiniz.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="155"/>
         <source>Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin %1 hazır. Yeniden başlatmadan önce belgelerinizde kaydedilmemiş değişiklik olup olmadığı denetlenecek. Windows yönetici izni isteyebilir.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="157"/>
         <source>Preparing to restart…</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeniden başlatmaya hazırlanılıyor…</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="161"/>
         <source>Muffin %1 is available. Download the update now?</source>
-        <translation type="unfinished"></translation>
+        <translation>Muffin %1 kullanılabilir. Güncelleme şimdi indirilsin mi?</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
         <source>Restart and Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Yeniden başlat ve güncelle</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
         <source>Download Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellemeyi indir</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
         <source>Cancel Download</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirmeyi iptal et</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
         <source>Later</source>
-        <translation type="unfinished">Daha sonra</translation>
+        <translation>Daha sonra</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="184"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirilen güncelleme kaydedilemedi veya beklenen boyutu aştı.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="192"/>
         <source>The update manifest is too large.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme bildirimi çok büyük.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="205"/>
         <source>Could not download the update: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme indirilemedi: %1</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="220"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme imzası geçersiz veya paket bu Windows sürümüyle uyumlu değil. Hiçbir şey yüklenmedi.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="231"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="236"/>
         <source>Could not create the update download folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme indirme klasörü oluşturulamadı.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="245"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
-        <translation type="unfinished"></translation>
+        <translation>İndirilen güncelleme eksik veya değiştirilmiş. Hiçbir şey yüklenmedi.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellemeden önce çalışan diğer Muffin örneklerini kapatın. Yalnızca kurulu kopyalar uygulama içinden güncellenebilir.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="313"/>
         <source>Could not save the session before updating.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncellemeden önce oturum kaydedilemedi.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Güncelleme yükleyicisi başlatılamadı. Mevcut sürümünüz değişmedi.</translation>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="358"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yükleyici hazır duruma gelmedi. Muffin açık kalacak; lütfen yeniden deneyin.</translation>
     </message>
 </context>
 <context>
