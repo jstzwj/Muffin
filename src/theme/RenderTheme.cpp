@@ -496,6 +496,11 @@ QMarginsF RenderTheme::blockMargin(BlockType type, int headingLevel, const Markd
   case BlockType::List:
     key = node && node->listKind() == ListKind::Ordered ? QStringLiteral("ol") : QStringLiteral("ul");
     break;
+  case BlockType::HtmlBlock:
+    if (node)
+      if (const auto* container = markdownFlow(*node)->container(*node))
+        key = container->attributes.tag;
+    break;
   default:
     break;
   }
@@ -770,6 +775,12 @@ const CssElement* RenderTheme::cssElementForNode(const MarkdownNode& node) const
   if (!styleTree_)
     styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
   return styleTree_->build(node);
+}
+
+std::shared_ptr<const MarkdownFlow> RenderTheme::markdownFlow(const MarkdownNode& root) const {
+  if (!styleTree_)
+    styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
+  return styleTree_->flowFor(root);
 }
 
 const ThemeElementStyle* RenderTheme::elementStyleForNode(const MarkdownNode& node, const QString& key) const {

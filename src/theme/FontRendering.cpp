@@ -359,6 +359,11 @@ QString documentFallbackTail() {
   append(sansFamily());
   append(serifFamily());
   append(codeFamily());
+  // Explicit symbol faces also work with Qt's offscreen font database, whose
+  // automatic fallback can miss emoji/status glyphs in otherwise valid text.
+  for (const auto* name :
+       {"Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji", "Noto Sans Symbols 2"})
+    append(availableFamilyNamed(QLatin1String(name), availableDocumentFamilies()));
   return families.join(QLatin1Char('\n'));
 }
 

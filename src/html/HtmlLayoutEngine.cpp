@@ -89,7 +89,7 @@ ThemeElementStyle formattingStyle(const HtmlBox& box, qreal containingWidth) {
 }
 
 QSizeF naturalImageSize(const HtmlBox& box) {
-  const auto natural = ImageLoader::instance().image(box.src()).size();
+  const auto natural = ImageLoader::instance().image(box.src()).deviceIndependentSize();
   return QSizeF(natural.width() > 0 ? natural.width() : kDefaultImageWidth,
                 natural.height() > 0 ? natural.height() : kDefaultImageHeight) *
          box.style().cssScale * box.style().zoom;
@@ -324,7 +324,7 @@ YGNode* HtmlLayoutEngine::createYogaNode(HtmlBox& box, qreal fontSize, qreal ava
     box.geometry().height = textHeight;
 
     YGNodeSetMeasureFunc(node, measureTextCallback);
-  } else if ((hasInlineContent || box.isTextRun()) && !hasBlockChildren && !hasReplacedInlineContent) {
+  } else if ((hasInlineContent || box.isTextRun()) && !hasBlockChildren) {
     // This is an inline formatting context — measure text as one unit
     auto textLayout = measurer_.buildInlineLayout(
         box, style.fontSize, qMax<qreal>(1.0, availableWidth - style.padding.left() - style.padding.right()),
@@ -683,18 +683,21 @@ void HtmlLayoutEngine::layoutTableBox(HtmlBox& table, qreal availableWidth,
   // Build a grid accounting for colspan and rowspan
   struct CellEntry {
     HtmlBox* box = nullptr;
+    int column = 0;
     int colSpan = 1;
     int rowSpan = 1;
   };
 
   int gridCols = 0;
   QVector<QVector<CellEntry>> grid;
+  QVector<int> occupied;
   grid.reserve(rows.size());
   for (HtmlBox* row : rows) {
     QVector<HtmlBox*> cells;
     collectRowCells(*row, cells);
-    // Determine effective column count accounting for spans
-    int rowCols = 0;
+    for (auto& remaining : occupied)
+      remaining = qMax(0, remaining - 1);
+    int column = 0;
     QVector<CellEntry> entries;
     entries.reserve(cells.size());
     for (HtmlBox* cell : cells) {
@@ -702,10 +705,26 @@ void HtmlLayoutEngine::layoutTableBox(HtmlBox& table, qreal availableWidth,
       entry.box = cell;
       entry.colSpan = qMax(1, cell->colSpan());
       entry.rowSpan = qMax(1, cell->rowSpan());
-      rowCols += entry.colSpan;
+      // Resolve occupancy once. Intrinsic sizing and final placement must use
+      // this same grid, including columns occupied by preceding rowspans.
+      while (true) {
+        int collision = -1;
+        for (int c = column; c < column + entry.colSpan && c < occupied.size(); ++c)
+          if (occupied[c] > 0)
+            collision = c;
+        if (collision < 0)
+          break;
+        column = collision + 1;
+      }
+      entry.column = column;
+      if (occupied.size() < column + entry.colSpan)
+        occupied.resize(column + entry.colSpan);
+      for (int c = column; c < column + entry.colSpan; ++c)
+        occupied[c] = entry.rowSpan;
+      column += entry.colSpan;
       entries.push_back(entry);
     }
-    gridCols = qMax(gridCols, rowCols);
+    gridCols = qMax(gridCols, column);
     grid.push_back(std::move(entries));
   }
 
@@ -716,18 +735,24 @@ void HtmlLayoutEngine::layoutTableBox(HtmlBox& table, qreal availableWidth,
   // Compute per-column widths from non-spanning cells
   QVector<qreal> columnWidths(qMax(0, gridCols), 0.0);
   for (int rowIdx = 0; rowIdx < grid.size(); ++rowIdx) {
-    int col = 0;
-    // Skip columns occupied by previous rowspans
-    // (simplified: we only account for colspan for width calculation)
     for (const auto& entry : grid[rowIdx]) {
       if (entry.colSpan == 1) {
-        if (col < columnWidths.size()) {
-          columnWidths[col] = qMax(columnWidths[col], intrinsicOuterWidth(*entry.box, availableInnerWidth));
-        }
+        columnWidths[entry.column] =
+            qMax(columnWidths[entry.column], intrinsicOuterWidth(*entry.box, availableInnerWidth));
       }
-      col += entry.colSpan;
     }
   }
+  for (const auto& entries : grid)
+    for (const auto& entry : entries) {
+      if (entry.colSpan <= 1)
+        continue;
+      const auto first = columnWidths.begin() + entry.column;
+      const auto last = first + entry.colSpan;
+      const qreal missing = intrinsicOuterWidth(*entry.box, availableInnerWidth) - std::accumulate(first, last, 0.0);
+      if (missing > 0)
+        for (auto column = first; column != last; ++column)
+          *column += missing / entry.colSpan;
+    }
 
   qreal naturalTableContentWidth = std::accumulate(columnWidths.begin(), columnWidths.end(), 0.0);
   qreal tableContentWidth = table.style().width >= 0 ? table.style().width : naturalTableContentWidth;
@@ -771,17 +796,8 @@ void HtmlLayoutEngine::layoutTableBox(HtmlBox& table, qreal availableWidth,
     qreal rowHeight = 0;
 
     // First pass: compute cell heights, place cells accounting for spans
-    int col = 0;
     for (auto& entry : grid[rowIdx]) {
-      // Skip columns occupied by rowspans from above
-      while (col < gridCols && rowSpanGrid[rowIdx].contains(col)) {
-        auto& slot = rowSpanGrid[rowIdx][col];
-        rowHeight = qMax(rowHeight, slot.height);
-        col += 1; // rowspan occupies 1 column-width per slot (simplified)
-      }
-
-      if (col >= gridCols)
-        break;
+      const int col = entry.column;
 
       // Compute width for this cell (sum of spanned columns)
       qreal cellWidth = 0;
@@ -804,8 +820,6 @@ void HtmlLayoutEngine::layoutTableBox(HtmlBox& table, qreal availableWidth,
           }
         }
       }
-
-      col += entry.colSpan;
     }
 
     // Account for any remaining rowspan slots in this row
@@ -911,7 +925,7 @@ qreal HtmlLayoutEngine::layoutFixedWidthBox(HtmlBox& box, qreal width,
     const int textLayoutIndex = static_cast<int>(textLayouts.size());
     textLayouts.push_back(std::move(textLayout));
     box.setTextLayoutIndex(textLayoutIndex);
-  } else if (hasInlineContent && !hasBlockChildren && !hasReplacedInlineContent) {
+  } else if (hasInlineContent && !hasBlockChildren) {
     auto textLayout = measurer_.buildInlineLayout(box, style.fontSize, contentWidth, style.textAlign);
     contentHeight = textLayout->height;
     const int textLayoutIndex = static_cast<int>(textLayouts.size());

@@ -299,6 +299,7 @@ private:
                        const QVector<QTextLayout::FormatRange>& formats = {}) const;
   void paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) const;
   void paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const;
+  QRectF imageAtomRect(const ImageAtom& atom) const;
   void paintGeneratedPseudoAtoms(QPainter& painter, QPointF origin, CssPaintContext* context, const QString& identity,
                                  qreal hoverPhase, qreal focusPhase, qsizetype focusSourceOffset) const;
   int generatedPseudoState(const GeneratedPseudoAtom& atom, QPainter& painter, QPointF origin,

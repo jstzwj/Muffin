@@ -20,6 +20,7 @@ struct MemoryAccounting;
 }
 
 class MarkdownNode;
+class MarkdownFlow;
 class MarkdownDocument;
 class CssComputedStyleEngine;
 class CssComputedStyle;
@@ -37,6 +38,7 @@ class RenderTheme {
 
 public:
   RenderTheme();
+  std::shared_ptr<const MarkdownFlow> markdownFlow(const MarkdownNode& root) const;
   static RenderTheme defaultTheme(int zoomPercent = 100);
   static RenderTheme github(int zoomPercent = 100);
   static RenderTheme newsprint(int zoomPercent = 100);

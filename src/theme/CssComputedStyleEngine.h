@@ -52,6 +52,7 @@ struct CssElement {
   // elements uncached; a pointer alone is not a lifetime identity.
   quint64 cacheId = 0;
   std::vector<CssDeclaration> inlineDeclarations;
+  std::vector<CssDeclaration> presentationDeclarations;
   QString tag;
   QString id;
   QStringList classes;

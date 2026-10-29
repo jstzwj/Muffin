@@ -61,7 +61,8 @@ HitTestResult BlockLayout::hitForCursorPosition(CursorPosition position, const R
     } else {
       const qsizetype offset = qBound<qsizetype>(0, position.text.textOffset, literal().size());
       const qreal x = offset <= literal().size() / 2 ? rect().left() : rect().right();
-      hit.cursorRect = QRectF(x, rect().top(), 1.0, rect().height());
+      hit.cursorRect = QRectF(x, rect().top(), 1.0,
+                              htmlContainer_ ? TextFontMetrics(cssBoxGeometry_.font).height() : rect().height());
     }
     break;
   case BlockType::Table:
@@ -138,6 +139,8 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
     if (literalEditing_) {
       return literalSelectionRects(selection.startOffset(), selection.endOffset(), theme);
     }
+    if (htmlContainer_)
+      return rects; // Hidden boundary source does not select its rendered descendants.
     rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
     return rects;
   case BlockType::MathBlock:
@@ -275,6 +278,8 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     if (literalEditing_) {
       return literalSelectionRects(startOffset, endOffset, theme);
     }
+    if (htmlContainer_)
+      return rects;
     if (startOffset != endOffset) {
       rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
     }
@@ -449,8 +454,8 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
           result.imageSrc = htmlHit.imageSrc;
         }
         result.textOffset = documentPos.x() < rect_.center().x() ? 0 : literal_.size();
-        result.cursorRect =
-            QRectF(result.textOffset == 0 ? rect_.left() : rect_.right(), rect_.top(), 1.0, rect_.height());
+        result.cursorRect = QRectF(result.textOffset == 0 ? rect_.left() : rect_.right(), rect_.top(), 1.0,
+                                   htmlContainer_ ? TextFontMetrics(cssBoxGeometry_.font).height() : rect_.height());
       }
     }
     break;

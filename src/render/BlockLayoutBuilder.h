@@ -135,7 +135,7 @@ private:
   std::unique_ptr<BlockLayout> buildListItem(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                              qreal width, int depth);
   std::unique_ptr<BlockLayout> buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
-                                                 qreal width, int depth);
+                                                 qreal width, int depth, bool forceHtmlSource = false);
   std::unique_ptr<BlockLayout> buildTable(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                           qreal width, int depth);
   std::unique_ptr<BlockLayout> buildThematicBreak(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,

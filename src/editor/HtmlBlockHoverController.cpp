@@ -18,7 +18,14 @@ QRectF HtmlBlockHoverController::overlayViewportRect(const Inputs& inputs) const
   if (!block || block->type() != BlockType::HtmlBlock) {
     return {};
   }
-  return block->rect().translated(0, -inputs.scrollY);
+  auto rect = block->rect().translated(0, -inputs.scrollY);
+  if (block->htmlContainer() && !block->literalEditing()) {
+    if (rect.height() == 0)
+      rect.setTop(rect.bottom() - 20);
+    else
+      rect.setHeight(20);
+  }
+  return rect;
 }
 
 QRectF HtmlBlockHoverController::buttonViewportRect(const Inputs& inputs) const {

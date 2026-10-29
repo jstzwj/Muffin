@@ -494,8 +494,9 @@ bool BlockLayout::selectionLayoutMatches(const SelectionRange& selection, const 
   // omitted empty paragraphs. Reuse within a block is governed by its actual
   // projection decisions, rather than the caret's exact character offset.
   if (layoutSelection_.focus.blockId != selection.focus.blockId ||
-      layoutSelection_.focus.text.nodeId != selection.focus.text.nodeId || isLiteralBlockType(type_) ||
-      type_ == BlockType::LinkDefinition || type_ == BlockType::FootnoteDefinition)
+      layoutSelection_.focus.text.nodeId != selection.focus.text.nodeId ||
+      (isLiteralBlockType(type_) && !(htmlContainer_ && !literalEditing_)) || type_ == BlockType::LinkDefinition ||
+      type_ == BlockType::FootnoteDefinition)
     return false;
   // A quote's virtual empty paragraphs also depend on the selection anchor.
   // Containers may omit those children entirely, so compare that dependency
@@ -1260,6 +1261,8 @@ HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme
     return {};
   for (size_t i = children_.size(); i > 0; --i) {
     const BlockLayout& child = *children_[formattingPaintOrder_.empty() ? i - 1 : formattingPaintOrder_[i - 1]];
+    if (child.htmlContainer_ && child.height() == 0)
+      continue;
     const auto target = cssBoxGeometry_.style.layout.establishesFormattingContext()
                             ? child.rect()
                             : child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(), theme.blockSpacing(),
@@ -1685,6 +1688,10 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(QPointF doc
 
 void BlockLayout::paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect,
                                  BlockPaintState state) const {
+  if (htmlContainer_ && !literalEditing_) {
+    paintLayoutBox(painter, cssBoxGeometry_, viewRect.topLeft() - rect_.topLeft(), state.hostStyle);
+    return;
+  }
   if (literalEditing_) {
     painter.save();
     paintLayoutBox(painter, cssBoxGeometry_, viewRect.topLeft() - rect_.topLeft(), state.hostStyle);

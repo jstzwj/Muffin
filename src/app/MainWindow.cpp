@@ -273,6 +273,7 @@ void muffin::MainWindow::setupUi() {
   tabs_->setUsesScrollButtons(true);
   tabs_->tabBar()->installEventFilter(this);
   tab_ = new DocumentTab(tabs_);
+  tab_->renderView->setThemeViewport(this);
   tabs_->addTab(tab_, tab_->session.displayName());
   setupTabButton(tab_);
   auto* newTabButton = new QToolButton(tabs_);

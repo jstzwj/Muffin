@@ -1,4 +1,5 @@
 #include "render/BlockHeightEstimator.h"
+#include "theme/MarkdownFlow.h"
 #include "diagnostics/ScopedPerfProbe.h"
 
 #include "render/BlockLayout.h"
@@ -159,6 +160,11 @@ qreal BlockHeightEstimator::cachedAvgCharWidthForElement(const RenderTheme& them
 
 BlockHeightEstimator::EstimateResult
 BlockHeightEstimator::estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
+  const auto flow = theme.markdownFlow(node);
+  if (flow->container(node))
+    return estimateContainer(node, theme, width, depth);
+  if (flow->closingBoundary(node))
+    return {0, false};
   switch (node.type()) {
   case BlockType::Paragraph:
   case BlockType::Heading:
@@ -234,13 +240,14 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(con
   if (depth > 64) {
     return {estimateLineHeight(theme.paragraphFont()), true};
   }
-  if (node.children().empty()) {
+  const auto* container = theme.markdownFlow(node)->container(node);
+  if (node.children().empty() && !container) {
     return {TextFontMetrics(theme.paragraphFont()).height(), false};
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
-  const bool quoteBox = isQuote;
-  const ThemeElementBoxStyle qbox =
-      quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote"), &node, width) : ThemeElementBoxStyle{};
+  const bool quoteBox = isQuote || container;
+  const QString key = container ? container->attributes.tag : QStringLiteral("blockquote");
+  const ThemeElementBoxStyle qbox = quoteBox ? theme.elementBoxStyle(key, &node, width) : ThemeElementBoxStyle{};
   const QMarginsF qpad = quoteBox ? qbox.padding : QMarginsF();
   const QMarginsF qborder =
       quoteBox ? QMarginsF(qbox.borderLeftWidth, qbox.borderTopWidth, qbox.borderRightWidth, qbox.borderBottomWidth)
@@ -254,7 +261,7 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(con
   bool mustMeasure = false;
   const MarkdownNode* previousChild = nullptr;
   bool omittedOnlyRenderChildren = !node.children().empty();
-  for (const auto& child : node.children()) {
+  for (const auto* child : theme.markdownFlow(node)->children(node)) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) {
       continue;
     }
@@ -267,7 +274,7 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(con
     const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
     total += r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
-    previousChild = child.get();
+    previousChild = child;
   }
   if (previousChild && !lastChildMarginCollapses) {
     total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true, childWidth);

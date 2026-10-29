@@ -135,6 +135,9 @@ private:
       if (run.style.paint.color.isValid())
         format.setForeground(run.style.paint.color);
     }
+    if (span.subscript || span.superscript)
+      applyScriptBaseline(
+          format, span.superscript ? QTextCharFormat::AlignSuperScript : QTextCharFormat::AlignSubScript, input_.font);
     return format;
   }
 
@@ -224,7 +227,7 @@ private:
         format.setFontPointSize(hs.fontSize);
       }
       if (hs.verticalAlignment != QTextCharFormat::AlignNormal) {
-        format.setVerticalAlignment(hs.verticalAlignment);
+        applyScriptBaseline(format, hs.verticalAlignment, input_.font);
       }
       if (hasDecoration(hs.decoration, html::HtmlTextDecoration::Underline)) {
         format.setFontUnderline(true);

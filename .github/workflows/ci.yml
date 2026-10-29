@@ -188,6 +188,14 @@ jobs:
           path: build/**/resource-pixels-*.png
           if-no-files-found: ignore
 
+      - name: Upload document visual acceptance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: document-visuals-${{ matrix.name }}
+          path: build/visual-acceptance/
+          if-no-files-found: ignore
+
   # Blocking Linux build with AddressSanitizer. Memory errors are release
   # failures, even when they are nondeterministic in an unsanitized build.
   #

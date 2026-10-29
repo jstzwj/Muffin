@@ -20,6 +20,7 @@
 #include "render/ImageLoader.h"
 #include "render/LayoutResources.h"
 #include "render/KeyframeSampler.h"
+#include "theme/MarkdownFlow.h"
 
 #include <QAction>
 #include <QApplication>
@@ -653,7 +654,8 @@ void EditorView::resizeEvent(QResizeEvent* event) {
   bool stylesChanged;
   {
     PerfTimer step("view.resize.theme");
-    stylesChanged = theme_.updateForViewport(viewport()->width(), viewport()->height());
+    const auto cssViewport = themeViewportSize();
+    stylesChanged = theme_.updateForViewport(cssViewport.width(), cssViewport.height());
     if (stylesChanged)
       syncViewportBackground();
   }
@@ -1233,7 +1235,8 @@ void EditorView::rebuildLayout(bool preserveViewport) {
   // notification raised during the rebuild marks the new layout dirty again.
   resourcesDirty_ = false;
   blockBuiltAt_.clear();
-  theme_.updateForViewport(viewport()->width(), viewport()->height());
+  const auto cssViewport = themeViewportSize();
+  theme_.updateForViewport(cssViewport.width(), cssViewport.height());
   syncViewportBackground();
   PerfTimer perf("view.rebuildLayout");
   if (!layout_) {
@@ -1443,7 +1446,25 @@ QRectF EditorView::htmlHoverButtonViewportRect() const {
 
 void EditorView::updateHtmlHover(QPointF viewportPos) {
   const HitTestResult hit = hitTest(viewportPos);
-  const NodeId next = hit.isValid() && hit.zone == HitTestResult::Zone::Html ? hit.blockId : NodeId();
+  NodeId next = hit.isValid() && hit.zone == HitTestResult::Zone::Html ? hit.blockId : NodeId();
+  if (document_ && layout_ && hit.isValid()) {
+    const auto flow = theme_.markdownFlow(document_->root());
+    const auto point = QPointF(viewportPos.x(), viewportPos.y() + scrollY());
+    for (const auto* node = document_->node(hit.blockId); node; node = flow->parent(*node)) {
+      const auto* container = flow->container(*node);
+      const auto* block = container ? layout_->blockIfPromoted(node->id()) : nullptr;
+      if (!block || point.x() < block->rect().right() - 76 || point.x() > block->rect().right())
+        continue;
+      if (point.y() >= block->rect().top() && point.y() <= block->rect().top() + 20) {
+        next = node->id();
+        break;
+      }
+      if (point.y() >= block->rect().bottom() - 20 && point.y() <= block->rect().bottom()) {
+        next = container->closing->id();
+        break;
+      }
+    }
+  }
   const HtmlBlockHoverController::Dirty dirty = htmlHover_.setHoveredBlock(next, htmlHoverInputs());
   if (!dirty.oldRect.isEmpty()) {
     diag::updateViewport(viewport(), dirty.oldRect);

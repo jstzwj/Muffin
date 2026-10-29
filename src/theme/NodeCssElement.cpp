@@ -152,6 +152,8 @@ QByteArray cssSemanticSignature(const MarkdownNode& root) {
     number(node.taskChecked());
     number(quint64(node.alertKind()));
     string(node.codeLanguage());
+    if (node.type() == BlockType::HtmlBlock)
+      string(node.literal());
     number(node.tableRowIsHeader());
     // Alert title text produces semantic classes rather than ordinary glyphs.
     const bool alertTitle = hasSyntheticAlertTitle(node) && !node.parent()->children().empty() &&
@@ -175,6 +177,7 @@ CssElement* NodeCssElementBuilder::makeOwned() const {
 }
 
 const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) const {
+  const auto flow = flowFor(node);
   const auto found = cache_.constFind(&node);
   if (found != cache_.constEnd()) {
     return found.value();
@@ -183,6 +186,14 @@ const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) const 
   CssElement* element = makeOwned();
   element->tag = cssTagForNode(node);
   element->navigator = this;
+  if (const auto* container = flow->container(node)) {
+    element->tag = container->attributes.tag;
+    element->id = container->attributes.id;
+    element->classes = container->attributes.classes;
+    element->attributes = container->attributes.attributes;
+    element->inlineDeclarations = container->attributes.inlineDeclarations;
+    element->presentationDeclarations = container->attributes.presentationDeclarations;
+  }
   addDocumentHostClasses(*element);
   if (node.type() == BlockType::Document) {
     element->id = QStringLiteral("write");
@@ -244,8 +255,8 @@ const CssElement* NodeCssElementBuilder::ensure(const MarkdownNode& node) const 
     bindings_.insert(&node, std::move(binding));
   }
   nodes_.insert(element, &node);
-  element->parent =
-      node.parent() ? ensure(*node.parent()) : (node.type() == BlockType::Document ? &host_.content : &host_.write);
+  const auto* parent = flow->parent(node);
+  element->parent = parent ? ensure(*parent) : (node.type() == BlockType::Document ? &host_.content : &host_.write);
   if (node.type() == BlockType::Table) {
     auto* wrapper = makeOwned();
     wrapper->tag = QStringLiteral("figure");
@@ -275,6 +286,16 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node) {
   return ensure(node);
 }
 
+std::shared_ptr<const MarkdownFlow> NodeCssElementBuilder::flowFor(const MarkdownNode& node) const {
+  if (!flow_) {
+    const auto* root = &node;
+    while (root->parent())
+      root = root->parent();
+    flow_ = std::make_shared<MarkdownFlow>(*root);
+  }
+  return flow_;
+}
+
 const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node, const QString& key) {
   const auto* parent = ensure(node);
   const auto pseudoSeparator = key.indexOf(QStringLiteral("::"));
@@ -285,7 +306,7 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node, const Q
   const QString tag = key.section(QLatin1Char(' '), -1).section(QLatin1Char(':'), 0, 0);
   if (node.type() == BlockType::Table && (key == ".table-figure" || tag == "figure"))
     return parent->parent;
-  if (tag == parent->tag || tag.startsWith(QLatin1Char('#')))
+  if (tag.isEmpty() || tag == parent->tag || tag.startsWith(QLatin1Char('#')))
     return parent;
   auto& children = synthetic_[&node];
   if (!children.contains(tag)) {
@@ -382,6 +403,7 @@ const CssElement* NodeCssElementBuilder::buildInline(const MarkdownNode& owner, 
                 child->id = box.cssId;
                 child->classes = box.cssClasses;
                 child->attributes = box.cssAttributes;
+                addHtmlPresentationHints(*child);
                 if (!box.href().isEmpty())
                   child->attributes.insert(QStringLiteral("href"), box.href());
                 child->inlineDeclarations = CssThemeParser::parseDeclarations(box.cssInlineStyle);
@@ -600,7 +622,7 @@ QVector<const CssElement*> NodeCssElementBuilder::semanticChildren(const CssElem
     if (&element == owner) {
       QVector<const CssElement*> result;
       QSet<const CssElement*> seen;
-      for (const auto& child : node->children()) {
+      for (const auto* child : flowFor(*node)->children(*node)) {
         const auto* view = ensure(*child);
         while (view->parent && view->parent != owner)
           view = view->parent;
@@ -701,6 +723,10 @@ QVector<quint64> NodeCssElementBuilder::releaseInlineViews(const QSet<NodeId>& t
 }
 
 bool NodeCssElementBuilder::rebindBlocks(const QHash<NodeId, const MarkdownNode*>& replacements) {
+  // A boundary can change siblings outside the edited block. Rebuild the
+  // borrowed topology before exposing replacement AST pointers.
+  if (flow_ && !flow_->empty())
+    return false;
   QHash<const MarkdownNode*, const MarkdownNode*> changed;
   for (auto it = bindings_.cbegin(); it != bindings_.cend(); ++it) {
     const auto replacement = replacements.constFind(it->topLevel);
@@ -782,10 +808,11 @@ const CssElement* NodeCssElementBuilder::previousSibling(const CssElement& eleme
   if (node && node->type() == BlockType::TableRow && node->previousSibling() &&
       node->previousSibling()->tableRowIsHeader() != node->tableRowIsHeader())
     return nullptr;
-  if (!node || !node->previousSibling())
+  const auto* previous = node ? flowFor(*node)->previous(*node) : nullptr;
+  if (!previous)
     return nullptr;
-  const auto* sibling = ensure(*node->previousSibling());
-  return node->previousSibling()->type() == BlockType::Table ? sibling->parent : sibling;
+  const auto* sibling = ensure(*previous);
+  return previous->type() == BlockType::Table ? sibling->parent : sibling;
 }
 
 const CssElement* NodeCssElementBuilder::nextSibling(const CssElement& element) const {
@@ -795,14 +822,19 @@ const CssElement* NodeCssElementBuilder::nextSibling(const CssElement& element) 
   if (node && node->type() == BlockType::TableRow && node->nextSibling() &&
       node->nextSibling()->tableRowIsHeader() != node->tableRowIsHeader())
     return nullptr;
-  if (!node || !node->nextSibling())
+  const auto* next = node ? flowFor(*node)->next(*node) : nullptr;
+  if (!next)
     return nullptr;
-  const auto* sibling = ensure(*node->nextSibling());
-  return node->nextSibling()->type() == BlockType::Table ? sibling->parent : sibling;
+  const auto* sibling = ensure(*next);
+  return next->type() == BlockType::Table ? sibling->parent : sibling;
 }
 
 int NodeCssElementBuilder::childIndex(const CssElement& element) const {
   const MarkdownNode* node = nodeFor(element);
+  if (node && flow_ && !flow_->empty() && node->type() != BlockType::TableRow &&
+      !(node->type() == BlockType::Table && element.tag == "table")) {
+    return flow_->childIndex(*node);
+  }
   if (node && node->type() == BlockType::Table && element.tag == "table")
     return 0;
   if (node && node->type() == BlockType::TableRow && !node->tableRowIsHeader())
@@ -815,6 +847,11 @@ int NodeCssElementBuilder::typeIndex(const CssElement& element) const {
     return -1;
   }
   const MarkdownNode* node = nodeFor(element);
+  if (node && flow_ && !flow_->empty() && node->type() != BlockType::TableRow &&
+      !(node->type() == BlockType::Table && element.tag == "table")) {
+    if (const auto index = flow_->typeIndex(*node); index >= 0)
+      return index;
+  }
   if (node && node->type() == BlockType::Table && element.tag == "table")
     return 0;
   if (node && node->type() == BlockType::TableRow)
@@ -836,6 +873,12 @@ bool NodeCssElementBuilder::hasTag(const CssElement& element, const QString& tag
 }
 
 bool NodeCssElementBuilder::hasTagUncached(const CssElement& element, const QString& tag, bool directChild) const {
+  if (flow_ && !flow_->empty()) {
+    for (const auto* child : semanticChildren(element))
+      if (child->tag == tag || (!directChild && hasTag(*child, tag, false)))
+        return true;
+    return false;
+  }
   const MarkdownNode* node = nodeFor(element);
   if (!node) {
     return false;
@@ -909,6 +952,12 @@ bool NodeCssElementBuilder::hasClass(const CssElement& element, const QString& c
 
 bool NodeCssElementBuilder::hasClassUncached(const CssElement& element, const QString& className,
                                              bool directChild) const {
+  if (flow_ && !flow_->empty()) {
+    for (const auto* child : semanticChildren(element))
+      if (child->classes.contains(className) || (!directChild && hasClass(*child, className, false)))
+        return true;
+    return false;
+  }
   const MarkdownNode* node = nodeFor(element);
   if (!node)
     return false;

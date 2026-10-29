@@ -452,7 +452,7 @@ void testHtmlInlineStyleAndTagSemanticsContract() {
       const qreal pointSize = range.format.fontPointSize();
       if (spanText == QStringLiteral("2") && pointSize > 0 && pointSize < 16.0) {
         sawSubSize = true;
-        if (range.format.verticalAlignment() == QTextCharFormat::AlignSubScript) {
+        if (range.format.baselineOffset() < 0) {
           sawSubBaseline = true;
         }
       } else if (spanText == QStringLiteral("small") && pointSize > 0 && pointSize < 16.0) {

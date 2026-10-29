@@ -2390,10 +2390,10 @@ CssComputedStyle CssComputedStyleEngine::parentStyleFor(const CssElement* parent
   return initial;
 }
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element) const {
-  return styleFor(element, {}, element.inlineDeclarations);
+  return styleFor(element, {}, element.inlineDeclarations, element.presentationDeclarations);
 }
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state) const {
-  return styleFor(element, state, element.inlineDeclarations, {});
+  return styleFor(element, state, element.inlineDeclarations, element.presentationDeclarations);
 }
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state,
                                                   const std::vector<CssDeclaration>& inlineDeclarations) const {

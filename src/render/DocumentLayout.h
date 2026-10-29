@@ -201,6 +201,7 @@ private:
   qsizetype slotIndexAtY(qreal y) const; // first slot whose top+height > y
 
   const MarkdownDocument* document_ = nullptr;
+  std::shared_ptr<const MarkdownFlow> flow_;
   QString documentPath_;
   NodeId editingHtmlBlockId_;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;

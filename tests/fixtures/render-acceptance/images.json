@@ -1,0 +1,8 @@
+{
+  "https://img.shields.io/badge/C%2B%2B-20-00599C?logo=c%2B%2B&logoColor=white": "badge-0.png",
+  "https://img.shields.io/badge/Qt-6-41CD52?logo=qt&logoColor=white": "badge-1.png",
+  "https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-2ea44f": "badge-2.png",
+  "https://img.shields.io/badge/UI_languages-15-blueviolet": "badge-3.png",
+  "https://img.shields.io/badge/releases-GitHub-181717?logo=github": "badge-4.png",
+  "https://img.shields.io/badge/license-MIT-blue.svg": "badge-5.png"
+}

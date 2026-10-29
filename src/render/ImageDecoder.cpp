@@ -1,9 +1,9 @@
 #include "render/ImageDecoder.h"
+#include "render/SvgDocument.h"
 
 #include <QFile>
 #include <QGuiApplication>
 #include <QImageReader>
-#include <QPainter>
 #include <QStringView>
 #include <QSvgRenderer>
 
@@ -130,38 +130,8 @@ QImage decodeAvif(const QByteArray& data) {
 }
 
 QImage decodeSvg(const QByteArray& data) {
-  QSvgRenderer renderer(data);
-  if (!renderer.isValid()) {
-    return QImage();
-  }
-
-  QSize svgSize = renderer.defaultSize();
-  if (svgSize.isEmpty()) {
-    svgSize = QSize(150, 150);
-  }
-
-  // Cap to prevent unreasonably large rasterization
-  static constexpr int kMaxSvgDimension = 2048;
-  if (svgSize.width() > kMaxSvgDimension || svgSize.height() > kMaxSvgDimension) {
-    svgSize.scale(kMaxSvgDimension, kMaxSvgDimension, Qt::KeepAspectRatio);
-  }
-
-  // Apply device pixel ratio for crisp rendering on HiDPI displays
   const qreal dpr = qGuiApp ? qGuiApp->devicePixelRatio() : qreal(1.0);
-  const int pixelW = static_cast<int>(std::ceil(svgSize.width() * dpr));
-  const int pixelH = static_cast<int>(std::ceil(svgSize.height() * dpr));
-
-  QImage image(pixelW, pixelH, QImage::Format_ARGB32_Premultiplied);
-  image.fill(Qt::transparent);
-  image.setDevicePixelRatio(dpr);
-
-  QPainter painter(&image);
-  painter.setRenderHint(QPainter::Antialiasing);
-  // Explicit logical target rect — see the note in StatusBarWidget::makeStatusIcon. Without it
-  // the SVG rasterizes at dpr× scale on HiDPI and only its corner fits the image.
-  renderer.render(&painter, QRectF(0, 0, svgSize.width(), svgSize.height()));
-
-  return image;
+  return svg::rasterize(data, {}, dpr);
 }
 
 bool isPng(const QByteArray& data) {

@@ -138,6 +138,7 @@ void muffin::MainWindow::configureTab(DocumentTab* document) {
 
 muffin::DocumentTab* muffin::MainWindow::createDocumentTab() {
   auto* document = new DocumentTab(tabs_);
+  document->renderView->setThemeViewport(this);
   document->session.setParseOptions(markdownParseOptions());
   document->editorController.inputController().setEmojiProvider(&emojiProvider_);
   configureTab(document);

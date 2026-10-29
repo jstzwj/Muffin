@@ -3,6 +3,7 @@
 #include "document/NodeId.h"
 #include "theme/CssComputedStyleEngine.h"
 #include "theme/DocumentStyleTree.h"
+#include "theme/MarkdownFlow.h"
 
 #include <QHash>
 
@@ -56,6 +57,7 @@ public:
   // Old AST addresses are keys only: replaced nodes are never dereferenced.
   bool rebindBlocks(const QHash<NodeId, const MarkdownNode*>& replacements);
   bool hasInlineViewportUnits() const { return inlineViewportUnits_; }
+  std::shared_ptr<const MarkdownFlow> flowFor(const MarkdownNode& node) const;
 
   const CssElement* previousSibling(const CssElement& element) const override;
   const CssElement* nextSibling(const CssElement& element) const override;
@@ -94,6 +96,7 @@ private:
   mutable QHash<const CssElement*, QHash<QString, bool>> descendantQueries_;
   mutable bool inlineViewportUnits_ = false;
   bool maintainTypeIndex_ = true;
+  mutable std::shared_ptr<const MarkdownFlow> flow_;
   DocumentStyleHost host_;
 };
 

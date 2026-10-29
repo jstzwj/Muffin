@@ -51,7 +51,7 @@ Q_LOGGING_CATEGORY(inlinePaintPerf, "muffin.perf.paint", QtWarningMsg)
 // indivisible for wrapping, painting and hit testing; the normal space before
 // the atom remains the browser-compatible break opportunity.
 constexpr QChar kInlineMathPlaceholder(0x00a0);
-constexpr QChar kImagePlaceholder(0x2009); // thin space, distinct from math placeholder
+constexpr QChar kImagePlaceholder = kInlineObjectPlaceholder;
 // Reserve atomic boxes with an ink-free glyph, including font fallback paths.
 constexpr QChar kGeneratedPseudoPlaceholder(0x00a0);
 constexpr QChar kTabIndentSourceChar(0x200b);
@@ -796,9 +796,8 @@ QString InlineLayout::imageSrcAtLocalPos(QPointF localPos) const {
       return atom.layout->hitTest(localPos - atom.rect.topLeft() + atom.crop.topLeft()).imageSrc;
   if (!textLayout_)
     return {};
-  const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
   for (const ImageAtom& atom : imageAtoms_) {
-    if (position >= atom.displayStart && position <= atom.displayEnd) {
+    if (imageAtomRect(atom).contains(localPos)) {
       return atom.srcUrl;
     }
   }
@@ -1936,7 +1935,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       // width. Freeze it so image sizing uses the same values as its snapshot.
       item.style.box.paddingLengths = {};
       item.style.box.marginLengths = {};
-      item.naturalSize = QSizeF(image.size()) * zoom * theme.zoomPercent() / 100.0;
+      item.naturalSize = image.deviceIndependentSize() * zoom * theme.zoomPercent() / 100.0;
       const auto size = cssReplacedSize(item, width);
       return std::make_shared<const LayoutBox>(LayoutBox::place("img", item.style, item.style.box, QRectF({}, size)));
     }();
@@ -2162,7 +2161,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     int start, end;
     QFont font;
     qreal lineHeight;
-    bool shifted;
+    qreal shift;
   };
   QVector<LineRun> lineRuns;
   for (const auto& span : projection_.spans()) {
@@ -2183,14 +2182,17 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     }
     lineRuns.push_back({toLayoutOffset(range.start), toLayoutOffset(range.end), font,
                         multiplier > 0 ? cssLineHeightPx(font.pointSizeF(), multiplier) : 0,
-                        span.subscript || span.superscript});
+                        scriptBaselineShift(span.superscript ? QTextCharFormat::AlignSuperScript
+                                            : span.subscript ? QTextCharFormat::AlignSubScript
+                                                             : QTextCharFormat::AlignNormal,
+                                            baseFont)});
   }
   for (const auto& span : htmlFormatSpans_) {
     QFont font = span.fontSet ? span.font : baseFont;
     if (span.fontSize > 0)
       font.setPointSizeF(span.fontSize);
     lineRuns.push_back({toLayoutOffset(span.layoutStart), toLayoutOffset(span.layoutEnd), font, span.lineHeight,
-                        span.verticalAlignment != QTextCharFormat::AlignNormal});
+                        scriptBaselineShift(span.verticalAlignment, baseFont)});
   }
   for (const auto& atom : generatedPseudoAtoms_) {
     if (atom.kind == GeneratedPseudoAtom::Kind::Text) {
@@ -2221,9 +2223,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     for (qsizetype i = firstRun; i < lineRuns.size() && lineRuns[i].start < lineEnd; ++i) {
       if (lineRuns[i].end <= lineStart)
         continue;
-      lineBox.includeText(lineRuns[i].font, lineRuns[i].lineHeight);
-      if (lineRuns[i].shifted)
-        lineBox.includeAtomic(line.ascent(), line.height());
+      lineBox.includeShiftedText(lineRuns[i].font, lineRuns[i].lineHeight, lineRuns[i].shift);
     }
     for (const auto& atom : htmlAtoms_) {
       const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
@@ -2418,34 +2418,28 @@ void InlineLayout::refreshImageResources() {
       }
 }
 
+QRectF InlineLayout::imageAtomRect(const ImageAtom& atom) const {
+  if (!textLayout_ || !atom.loaded || atom.image.isNull())
+    return {};
+  const int start = toLayoutOffset(static_cast<int>(atom.displayStart));
+  const auto line = textLayout_->lineForTextPosition(start);
+  if (!line.isValid())
+    return {};
+  return {line.cursorToX(start), line.y() + line.ascent() - atom.displaySize.height(), atom.displaySize.width(),
+          atom.displaySize.height()};
+}
+
 void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const {
-  if (!textLayout_) {
-    return;
-  }
   for (const ImageAtom& atom : imageAtoms_) {
-    if (!atom.loaded || atom.image.isNull()) {
+    const auto rect = imageAtomRect(atom);
+    if (rect.isEmpty()) {
       continue;
     }
-    for (int i = 0; i < textLayout_->lineCount(); ++i) {
-      const TextLine line = textLayout_->lineAt(i);
-      if (!line.isValid()) {
-        continue;
-      }
-      const int lineStart = line.textStart();
-      const int lineEnd = lineStart + line.textLength();
-      const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
-      if (atomStart < lineStart || atomStart >= lineEnd) {
-        continue;
-      }
-      const qreal x = line.cursorToX(atomStart);
-      const qreal y = origin.y() + line.y() + line.ascent() - atom.displaySize.height();
-      const QRectF targetRect(origin.x() + x, y, atom.displaySize.width(), atom.displaySize.height());
-      if (atom.cssBox)
-        paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
-      painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
-                        QRectF(atom.image.rect()));
-      break;
-    }
+    const auto targetRect = rect.translated(origin);
+    if (atom.cssBox)
+      paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
+    painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
+                      QRectF(atom.image.rect()));
   }
 }
 

@@ -305,9 +305,36 @@ void testHtmlLinkAndRelativeImageHitContract() {
   require(imageResult.valid(), QStringLiteral("html relative image fixture should render"));
   require(imageResult.size().height() >= 16.0 && imageResult.size().height() <= 40.0,
           QStringLiteral("html image width attr should preserve natural aspect ratio"));
-  const html::HtmlLayoutResult::HitResult imageHit = imageResult.hitTest(QPointF(4.0, 4.0));
+  const auto* imageBox = firstChildWithTag(*imageResult.root(), html::HtmlTag::Image);
+  require(imageBox != nullptr, QStringLiteral("relative image retains a native layout box"));
+  const auto imageRect = absoluteHtmlBoxRect(*imageBox);
+  const html::HtmlLayoutResult::HitResult imageHit = imageResult.hitTest(imageRect.center());
   require(QFileInfo(imageHit.imageSrc).absoluteFilePath() == QFileInfo(imagePath).absoluteFilePath(),
           QStringLiteral("html image hit-test should return resolved local path"));
+  require(imageResult.hitTest(imageRect.topRight() + QPointF(2, 0)).imageSrc.isEmpty(),
+          QStringLiteral("image hit region ends at its inline painted box"));
+}
+
+void testHtmlTableSpanningColumnWidths() {
+  html::HtmlRenderer renderer;
+  auto result =
+      renderer.render(QStringLiteral("<table><tr><td rowspan='2'>A</td><td>B</td><td>C</td></tr>"
+                                     "<tr><td>D</td><td>A substantially longer value in the last column</td></tr>"
+                                     "<tr><td colspan='3'>Combined columns</td></tr></table>"),
+                      16, 640);
+  require(result.valid(), QStringLiteral("spanning column fixture renders"));
+  QVector<const html::HtmlBox*> cells;
+  collectChildrenWithTag(*result.root(), html::HtmlTag::TableCell, cells);
+  require(cells.size() == 6, QStringLiteral("spanning fixture contains six cells"));
+  const auto first = absoluteHtmlBoxRect(*cells[0]);
+  const auto middle = absoluteHtmlBoxRect(*cells[3]);
+  const auto last = absoluteHtmlBoxRect(*cells[4]);
+  require(qAbs(middle.left() - first.right()) < 1 && qAbs(last.left() - middle.right()) < 1,
+          QStringLiteral("rowspan occupancy defines the same columns for sizing and placement"));
+  require(last.width() > middle.width() * 3,
+          QStringLiteral("long content sizes its actual column rather than the occupied column before it"));
+  require(qAbs(absoluteHtmlBoxRect(*cells[5]).width() - (first.width() + middle.width() + last.width())) < 1,
+          QStringLiteral("colspan allocation equals the combined column widths"));
 }
 
 void testHtmlWrappedTextLinePositionsContract() {
@@ -359,6 +386,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testHtmlImagePaintContract);
   RUN_TEST(testHtmlLinkWrappedSvgImagesPaintContract);
   RUN_TEST(testHtmlLinkAndRelativeImageHitContract);
+  RUN_TEST(testHtmlTableSpanningColumnWidths);
   RUN_TEST(testHtmlWrappedTextLinePositionsContract);
 #undef RUN_TEST
   return 0;

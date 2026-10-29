@@ -1,4 +1,5 @@
 #include "render/BlockLayoutBuilder.h"
+#include "theme/MarkdownFlow.h"
 #include "render/BlockLayoutRules.h"
 #include "render/BlockFormattingCache.h"
 #include "theme/NodeCssElement.h"
@@ -40,6 +41,13 @@ namespace {
 
 Q_LOGGING_CATEGORY(blockBuildPerf, "muffin.perf", QtWarningMsg)
 Q_LOGGING_CATEGORY(blockBuildDetailPerf, "muffin.perf.detail", QtWarningMsg)
+
+qreal containerSourceLineHeight(const MarkdownNode& node, const RenderTheme& theme, const QString& key) {
+  const auto font = theme.textFontForElement(key, &node);
+  const auto multiplier = theme.lineHeightMultiplierForElement(key, &node);
+  return multiplier > 0 ? cssLineHeightPx(font.pointSizeF(), multiplier)
+                        : std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
+}
 
 bool isOrderedListStyle(const QString& style) {
   static const QSet<QString> ordered = {
@@ -403,7 +411,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& 
                                                             qreal y, qreal width, int depth) {
   diag::ScopedPerfProbe perf("block.buildFresh", blockBuildDetailPerf());
   const auto build = [&]() -> std::unique_ptr<BlockLayout> {
-    const auto key = cssTagForNode(node);
+    const auto flow = theme.markdownFlow(node);
+    const auto key = flow->container(node) ? flow->container(node)->attributes.tag : cssTagForNode(node);
     const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
     if (style && style->layout.display == "none") {
       auto hidden = std::make_unique<BlockLayout>(node.id());
@@ -411,8 +420,18 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& 
       hidden->setRect({x, y, 0, 0});
       return hidden;
     }
-    if (style && style->layout.establishesFormattingContext() && !node.children().empty())
+    if (style && style->layout.establishesFormattingContext() && (!node.children().empty() || flow->container(node)))
       return buildFormattingContainer(node, theme, x, y, width, depth);
+    if (flow->container(node))
+      return buildContainer(node, theme, x, y, width, depth);
+    if (flow->closingBoundary(node) && editingHtmlBlockId_ != node.id()) {
+      auto boundary = std::make_unique<BlockLayout>(node.id());
+      boundary->setType(BlockType::HtmlBlock);
+      boundary->setHtmlContainer(true);
+      boundary->setLiteral(node.literal());
+      boundary->setRect({x, y, width, 0});
+      return boundary;
+    }
     switch (node.type()) {
     case BlockType::Paragraph:
     case BlockType::Heading:
@@ -689,11 +708,11 @@ CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& nod
     const auto widths = text->intrinsicWidths();
     return {widths.first, widths.second};
   }
-  if (!node.children().empty()) {
+  if (!node.children().empty() || theme.markdownFlow(node)->container(node)) {
     CssIntrinsicMetrics result;
     const auto* style = theme.elementStyleForNode(node, cssTagForNode(node));
     const bool row = style && style->layout.isFlex() && style->layout.direction.startsWith("row");
-    for (const auto& child : node.children()) {
+    for (const auto* child : theme.markdownFlow(node)->children(node)) {
       const auto metrics = intrinsicMetrics(*child, theme, containingWidth);
       result.minContent = qMax(result.minContent, metrics.minContent);
       result.maxContent = row ? result.maxContent + metrics.maxContent : qMax(result.maxContent, metrics.maxContent);
@@ -782,7 +801,7 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
     }
   };
   inlines(inlines, node.inlines());
-  for (const auto& child : node.children()) {
+  for (const auto* child : theme.markdownFlow(node)->children(node)) {
     const auto signature = formattingSignature(*child, theme);
     if (signature.isEmpty())
       reusable = false;
@@ -795,7 +814,8 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
 
 CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, const RenderTheme& theme,
                                                      qreal containingWidth, int depth) {
-  const auto key = cssTagForNode(node);
+  const auto flow = theme.markdownFlow(node);
+  const auto key = flow->container(node) ? flow->container(node)->attributes.tag : cssTagForNode(node);
   const auto* style = theme.elementStyleForNode(node, key);
   auto projected = style ? *style : ThemeElementStyle{};
   projected.box = theme.elementBoxStyle(key, &node, containingWidth);
@@ -813,9 +833,9 @@ CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, c
     LayoutResources::instance().read(it.key());
   LayoutResources::instance().read(LayoutResources::fontKey());
   item.measurements = cached->measurements;
-  if (projected.layout.establishesFormattingContext() && !node.children().empty()) {
+  if (projected.layout.establishesFormattingContext() && (!node.children().empty() || flow->container(node))) {
     item.children.emplace();
-    for (const auto& child : node.children()) {
+    for (const auto* child : flow->children(node)) {
       if (!omitVirtualEmptyParagraphInRenderFlow(*child, selection_))
         item.children->push_back(formattingItem(*child, theme, containingWidth, depth + 1));
     }
@@ -869,7 +889,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
   auto result = std::make_unique<BlockLayout>(node.id());
   result->setType(node.type());
   result->setDepth(depth);
-  const auto key = cssTagForNode(node);
+  const auto flow = theme.markdownFlow(node);
+  const auto key = flow->container(node) ? flow->container(node)->attributes.tag : cssTagForNode(node);
+  result->setHtmlContainer(flow->container(node) != nullptr);
+  result->setLiteral(node.literal());
   auto style = *theme.elementStyleForNode(node, key);
   const auto used = boxFor(node, theme, key, width);
   x += used.margin.left();
@@ -883,30 +906,54 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
   const qreal zoom = theme.zoomPercent() / 100.0;
   style.layout.scaleLengths(zoom);
   style.box = used;
+  qreal sourceHeight = 0;
+  if (flow->container(node) && editingHtmlBlockId_ == node.id()) {
+    result->setLiteralEditing(true);
+    const auto font = theme.textFontForElement(key, &node);
+    const LiteralTextLayout::Preedit preedit =
+        selectionFocusesNode(selection_, node.id())
+            ? LiteralTextLayout::Preedit{selection_.focus.text.textOffset, preeditText_, preeditFormats_,
+                                         preeditCursor_}
+            : LiteralTextLayout::Preedit{};
+    auto source = std::make_shared<LiteralTextLayout>(node.literal(), font, contentWidth,
+                                                      containerSourceLineHeight(node, theme, key), true, preedit);
+    sourceHeight = source->height();
+    result->setLiteralTextLayout(std::move(source));
+  }
   std::vector<const MarkdownNode*> nodes;
   std::vector<CssFormattingItem> items;
-  for (const auto& child : node.children()) {
+  for (const auto* child : flow->children(node)) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_))
       continue;
     const auto* childStyle = theme.elementStyleForNode(*child, cssTagForNode(*child));
     if (childStyle && childStyle->layout.display == "none")
       continue;
-    nodes.push_back(child.get());
+    nodes.push_back(child);
     items.push_back(formattingItem(*child, theme, contentWidth, depth + 1));
   }
   const auto formatted = solveFormatting(node.id(), style, items, contentWidth, contentHeight,
                                          contentGridInheritance(gridInheritance_.value(&node), inset));
   std::vector<std::unique_ptr<BlockLayout>> children;
   for (size_t i = 0; i < nodes.size(); ++i) {
-    const auto allocation = formatted.items[i].translated(x + inset.left(), y + inset.top());
+    const auto allocation = formatted.items[i].translated(x + inset.left(), y + inset.top() + sourceHeight);
     children.push_back(buildAllocated(*nodes[i], theme, allocation, formatted.containingWidths[i], depth + 1,
                                       formatted.inheritedGrids[i]));
   }
-  const QRectF rect(x, y, width, formatted.size.height() + inset.top() + inset.bottom());
+  qreal closingHeight = 0;
+  if (const auto* container = flow->container(node)) {
+    auto closing = build(*container->closing, theme, x + inset.left(),
+                         y + inset.top() + sourceHeight + formatted.size.height(), contentWidth, depth + 1);
+    closingHeight = closing->height();
+    children.push_back(std::move(closing));
+  }
+  const QRectF rect(x, y, width, formatted.size.height() + inset.top() + inset.bottom() + sourceHeight + closingHeight);
   result->setRect(rect);
-  result->setFormattingBaselines(formatted.firstBaseline < 0 ? -1 : formatted.firstBaseline + inset.top(),
-                                 formatted.lastBaseline < 0 ? -1 : formatted.lastBaseline + inset.top());
-  result->setCssBoxGeometry(LayoutBox::place(key, style, used, rect, theme.textFontForElement(key, &node)));
+  result->setFormattingBaselines(formatted.firstBaseline < 0 ? -1
+                                                             : formatted.firstBaseline + inset.top() + sourceHeight,
+                                 formatted.lastBaseline < 0 ? -1 : formatted.lastBaseline + inset.top() + sourceHeight);
+  auto box = LayoutBox::place(key, style, used, rect, theme.textFontForElement(key, &node));
+  box.lineHeight = containerSourceLineHeight(node, theme, key);
+  result->setCssBoxGeometry(std::move(box));
   result->setChildren(std::move(children));
   return result;
 }
@@ -954,6 +1001,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
   auto layout = std::make_unique<BlockLayout>(node.id());
   layout->setType(node.type());
   layout->setDepth(depth);
+  const auto flow = theme.markdownFlow(node);
+  const auto* htmlContainer = flow->container(node);
+  layout->setHtmlContainer(htmlContainer != nullptr);
+  if (htmlContainer)
+    layout->setLiteral(node.literal());
   layout->setAlertKind(node.alertKind());
   if (node.alertKind() != AlertKind::None) {
     auto plain = *theme.cssElementForNode(node);
@@ -968,25 +1020,41 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
                                       styled->box.borderTopWidth != ordinary.box.borderTopWidth));
   }
 
-  const bool quoteBox = node.type() == BlockType::BlockQuote;
-  const ThemeElementBoxStyle qbox =
-      quoteBox ? theme.elementBoxStyle(QStringLiteral("blockquote"), &node, width) : ThemeElementBoxStyle{};
+  const bool quoteBox = node.type() == BlockType::BlockQuote || htmlContainer;
+  const QString containerKey = htmlContainer ? htmlContainer->attributes.tag : QStringLiteral("blockquote");
+  const ThemeElementBoxStyle qbox = quoteBox ? boxFor(node, theme, containerKey, width) : ThemeElementBoxStyle{};
   if (quoteBox) {
     x += qbox.margin.left();
-    width = LayoutBox::borderWidth(qbox, qMax<qreal>(1, width - qbox.margin.left() - qbox.margin.right()));
+    const auto availableWidth = qMax<qreal>(1, width - qbox.margin.left() - qbox.margin.right());
+    width = LayoutBox::borderWidth(qbox, availableWidth);
+    if (qbox.marginLeftAuto)
+      x += qMax<qreal>(0, availableWidth - width) / (qbox.marginRightAuto ? 2 : 1);
   }
   const QMarginsF qpad = qbox.padding;
   const QMarginsF qborder = LayoutBox::borders(qbox);
   const qreal childX = x + qborder.left() + qpad.left();
   const qreal childWidth = qMax<qreal>(1.0, width - qborder.left() - qborder.right() - qpad.left() - qpad.right());
   qreal cursorY = y + qborder.top() + qpad.top();
+  if (htmlContainer && editingHtmlBlockId_ == node.id()) {
+    layout->setLiteralEditing(true);
+    const QFont font = theme.textFontForElement(containerKey, &node);
+    const LiteralTextLayout::Preedit preedit =
+        selectionFocusesNode(selection_, node.id())
+            ? LiteralTextLayout::Preedit{selection_.focus.text.textOffset, preeditText_, preeditFormats_,
+                                         preeditCursor_}
+            : LiteralTextLayout::Preedit{};
+    auto source = std::make_shared<LiteralTextLayout>(
+        layout->literal(), font, childWidth, containerSourceLineHeight(node, theme, containerKey), true, preedit);
+    cursorY += source->height();
+    layout->setLiteralTextLayout(std::move(source));
+  }
   std::vector<std::unique_ptr<BlockLayout>> children;
   const MarkdownNode* previousChild = nullptr;
   bool omittedOnlyRenderChildren = !node.children().empty();
 
   const bool firstChildMarginCollapses = qFuzzyIsNull(qborder.top() + qpad.top());
   const bool lastChildMarginCollapses = qFuzzyIsNull(qborder.bottom() + qpad.bottom());
-  for (const auto& child : node.children()) {
+  for (const auto* child : flow->children(node)) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) {
       continue;
     }
@@ -998,8 +1066,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
     }
     auto childLayout = build(*child, theme, childX, cursorY, childWidth, depth + 1);
     cursorY = childLayout->rect().bottom();
-    previousChild = child.get();
+    previousChild = child;
     children.push_back(std::move(childLayout));
+  }
+  if (htmlContainer) {
+    auto closing = build(*htmlContainer->closing, theme, childX, cursorY, childWidth, depth + 1);
+    cursorY = closing->rect().bottom();
+    children.push_back(std::move(closing));
   }
 
   qreal height = 0.0;
@@ -1010,7 +1083,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
                        qborder.bottom();
   } else {
     const qreal trailingChildMargin =
-        lastChildMarginCollapses ? 0.0 : spacingAfterInFlow(*previousChild, theme, false, childWidth);
+        lastChildMarginCollapses || !previousChild ? 0.0 : spacingAfterInFlow(*previousChild, theme, false, childWidth);
     height = cursorY + trailingChildMargin + qpad.bottom() + qborder.bottom() - y;
   }
   if (quoteBox)
@@ -1018,10 +1091,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
   const QRectF flowRect(x, y, width, height);
   layout->setRect(flowRect);
   if (quoteBox) {
-    const auto* style = theme.elementStyleForNode(node, QStringLiteral("blockquote"));
-    layout->setCssBoxGeometry(LayoutBox::place(QStringLiteral("blockquote"), style ? *style : ThemeElementStyle{}, qbox,
-                                               flowRect,
-                                               theme.textFontForElement(QStringLiteral("blockquote"), &node)));
+    const auto* style = theme.elementStyleForNode(node, containerKey);
+    auto box = LayoutBox::place(containerKey, style ? *style : ThemeElementStyle{}, qbox, flowRect,
+                                theme.textFontForElement(containerKey, &node));
+    box.lineHeight = containerSourceLineHeight(node, theme, containerKey);
+    layout->setCssBoxGeometry(std::move(box));
   }
   layout->setChildren(std::move(children));
   return layout;
@@ -1114,20 +1188,20 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(const MarkdownNod
 
   bool skippedPrimaryParagraph = false;
   const MarkdownNode* previousChild = nullptr;
-  for (const auto& child : node.children()) {
+  for (const auto* child : theme.markdownFlow(node)->children(node)) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) {
       continue;
     }
     if (!skippedPrimaryParagraph && child->type() == BlockType::Paragraph) {
       skippedPrimaryParagraph = true;
-      previousChild = child.get();
+      previousChild = child;
       continue;
     }
     flowBottom +=
         previousChild ? spacingBetweenInFlow(*previousChild, *child, theme, false, contentWidth) : theme.blockSpacing();
     auto childLayout = build(*child, theme, contentX, flowBottom, contentWidth, depth + 1);
     flowBottom = childLayout->rect().bottom();
-    previousChild = child.get();
+    previousChild = child;
     children.push_back(std::move(childLayout));
   }
   const qreal height = flowBottom - y;
@@ -1146,7 +1220,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(const MarkdownNod
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme,
-                                                                   qreal x, qreal y, qreal width, int depth) {
+                                                                   qreal x, qreal y, qreal width, int depth,
+                                                                   bool forceHtmlSource) {
   auto layout = std::make_unique<BlockLayout>(node.id());
   layout->setType(node.type());
   layout->setDepth(depth);
@@ -1168,9 +1243,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
       layout->setCodeHighlightSpans(codeHighlighter_.highlight(language, layout->literal()));
     }
   }
-  const QString styleKey = QStringLiteral("pre");
+  const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
+                              (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
+  const bool htmlPreview = node.type() == BlockType::HtmlBlock && !editingLiteral && !forceHtmlSource;
+  const qreal inputX = x, inputWidth = width;
+  const QString styleKey = htmlPreview ? QString() : QStringLiteral("pre");
   const auto* resolvedStyle = theme.elementStyleForNode(node, styleKey);
-  const auto usedBox = boxFor(node, theme, styleKey, width);
+  const auto usedBox = htmlPreview ? ThemeElementBoxStyle{} : boxFor(node, theme, styleKey, width);
   const qreal availableWidth = qMax<qreal>(1, width - usedBox.margin.left() - usedBox.margin.right());
   x += usedBox.margin.left();
   width = LayoutBox::borderWidth(usedBox, availableWidth);
@@ -1181,8 +1260,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
   const qreal codeLineHeight = resolvedStyle && resolvedStyle->text.lineHeight > 0
                                    ? codeFont.pointSizeF() * 96.0 / 72.0 * resolvedStyle->text.lineHeight
                                    : TextFontMetrics(codeFont).height();
-  const bool editingLiteral = (node.type() == BlockType::MathBlock && selectionFocusesNode(selection_, node.id())) ||
-                              (node.type() == BlockType::HtmlBlock && editingHtmlBlockId_ == node.id());
   layout->setLiteralEditing(editingLiteral);
   const qreal lineNumberGutter = (node.type() == BlockType::CodeFence && showLineNumbers_)
                                      ? codeLineNumberGutterWidth(layout->literal(), codeFont)
@@ -1273,7 +1350,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
     BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
     layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
   }
-  if (node.type() == BlockType::HtmlBlock && !editingLiteral) {
+  if (node.type() == BlockType::HtmlBlock && !editingLiteral && !forceHtmlSource) {
     const qreal contentWidth = qMax<qreal>(1.0, width - padding.left() - padding.right());
     qreal fontSize = theme.paragraphFont().pointSizeF();
     if (fontSize <= 0) {
@@ -1286,6 +1363,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
       BuildAccumTimer t(htmlRenderNs_, perfEnabled_);
       sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
       html::HtmlColorPalette htmlPalette;
+      htmlPalette.documentParent = theme.cssElementForNode(node)->parent;
       htmlPalette.documentStyleSheet = theme.documentStyleSheet();
       htmlPalette.fontAliases = theme.fontAliases();
       htmlPalette.cssEnvironment = theme.documentCssEnvironment();
@@ -1307,13 +1385,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
       height = std::ceil(htmlResult->size().height() + padding.top() + padding.bottom());
       layout->setHtmlLayout(std::move(htmlResult));
     } else {
-      // The HTML rendered to nothing readable — invalid, or valid but with no visible content
-      // (e.g. just <div>/<br>/whitespace). Fall back to showing the highlighted source so the
-      // block is not an unexplained blank. Spans feed paintLiteralSource() in the paint fallback.
-      BuildAccumTimer t(codeHighlightNs_, perfEnabled_);
-      layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
+      return buildLiteralBlock(node, theme, inputX, y, inputWidth, depth, true);
     }
   }
+  if (forceHtmlSource)
+    layout->setCodeHighlightSpans(codeHighlighter_.highlight(QStringLiteral("html"), layout->literal()));
   height = LayoutBox::borderHeight(usedBox, qMax<qreal>(0, height - padding.top() - padding.bottom()));
   layout->setRect(QRectF(x, y, width, height));
   auto box = LayoutBox::place(styleKey, resolvedStyle ? *resolvedStyle : ThemeElementStyle{}, usedBox, layout->rect(),

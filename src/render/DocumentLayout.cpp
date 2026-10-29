@@ -1,4 +1,5 @@
 #include "render/DocumentLayout.h"
+#include "theme/MarkdownFlow.h"
 #include "diagnostics/ThemePerformance.h"
 #include "diagnostics/ScopedPerfProbe.h"
 #include <QScopedValueRollback>
@@ -153,6 +154,8 @@ qreal spacingAfterBlockPrototype(BlockType type, int headingLevel, const RenderT
 }
 
 qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme, bool fast, qreal containingWidth) {
+  if (node.type() == BlockType::HtmlBlock && theme.markdownFlow(node)->container(node))
+    return theme.blockMargin(node.type(), 0, &node, containingWidth).bottom();
   // `fast` (Lazy estimate path) resolves the prototype style only — skips the per-node structural
   // cascade, which is the difference between an O(n) and O(n²) rebuild on a flat block list.
   if (fast) {
@@ -298,8 +301,8 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 
   // Navigation is independent of theme/fonts/viewport. Only reuse it for the
   // exact document generation; a reset can keep the same document address.
-  const bool reuseIndex = document_ == &document && indexDocumentRoot_ == document.root().id() &&
-                          indexDocumentRevision_ == document.revision() &&
+  const bool reuseIndex = (!flow_ || flow_->empty()) && document_ == &document &&
+                          indexDocumentRoot_ == document.root().id() && indexDocumentRevision_ == document.revision() &&
                           slots_.size() == document.root().children().size();
   if (document_ != &document || indexDocumentRoot_ != document.root().id())
     imageResources_.clear();
@@ -321,6 +324,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
     theme.invalidateDocumentStyles();
   }
   styleDocumentRevision_ = document.revision();
+  flow_ = theme.markdownFlow(document.root());
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
@@ -365,7 +369,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
     recomputeHeadingCounters(document, theme);
   }
 
-  const auto& children = document.root().children();
+  const auto children = flow_->children(document.root());
   slots_.reserve(children.size());
   size_t slotCursor = 0;
   const auto storeSlot = [&](BlockSlot slot) {
@@ -447,7 +451,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
       slot.measured = false;
       slot.viewportGeneration = viewportGeneration_;
       cursorY += est.height;
-      previous = child.get();
+      previous = child;
       storeSlot(std::move(slot));
     }
     if (collectPerf) {
@@ -477,7 +481,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
       slot.detailLeft = pageLeft_;
       slot.viewportGeneration = viewportGeneration_;
       cursorY = block->rect().bottom();
-      previous = child.get();
+      previous = child;
       indexLayoutBlock(*block);
       slot.detail = std::move(block);
       storeSlot(std::move(slot));
@@ -574,7 +578,7 @@ bool DocumentLayout::relayoutForViewportWidth(const RenderTheme& theme, qreal vi
     const auto* rootStyle = theme.elementStyle(QStringLiteral("#write"));
     // A root flex/grid needs all sibling allocations together. Export/eager
     // layouts likewise retain their exact full-document geometry contract.
-    if (buildPolicy_ != BuildPolicy::Lazy || formattingRoot_ ||
+    if (buildPolicy_ != BuildPolicy::Lazy || formattingRoot_ || (flow_ && !flow_->empty()) ||
         (rootStyle && rootStyle->layout.establishesFormattingContext()))
       return false;
     ++viewportGeneration_;
@@ -651,9 +655,21 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   if (!blockId.isValid() || document_ != &document || slots_.empty() || viewportWidth_ <= 0) {
     return result;
   }
+  // Selection does not change the borrowed render topology. Reuse the native
+  // subtree just as for a list, instead of relaying out the entire document.
+  const bool selectionOnly = reason == BlockUpdateReason::Selection && styleDocumentRevision_ == document.revision();
+  if (!selectionOnly && flow_ && !flow_->empty()) {
+    result.blockId = blockId;
+    result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    const qreal oldHeight = totalHeight_;
+    rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    result.newRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    result.heightDelta = totalHeight_ - oldHeight;
+    result.rebuilt = true;
+    return result;
+  }
   // Selection changes do not edit the AST or alter structural selectors. An
   // edit may arrive before its queued content refresh, so also check revision.
-  const bool selectionOnly = reason == BlockUpdateReason::Selection && styleDocumentRevision_ == document.revision();
   const auto* node = topLevelBlockFor(blockId, document);
   if (!node)
     return result;
@@ -690,7 +706,11 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   }
 
   const auto& documentBlocks = document.root().children();
-  if (static_cast<qsizetype>(slots_.size()) != static_cast<qsizetype>(documentBlocks.size())) {
+  const auto renderBlocks =
+      flow_ && !flow_->empty() ? flow_->children(document.root()) : std::vector<const MarkdownNode*>{};
+  const auto documentCount = renderBlocks.empty() ? documentBlocks.size() : renderBlocks.size();
+  const auto nodeAt = [&](size_t i) { return renderBlocks.empty() ? documentBlocks[i].get() : renderBlocks[i]; };
+  if (slots_.size() != documentCount) {
     return result;
   }
   auto indexIt = topLevelIndex_.constFind(node->id());
@@ -698,8 +718,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
     return result;
   }
   const qsizetype index = positionIndex_.rank(indexIt.value());
-  if (index < 0 || index >= static_cast<qsizetype>(documentBlocks.size()) ||
-      documentBlocks.at(static_cast<size_t>(index))->id() != node->id()) {
+  if (index < 0 || index >= static_cast<qsizetype>(documentCount) ||
+      nodeAt(static_cast<size_t>(index))->id() != node->id()) {
     return result;
   }
 
@@ -726,7 +746,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   }
   qreal newTop = theme.pageMargin().top() + theme.pagePadding().top();
   if (index > 0) {
-    const auto& previous = *documentBlocks.at(static_cast<size_t>(index - 1));
+    const auto& previous = *nodeAt(static_cast<size_t>(index - 1));
     newTop =
         slotTop(index - 1) + slotHeight(index - 1) + spacingBetweenBlocks(previous, *node, theme, false, pageWidth_);
   } else
@@ -741,9 +761,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
 
   // Shared structural-spacing formula (nextTopAfterBuild) — promoteSlot uses the same,
   // so a block lands at the same Y whether promoted or rebuilt (no click-induced jump).
-  const MarkdownNode* nextNode = (index + 1 < static_cast<qsizetype>(documentBlocks.size()))
-                                     ? documentBlocks.at(static_cast<size_t>(index + 1)).get()
-                                     : nullptr;
+  const MarkdownNode* nextNode =
+      (index + 1 < static_cast<qsizetype>(documentCount)) ? nodeAt(static_cast<size_t>(index + 1)) : nullptr;
   const qreal newNextTop = nextTopAfterBuild(*node, *replacement, nextNode, theme, pageWidth_);
   const qreal delta = index + 1 < static_cast<qsizetype>(slots_.size())
                           ? newNextTop - slotTop(index + 1)
@@ -796,12 +815,27 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(TopLevel
   result.first = range.first;
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
+  // Prepare exactly one style generation. Repeating this invalidation loses
+  // the local replacement/counter cache even for an ordinary paragraph edit.
+  theme.invalidateDocumentStyles(range, &document);
+  styleDocumentRevision_ = document.revision();
+  if (range.isValid() && document_ == &document && viewportWidth_ > 0) {
+    const bool hadContainers = flow_ && !flow_->empty();
+    if (hadContainers || !theme.markdownFlow(document.root())->empty()) {
+      result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+      const qreal oldHeight = totalHeight_;
+      const QScopedValueRollback<bool> preserveStyles(stylesPrepared_, true);
+      rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+      result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+      result.heightDelta = totalHeight_ - oldHeight;
+      result.rebuilt = true;
+      return result;
+    }
+  }
   if (formattingRoot_ && range.isValid()) {
     result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     const qreal oldHeight = totalHeight_;
     incrementalFormatting_ = true;
-    theme.invalidateDocumentStyles(range, &document);
-    styleDocumentRevision_ = document.revision();
     const auto& current = document.root().children();
     for (qsizetype i = qMax<qsizetype>(0, range.first);
          i < qMin<qsizetype>(current.size(), range.first + range.newCount); ++i)
@@ -813,8 +847,6 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(TopLevel
     result.rebuilt = true;
     return result;
   }
-  theme.invalidateDocumentStyles(range, &document);
-  styleDocumentRevision_ = document.revision();
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
   }
@@ -1426,6 +1458,8 @@ HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& th
 }
 
 const MarkdownNode* DocumentLayout::topLevelBlockFor(NodeId id, const MarkdownDocument& document) const {
+  if (flow_ && !flow_->empty())
+    return document.node(nestedToTopLevel_.value(id));
   const MarkdownNode* node = document.node(id);
   if (!node) {
     return nullptr;
@@ -1473,7 +1507,7 @@ void DocumentLayout::buildNestedIndex(const MarkdownDocument& document) {
   topLevelIndex_.clear();
   nestedToTopLevel_.clear();
   nestedIdsByTopLevel_.clear();
-  const auto& children = document.root().children();
+  const auto children = flow_->children(document.root());
   for (qsizetype i = 0; i < static_cast<qsizetype>(children.size()); ++i) {
     topLevelIndex_.insert(children.at(static_cast<size_t>(i))->id(), slots_.at(static_cast<size_t>(i)).positionToken);
     collectNestedToTopLevel(*children.at(static_cast<size_t>(i)), children.at(static_cast<size_t>(i))->id());
@@ -1487,9 +1521,14 @@ void DocumentLayout::collectNestedToTopLevel(const MarkdownNode& node, NodeId to
   if (node.id() != topLevelId) {
     nestedIdsByTopLevel_[topLevelId].push_back(node.id());
   }
-  for (const auto& child : node.children()) {
-    collectNestedToTopLevel(*child, topLevelId);
-  }
+  if (flow_ && !flow_->empty()) {
+    for (const auto* child : flow_->children(node))
+      collectNestedToTopLevel(*child, topLevelId);
+    if (const auto* container = flow_->container(node))
+      collectNestedToTopLevel(*container->closing, topLevelId);
+  } else
+    for (const auto& child : node.children())
+      collectNestedToTopLevel(*child, topLevelId);
 }
 
 void DocumentLayout::removeNestedIndexForTopLevel(NodeId topLevelId) {
@@ -1641,6 +1680,18 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   if (!document_ || index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
     return 0.0;
   }
+  // A resize can arrive after the AST edit and before its queued layout
+  // refresh. Old slots must never be resolved against that newer generation.
+  if (styleDocumentRevision_ != document_->revision())
+    return 0.0;
+  const auto nodeAt = [&](qsizetype i) -> const MarkdownNode* {
+    return i >= 0 && i < qsizetype(slots_.size()) ? document_->node(slots_[size_t(i)].nodeId) : nullptr;
+  };
+  const auto* currentNode = nodeAt(index);
+  const auto* previousNode = nodeAt(index - 1);
+  const auto* nextNode = nodeAt(index + 1);
+  if (!currentNode || (index > 0 && !previousNode) || (index + 1 < qsizetype(slots_.size()) && !nextNode))
+    return 0.0;
   BlockSlot& slot = slots_.at(static_cast<size_t>(index));
   if (slot.detail && slot.viewportGeneration == viewportGeneration_) {
     ensureSlotDetailPosition(index);
@@ -1650,16 +1701,14 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
     removeLayoutIndexFor(*slot.detail);
     slot.detail.reset();
   }
-  const auto& children = document_->root().children();
-  const MarkdownNode& node = *children.at(static_cast<size_t>(index));
+  const MarkdownNode& node = *currentNode;
   // Promotion replaces prototype spacing on both sides of the block. Resolving
   // its own gap matters when :first-child or a sibling selector changes margins.
   const qreal oldTop = slotTop(index);
   const qreal pageTop = theme.pageMargin().top() + theme.pagePadding().top();
-  const qreal newTop =
-      index > 0 ? slotTop(index - 1) + slots_[static_cast<size_t>(index - 1)].height +
-                      spacingBetweenBlocks(*children[static_cast<size_t>(index - 1)], node, theme, false, pageWidth_)
-                : pageTop + spacingBeforeBlock(node, theme, pageTop, false, pageWidth_);
+  const qreal newTop = index > 0 ? slotTop(index - 1) + slots_[static_cast<size_t>(index - 1)].height +
+                                       spacingBetweenBlocks(*previousNode, node, theme, false, pageWidth_)
+                                 : pageTop + spacingBeforeBlock(node, theme, pageTop, false, pageWidth_);
   const qreal ownDelta = newTop - oldTop;
   shiftSuffixFrom(index, ownDelta);
   const qreal currentShift = slotShift(index);
@@ -1676,9 +1725,6 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   // without this, the promoted block kept the prototype gap while a later click/rebuild
   // recomputed it structurally → the suffix jumped (visible "bottom margin shrinks").
   // The shift runs inside the caller's viewport pin, so it is invisible on scroll.
-  const MarkdownNode* nextNode = (index + 1 < static_cast<qsizetype>(children.size()))
-                                     ? children.at(static_cast<size_t>(index + 1)).get()
-                                     : nullptr;
   const qreal newNextTop = nextTopAfterBuild(node, *built, nextNode, theme, pageWidth_);
   slot.detail = std::move(built);
   qreal delta = 0.0;
@@ -1712,8 +1758,10 @@ void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
   const BlockLayout* lastBlock = nullptr;
   if (!slots_.empty()) {
     const BlockSlot& last = slots_.back();
-    const auto& lastNode = *document_->root().children().back();
-    const qreal spacingAfter = spacingAfterBlock(lastNode, theme, !last.detail, pageWidth_);
+    const auto* lastNode = document_->node(last.nodeId);
+    if (!lastNode)
+      return;
+    const qreal spacingAfter = spacingAfterBlock(*lastNode, theme, !last.detail, pageWidth_);
     cursorY = slotTop(static_cast<qsizetype>(slots_.size()) - 1) + last.height + spacingAfter;
     lastBlock = last.detail.get();
   }

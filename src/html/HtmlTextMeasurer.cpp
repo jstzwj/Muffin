@@ -209,7 +209,9 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(const HtmlBo
       fmt.setFontPointSize(span.fontSize);
     }
     if (span.verticalAlignment != QTextCharFormat::AlignNormal) {
-      fmt.setVerticalAlignment(span.verticalAlignment);
+      if (!span.fontSet && span.fontSize <= 0)
+        fmt.setFont(baseFont);
+      applyScriptBaseline(fmt, span.verticalAlignment, baseFont);
     }
     if (hasDecoration(span.decoration, HtmlTextDecoration::Underline)) {
       fmt.setFontUnderline(true);
@@ -242,8 +244,9 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(const HtmlBo
   for (const auto& atom : result->atoms) {
     QFont font = baseFont;
     font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
-    font.setLetterSpacing(QFont::AbsoluteSpacing, atom.size.width() + atom.margin.left() + atom.margin.right() -
-                                                      TextFontMetrics(font).horizontalAdvance(QChar(0xfffc)));
+    font.setLetterSpacing(QFont::AbsoluteSpacing,
+                          atom.size.width() + atom.margin.left() + atom.margin.right() -
+                              TextFontMetrics(font).horizontalAdvance(kInlineObjectPlaceholder));
     QTextCharFormat format;
     format.setFont(font);
     format.setForeground(Qt::transparent);
@@ -268,10 +271,8 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(const HtmlBo
       ++firstSpan;
     for (size_t i = firstSpan; i < spans.size() && spans[i].start < line.textStart() + line.textLength(); ++i) {
       const auto& span = spans[i];
-      lineBox.includeText(span.fontSet ? span.font : baseFont, span.lineHeight);
-      if (span.verticalAlignment != QTextCharFormat::AlignNormal) {
-        lineBox.includeAtomic(line.ascent(), line.height());
-      }
+      lineBox.includeShiftedText(span.fontSet ? span.font : baseFont, span.lineHeight,
+                                 scriptBaselineShift(span.verticalAlignment, baseFont));
     }
     for (const auto& atom : result->atoms)
       if (atom.start >= line.textStart() && atom.start < line.textStart() + line.textLength()) {
@@ -388,10 +389,12 @@ void HtmlTextMeasurer::collectInlineText(const HtmlBox& box, QString& outText, s
   if (!box.style().visible || box.style().display == HtmlDisplay::None)
     return;
   const auto& display = box.style().computed.layout.display;
-  if (&box != contextRoot && atoms && atomicLayout_ && (display == "inline-flex" || display == "inline-grid")) {
+  if (&box != contextRoot && atoms && atomicLayout_ &&
+      (display == "inline-flex" || display == "inline-grid" || display == "inline-block" ||
+       box.tag() == HtmlTag::Image)) {
     auto atom = atomicLayout_(const_cast<HtmlBox&>(box), availableWidth);
     atom.start = offset++;
-    outText += QChar(0xfffc);
+    outText += kInlineObjectPlaceholder;
     atoms->push_back(std::move(atom));
     return;
   }

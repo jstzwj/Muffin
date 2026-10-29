@@ -211,6 +211,8 @@ public:
   bool isMermaidRendered() const;
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
+  void setHtmlContainer(bool value) { htmlContainer_ = value; }
+  bool htmlContainer() const { return htmlContainer_; }
   QRectF literalContentRect(const RenderTheme& theme) const;
   // Visual-line queries over a literal block's source (code/math/HTML/front matter). Offsets are
   // LOCAL to the literal (0..literal().size()), matching CursorPosition::textOffset for these
@@ -410,6 +412,7 @@ private:
   muffin::mermaid::MermaidDiagnostic mermaidDiagnostic_;
   QString mermaidDiagnosticMessage_;
   bool literalEditing_ = false;
+  bool htmlContainer_ = false;
   qreal lineNumberGutterWidth_ = 0.0;
   qreal codeMaxLineWidth_ = 0.0;
   int headingLevel_ = 0;

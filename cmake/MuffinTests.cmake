@@ -3,6 +3,16 @@
 # CMakeLists.txt after MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS is assembled.
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
+muffin_add_test(NAME MuffinMarkdownFlowTest SOURCE tests/render/MarkdownFlowTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+muffin_add_test(NAME MuffinDocumentVisualAcceptanceTest SOURCE tests/render/DocumentVisualAcceptanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+target_compile_definitions(MuffinDocumentVisualAcceptanceTest PRIVATE MUFFIN_VISUAL_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render-acceptance")
+set_property(TEST MuffinDocumentVisualAcceptanceTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "MUFFIN_VISUAL_OUTPUT=set:${CMAKE_CURRENT_BINARY_DIR}/visual-acceptance")
+foreach(scale IN ITEMS 1.25 1.5)
+  add_test(NAME MuffinDocumentVisualAcceptanceDpi${scale} COMMAND $<TARGET_FILE:MuffinDocumentVisualAcceptanceTest>)
+  set_tests_properties(MuffinDocumentVisualAcceptanceDpi${scale} PROPERTIES
+    ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_SCALE_FACTOR=set:${scale};MUFFIN_VISUAL_OUTPUT=set:${CMAKE_CURRENT_BINARY_DIR}/visual-acceptance"
+    RESOURCE_LOCK MuffinQtGui)
+endforeach()
 muffin_add_test(NAME MuffinWorkspaceFilesTest SOURCE tests/app/WorkspaceFilesTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinWorkspaceSearchTest SOURCE tests/app/WorkspaceSearchTest.cpp LINK MuffinUi RESOURCE_LOCK)
 

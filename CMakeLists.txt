@@ -1370,6 +1370,8 @@ set(MUFFIN_UI_SOURCES
   src/render/KeyframeSampler.cpp
   src/render/KeyframeSampler.h
   src/render/ImageDecoder.cpp
+  src/render/SvgDocument.cpp
+  src/render/SvgDocument.h
   src/render/ImageDecoder.h
   src/render/ImageLoader.cpp
   src/render/ImageLoader.h
@@ -1405,6 +1407,8 @@ set(MUFFIN_UI_SOURCES
   src/theme/LegacyThemeAdapter.cpp
   src/theme/LegacyThemeAdapter.h
   src/theme/NodeCssElement.cpp
+  src/theme/MarkdownFlow.cpp
+  src/theme/MarkdownFlow.h
   src/theme/NodeCssElement.h
   src/theme/MarkdownAlertIcon.h
 )

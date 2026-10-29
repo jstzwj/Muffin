@@ -10,6 +10,17 @@ namespace muffin {
 // defaults below them, without accumulating copies across viewport changes.
 CssThemeSheet documentStyleSheet(const CssThemeSheet& author);
 
+// HTML presentational hints participate below author CSS in every native
+// backend, including containers projected over Markdown blocks.
+inline void addHtmlPresentationHints(CssElement& element) {
+  const QString align = element.attributes.value(QStringLiteral("align")).toLower();
+  if (element.tag == QLatin1String("center"))
+    element.presentationDeclarations = CssThemeParser::parseDeclarations(QStringLiteral("text-align:center"));
+  else if (align == QLatin1String("left") || align == QLatin1String("center") || align == QLatin1String("right") ||
+           align == QLatin1String("justify"))
+    element.presentationDeclarations = CssThemeParser::parseDeclarations(QStringLiteral("text-align:") + align);
+}
+
 // Theme compatibility classes describe the Markdown host, rather than a
 // selector-matching exception. Prototypes and live nodes use this same contract.
 inline void addDocumentHostClasses(CssElement& element) {

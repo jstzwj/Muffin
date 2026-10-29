@@ -1,6 +1,7 @@
 #include "render/BlockLayoutRules.h"
 
 #include "theme/NodeCssElement.h"
+#include "theme/MarkdownFlow.h"
 #include "render/TextLayout.h"
 
 namespace muffin::layout_rules {
@@ -15,6 +16,9 @@ bool isInsideBlockquote(const MarkdownNode& node) {
 }
 
 QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast, qreal containingWidth) {
+  if (node.type() == BlockType::HtmlBlock)
+    if (const auto* container = theme.markdownFlow(node)->container(node))
+      return theme.elementBoxStyle(container->attributes.tag, &node, containingWidth).margin;
   if (!fast && node.type() == BlockType::Paragraph && isInsideBlockquote(node)) {
     const ThemeElementBoxStyle quoteParagraph =
         theme.elementBoxStyle(QStringLiteral("blockquote p"), &node, containingWidth);
@@ -26,6 +30,9 @@ QMarginsF blockMarginForFlow(const MarkdownNode& node, const RenderTheme& theme,
 }
 
 bool hasCssFlowMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast, qreal containingWidth) {
+  if (node.type() == BlockType::HtmlBlock)
+    if (const auto* container = theme.markdownFlow(node)->container(node))
+      return theme.elementStyleForNode(node, container->attributes.tag)->box.marginSpecified;
   return theme.hasBlockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node);
 }
 
@@ -36,7 +43,8 @@ qreal spacingBeforeInFlow(const MarkdownNode& node, const RenderTheme& theme, bo
 
 qreal spacingAfterInFlow(const MarkdownNode& node, const RenderTheme& theme, bool fast, qreal containingWidth) {
   const QMarginsF margin = blockMarginForFlow(node, theme, fast, containingWidth);
-  return !cssTagForNode(node).isEmpty() ? margin.bottom() : theme.blockSpacing();
+  return !cssTagForNode(node).isEmpty() || theme.markdownFlow(node)->container(node) ? margin.bottom()
+                                                                                     : theme.blockSpacing();
 }
 
 bool isTightListItemSiblingPair(const MarkdownNode& prev, const MarkdownNode& next) {

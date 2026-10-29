@@ -74,7 +74,9 @@ void ImageLoader::store(const QString& url, QImage image) {
   cacheBytes_ += image.sizeInBytes();
   cache_.insert(url, image);
   recency_[url] = ++clock_;
-  const auto metrics = QByteArray::number(image.width()) + ':' + QByteArray::number(image.height());
+  const auto logical = image.deviceIndependentSize();
+  const auto metrics =
+      QByteArray::number(logical.width(), 'g', 17) + ':' + QByteArray::number(logical.height(), 'g', 17);
   LayoutResources::instance().publish(LayoutResources::imageKey(url), metrics);
   emit imageReady(url);
   trim();

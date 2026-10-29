@@ -5,6 +5,7 @@
 #include <QChar>
 #include "render/TextLayout.h"
 #include <QMarginsF>
+#include <QTextCharFormat>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -17,6 +18,26 @@ namespace muffin {
 // WORD JOINER can report a missing-glyph advance in TextFontMetrics while Qt's
 // layout strips that glyph, making width calibration font-dependent.
 inline constexpr QChar kInlineBoxSpacer{0xe001};
+// A replaced object is not trailing whitespace. Treating an image as a thin
+// space made right/center alignment discard its reserved advance.
+inline constexpr QChar kInlineObjectPlaceholder{0xe002};
+
+// CSS owns the used font size. Qt's AlignSuper/SubScript silently scales it
+// again (and rounds to integer points), so represent only the baseline shift.
+inline qreal scriptBaselineShift(QTextCharFormat::VerticalAlignment alignment, const QFont& parent) {
+  const qreal em = parent.pointSizeF() > 0 ? parent.pointSizeF() * 96. / 72. : parent.pixelSize();
+  return alignment == QTextCharFormat::AlignSuperScript ? em * .35
+         : alignment == QTextCharFormat::AlignSubScript ? -em * .2
+                                                        : 0;
+}
+inline void applyScriptBaseline(QTextCharFormat& format, QTextCharFormat::VerticalAlignment alignment,
+                                const QFont& parent) {
+  if (alignment != QTextCharFormat::AlignSuperScript && alignment != QTextCharFormat::AlignSubScript)
+    return;
+  const qreal height = TextFontMetrics(format.font()).height();
+  format.setVerticalAlignment(QTextCharFormat::AlignNormal);
+  format.setBaselineOffset(100 * scriptBaselineShift(alignment, parent) / qMax<qreal>(.001, height));
+}
 
 // CSS line boxes and glyph ink are different geometries. Explicit line-height
 // contributes half-leading, even when negative; replaced/atomic inline boxes
@@ -39,6 +60,11 @@ struct InlineLineBox {
     const InlineLineBox run(font, lineHeight);
     ascent = std::max(ascent, run.ascent);
     descent = std::max(descent, run.descent);
+  }
+  void includeShiftedText(const QFont& font, qreal lineHeight, qreal shift) {
+    const InlineLineBox run(font, lineHeight);
+    ascent = std::max(ascent, run.ascent + shift);
+    descent = std::max(descent, run.descent - shift);
   }
   void includeAtomic(qreal baseline, qreal height, QMarginsF margin = {}) {
     ascent = std::max(ascent, baseline + margin.top());

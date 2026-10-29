@@ -85,6 +85,12 @@ public:
   qreal layoutTotalHeight() const { return layout_ ? layout_->totalHeight() : 0.0; }
   qsizetype residentLayoutCount() const { return layout_ ? layout_->residentDetailCount() : 0; }
   const RenderTheme& theme() const { return theme_; }
+  // Optional host for CSS viewport units/media queries. Layout still uses the
+  // editor's available width; standalone views default to their own viewport.
+  void setThemeViewport(QWidget* host) { themeViewport_ = host; }
+  QSize themeViewportSize() const {
+    return themeViewport_ ? themeViewport_->contentsRect().size() : viewport()->size();
+  }
   void scrollToNode(NodeId id);
   NodeId specialAnchorTarget(const QString& href) const;
   ViewportPosition viewportPosition() const;
@@ -296,6 +302,7 @@ private:
   int typewriterScrollTarget(const QRectF& cursor) const;
 
   QPointer<const MarkdownDocument> document_;
+  QPointer<QWidget> themeViewport_;
   QString documentPath_;
   RenderTheme theme_ = RenderTheme::defaultTheme();
   std::unique_ptr<DocumentLayout> layout_;
