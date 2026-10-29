@@ -336,6 +336,8 @@ void muffin::MainWindow::restoreStartupFile() {
     const QString folder = snapshot.value(QStringLiteral("folder")).toString();
     if (QFileInfo(folder).isDir())
       openFolderAtPath(folder);
+    if (snapshot.contains(QStringLiteral("folderState")))
+      sidebar_->restoreFolderState(snapshot.value(QStringLiteral("folderState")).toMap());
     const QStringList files = snapshot.value(QStringLiteral("files")).toStringList();
     const QVariantList views = snapshot.value(QStringLiteral("views")).toList();
     const int active = snapshot.value(QStringLiteral("active"), -1).toInt();
@@ -381,7 +383,10 @@ void muffin::MainWindow::restoreStartupFile() {
     updateTabBarVisibility();
   }
   refreshSidebarDocumentInfo();
-  sidebar_->restoreExpandedFolders(snapshot.value(QStringLiteral("expanded")).toStringList());
+  if (snapshot.contains(QStringLiteral("folderState")))
+    sidebar_->restoreFolderState(snapshot.value(QStringLiteral("folderState")).toMap());
+  else
+    sidebar_->restoreExpandedFolders(snapshot.value(QStringLiteral("expanded")).toStringList());
   activateTab(tabs_->currentIndex());
   saveSessionState();
 }

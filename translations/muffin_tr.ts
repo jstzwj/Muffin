@@ -1007,7 +1007,7 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="480"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="500"/>
         <source>Start writing...</source>
         <translation>Yazmaya başlayın...</translation>
     </message>
@@ -1063,12 +1063,12 @@ Make it your default editor now?</source>
         <translation>Yükleniyor…</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="578"/>
+        <location filename="../src/editor/EditorView.cpp" line="579"/>
         <source>Markdown editor</source>
         <translation>Markdown düzenleyici</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="579"/>
+        <location filename="../src/editor/EditorView.cpp" line="580"/>
         <source>Rendered Markdown document</source>
         <translation>İşlenmiş Markdown belgesi</translation>
     </message>
@@ -1405,7 +1405,7 @@ Make it your default editor now?</source>
         <translation type="vanished">Ayrıştırma %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="521"/>
+        <location filename="../src/app/MainWindow.cpp" line="522"/>
         <source>Open Folder</source>
         <translation>Klasör Aç</translation>
     </message>
@@ -1483,8 +1483,8 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="169"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="305"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="406"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1430"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="411"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1435"/>
         <source>Properties</source>
         <translation>Özellikler</translation>
     </message>
@@ -2438,9 +2438,9 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="287"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="199"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="233"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="465"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="200"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="234"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="466"/>
         <source>Close Tab</source>
         <translation>Sekmeyi kapat</translation>
     </message>
@@ -2915,7 +2915,7 @@ C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif yerel Markdown düzenleyic
         <translation>Tema, tema klasörüne kopyalanamadı.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="396"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="401"/>
         <source>Name: %1
 Location: %2
 Size: %3 bytes
@@ -2930,150 +2930,150 @@ Kelime: %5
 Ayrıştırma süresi: %6 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="570"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="581"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="575"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="586"/>
         <source>Unsaved Drafts Found</source>
         <translation>Kaydedilmemiş Taslak Bulundu</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="575"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="580"/>
         <source>Muffin found %n unsaved draft(s) from a previous session. Restore one into this window, discard all of them, or keep them for later.</source>
         <translation>
             <numerusform>Muffin, önceki oturumdan %n kaydedilmemiş taslak buldu. Birini bu pencereye geri yükleyin, tamamını atın veya daha sonra için saklayın.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="587"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="826"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="592"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="831"/>
         <source>Untitled</source>
         <translation>Adsız</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="588"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="593"/>
         <source>%1  —  %2  (%n char(s))</source>
         <translation>
             <numerusform>%1  —  %2  (%n karakter)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="596"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="601"/>
         <source>Restore</source>
         <translation>Geri Yükle</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="597"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="602"/>
         <source>Discard All</source>
         <translation>Tümünü At</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="598"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="603"/>
         <source>Later</source>
         <translation>Daha sonra</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="679"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="684"/>
         <source>No files to open</source>
         <translation>Açılacak dosya yok</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="700"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="705"/>
         <source>Import</source>
         <translation>İçe Aktar</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="701"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="706"/>
         <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
         <translation>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;Tüm dosyalar (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="709"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="726"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="714"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="731"/>
         <source>Import Failed</source>
         <translation>İçe Aktarma Başarısız</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="710"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="892"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="715"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="897"/>
         <source>Pandoc was not found. Install Pandoc or set its path in Preferences → Export.</source>
         <translation>Pandoc bulunamadı. Pandoc&apos;u yükleyin veya Tercihler → Dışa Aktar bölümünde yolunu ayarlayın.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="714"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="719"/>
         <source>Importing %1…</source>
         <translation>%1 içe aktarılıyor…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="727"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="732"/>
         <source>Pandoc could not convert the file.</source>
         <translation>Pandoc dosyayı dönüştüremedi.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="736"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="741"/>
         <source>Imported %1</source>
         <translation>%1 içe aktarıldı</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="821"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="826"/>
         <source>Nothing to export</source>
         <translation>Dışa aktarılacak bir şey yok</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="218"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="253"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="831"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="836"/>
         <source>Export As</source>
         <translation>Farklı Dışa Aktar</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="831"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="836"/>
         <source>%1 files (*%2)</source>
         <translation>%1 dosyaları (*%2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="895"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="900"/>
         <source>Exporting %1…</source>
         <translation>%1 dışa aktarılıyor…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="932"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="937"/>
         <source>Pandoc failed:</source>
         <translation>Pandoc başarısız oldu:</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="234"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="841"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="953"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="846"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="958"/>
         <source>Export Failed</source>
         <translation>Dışa Aktarma Başarısız</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="957"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="962"/>
         <source>Exported to %1</source>
         <translation>%1 konumuna dışa aktarıldı</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1102"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1107"/>
         <source>Save All</source>
         <translation>Tümünü kaydet</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1103"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1108"/>
         <source>Saved %1 file(s). %2 file(s) could not be saved.</source>
         <translation>%1 dosya kaydedildi. %2 dosya kaydedilemedi.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1133"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1159"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1361"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1138"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1164"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1366"/>
         <source>Delete File</source>
         <translation>Dosyayı sil</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1134"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1366"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1139"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1371"/>
         <source>Are you sure you want to move &quot;%1&quot; to the trash?
 
 This action cannot be undone.</source>
@@ -3082,8 +3082,8 @@ This action cannot be undone.</source>
 Bu işlem geri alınamaz.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1160"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1393"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1165"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1398"/>
         <source>Could not move to trash. Permanently delete &quot;%1&quot;?
 
 This action cannot be undone.</source>
@@ -3092,35 +3092,35 @@ This action cannot be undone.</source>
 Bu işlem geri alınamaz.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1170"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1401"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1175"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1406"/>
         <source>Delete Failed</source>
         <translation>Silme başarısız</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1170"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1175"/>
         <source>Could not delete file:
 %1</source>
         <translation>Dosya silinemedi:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1280"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1285"/>
         <source>Name cannot be empty.</source>
         <translation>Ad boş olamaz.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1294"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1299"/>
         <source>An item named &quot;%1&quot; already exists.</source>
         <translation>&quot;%1&quot; adlı bir öğe zaten var.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1316"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1321"/>
         <source>Could not rename: %1</source>
         <translation>Yeniden adlandırılamadı: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1233"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1238"/>
         <source>Could not create file:
 %1
 
@@ -3131,207 +3131,207 @@ Bu işlem geri alınamaz.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="841"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="846"/>
         <source>Could not create a temporary export file.</source>
         <translation>Geçici dışa aktarma dosyası oluşturulamadı.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="861"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="866"/>
         <source>PDF export failed: the printer device could not be opened.</source>
         <translation>PDF dışa aktarımı başarısız oldu: yazıcı aygıtı açılamadı.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="870"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="875"/>
         <source>Image export failed. The image must fit within 64 million pixels and 32,767 pixels in height. Try a smaller width or scale, or export as PDF.</source>
         <translation>Görüntü dışa aktarılamadı. Görüntü 64 milyon pikseli ve 32,767 piksel yüksekliği aşmamalıdır. Daha küçük bir genişlik veya ölçek deneyin ya da PDF olarak dışa aktarın.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="905"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="910"/>
         <source>Export resource was not found: %1</source>
         <translation>Dışa aktarma kaynağı bulunamadı: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="916"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="921"/>
         <source>Additional arguments cannot override the input format, output format, output path, or defaults file.</source>
         <translation>Ek bağımsız değişkenler girdi biçimini, çıktı biçimini, çıktı yolunu veya varsayılan ayarlar dosyasını geçersiz kılamaz.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="985"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="990"/>
         <source>Unicode</source>
         <translation>Unicode</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="987"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="992"/>
         <source>UTF-8</source>
         <translation>UTF-8</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="988"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="993"/>
         <source>UTF-16 LE</source>
         <translation>UTF-16 LE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="989"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="994"/>
         <source>UTF-16 BE</source>
         <translation>UTF-16 BE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="991"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="996"/>
         <source>Western</source>
         <translation>Batı</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="993"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="998"/>
         <source>Western (Windows-1252)</source>
         <translation>Batı (Windows-1252)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="995"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1000"/>
         <source>Cyrillic</source>
         <translation>Kiril</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="997"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1002"/>
         <source>Cyrillic (Windows-1251)</source>
         <translation>Kiril (Windows-1251)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="998"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1003"/>
         <source>Cyrillic (ISO-8859-5)</source>
         <translation>Kiril (ISO-8859-5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="999"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1004"/>
         <source>Cyrillic (IBM866)</source>
         <translation>Kiril (IBM866)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1000"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1005"/>
         <source>Cyrillic (IBM855)</source>
         <translation>Kiril (IBM855)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1001"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1006"/>
         <source>Cyrillic (KOI8-R)</source>
         <translation>Kiril (KOI8-R)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1002"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1007"/>
         <source>Cyrillic (Mac)</source>
         <translation>Kiril (Mac)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1004"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1009"/>
         <source>Central European</source>
         <translation>Orta Avrupa</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1006"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1011"/>
         <source>Central European (Windows-1250)</source>
         <translation>Orta Avrupa (Windows-1250)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1007"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1012"/>
         <source>Central European (ISO-8859-2)</source>
         <translation>Orta Avrupa (ISO-8859-2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1009"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1014"/>
         <source>Greek</source>
         <translation>Yunanca</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1011"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1016"/>
         <source>Greek (Windows-1253)</source>
         <translation>Yunanca (Windows-1253)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1012"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1017"/>
         <source>Greek (ISO-8859-7)</source>
         <translation>Yunanca (ISO-8859-7)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1014"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1019"/>
         <source>Hebrew</source>
         <translation>İbranice</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1016"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1021"/>
         <source>Hebrew (Windows-1255)</source>
         <translation>İbranice (Windows-1255)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1017"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1022"/>
         <source>Hebrew (ISO-8859-8)</source>
         <translation>İbranice (ISO-8859-8)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1019"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1024"/>
         <source>Chinese Simplified</source>
         <translation>Basitleştirilmiş Çince</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1021"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1026"/>
         <source>Chinese Simplified (GB2312)</source>
         <translation>Basitleştirilmiş Çince (GB2312)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1022"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1027"/>
         <source>Chinese Simplified (GB18030)</source>
         <translation>Basitleştirilmiş Çince (GB18030)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1024"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1029"/>
         <source>Chinese Traditional</source>
         <translation>Geleneksel Çince</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1026"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1031"/>
         <source>Chinese Traditional (Big5)</source>
         <translation>Geleneksel Çince (Big5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1028"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1033"/>
         <source>Japanese</source>
         <translation>Japonca</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1030"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1035"/>
         <source>Japanese (Shift_JIS)</source>
         <translation>Japonca (Shift_JIS)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1031"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1036"/>
         <source>Japanese (EUC-JP)</source>
         <translation>Japonca (EUC-JP)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1033"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1038"/>
         <source>Korean</source>
         <translation>Korece</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1035"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1040"/>
         <source>Korean (EUC-KR)</source>
         <translation>Korece (EUC-KR)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1037"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1042"/>
         <source>Thai</source>
         <translation>Tayca</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1039"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1044"/>
         <source>Thai (TIS-620)</source>
         <translation>Tayca (TIS-620)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1070"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1075"/>
         <source>Markdown Files (*.md *.markdown);;All Files (*)</source>
         <translation>Markdown Dosyaları (*.md *.markdown);;Tüm Dosyalar (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1252"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1257"/>
         <source>Could not create folder:
 %1
 
@@ -3342,7 +3342,7 @@ Bu işlem geri alınamaz.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1348"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1353"/>
         <source>Could not create a copy:
 %1
 
@@ -3353,12 +3353,12 @@ Bu işlem geri alınamaz.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1361"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1366"/>
         <source>Delete Folder</source>
         <translation>Klasörü Sil</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1364"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1369"/>
         <source>Are you sure you want to move &quot;%1&quot; and all its contents to the trash?
 
 This action cannot be undone.</source>
@@ -3367,32 +3367,32 @@ This action cannot be undone.</source>
 Bu işlem geri alınamaz.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1401"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1406"/>
         <source>Could not delete:
 %1</source>
         <translation>Silinemedi:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1424"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1429"/>
         <source>Folder</source>
         <translation>Klasör</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1424"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1429"/>
         <source>File</source>
         <comment>properties: entry type</comment>
         <translation>Dosya</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1426"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1431"/>
         <source>Size: %1 bytes
 </source>
         <translation>Boyut: %1 bayt
 </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1427"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1432"/>
         <source>Name: %1
 Type: %2
 Location: %3
@@ -3403,21 +3403,21 @@ Konum: %3
 %4Değiştirilme: %5</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1447"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1452"/>
         <source>Could not reveal:
 %1</source>
         <translation>Dosya yöneticisinde gösterilemedi:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1145"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1470"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1150"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1475"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1145"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1470"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1150"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1475"/>
         <source>The current document has unsaved changes.</source>
         <translation>Geçerli belgede kaydedilmemiş değişiklikler var.</translation>
     </message>
@@ -3584,15 +3584,15 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="297"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="314"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1232"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1237"/>
         <source>New File</source>
         <translation>Yeni Dosya</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="298"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="315"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1245"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1251"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1250"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1256"/>
         <source>New Folder</source>
         <translation>Yeni Klasör</translation>
     </message>
@@ -3603,29 +3603,29 @@ Would you like to open the download page?</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="301"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1070"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1075"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="30"/>
         <source>Move To</source>
         <translation>Şuraya taşı</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="302"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1347"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1352"/>
         <source>Duplicate</source>
         <translation>Kopyasını Oluştur</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="307"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="501"/>
         <source>Copy Path</source>
         <translation>Yolu Kopyala</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="308"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="318"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1446"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="506"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1451"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="507"/>
         <source>Reveal in File Manager</source>
         <translation>Dosya Yöneticisinde Göster</translation>
     </message>
@@ -3647,65 +3647,65 @@ Would you like to open the download page?</source>
         <translation>Tümünü değiştir</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="199"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="233"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="496"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="200"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="234"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="497"/>
         <source>Unpin Tab</source>
         <translation>Sekmenin sabitlemesini kaldır</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="220"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="221"/>
         <source>Open Documents</source>
         <translation>Açık belgeler</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="224"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="227"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="225"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="228"/>
         <source>New Tab</source>
         <translation>Yeni sekme</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="491"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="492"/>
         <source>Close Others</source>
         <translation>Diğer sekmeleri kapat</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="492"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="493"/>
         <source>Close Tabs to the Right</source>
         <translation>Sağdaki sekmeleri kapat</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="493"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="494"/>
         <source>Close Saved Tabs</source>
         <translation>Kaydedilmiş sekmeleri kapat</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="494"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="495"/>
         <source>Close All Tabs</source>
         <translation>Tüm sekmeleri kapat</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="496"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="497"/>
         <source>Pin Tab</source>
         <translation>Sekmeyi sabitle</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="502"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="503"/>
         <source>Reveal in Finder</source>
         <translation>Finder’da göster</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="504"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="505"/>
         <source>Reveal in File Explorer</source>
         <translation>Dosya Gezgini’nde göster</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="510"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="511"/>
         <source>Move Tab to New Window</source>
         <translation>Sekmeyi yeni pencereye taşı</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="513"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="514"/>
         <source>Copy Tab to New Window</source>
         <translation>Sekmeyi yeni pencereye kopyala</translation>
     </message>
@@ -3854,7 +3854,7 @@ Bazı asıllar geri yüklenemedi. Yedekler: %1</translation>
         <translation>Not Bağlantılarını Güncelle</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="271"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>Bağlantılar güncellendi. Asıllar %1 konumuna yedeklendi</translation>
     </message>
@@ -5441,110 +5441,110 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
 <context>
     <name>muffin::SearchPanelWidget</name>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="297"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="301"/>
         <source> · Unsaved</source>
         <translation> · Kaydedilmemiş</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="317"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="321"/>
         <source>Open a folder to search its contents.</source>
         <translation>İçeriğinde arama yapmak için bir klasör açın.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="319"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="323"/>
         <source>Search failed: %1</source>
         <translation>Arama başarısız: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="321"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="325"/>
         <source>Search text files in this folder and its subfolders.</source>
         <translation>Bu klasördeki ve alt klasörlerindeki metin dosyalarında arama yapın.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="323"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="327"/>
         <source>%1 matches in %2 files</source>
         <translation>%2 dosyada %1 eşleşme</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="325"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="329"/>
         <source> · Searching…</source>
         <translation> · Aranıyor…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="327"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="331"/>
         <source> · Incomplete results; search again before replacing</source>
         <translation> · Sonuçlar eksik; değiştirmeden önce yeniden arayın</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="329"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="345"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="333"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
         <source>%1 files searched</source>
         <translation>%1 dosyada arama yapıldı</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="331"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="335"/>
         <source> · %1 files or folders skipped</source>
         <translation> · %1 dosya veya klasör atlandı</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="333"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="386"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="337"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="390"/>
         <source>Result limit reached</source>
         <translation>Sonuç sınırına ulaşıldı</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="336"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="342"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="346"/>
         <source>Search details</source>
         <translation>Arama ayrıntıları</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="348"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
         <source>Path</source>
         <translation>Yol</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="348"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
         <source>Reason</source>
         <translation>Neden</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="356"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="360"/>
         <source>File size exceeds %1 MiB</source>
         <translation>Dosya boyutu %1 MiB sınırını aşıyor</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="359"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
         <source>Regular expression search is limited to %1 MiB per file</source>
         <translation>Düzenli ifadeyle arama, dosya başına %1 MiB ile sınırlıdır</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="367"/>
         <source>File is loading or has conflicting unsaved versions</source>
         <translation>Dosya yükleniyor veya çakışan kaydedilmemiş sürümleri var</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="366"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
         <source>Cannot read file or folder</source>
         <translation>Dosya veya klasör okunamıyor</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="369"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
         <source>Unsupported encoding or binary content</source>
         <translation>Desteklenmeyen kodlama veya ikili içerik</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="372"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
         <source>File changed during search</source>
         <translation>Dosya arama sırasında değişti</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="375"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
         <source>Search exceeded its resource limit</source>
         <translation>Arama kaynak sınırını aştı</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="378"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
         <source>Ignored directory</source>
         <translation>Yok sayılan dizin</translation>
     </message>
@@ -5553,12 +5553,12 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation type="vanished">Açık klasör yok</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="394"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="398"/>
         <source>Search contents…</source>
         <translation>İçerikte ara…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="395"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
         <source>Search contents</source>
         <translation>İçerikte ara</translation>
     </message>
@@ -5572,44 +5572,44 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="398"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="402"/>
         <source>Match case</source>
         <translation>Büyük/küçük harf duyarlı</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="400"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="404"/>
         <source>Regular expression</source>
         <translation>Düzenli ifade</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="402"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="406"/>
         <source>Replace with…</source>
         <translation>Şununla değiştir…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="403"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
         <source>Replace with</source>
         <translation>Şununla değiştir</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="404"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="405"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="409"/>
         <source>Replace</source>
         <translation>Değiştir</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="406"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="410"/>
         <source>Preview folder replacement…</source>
         <translation>Klasörde değiştirmeyi önizle…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Search</source>
         <translation>Ara</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Stop</source>
         <translation>Durdur</translation>
     </message>
@@ -5618,7 +5618,7 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation type="vanished">Klasörde değiştirmeyi geri al…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="409"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Content search results</source>
         <translation>İçerik arama sonuçları</translation>
     </message>
@@ -5626,81 +5626,91 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
 <context>
     <name>muffin::SidebarWidget</name>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="317"/>
-        <location filename="../src/app/SidebarWidget.cpp" line="958"/>
-        <location filename="../src/app/SidebarWidget.cpp" line="987"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="322"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1142"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1171"/>
         <source>Files</source>
         <translation>Dosyalar</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="462"/>
-        <location filename="../src/app/SidebarWidget.cpp" line="961"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="474"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1145"/>
         <source>Outline</source>
         <translation>Ana Hat</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="938"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="735"/>
+        <source>Directory pinned — click to follow the active tab</source>
+        <translation>Dizin sabitlendi — etkin sekmeyi takip etmek için tıklayın</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="736"/>
+        <source>Following active tab — click to pin this directory</source>
+        <translation>Etkin sekme takip ediliyor — bu dizini sabitlemek için tıklayın</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SidebarWidget.cpp" line="1122"/>
         <source>No folder open</source>
         <translation>Açık klasör yok</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="944"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1128"/>
         <source>New File</source>
         <translation>Yeni Dosya</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="945"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1129"/>
         <source>New Folder</source>
         <translation>Yeni Klasör</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="947"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1131"/>
         <source>Refresh Files</source>
         <translation>Dosyaları Yenile</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="948"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1132"/>
         <source>Sort Files</source>
         <translation>Dosyaları Sırala</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="949"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1133"/>
         <source>File Name</source>
         <translation>Dosya Adı</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="950"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1134"/>
         <source>Date Modified</source>
         <translation>Değiştirilme Tarihi</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="951"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1135"/>
         <source>Date Created</source>
         <translation>Oluşturulma Tarihi</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="952"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1136"/>
         <source>File Type</source>
         <translation>Dosya Türü</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="953"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1137"/>
         <source>File Size</source>
         <translation>Dosya Boyutu</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="954"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1138"/>
         <source>Ascending</source>
         <translation>Artan</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="955"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1139"/>
         <source>Descending</source>
         <translation>Azalan</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="964"/>
-        <location filename="../src/app/SidebarWidget.cpp" line="988"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1148"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1172"/>
         <source>Search</source>
         <translation>Ara</translation>
     </message>
@@ -5711,7 +5721,7 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="324"/>
-        <location filename="../src/app/SidebarWidget.cpp" line="946"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1130"/>
         <source>Collapse All Folders</source>
         <translation>Tüm Klasörleri Daralt</translation>
     </message>
@@ -5729,7 +5739,7 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation>Klasörü Kapat</translation>
     </message>
     <message>
-        <location filename="../src/app/SidebarWidget.cpp" line="967"/>
+        <location filename="../src/app/SidebarWidget.cpp" line="1151"/>
         <source>No Headings</source>
         <translation>Başlık Yok</translation>
     </message>

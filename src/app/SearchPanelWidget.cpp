@@ -213,6 +213,10 @@ void muffin::SearchPanelWidget::setRoot(const QString& root) {
   case_->setChecked(settings.value("case", false).toBool());
   regex_->setChecked(settings.value("regex", false).toBool());
 }
+void muffin::SearchPanelWidget::setDefaultRoot(const QString& root) {
+  if (query_->text().isEmpty() && !running_)
+    setRoot(root);
+}
 void muffin::SearchPanelWidget::activate(bool replace) {
   replaceToggle_->setChecked(replace);
   query_->setFocus();

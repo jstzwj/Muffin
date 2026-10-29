@@ -11,6 +11,7 @@
 #include <QSet>
 #include <QQueue>
 #include <QWidget>
+#include <QVariantMap>
 
 class QMenu;
 class QLabel;
@@ -61,6 +62,10 @@ public:
   void setCurrentDocument(QString displayName, QString filePath, bool modified);
   void setFolderRoot(QString path);
   QString folderRoot() const;
+  bool folderPinned() const { return folderPinned_; }
+  void setFolderPinned(bool pinned);
+  QVariantMap folderState() const;
+  void restoreFolderState(const QVariantMap& state);
   QStringList expandedFolders() const;
   void restoreExpandedFolders(const QStringList& paths);
   void collapseAllFolders();
@@ -107,6 +112,11 @@ private:
   void changeEvent(QEvent* event) override;
   void setupFilesPanel();
   void updateFolderControls();
+  void updateFolderPin();
+  void changeFolderRoot(QString path);
+  void followCurrentDocument();
+  QVariantMap captureFolderView() const;
+  void restoreFolderView();
   void updateFileSort();
   void processFolderExpansions();
   void queueFolderExpansion(const QString& path);
@@ -133,6 +143,7 @@ private:
   QToolButton* filesTabButton_ = nullptr;
   QToolButton* outlineTabButton_ = nullptr;
   QToolButton* searchFilesButton_ = nullptr;
+  QToolButton* folderPinButton_ = nullptr;
   SearchPanelWidget* searchPanel_ = nullptr;
   QStackedWidget* stack_ = nullptr;
   QWidget* filesPanel_ = nullptr;
@@ -151,10 +162,15 @@ private:
   QString refreshAnchorPath_;
   int refreshAnchorOffset_ = 0;
   QTimer* folderExpansionTimer_ = nullptr;
+  QTimer* folderViewTimer_ = nullptr;
+  QVariantList folderViews_; // Bounded most-recently-used roots, without document text.
+  QVariantMap pendingFolderView_;
+  QString pendingRevealPath_;
   QQueue<QString> folderExpansionQueue_;
   QSet<QString> queuedFolderExpansions_;
   QSet<QString> expandedFolderPaths_;
   bool folderExplicitlyClosed_ = false;
+  bool folderPinned_ = false;
   bool expandAllRequested_ = false;
   QTreeView* outlineTree_ = nullptr;
   OutlineModel* outlineModel_ = nullptr;

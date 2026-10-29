@@ -4,6 +4,8 @@
 
 #include <QCollator>
 #include <QFileSystemModel>
+#include <QPersistentModelIndex>
+#include <QSet>
 #include <QSortFilterProxyModel>
 
 namespace muffin {
@@ -23,6 +25,7 @@ public:
   QString filePath(const QModelIndex& index) const;
   QString fileName(const QModelIndex& index) const;
   bool isDir(const QModelIndex& index) const;
+  bool isDirectoryLoaded(const QModelIndex& index) const;
   void setSortBy(SortBy field, Qt::SortOrder order);
   SortBy sortBy() const { return sortBy_; }
   // Replace stale filesystem caches; consumers restore only saved branches.
@@ -37,6 +40,7 @@ protected:
 private:
   void replaceSource();
   QFileSystemModel* files_ = nullptr;
+  QSet<QPersistentModelIndex> loadedDirectories_;
   QCollator collator_;
   SortBy sortBy_ = SortBy::Name;
 };

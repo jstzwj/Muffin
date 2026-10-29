@@ -259,8 +259,11 @@ bool muffin::MainWindow::renameOrMoveWithLinks(const QString& oldPath, const QSt
     for (auto& path : folders)
       path = FilePathOps::remapDescendant(path, oldPath, newPath);
     window->setRecentFolders(folders);
-    if (FilePathOps::isSameOrDescendant(window->sidebarFolderRoot_, oldPath))
+    if (FilePathOps::isSameOrDescendant(window->sidebarFolderRoot_, oldPath)) {
+      const bool pinned = window->sidebar_->folderPinned();
       window->openFolderAtPath(FilePathOps::remapDescendant(window->sidebarFolderRoot_, oldPath, newPath));
+      window->sidebar_->setFolderPinned(pinned);
+    }
     if (window->sidebar_)
       window->sidebar_->setCurrentPath(newPath);
     window->rebuildRecentFilesMenu();

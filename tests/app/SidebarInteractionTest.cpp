@@ -19,6 +19,7 @@
 #include <QMenu>
 #include <QMimeData>
 #include <QSettings>
+#include <QScrollBar>
 #include <QTemporaryDir>
 #include <QThread>
 #include <QTreeView>
@@ -194,7 +195,7 @@ void testToolbarIconsRetainTheirShapeAtHighDpi() {
     require(theme.has_value(), "toolbar icon test theme should exist");
     sidebar.applyTheme(*theme);
     for (const auto* name : {"NewFileButton", "NewFolderButton", "RefreshFoldersButton", "SortFilesButton",
-                             "CollapseFoldersButton", "SearchFilesButton"}) {
+                             "CollapseFoldersButton", "SearchFilesButton", "FolderPinButton"}) {
       const auto* button = sidebar.findChild<QToolButton*>(QString::fromLatin1(name));
       require(button && !button->icon().isNull(), "toolbar button should have an icon");
       for (const auto mode : {QIcon::Normal, QIcon::Disabled, QIcon::Active}) {
@@ -236,7 +237,7 @@ void testToolbarCollapsesFoldersAndRestoresState() {
   require(collapse && !collapse->toolTip().isEmpty() && !collapse->accessibleName().isEmpty(),
           "folder toolbar exposes tooltips and accessible names");
   auto* toolbar = f.sidebar.findChild<QWidget*>("FolderToolbar");
-  require(toolbar && toolbar->findChildren<QToolButton*>().size() == 6 &&
+  require(toolbar && toolbar->findChildren<QToolButton*>().size() == 7 &&
               !f.sidebar.findChild<QWidget*>("FolderName") && !f.sidebar.findChild<QToolButton*>("FolderMenuButton"),
           "compact toolbar contains file controls and the search toggle");
   const auto nestedPath = f.dir.filePath("Folder/Nested");
@@ -288,6 +289,110 @@ void testToolbarCollapsesFoldersAndRestoresState() {
     require(f.sidebar.grab().save(screenshot + QStringLiteral(".night.png")),
             "capture dark explorer toolbar appearance");
   }
+}
+
+void testFolderPinAndFollowState() {
+  QTemporaryDir dir;
+  require(QDir(dir.path()).mkpath("A/Branch/Deep") && QDir(dir.path()).mkpath("C"), "create followed directories");
+  for (const auto* name : {"A", "A/Branch/Deep", "C"}) {
+    for (int i = 0; i < 80; ++i) {
+      QFile file(dir.filePath(QStringLiteral("%1/note%2.md").arg(name).arg(i, 3, 10, QLatin1Char('0'))));
+      require(file.open(QIODevice::WriteOnly), "create scrolling directory");
+      file.write("note\n");
+    }
+  }
+  SidebarWidget sidebar;
+  sidebar.resize(SidebarWidget::kMinimumWidth, 310);
+  sidebar.show();
+  auto* tree = sidebar.findChild<QTreeView*>("FileTree");
+  auto* model = qobject_cast<FileTreeModel*>(tree->model());
+  auto* pin = sidebar.findChild<QToolButton*>("FolderPinButton");
+  require(pin && !pin->isEnabled() && !pin->isChecked(), "empty tree has a disabled follow pin");
+  const auto emptyState = sidebar.folderState();
+  const QString a = dir.filePath("A"), c = dir.filePath("C");
+  sidebar.setCurrentDocument("note000.md", a + "/note000.md", false);
+  waitUntil([&] { return model->rowCount(tree->rootIndex()) == 81; }, "first followed directory loads");
+  require(sidebar.folderRoot() == a && !pin->isChecked() && pin->isEnabled(), "direct file open follows its directory");
+  sidebar.restoreExpandedFolders({"Branch", "Branch/Deep"});
+  waitUntil(
+      [&] {
+        const auto deep = model->index(a + "/Branch/Deep");
+        return tree->isExpanded(deep) && model->rowCount(deep) == 80;
+      },
+      "followed folder expansion loads");
+  tree->verticalScrollBar()->setValue(700);
+  QApplication::processEvents();
+  const int scroll = tree->verticalScrollBar()->value();
+  const auto anchor = QPersistentModelIndex(tree->indexAt({60, 0}));
+  const int y = tree->visualRect(anchor).top();
+  require(scroll > 0 && anchor.isValid(), "following fixture has a scrolled view");
+  sidebar.setCurrentDocument("note000.md", c + "/note000.md", false);
+  waitUntil([&] { return model->rowCount(tree->rootIndex()) == 80; }, "second followed directory loads");
+  require(sidebar.folderRoot() == c, "another file changes the followed root");
+  sidebar.setCurrentDocument("note000.md", a + "/note000.md", false);
+  waitUntil(
+      [&] {
+        return tree->isExpanded(model->index(a + "/Branch/Deep")) && qAbs(tree->visualRect(anchor).top() - y) <= 1;
+      },
+      "return restores root expansion and visual scroll anchor");
+  require(qAbs(tree->verticalScrollBar()->value() - scroll) <= 1, "return does not scroll to the active file");
+  {
+    SidebarWidget restored;
+    restored.resize(sidebar.size());
+    restored.show();
+    restored.setCurrentDocument("note000.md", a + "/note000.md", false);
+    restored.restoreFolderState(sidebar.folderState());
+    auto* restoredTree = restored.findChild<QTreeView*>("FileTree");
+    auto* restoredModel = qobject_cast<FileTreeModel*>(restoredTree->model());
+    const QString anchorPath = model->filePath(anchor);
+    require(anchorPath.startsWith(a + "/Branch/Deep/"), "saved viewport starts inside a nested branch");
+    waitUntil(
+        [&] {
+          const auto restoredAnchor = restoredModel->index(anchorPath);
+          return restoredModel->isDirectoryLoaded(restoredModel->index(a + "/Branch/Deep")) &&
+                 !restoredTree->visualRect(restoredAnchor).isEmpty() &&
+                 qAbs(restoredTree->visualRect(restoredAnchor).top() - y) <= 1;
+        },
+        "cold filesystem model restores the nested viewport after all saved branches load");
+    require(!restored.folderPinned(), "cold restore preserves follow mode");
+  }
+  sidebar.setCurrentDocument("note000.md", c + "/note000.md", false);
+  sidebar.setCurrentDocument("note000.md", a + "/note000.md", false);
+  sidebar.setCurrentPath(a + "/note000.md");
+  waitUntil(
+      [&] {
+        const auto revealed = tree->visualRect(model->index(a + "/note000.md"));
+        return tree->isExpanded(model->index(a + "/Branch/Deep")) && !revealed.isEmpty() &&
+               tree->viewport()->rect().intersects(revealed);
+      },
+      "explicit reveal wins over the saved viewport while switching roots");
+  pin->click();
+  require(sidebar.folderPinned() && pin->isChecked(), "click pins the current directory");
+  sidebar.setCurrentDocument("note000.md", c + "/note000.md", false);
+  require(sidebar.folderRoot() == a && !tree->currentIndex().isValid(),
+          "pinned tree stays put without selecting an outside row");
+  pin->click();
+  require(!sidebar.folderPinned() && sidebar.folderRoot() == c, "unpin immediately follows the current file");
+  sidebar.setCurrentDocument("Untitled", {}, true);
+  require(sidebar.folderRoot() == c, "untitled tabs keep the last followed directory");
+  sidebar.setFolderRoot(a);
+  require(sidebar.folderPinned() && pin->isChecked(), "Open Folder pins even when a directory is already shown");
+  sidebar.setFolderRoot({});
+  sidebar.setCurrentDocument("note000.md", c + "/note000.md", false);
+  require(sidebar.folderRoot().isEmpty() && !pin->isEnabled(), "explicitly closed tree stays closed");
+  {
+    SidebarWidget restored;
+    restored.restoreFolderState(sidebar.folderState());
+    restored.setCurrentDocument("note000.md", c + "/note000.md", false);
+    require(restored.folderRoot().isEmpty(), "explicitly closed tree stays closed after restart");
+    restored.restoreFolderState(emptyState);
+    require(restored.folderRoot() == c && !restored.folderPinned(),
+            "fresh empty session can still follow its first opened file after restart");
+  }
+  auto* search = sidebar.findChild<QToolButton*>("SearchFilesButton");
+  require(sidebar.width() == SidebarWidget::kMinimumWidth && pin->geometry().left() >= 0 &&
+              search->geometry().right() < search->parentWidget()->width(),
+          "pin fits without widening the minimum sidebar");
 }
 
 void testClosingWorkspaceAndToolbarCreationTargets() {
@@ -463,6 +568,7 @@ int main(int argc, char** argv) {
   QSettings::setDefaultFormat(QSettings::IniFormat);
   QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
   runTest("testToolbarIconsRetainTheirShapeAtHighDpi", testToolbarIconsRetainTheirShapeAtHighDpi);
+  runTest("testFolderPinAndFollowState", testFolderPinAndFollowState);
   runTest("testSortMenuAndPersistence", testSortMenuAndPersistence);
   runTest(
       "testSortMenuAndPersistenceInCLocale", +[] {

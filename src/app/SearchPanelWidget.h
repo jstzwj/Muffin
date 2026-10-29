@@ -16,6 +16,8 @@ public:
   explicit SearchPanelWidget(QWidget* parent = nullptr);
   ~SearchPanelWidget() override;
   void setRoot(const QString& root);
+  // Follow the file tree only while there is no active search query.
+  void setDefaultRoot(const QString& root);
   QString root() const { return root_; }
   void activate(bool replace);
   void startSearch(const OpenSearchBuffers& buffers);

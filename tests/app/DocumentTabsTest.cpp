@@ -3060,6 +3060,81 @@ QStringList openPaths(Fixture& f) {
   return paths;
 }
 
+void directoryTreeFollowsTabsUnlessPinned() {
+  Fixture f;
+  require(QDir(f.directory.path()).mkpath("A/Sub") && QDir(f.directory.path()).mkpath("C"), "create tab directories");
+  const auto a = f.file("A/B.md", "needle A\n");
+  const auto c = f.file("C/D.md", "needle C\n");
+  auto* first = f.open(a);
+  auto* sidebar = f.window.findChild<SidebarWidget*>();
+  auto* pin = sidebar->findChild<QToolButton*>("FolderPinButton");
+  const auto rootA = f.directory.filePath("A"), rootC = f.directory.filePath("C");
+  require(sidebar->folderRoot() == rootA && !pin->isChecked(), "direct file open follows its parent");
+  auto* second = f.open(c);
+  require(sidebar->folderRoot() == rootC, "opening another directory follows its active tab");
+  f.tabs->setCurrentWidget(first);
+  require(sidebar->folderRoot() == rootA, "switch back follows first tab");
+  auto* query = sidebar->searchPanel()->findChild<QLineEdit*>("WorkspaceSearchQuery");
+  require(query, "search exposes query field");
+  query->setText("needle");
+  sidebar->searchPanel()->startSearch({});
+  waitUntil([&] { return sidebar->searchPanel()->result().complete; }, "directory A search completes");
+  f.tabs->setCurrentWidget(second);
+  require(sidebar->folderRoot() == rootC && sidebar->searchPanel()->root() == rootA &&
+              sidebar->searchPanel()->result().query.root == rootA && sidebar->searchPanel()->result().complete,
+          "tab navigation changes the tree without discarding an existing search or replacement scope");
+  pin->click();
+  f.tabs->setCurrentWidget(first);
+  require(sidebar->folderRoot() == rootC && pin->isChecked(), "manual pin retains root across tabs");
+  pin->click();
+  require(sidebar->folderRoot() == rootA && !pin->isChecked(), "unpin immediately follows active tab");
+  f.window.openFolderAtPath(f.directory.path());
+  f.tabs->setCurrentWidget(second);
+  require(sidebar->folderPinned() && sidebar->folderRoot() == f.directory.path(), "Open Folder pins the library root");
+  const auto state = sidebar->folderState();
+  require(state.value("pinned").toBool(), "pinned mode is serializable");
+  pin->click();
+  require(sidebar->folderRoot() == rootC && !sidebar->folderPinned(), "unpin library switches to document directory");
+  action(f.window, "New")->trigger();
+  require(sidebar->folderRoot() == rootC, "new unsaved tab retains directory");
+}
+
+void followingDirectorySurvivesRestart() {
+  SettingsOverride startup("files/startupBehavior", 1);
+  SettingsOverride session("session/window", QVariantMap{});
+  Fixture original;
+  require(QDir(original.directory.path()).mkpath("A/Branch/Deep") && QDir(original.directory.path()).mkpath("C"),
+          "create followed session folders");
+  const auto a = original.file("A/a.md", "a\n");
+  const auto c = original.file("C/c.md", "c\n");
+  auto* first = original.open(a);
+  auto* sidebar = original.window.findChild<SidebarWidget*>();
+  auto* tree = sidebar->findChild<QTreeView*>("FileTree");
+  auto* model = qobject_cast<FileTreeModel*>(tree->model());
+  sidebar->restoreExpandedFolders({"Branch", "Branch/Deep"});
+  waitUntil([&] { return tree->isExpanded(model->index(original.directory.filePath("A/Branch/Deep"))); },
+            "followed session expansion loads");
+  original.open(c);
+  original.tabs->setCurrentWidget(first);
+  require(original.window.close(), "close followed session");
+  Fixture restored;
+  restored.window.restoreStartupFile();
+  auto* restoredSidebar = restored.window.findChild<SidebarWidget*>();
+  auto* restoredTree = restoredSidebar->findChild<QTreeView*>("FileTree");
+  auto* restoredModel = qobject_cast<FileTreeModel*>(restoredTree->model());
+  waitUntil(
+      [&] { return restoredTree->isExpanded(restoredModel->index(original.directory.filePath("A/Branch/Deep"))); },
+      "followed session restores per-root expansion");
+  require(!restoredSidebar->folderPinned() && restoredSidebar->folderRoot() == original.directory.filePath("A"),
+          "restart retains follow mode instead of pinning the saved root");
+  restored.tabs->setCurrentIndex(1);
+  require(restoredSidebar->folderRoot() == original.directory.filePath("C"), "restored tabs continue following");
+  restored.tabs->setCurrentIndex(0);
+  waitUntil(
+      [&] { return restoredTree->isExpanded(restoredModel->index(original.directory.filePath("A/Branch/Deep"))); },
+      "switching restored roots retains their expansion");
+}
+
 void sessionRestoresOrderActiveFolderAndExpansion() {
   SettingsOverride startup("files/startupBehavior", 1);
   SettingsOverride session("session/window", QVariantMap{});
@@ -3069,6 +3144,7 @@ void sessionRestoresOrderActiveFolderAndExpansion() {
   const QString b = original.file("Folder/b.md", "# Second\n");
   const QString c = original.file("c.md", "# Third\n");
   original.open(a);
+  original.window.openFolderAtPath(original.directory.path());
   auto* second = original.open(b);
   original.open(c);
   original.tabs->tabBar()->moveTab(2, 0);
@@ -3492,6 +3568,8 @@ int main(int argc, char** argv) {
   runTest("focusedSaveDialogSelectsExactPath", focusedSaveDialogSelectsExactPath);
   if (QCoreApplication::arguments().contains(QStringLiteral("--save-dialog")))
     return 0;
+  runTest("directoryTreeFollowsTabsUnlessPinned", directoryTreeFollowsTabsUnlessPinned);
+  runTest("followingDirectorySurvivesRestart", followingDirectorySurvivesRestart);
   runTest("fileTreeOpeningPreservesScrollPosition", fileTreeOpeningPreservesScrollPosition);
   if (QCoreApplication::arguments().contains(QStringLiteral("--sidebar-file-open")))
     return 0;

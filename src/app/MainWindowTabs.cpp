@@ -670,6 +670,7 @@ void muffin::MainWindow::saveSessionState() {
                              {QStringLiteral("active"), active},
                              {QStringLiteral("views"), views},
                              {QStringLiteral("folder"), sidebar_->folderRoot()},
+                             {QStringLiteral("folderState"), sidebar_->folderState()},
                              {QStringLiteral("expanded"), sidebar_->expandedFolders()}};
   QSettings settings;
   settings.setValue(QStringLiteral("session/window"), snapshot);

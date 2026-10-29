@@ -39,9 +39,13 @@ muffin::FileTreeModel::FileTreeModel(QObject* parent) : QSortFilterProxyModel(pa
 
 void muffin::FileTreeModel::replaceSource() {
   auto* previous = files_;
+  loadedDirectories_.clear();
   files_ = new FileSourceModel(this);
   files_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-  connect(files_, &QFileSystemModel::directoryLoaded, this, &FileTreeModel::directoryLoaded);
+  connect(files_, &QFileSystemModel::directoryLoaded, this, [this](const QString& path) {
+    loadedDirectories_.insert(QPersistentModelIndex(files_->index(path)));
+    emit directoryLoaded(path);
+  });
   setSourceModel(files_);
   if (previous) {
     disconnect(previous, nullptr, this, nullptr);
@@ -67,6 +71,10 @@ QString muffin::FileTreeModel::fileName(const QModelIndex& index) const {
 
 bool muffin::FileTreeModel::isDir(const QModelIndex& index) const {
   return files_->isDir(mapToSource(index));
+}
+
+bool muffin::FileTreeModel::isDirectoryLoaded(const QModelIndex& index) const {
+  return index.isValid() && loadedDirectories_.contains(QPersistentModelIndex(mapToSource(index)));
 }
 
 void muffin::FileTreeModel::setSortBy(SortBy field, Qt::SortOrder order) {
