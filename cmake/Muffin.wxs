@@ -10,7 +10,10 @@
 
     <!-- The registry choices include changes made from the app after install.
          Migrating the old MSI feature state would overwrite those choices. -->
-    <MajorUpgrade MigrateFeatures="no" DowngradeErrorMessage="A newer version of Muffin is already installed." />
+    <!-- Remove the old product inside the MSI transaction. The default
+         afterInstallValidate schedule cannot restore it if the update fails. -->
+    <MajorUpgrade Schedule="afterInstallInitialize" MigrateFeatures="no"
+                  DowngradeErrorMessage="A newer version of Muffin is already installed." />
 
     <Property Id="MUFFINCONTEXTMENUSAVED">
       <RegistrySearch Id="SavedContextMenu" Root="HKCU" Key="Software\Muffin\Muffin\integration"

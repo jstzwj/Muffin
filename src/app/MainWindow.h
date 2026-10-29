@@ -80,6 +80,11 @@ public:
   // window so each checks all its tabs for unsaved changes; the event loop
   // ends when the last window closes.
   void quitApplication();
+  // Update shutdown is prepared across every window before any window closes.
+  bool prepareUpdateClose();
+  void finishUpdateClose(bool approved);
+  QVariantMap sessionState() const;
+  void restoreSessionState(const QVariantMap& snapshot);
 
   // Composite editor-state queries backing the command declaration predicates
   // (CommandDeclarations.cpp). Exposed so the predicate table — which lives
@@ -103,6 +108,9 @@ protected:
   void showEvent(QShowEvent* event) override;
 
 private:
+  bool confirmWindowClose();
+  bool updateClosePrepared_ = false;
+  bool updateCloseApproved_ = false;
   bool startNewDocument();
   bool loadFileIntoTab(DocumentTab* document, const QString& path);
   void confirmPendingFileOpen(DocumentTab* document);

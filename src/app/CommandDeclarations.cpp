@@ -4,6 +4,7 @@
 #include "app/MarkdownSettings.h"
 #include "app/HelpViewerDialog.h"
 #include "app/UpdateChecker.h"
+#include "app/WindowsUpdater.h"
 #include "app/SidebarWidget.h"
 #include "document/MarkdownTypes.h"
 #include "document/ImageSyntaxOps.h"
@@ -1891,7 +1892,11 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
         {.id = QStringLiteral("help.update"),
          .category = CommandCategory::Help,
          .text = muffin::MainWindow::tr("Check for Updates..."),
-         .handler = [](MainWindow& window) { UpdateChecker::instance().checkForUpdates(&window); }},
+         .handler =
+             [](MainWindow& window) {
+               if (!WindowsUpdater::instance().showExisting())
+                 UpdateChecker::instance().checkForUpdates(&window);
+             }},
         {.id = QStringLiteral("help.about"),
          .category = CommandCategory::Help,
          .text = muffin::MainWindow::tr("About"),

@@ -2,9 +2,11 @@
 
 #include "app/LanguageManager.h"
 #include "app/UpdateChecker.h"
+#include "app/WindowsUpdater.h"
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -83,6 +85,16 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
             }
             checkUpdateButton_->setEnabled(true);
             retranslateUi();
+            const auto& package = UpdateChecker::instance().latestPackage();
+            if (WindowsUpdater::installedCopy() && package) {
+              WindowsUpdater::instance().showUpdate(*package, window());
+              // The updater is independent of the modal Preferences lifetime.
+              // End its nested event loop so the update dialog and editor can
+              // both receive input while a download is in progress.
+              if (auto* preferences = qobject_cast<QDialog*>(window()))
+                preferences->accept();
+              return;
+            }
             QMessageBox::information(window(), tr("Update Available"),
                                      tr("A new version of Muffin (%1) is available.").arg(version));
           });
@@ -105,6 +117,11 @@ muffin::PrefsGeneralPage::PrefsGeneralPage(QWidget* parent) : PreferencesPage(pa
 
   // --- Update check button ---
   connect(checkUpdateButton_, &QPushButton::clicked, this, [this] {
+    if (WindowsUpdater::instance().showExisting()) {
+      if (auto* preferences = qobject_cast<QDialog*>(window()))
+        preferences->accept();
+      return;
+    }
     checkUpdateButton_->setEnabled(false);
     checkUpdateButton_->setText(tr("Checking..."));
     if (!muffin::UpdateChecker::instance().checkForUpdates(this)) {

@@ -21,14 +21,18 @@ public:
   // safe and elects one listener when several files launch simultaneously.
   bool listen();
   bool forwardFiles(const QStringList& absolutePaths) const;
+  bool hasPendingFileRequests() const { return pendingFileRequests_ != 0; }
 
 signals:
+  // Emitted before acknowledgement, while delivery may still be queued.
+  void acceptingFileRequest();
   void filesRequested(const QStringList& absolutePaths);
 
 private:
   QString serverName_;
   QLockFile lock_;
   QLocalServer server_;
+  qsizetype pendingFileRequests_ = 0;
 };
 
 } // namespace muffin

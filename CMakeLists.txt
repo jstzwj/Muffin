@@ -188,6 +188,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsAppearancePage.cpp
   src/app/PrefsGeneralPage.cpp
   src/app/UpdateChecker.cpp
+  src/app/WindowsUpdater.cpp
   src/app/SidebarWidget.cpp
   src/app/StatusBarWidget.cpp
   src/document/DocumentSession.cpp
@@ -1097,6 +1098,8 @@ add_executable(Muffin
   src/app/MainWindowSignalBinder.cpp
   src/app/UpdateChecker.cpp
   src/app/UpdateChecker.h
+  src/app/WindowsUpdater.cpp
+  src/app/WindowsUpdater.h
   src/app/MainWindowFileOps.cpp
   src/app/MainWindowNavigation.cpp
   src/app/MainWindowNoteLinks.cpp
@@ -1417,7 +1420,24 @@ set(MUFFIN_UI_SOURCES
 
 add_library(MuffinUi ${MUFFIN_LIB_TYPE}
   ${MUFFIN_UI_SOURCES}
+  src/app/UpdatePackage.cpp
+  src/app/UpdatePackage.h
 )
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/update-public-key.txt")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/resources/update-public-key.txt" MUFFIN_UPDATE_PUBLIC_KEY_HEX)
+string(STRIP "${MUFFIN_UPDATE_PUBLIC_KEY_HEX}" MUFFIN_UPDATE_PUBLIC_KEY_HEX)
+string(LENGTH "${MUFFIN_UPDATE_PUBLIC_KEY_HEX}" MUFFIN_UPDATE_PUBLIC_KEY_LENGTH)
+if(NOT MUFFIN_UPDATE_PUBLIC_KEY_LENGTH EQUAL 144 OR
+   NOT MUFFIN_UPDATE_PUBLIC_KEY_HEX MATCHES "^4543533120000000[0-9a-f]+$")
+  message(FATAL_ERROR "resources/update-public-key.txt must contain a 72-byte ECDSA P-256 public key blob in lowercase hex")
+endif()
+configure_file(cmake/UpdateTrust.h.in "${CMAKE_CURRENT_BINARY_DIR}/generated/UpdateTrust.h" @ONLY)
+target_include_directories(MuffinUi PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+if(WIN32)
+  target_link_libraries(MuffinUi PRIVATE bcrypt msi.lib)
+  target_link_libraries(Muffin PRIVATE msi.lib)
+endif()
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/themes/document-base.css")
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/resources/themes/document-base.css" MUFFIN_DOCUMENT_BASE_CSS)

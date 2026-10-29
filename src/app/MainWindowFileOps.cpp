@@ -326,6 +326,10 @@ void muffin::MainWindow::restoreStartupFile() {
   if (settings.value(QStringLiteral("files/startupBehavior"), 1).toInt() != 1)
     return;
   const auto snapshot = settings.value(QStringLiteral("session/window")).toMap();
+  restoreSessionState(snapshot);
+}
+
+void muffin::MainWindow::restoreSessionState(const QVariantMap& snapshot) {
   if (snapshot.value(QStringLiteral("version")).toInt() != 1)
     return;
   {
@@ -517,6 +521,8 @@ int muffin::MainWindow::draftSnapshotIntervalMs(const DocumentTab* tab) const {
 }
 
 void muffin::MainWindow::performAutoSave(DocumentTab* tab) {
+  if (updateClosePrepared_)
+    return;
   // Silent write of a pathed, modified document when files/autoSave is on. Untitled
   // documents (no filePath) are handled by draft-recovery snapshots, not here.
   QSettings settings;

@@ -1,6 +1,7 @@
 #include "app/FileOpenDispatcher.h"
 
 #include "app/MainWindow.h"
+#include "app/WindowsUpdater.h"
 
 #include <QApplication>
 #include <QFileInfo>
@@ -19,6 +20,10 @@ muffin::FileOpenDispatcher::FileOpenDispatcher(QObject* parent) : QObject(parent
   retry_.setInterval(100);
   retry_.setSingleShot(true);
   connect(&retry_, &QTimer::timeout, this, &FileOpenDispatcher::dispatch);
+  connect(&WindowsUpdater::instance(), &WindowsUpdater::preparingRestart, this, [this] {
+    if (!pending_.isEmpty())
+      WindowsUpdater::instance().interruptRestart();
+  });
 }
 
 bool muffin::FileOpenDispatcher::setInitialWindow(MainWindow* window) {
@@ -32,6 +37,9 @@ bool muffin::FileOpenDispatcher::setInitialWindow(MainWindow* window) {
 void muffin::FileOpenDispatcher::openFiles(const QStringList& paths) {
   if (paths.isEmpty())
     return;
+  // An acknowledged OS open must survive an update attempt. Let it cancel the
+  // pending restart; dispatch() will retry after prepared windows are released.
+  WindowsUpdater::instance().interruptRestart();
   pending_.enqueue({paths, !file_open_preferences::openInTabs()});
   dispatch();
 }
@@ -64,7 +72,7 @@ void muffin::FileOpenDispatcher::dispatch() {
   if (!ready_ || pending_.isEmpty())
     return;
   // Never interrupt a save/conflict dialog, export, or workspace replacement.
-  if (QApplication::activeModalWidget()) {
+  if (QApplication::activeModalWidget() || WindowsUpdater::instance().restartPending()) {
     retry_.start();
     return;
   }

@@ -1,4 +1,4 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
 
   <!-- Burn bundle wrapping the Muffin MSI behind a custom WPF bootstrapper
        application (installer/ba). The BA carries the modern install/update/
@@ -44,6 +44,9 @@
       <Payload SourceFile="$(var.BaDir)/mbanative.dll" />
     </BootstrapperApplicationRef>
 
+    <!-- Only used by the in-app updater. Contains a PID and base64 paths, not
+         shell commands. Hidden so user paths do not enter the bundle log. -->
+    <Variable Name="MuffinUpdate" Type="string" Value="" Hidden="yes" bal:Overridable="yes" />
     <Chain>
       <!-- EnableFeatureSelection lets the BA answer PlanMsiFeature for each
            MSI feature from its checkboxes (see MuffinBa.OnPlanMsiFeature).

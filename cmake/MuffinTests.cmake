@@ -515,8 +515,15 @@ get_target_property(_tab_test_app_sources Muffin SOURCES)
 list(FILTER _tab_test_app_sources INCLUDE REGEX "^src/app/.*\\.(cpp|h)$")
 muffin_add_test(NAME MuffinDocumentTabsTest SOURCE tests/app/DocumentTabsTest.cpp LINK MuffinUi
   EXTRA_LINK Qt6::Test Qt6::Svg Qt6::PrintSupport Qt6::Concurrent
-  EXTRA_SOURCES ${_tab_test_app_sources} src/icons.qrc src/translations.qrc ${MUFFIN_THEMES_QRC} ${MUFFIN_HELP_QRC} ${MUFFIN_EMOJI_QRC}
+  EXTRA_SOURCES ${_tab_test_app_sources} tests/app/WindowsUpdateTest.cpp src/icons.qrc src/translations.qrc ${MUFFIN_THEMES_QRC} ${MUFFIN_HELP_QRC} ${MUFFIN_EMOJI_QRC}
   RESOURCE_LOCK)
+if(WIN32)
+  target_link_libraries(MuffinDocumentTabsTest PRIVATE bcrypt msi.lib)
+endif()
+add_test(NAME MuffinWindowsUpdateTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --windows-update)
+set_tests_properties(MuffinWindowsUpdateTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"
+  RESOURCE_LOCK MuffinQtGui)
 target_compile_definitions(MuffinDocumentTabsTest PRIVATE MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}")
 add_test(NAME MuffinLazySessionViewTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --session-view-state)
 set_tests_properties(MuffinLazySessionViewTest PROPERTIES

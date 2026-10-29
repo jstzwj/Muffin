@@ -10,6 +10,7 @@
 #include "app/SourceEditorBackend.h"
 #include "app/StatusBarWidget.h"
 #include "app/UpdateChecker.h"
+#include "app/WindowsUpdater.h"
 #include "document/MarkdownNode.h"
 #include "document/OutlineBuilder.h"
 #include "document/SourceRangeUtil.h"
@@ -145,9 +146,28 @@ muffin::MainWindow::~MainWindow() {
 }
 
 void muffin::MainWindow::closeEvent(QCloseEvent* event) {
-  if (workspaceWriteInProgress_) {
+  if (!updateCloseApproved_ && WindowsUpdater::instance().restartPending()) {
     event->ignore();
     return;
+  }
+  if (!updateCloseApproved_ && !confirmWindowClose()) {
+    event->ignore();
+    return;
+  }
+  QSettings settings;
+  saveSessionState();
+  settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
+  for (DocumentTab* document : documentTabs()) {
+    document->autoSaveTimer->stop();
+    document->draftTimer->stop();
+    clearDraftSnapshot(document->session.filePath(), document->draftKey);
+  }
+  event->accept();
+}
+
+bool muffin::MainWindow::confirmWindowClose() {
+  if (workspaceWriteInProgress_) {
+    return false;
   }
   const QScopedValueRollback<bool> switchGuard(suppressSaveOnTabSwitch_, true);
   // Prompting visits every page; those temporary activations must not replace
@@ -160,21 +180,36 @@ void muffin::MainWindow::closeEvent(QCloseEvent* event) {
     snapshotDraft(document);
     if (!maybeSaveChanges()) {
       tabs_->setCurrentWidget(original);
-      event->ignore();
-      return;
+      return false;
     }
   }
-  QSettings settings;
   tabs_->setCurrentWidget(original);
-  sessionUpdatesPaused_ = false;
-  saveSessionState();
-  settings.setValue(QStringLiteral("window/geometry"), saveGeometry());
-  for (DocumentTab* document : documentTabs()) {
-    document->autoSaveTimer->stop();
-    document->draftTimer->stop();
-    clearDraftSnapshot(document->session.filePath(), document->draftKey);
+  return true;
+}
+
+bool muffin::MainWindow::prepareUpdateClose() {
+  for (const auto* document : documentTabs()) {
+    // An asynchronous file load/confirmation cannot be faithfully snapshotted.
+    if (!document->pendingOpenPath.isEmpty() || document->session.isOpenInProgress())
+      return false;
   }
-  event->accept();
+  if (!confirmWindowClose())
+    return false;
+  updateClosePrepared_ = true;
+  return true;
+}
+
+void muffin::MainWindow::finishUpdateClose(bool approved) {
+  const bool wasPrepared = updateClosePrepared_;
+  updateClosePrepared_ = approved;
+  updateCloseApproved_ = approved;
+  if (!approved && wasPrepared) {
+    setEnabled(true);
+    for (auto* document : documentTabs())
+      if (document->session.document().isModified())
+        document->autoSaveTimer->start();
+    QTimer::singleShot(0, this, &MainWindow::showNextExternalFileChange);
+  }
 }
 
 void muffin::MainWindow::quitApplication() {

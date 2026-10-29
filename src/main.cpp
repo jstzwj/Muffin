@@ -4,6 +4,7 @@
 #include "app/DwmPopupBorderFilter.h"
 #include "app/FileOpenDispatcher.h"
 #include "app/LanguageManager.h"
+#include "app/WindowsUpdater.h"
 #include "editor/EditorAccessibility.h"
 #include "theme/FontRendering.h"
 
@@ -21,6 +22,8 @@
 #include <QLoggingCategory>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QMessageBox>
+#include <QTimer>
 #include <QStandardPaths>
 #include <QTextStream>
 
@@ -121,6 +124,9 @@ int main(int argc, char* argv[]) {
   const QCommandLineOption newWindowOption(QStringLiteral("new-window"),
                                            QCoreApplication::translate("muffin::MainWindow", "Open in New Window"));
   parser.addOption(newWindowOption);
+  const QCommandLineOption updateResultOption(QStringLiteral("update-result"),
+                                              QStringLiteral("Internal update result."), QStringLiteral("code"));
+  parser.addOption(updateResultOption);
   parser.addPositionalArgument(QStringLiteral("file"),
                                QCoreApplication::translate("main", "Markdown or text file (or folder) to open."));
   parser.process(app);
@@ -135,6 +141,13 @@ int main(int argc, char* argv[]) {
     hasFolder = hasFolder || info.isDir();
   }
   muffin::ApplicationInstance instance(muffin::ApplicationInstance::profileIdentity(), &app);
+  auto& updater = muffin::WindowsUpdater::instance();
+  QObject::connect(&instance, &muffin::ApplicationInstance::acceptingFileRequest, &updater,
+                   &muffin::WindowsUpdater::interruptRestart);
+  QObject::connect(&updater, &muffin::WindowsUpdater::preparingRestart, &instance, [&instance, &updater] {
+    if (instance.hasPendingFileRequests())
+      updater.interruptRestart();
+  });
   // Folder launches still create an independent workspace. Starting without
   // arguments also keeps the familiar ability to create another blank window.
   const bool reuseWindow =
@@ -148,6 +161,27 @@ int main(int argc, char* argv[]) {
   }
   QObject::connect(&instance, &muffin::ApplicationInstance::filesRequested, &fileOpenDispatcher,
                    &muffin::FileOpenDispatcher::openFiles);
+
+  if (parser.isSet(updateResultOption)) {
+    bool valid = false;
+    const auto code = parser.value(updateResultOption).toULongLong(&valid);
+    if (valid && code != 0 && code != 3010 && code != 1641) {
+      QTimer::singleShot(0, &app, [code] {
+        QMessageBox::warning(
+            QApplication::activeWindow(), QCoreApplication::translate("muffin::WindowsUpdater", "Update Muffin"),
+            QCoreApplication::translate(
+                "muffin::WindowsUpdater",
+                "The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help > Check for Updates.")
+                .arg(code));
+      });
+    }
+  }
+  if (positionalArguments.isEmpty() && folderArg.isEmpty()) {
+    if (auto* restored = muffin::WindowsUpdater::restoreAfterUpdate()) {
+      fileOpenDispatcher.setInitialWindow(restored);
+      return QApplication::exec();
+    }
+  }
 
   muffin::MainWindow window;
   bool openedSomething = fileOpenDispatcher.setInitialWindow(&window);

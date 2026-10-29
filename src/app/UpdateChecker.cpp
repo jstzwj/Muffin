@@ -29,6 +29,7 @@ bool muffin::UpdateChecker::checkForUpdates(QObject* requester) {
   QNetworkRequest request(QUrl(QStringLiteral("https://api.github.com/repos/jstzwj/Muffin/releases/latest")));
   request.setHeader(QNetworkRequest::UserAgentHeader, userAgent);
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+  request.setTransferTimeout(30000);
 
   QNetworkReply* reply = network_.get(request);
   const QPointer<QObject> requestOwner(requester);
@@ -54,6 +55,7 @@ bool muffin::UpdateChecker::checkForUpdates(QObject* requester) {
     }
 
     const QJsonObject obj = doc.object();
+    latestPackage_ = UpdatePackage::release(obj, UpdatePackage::architectureName());
     const QString tagName = obj.value(QStringLiteral("tag_name")).toString();
     const QString htmlUrl = obj.value(QStringLiteral("html_url")).toString();
 

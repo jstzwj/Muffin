@@ -42,6 +42,7 @@
     <Compile Include="UiStrings.cs" />
     <Compile Include="SetupModel.cs" />
     <Compile Include="IntegrationOptions.cs" />
+    <Compile Include="UpdateHandoff.cs" />
     <Compile Include="MuffinBaFactory.cs" />
     <Compile Include="MuffinBa.cs" />
     <Compile Include="Ui\MainWindow.xaml.cs" />

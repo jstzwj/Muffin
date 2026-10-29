@@ -314,6 +314,14 @@ jobs:
           & ./build/installer-options-test/IntegrationOptionsTest.exe "./build/Muffin-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.msi"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Sign Windows in-app update
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MUFFIN_UPDATE_SIGNING_KEY: ${{ secrets.MUFFIN_UPDATE_SIGNING_KEY }}
+        run: |
+          ./scripts/Sign-WindowsUpdate.ps1 -Installer "./build/Muffin-Setup-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.exe" -Version "${{ env.MUFFIN_RELEASE_VERSION }}" -Architecture "${{ matrix.conan-arch == 'armv8' && 'arm64' || 'x64' }}"
+
       - name: Upload MSI artifact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -327,7 +335,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}-setup
-          path: build/Muffin-Setup-*-${{ matrix.artifact-suffix }}.exe
+          path: |
+            build/Muffin-Setup-*-${{ matrix.artifact-suffix }}.exe
+            build/Muffin-Setup-*-${{ matrix.artifact-suffix }}.update.json
           if-no-files-found: error
 
       - name: Upload DMG artifact
@@ -361,3 +371,4 @@ jobs:
             release-artifacts/**/*.msi
             release-artifacts/**/*.exe
             release-artifacts/**/*.dmg
+            release-artifacts/**/*.update.json

@@ -123,6 +123,11 @@ internal static class IntegrationOptionsTest
             var database = MsiGetActiveDatabase(package);
             try
             {
+                var initialize = int.Parse(Scalar(database, "SELECT `Sequence` FROM `InstallExecuteSequence` WHERE `Action`='InstallInitialize'"));
+                var removePrevious = int.Parse(Scalar(database, "SELECT `Sequence` FROM `InstallExecuteSequence` WHERE `Action`='RemoveExistingProducts'"));
+                var installFiles = int.Parse(Scalar(database, "SELECT `Sequence` FROM `InstallExecuteSequence` WHERE `Action`='InstallFiles'"));
+                Require(initialize < removePrevious && removePrevious < installFiles,
+                    "old product removal participates in rollback before new files are installed");
                 var contextCondition = Scalar(database, "SELECT `Condition` FROM `Condition` WHERE `Feature_`='ShellContextMenu'");
                 var openCondition = Scalar(database, "SELECT `Condition` FROM `Condition` WHERE `Feature_`='FileAssociations'");
                 foreach (var installed in new[] { false, true })
@@ -199,8 +204,10 @@ internal static class IntegrationOptionsTest
 
     public static int Main(string[] args)
     {
+        if (UpdateHandoffTest.Child(args)) return 0;
         try
         {
+            UpdateHandoffTest.Run();
             TestRegistryChoices();
             if (args.Length > 0) TestPackage(args[0]);
             Console.WriteLine("Installer integration choice tests passed");

@@ -22,6 +22,7 @@ namespace Muffin.Setup
         private Dispatcher _dispatcher;
         private volatile bool _cancelRequested;
         private int _exitCode;
+        private UpdateHandoff _update;
 
         public MuffinBa(IEngine engine, IBootstrapperCommand command)
             : base(engine)
@@ -82,9 +83,54 @@ namespace Muffin.Setup
                 _applyHandle = _hiddenSource.Handle;
             }
 
-            Engine.Detect();
+            var updateToken = Engine.GetVariableString("MuffinUpdate");
+            if (!string.IsNullOrEmpty(updateToken))
+            {
+                try
+                {
+                    if (_command.Action != LaunchAction.Install || _command.Display != Display.Passive)
+                        throw new ArgumentException("In-app updates require passive install mode.");
+                    _update = UpdateHandoff.Parse(updateToken);
+                    // Do not block the BA dispatcher: it must paint progress
+                    // while the editor finishes its save-and-exit workflow.
+                    System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        var ready = false;
+                        try { ready = _update.WaitForExit(() => _cancelRequested); }
+                        catch (Exception error) { Engine.Log(LogLevel.Error, "Update handoff failed: " + error.GetType().Name); }
+                        if (!ready)
+                        {
+                            try { _update.Cancel(); }
+                            catch (Exception error) { Engine.Log(LogLevel.Error, "Could not cancel update handoff: " + error.GetType().Name); }
+                        }
+                        _dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            if (ready) Engine.Detect();
+                            else { _exitCode = 1602; RequestShutdown(); }
+                        }));
+                    });
+                }
+                catch (Exception error)
+                {
+                    Engine.Log(LogLevel.Error, "Invalid update handoff: " + error.GetType().Name);
+                    _exitCode = 1602;
+                    _dispatcher.BeginInvoke(new Action(RequestShutdown));
+                }
+            }
+            else
+            {
+                Engine.Detect();
+            }
 
             Dispatcher.Run();
+            if (_update != null)
+            {
+                try { _update.MarkFinished(); }
+                catch (Exception error) { Engine.Log(LogLevel.Error, "Could not mark update completion: " + error.GetType().Name); }
+                try { _update.Relaunch(_exitCode); }
+                catch (Exception error) { Engine.Log(LogLevel.Error, "Could not restart Muffin: " + error.GetType().Name); }
+                _update.Dispose();
+            }
             Engine.Quit(_exitCode);
         }
 
@@ -94,7 +140,7 @@ namespace Muffin.Setup
             Engine.Log(LogLevel.Standard, "Muffin BA request shutdown");
             if (_window != null)
             {
-                _window.Dispatcher.BeginInvoke(new Action(_window.Close));
+                _window.Dispatcher.BeginInvoke(new Action(_window.FinishAndClose));
             }
             else
             {
@@ -110,6 +156,11 @@ namespace Muffin.Setup
         public void RequestCancel()
         {
             _cancelRequested = true;
+            if (_update != null)
+            {
+                try { _update.Cancel(); }
+                catch (Exception error) { Engine.Log(LogLevel.Error, "Could not cancel update handoff: " + error.GetType().Name); }
+            }
         }
 
         public string TryGetLogPath()
@@ -207,14 +258,43 @@ namespace Muffin.Setup
             Engine.Log(LogLevel.Standard, string.Format(
                 "Muffin BA detect complete: display={0} action={1} showUi={2}",
                 _command.Display, _command.Action, ShowUi));
-            OnUi(() => _model.OnDetectComplete(!ShowUi));
+            if (_cancelRequested)
+            {
+                _exitCode = 1602;
+                RequestShutdown();
+                return;
+            }
+            if (e.Status != 0)
+            {
+                _exitCode = e.Status;
+                OnUi(() => _model.OnDetectFailed(e.Status));
+                if (IsPassive || !ShowUi) RequestShutdown();
+                return;
+            }
+            OnUi(() =>
+            {
+                _model.OnDetectComplete(!ShowUi || IsPassive);
+                if (_model.NewerVersionInstalled && _command.Action == LaunchAction.Install && (IsPassive || !ShowUi))
+                {
+                    _exitCode = 1638;
+                    RequestShutdown();
+                }
+            });
         }
 
         protected override void OnPlanComplete(PlanCompleteEventArgs e)
         {
+            if (_cancelRequested)
+            {
+                _exitCode = 1602;
+                RequestShutdown();
+                return;
+            }
             if (e.Status != 0)
             {
+                _exitCode = e.Status;
                 OnUi(() => _model.OnPlanFailed(e.Status));
+                if (IsPassive || !ShowUi) RequestShutdown();
                 return;
             }
 

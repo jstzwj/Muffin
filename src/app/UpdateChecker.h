@@ -3,6 +3,7 @@
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QString>
+#include "app/UpdatePackage.h"
 
 namespace muffin {
 
@@ -24,6 +25,7 @@ public:
   /// Check if auto-check is enabled in QSettings and enough time has
   /// elapsed since the last check (24 hours). If so, perform a silent check.
   void maybeAutoCheck();
+  const std::optional<UpdateRelease>& latestPackage() const { return latestPackage_; }
 
 signals:
   /// Emitted when a newer version is available.
@@ -41,6 +43,7 @@ private:
 
   QNetworkAccessManager network_;
   bool checking_ = false;
+  std::optional<UpdateRelease> latestPackage_;
 };
 
 } // namespace muffin

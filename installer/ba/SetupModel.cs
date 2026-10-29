@@ -326,6 +326,13 @@ namespace Muffin.Setup
             }
         }
 
+        public void OnDetectFailed(int status)
+        {
+            LogFilePath = _ba.TryGetLogPath();
+            ErrorMessage = string.Format(UiStrings.Get("ErrorFmt"), (uint)status);
+            Page = SetupPage.Failed;
+        }
+
         public void OnApplyBegin()
         {
             Page = SetupPage.Progress;
@@ -429,7 +436,7 @@ namespace Muffin.Setup
 
         public void Cancel()
         {
-            if (Page == SetupPage.Progress)
+            if (Page == SetupPage.Detecting || Page == SetupPage.Progress)
             {
                 _ba.RequestCancel();
             }

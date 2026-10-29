@@ -3,6 +3,7 @@
 #include "app/SearchPanelWidget.h"
 #include "app/FileOpenConfirmation.h"
 #include "app/UpdateChecker.h"
+#include "app/WindowsUpdater.h"
 #include "app/SidebarWidget.h"
 #include "app/StatusBarWidget.h"
 #include "document/MarkdownDocument.h"
@@ -25,6 +26,7 @@
 #include <QLoggingCategory>
 #include <QMenu>
 #include <QToolButton>
+#include <QPushButton>
 #include <QTabWidget>
 
 namespace {
@@ -343,7 +345,7 @@ void muffin::MainWindow::queueExternalFileChange(DocumentTab* tab) {
 }
 
 void muffin::MainWindow::showNextExternalFileChange() {
-  if (externalFileChangePromptActive_ || suppressSaveOnTabSwitch_ || !tab_ ||
+  if (updateClosePrepared_ || externalFileChangePromptActive_ || suppressSaveOnTabSwitch_ || !tab_ ||
       tab_->pendingExternalFileChangePath.isEmpty())
     return;
   auto* tab = tab_;
@@ -439,6 +441,11 @@ void muffin::MainWindow::connectApplicationSignals() {
       &updateChecker, &muffin::UpdateChecker::updateAvailable, &window,
       [&window](const QString& version, const QString& url, QObject* requester) {
         if (requester == &window) {
+          const auto& package = UpdateChecker::instance().latestPackage();
+          if (WindowsUpdater::installedCopy() && package) {
+            WindowsUpdater::instance().showUpdate(*package, &window);
+            return;
+          }
           const int result = QMessageBox::information(
               &window, muffin::MainWindow::tr("Update Available"),
               muffin::MainWindow::tr(
@@ -449,6 +456,19 @@ void muffin::MainWindow::connectApplicationSignals() {
             QDesktopServices::openUrl(QUrl(url));
           }
         } else if (requester == nullptr && window.statusBar() && window.statusBar()->isVisible()) {
+          const auto& package = UpdateChecker::instance().latestPackage();
+          if (WindowsUpdater::installedCopy() && package) {
+            if (!window.findChild<QPushButton*>(QStringLiteral("availableUpdateButton"))) {
+              auto* button = new QPushButton(muffin::MainWindow::tr("Update Available"), &window);
+              button->setObjectName(QStringLiteral("availableUpdateButton"));
+              window.statusBar()->addPermanentWidget(button);
+              QObject::connect(button, &QPushButton::clicked, &window, [&window] {
+                const auto& latest = UpdateChecker::instance().latestPackage();
+                if (latest)
+                  WindowsUpdater::instance().showUpdate(*latest, &window);
+              });
+            }
+          }
           window.statusBar()->showMessage(
               muffin::MainWindow::tr("Muffin %1 is available. Use Help > Check for Updates to download.").arg(version),
               15000);

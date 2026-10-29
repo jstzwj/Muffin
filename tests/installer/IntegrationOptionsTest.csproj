@@ -8,6 +8,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
     <Compile Include="../../installer/ba/IntegrationOptions.cs" />
+    <Compile Include="../../installer/ba/UpdateHandoff.cs" />
+    <Compile Include="UpdateHandoffTest.cs" />
     <Compile Include="IntegrationOptionsTest.cs" />
   </ItemGroup>
 </Project>

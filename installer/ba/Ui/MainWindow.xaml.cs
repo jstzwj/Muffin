@@ -10,6 +10,7 @@ namespace Muffin.Setup
     {
         private readonly SetupModel _model;
         private bool _closeIssued;
+        private bool _finished;
 
         public MainWindow(SetupModel model)
         {
@@ -56,15 +57,24 @@ namespace Muffin.Setup
             Close();
         }
 
+        // The BA calls this only after the operation has finished, including
+        // a failed handoff before Detect began. That path has no ApplyComplete
+        // event to release the usual close-while-working guard.
+        public void FinishAndClose()
+        {
+            _finished = true;
+            Close();
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
-            if (_model.IsWorking && !_closeIssued)
+            if (!_finished && _model.IsWorking && !_closeIssued)
             {
                 e.Cancel = true;
                 RequestClose();
                 return;
             }
-            if (_model.IsWorking && _closeIssued)
+            if (!_finished && _model.IsWorking && _closeIssued)
             {
                 // Waiting for ApplyComplete after the cancel above.
                 e.Cancel = true;

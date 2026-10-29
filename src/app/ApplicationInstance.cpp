@@ -77,9 +77,14 @@ muffin::ApplicationInstance::ApplicationInstance(const QString& identity, QObjec
         // One request per connection. Queue delivery until after acknowledgement
         // so slow document loading or a confirmation cannot stall the launcher.
         QObject::disconnect(socket, &QLocalSocket::readyRead, this, nullptr);
+        ++pendingFileRequests_;
+        emit acceptingFileRequest();
         socket->write("OK\n");
         socket->disconnectFromServer();
-        QTimer::singleShot(0, this, [this, files] { emit filesRequested(files); });
+        QTimer::singleShot(0, this, [this, files] {
+          emit filesRequested(files);
+          --pendingFileRequests_;
+        });
       };
       connect(socket, &QLocalSocket::readyRead, this, readRequest);
       readRequest(); // The entire frame may have arrived before newConnection.

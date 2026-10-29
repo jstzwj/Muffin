@@ -3495,6 +3495,8 @@ void sessionRestoresNestedAndLiteralCoordinates() {
 
 } // namespace
 
+void runWindowsUpdateTests();
+
 int main(int argc, char** argv) {
   // A deterministic converter process for export plumbing tests. Actual
   // Pandoc need not be installed on CI, and can fail after partial output.
@@ -3533,6 +3535,10 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update"))) {
+    runWindowsUpdateTests();
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--document-memory"))) {
     muffin::diag::runDocumentMemoryBenchmark<Fixture>();
     return 0;

@@ -649,6 +649,12 @@ void muffin::MainWindow::saveSessionState() {
     return;
   if (sessionSaveTimer_)
     sessionSaveTimer_->stop();
+  QSettings settings;
+  settings.setValue(QStringLiteral("session/window"), sessionState());
+  settings.sync();
+}
+
+QVariantMap muffin::MainWindow::sessionState() const {
   QStringList files;
   QVariantList views;
   int active = -1;
@@ -672,9 +678,7 @@ void muffin::MainWindow::saveSessionState() {
                              {QStringLiteral("folder"), sidebar_->folderRoot()},
                              {QStringLiteral("folderState"), sidebar_->folderState()},
                              {QStringLiteral("expanded"), sidebar_->expandedFolders()}};
-  QSettings settings;
-  settings.setValue(QStringLiteral("session/window"), snapshot);
-  settings.sync();
+  return snapshot;
 }
 
 QVariantMap muffin::MainWindow::tabViewState(DocumentTab* document) const {
