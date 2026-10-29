@@ -3,6 +3,7 @@
 #include "document/InlineNode.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
+#include "document/ListItemSource.h"
 #include "parser/CmarkGfmParser.h"
 #include "projection/InlineProjection.h"
 #include "projection/MarkdownHtmlSerializer.h"
@@ -82,7 +83,7 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
   qsizetype end = 0;
   if (selectionContext(document, selection, context, start, end)) {
     const PieceTable& markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(markdown.toString(), context.sourceStart);
+    const qsizetype prefixStart = structuredLineStart(document, context.node->id(), context.sourceStart);
     const qsizetype selectedStart = context.sourceStart + qBound<qsizetype>(0, start, context.sourceText.size());
     const qsizetype selectedEnd = context.sourceStart + qBound<qsizetype>(0, end, context.sourceText.size());
     if (selectedEnd <= selectedStart) {
@@ -128,12 +129,14 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
     qsizetype sourceStart = anchorOffset;
     qsizetype sourceEnd = focusOffset;
     qsizetype startContext = anchorContextStart;
+    NodeId startBlock = selection.anchor.blockId;
     if (sourceStart > sourceEnd) {
       qSwap(sourceStart, sourceEnd);
       startContext = focusContextStart;
+      startBlock = selection.focus.blockId;
     }
     const PieceTable& markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(markdown.toString(), startContext);
+    const qsizetype prefixStart = structuredLineStart(document, startBlock, startContext);
     const QString prefix =
         prefixStart < startContext ? markdown.mid(prefixStart, startContext - prefixStart) : QString();
     return prefix + markdown.mid(sourceStart, sourceEnd - sourceStart);
@@ -215,28 +218,26 @@ bool SelectionSerializer::selectionContext(const MarkdownDocument& document, con
 
 bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, const MarkdownNode& displayNode,
                                              EditableContext& context) const {
+  if (displayNode.type() == BlockType::Paragraph && displayNode.parent() &&
+      displayNode.parent()->type() == BlockType::ListItem && primaryParagraph(*displayNode.parent()) == &displayNode) {
+    return editableContextFor(document, *displayNode.parent(), context);
+  }
   const MarkdownNode* editable = &displayNode;
   const PieceTable& markdown = document.markdownText();
+  ListItemSource listSource;
   if (displayNode.type() == BlockType::ListItem) {
-    editable = primaryParagraph(displayNode);
+    listSource = listItemSource(markdown, displayNode);
+    if (!listSource.isValid()) {
+      return false;
+    }
+    editable = listSource.paragraph;
     if (!editable) {
-      EditableContext markerContext;
-      markerContext.node = &displayNode;
-      markerContext.sourceStart = sourceOffsetForLineColumn(markdown, displayNode.sourceRange().lineStart,
-                                                            qMax(1, displayNode.sourceRange().columnStart));
-      qsizetype lineStart = -1;
-      qsizetype contentStart = -1;
-      qsizetype lineEnd = -1;
-      if (markerContext.sourceStart >= 0 &&
-          listItemLineBounds(markdown.toString(), markerContext, lineStart, contentStart, lineEnd)) {
-        context.node = &displayNode;
-        context.editableNode = nullptr;
-        const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
-        context.sourceStart = info.valid && info.task ? lineStart + info.taskContentStart : contentStart;
-        context.sourceEnd = lineEnd;
-        context.sourceText = markdown.mid(context.sourceStart, lineEnd - context.sourceStart);
-        return context.sourceText.trimmed().isEmpty();
-      }
+      context.node = &displayNode;
+      context.editableNode = nullptr;
+      context.sourceStart = listSource.content.start;
+      context.sourceEnd = listSource.content.end;
+      context.sourceText.clear();
+      return true;
     }
   }
 
@@ -253,32 +254,22 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   qsizetype sourceStart = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
                               ? range.byteStart
                               : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  const qsizetype sourceEnd = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
-                                  ? range.byteEnd
-                                  : sourceOffsetForLineEnd(markdown, range.lineEnd);
+  qsizetype sourceEnd = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+                            ? range.byteEnd
+                            : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (sourceStart < 0 || sourceEnd < sourceStart) {
     return false;
   }
 
-  if (editable->type() == BlockType::Heading) {
+  if (listSource.isValid()) {
+    sourceStart = listSource.content.start;
+    sourceEnd = listSource.content.end;
+  } else if (editable->type() == BlockType::Heading) {
     while (sourceStart < sourceEnd && markdown.at(sourceStart) == QLatin1Char('#')) {
       ++sourceStart;
     }
     if (sourceStart < sourceEnd && markdown.at(sourceStart).isSpace()) {
       ++sourceStart;
-    }
-  } else if (editable->type() == BlockType::Paragraph && displayNode.type() == BlockType::ListItem) {
-    qsizetype lineStart = sourceStart;
-    while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-      --lineStart;
-    }
-    qsizetype lineEnd = sourceStart;
-    while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
-      ++lineEnd;
-    }
-    const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
-    if (info.valid && info.task) {
-      sourceStart = lineStart + info.taskContentStart;
     }
   }
 
@@ -313,7 +304,8 @@ bool SelectionSerializer::editableCursorSourceOffset(const MarkdownDocument& doc
   InlineProjectionState projectionState =
       InlineProjectionState::forCursor(contextCursor, cursor.blockId, context.sourceStart);
   InlineProjection projection(context.editableNode ? context.editableNode->inlines() : QVector<InlineNode>(),
-                              context.sourceText, projectionState, context.sourceStart);
+                              context.sourceText, projectionState,
+                              context.sourceStart - node->topLevelBlock()->sourceRange().byteStart);
   if (cursor.text.sourceOffset >= context.sourceStart && cursor.text.sourceOffset <= context.sourceEnd) {
     localSourceOffset = cursor.text.sourceOffset - context.sourceStart;
   } else if (!projection.sourceOffsetForVisibleOffset(offset, localSourceOffset)) {
@@ -500,11 +492,20 @@ QString SelectionSerializer::literalMarkdownPrefix(const MarkdownDocument& docum
   return document.markdownText().mid(blockStart, contentStart - blockStart);
 }
 
-qsizetype SelectionSerializer::structuredLineStart(const QString& markdown, qsizetype contextSourceStart) const {
+qsizetype SelectionSerializer::structuredLineStart(const MarkdownDocument& document, NodeId block,
+                                                   qsizetype contextSourceStart) const {
   if (contextSourceStart < 0) {
     return contextSourceStart;
   }
 
+  const PieceTable& markdown = document.markdownText();
+  if (const auto* node = document.node(block); node && node->type() == BlockType::ListItem) {
+    const auto source = listItemSource(markdown, *node);
+    if (source.isValid()) {
+      const QString prefix = markdown.mid(source.firstLine.start, source.item.start - source.firstLine.start);
+      return prefix.trimmed().isEmpty() ? source.firstLine.start : source.item.start;
+    }
+  }
   qsizetype prefixStart = qMin(contextSourceStart, markdown.size());
   while (prefixStart > 0 && markdown.at(prefixStart - 1) != QLatin1Char('\n')) {
     --prefixStart;
@@ -512,30 +513,6 @@ qsizetype SelectionSerializer::structuredLineStart(const QString& markdown, qsiz
 
   const QString prefix = markdown.mid(prefixStart, contextSourceStart - prefixStart);
   return prefix.trimmed().isEmpty() ? contextSourceStart : prefixStart;
-}
-
-bool SelectionSerializer::listItemLineBounds(const QString& markdown, const EditableContext& context,
-                                             qsizetype& lineStart, qsizetype& contentStart, qsizetype& lineEnd) const {
-  if (!context.node || context.node->type() != BlockType::ListItem) {
-    return false;
-  }
-
-  lineStart = context.sourceStart;
-  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-    --lineStart;
-  }
-  lineEnd = context.sourceStart;
-  while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
-    ++lineEnd;
-  }
-
-  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
-    return false;
-  }
-  contentStart = lineStart + info.contentStart;
-  return contentStart >= lineStart && contentStart <= lineEnd;
 }
 
 bool SelectionSerializer::isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const {

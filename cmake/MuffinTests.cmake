@@ -446,6 +446,7 @@ muffin_add_test(NAME MuffinInputTextEditingTest        SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinInputParagraphTest          SOURCE tests/editor/InputParagraphTest.cpp          LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputUndoSelectionTest      SOURCE tests/editor/InputUndoSelectionTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputListTabTest            SOURCE tests/editor/InputListTabTest.cpp            LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinListEditingSequenceTest SOURCE tests/editor/ListEditingSequenceTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputIndentSizeTest         SOURCE tests/editor/InputIndentSizeTest.cpp         LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputMarkdownDefaultsTest   SOURCE tests/editor/InputMarkdownDefaultsTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputShiftTabDedentTest     SOURCE tests/editor/InputShiftTabDedentTest.cpp     LINK MuffinUi RESOURCE_LOCK)

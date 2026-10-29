@@ -547,11 +547,8 @@ bool BlockLayout::stylesMatch(const RenderTheme& theme, const MarkdownDocument& 
   if (inlineLayout_) {
     const auto* owner = node;
     if (type_ == BlockType::ListItem) {
-      for (const auto& child : node->children())
-        if (child->type() == BlockType::Paragraph) {
-          owner = child.get();
-          break;
-        }
+      if (const auto* paragraph = primaryParagraph(*node))
+        owner = paragraph;
     }
     if (!inlineLayout_->stylesMatch(theme, *owner))
       return false;

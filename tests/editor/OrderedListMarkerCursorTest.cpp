@@ -9,6 +9,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QMouseEvent>
 #include <QFontMetricsF>
 
 #include <iostream>
@@ -279,6 +280,57 @@ void testTypeAndBackspaceOnSplitVepRoundTrips() {
           "type + backspace must restore the authored split text exactly");
 }
 
+void testSameLineNestedListClickBackspaceAndUndo() {
+  const QString original = QStringLiteral("**问题：**\n\n"
+                                          "1. 如何证明 LLM 生成的 HTML/CSS 文档与真实文档相似？\n\n"
+                                          "2. 为什么仍需要人工筛选与交叉审核？\n"
+                                          "3. 4. 文本、表格、公式和 Reading Order 等标注中，哪些可以确定性提取？\n"
+                                          "4. 如何保证扩大数据规模后的标注质量？");
+  QString expected = original;
+  expected.replace(QStringLiteral("3. 4. "), QStringLiteral("3. "));
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(1000, 600);
+  session.setMarkdownText(original, false);
+  view.setDocument(session.document());
+
+  MarkdownNode* outer = listItemAt(session, 1, 2);
+  MarkdownNode* inner = childAt(firstChildOfType(outer, BlockType::List), 0);
+  const BlockLayout* innerLayout = view.blockLayoutForNode(inner->id());
+  require(innerLayout && innerLayout->listMarker() == QStringLiteral("4."),
+          "same-line nested marker must use its own authored number, not the parent's number");
+  CursorPosition cursor;
+  cursor.blockId = inner->id();
+  cursor.text.nodeId = inner->id();
+  const HitTestResult hit = view.hitForCursorPosition(cursor);
+  const qsizetype textStart = original.indexOf(QStringLiteral("文本、表格"));
+  require(hit.isValid() && innerLayout->contentSourceStart() == textStart,
+          "rendered text start must map past both list markers");
+  const QPointF local = view.mapDocumentToViewport(hit.cursorRect.center());
+  const QPointF global = view.viewport()->mapToGlobal(local.toPoint());
+  QMouseEvent press(QEvent::MouseButtonPress, local, global, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent release(QEvent::MouseButtonRelease, local, global, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  require(controller.selection().cursorPosition().text.sourceOffset == textStart,
+          "click should place the source caret immediately after '3. 4. '");
+  sendKey(&view, Qt::Key_Backspace);
+  controller.brushQueue().flush();
+  require(session.markdownText().toString() == expected, "real Backspace key should remove the inner marker only");
+  const CursorPosition after = controller.selection().cursorPosition();
+  require(after.isValid() && after.blockId == listItemAt(session, 1, 2)->id() && after.text.textOffset == 0,
+          "caret should remain before the text in the surviving item");
+  require(view.hitForCursorPosition(after).isValid(), "caret must still resolve in the updated rendering");
+  controller.undo();
+  require(session.markdownText().toString() == original, "undo should restore both list levels exactly");
+  require(controller.selection().cursorPosition().text.sourceOffset == textStart,
+          "undo should restore the clicked caret position");
+  controller.redo();
+  require(session.markdownText().toString() == expected, "redo should restore the collapsed list and retain all text");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -292,6 +344,7 @@ int main(int argc, char** argv) {
   testTabOnPostSplitItemNestsUnderPreviousItem();
   testBackspaceOnSplitVepCollapsesSplit();
   testTypeAndBackspaceOnSplitVepRoundTrips();
+  testSameLineNestedListClickBackspaceAndUndo();
   QApplication::clipboard()->clear();
   return 0;
 }

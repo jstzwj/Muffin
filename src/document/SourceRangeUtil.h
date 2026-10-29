@@ -161,6 +161,8 @@ MarkdownNode* primaryParagraph(MarkdownNode& node);
 const MarkdownNode* primaryParagraph(const MarkdownNode& node);
 
 QString listMarkerFor(const QString& line);
-ListLineInfo listLineInfoFor(const QString& line);
+// All returned offsets remain relative to the physical line, including when an AST node's
+// marker begins after another container's prefix (e.g. the inner item in "3. 4. text").
+ListLineInfo listLineInfoFor(const QString& line, qsizetype start = 0);
 
 } // namespace muffin

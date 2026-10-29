@@ -5,6 +5,7 @@
 #include "document/NodeNavigation.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
+#include "document/ListItemSource.h"
 #include "editor/InlineSplit.h"
 
 #include <QSettings>
@@ -128,69 +129,6 @@ template <typename Text> qsizetype lineEndForOffset(const Text& text, qsizetype 
     ++lineEnd;
   }
   return lineEnd;
-}
-
-template <typename Text> qsizetype nextLineStart(const Text& text, qsizetype lineEnd) {
-  return lineEnd < text.size() && text.at(lineEnd) == QLatin1Char('\n') ? lineEnd + 1 : lineEnd;
-}
-
-template <typename Text> qsizetype orderedSiblingRunEnd(const Text& markdown, qsizetype start, qsizetype markerColumn) {
-  qsizetype pos = qBound<qsizetype>(0, start, markdown.size());
-  while (pos < markdown.size()) {
-    const qsizetype lineEnd = lineEndForOffset(markdown, pos);
-    const QString line = markdown.mid(pos, lineEnd - pos);
-    const QString trimmed = line.trimmed();
-    if (trimmed.isEmpty()) {
-      break;
-    }
-
-    const ListLineInfo info = listLineInfoFor(line);
-    if (!info.valid) {
-      qsizetype leading = 0;
-      while (leading < line.size() && line.at(leading) == QLatin1Char(' ')) {
-        ++leading;
-      }
-      if (leading <= markerColumn) {
-        break;
-      }
-    } else if (info.markerStart < markerColumn) {
-      break;
-    }
-
-    pos = nextLineStart(markdown, lineEnd);
-  }
-  return pos;
-}
-
-QString renumberOrderedSiblings(QString text, qsizetype markerColumn, int nextNumber) {
-  const bool sequential = orderedListSequential();
-  if (!sequential) {
-    nextNumber = 1; // "1. 1. 1." style: every sibling restarts at 1.
-  }
-  qsizetype pos = 0;
-  while (pos < text.size()) {
-    const qsizetype lineEnd = lineEndForOffset(text, pos);
-    const QString line = text.mid(pos, lineEnd - pos);
-    const ListLineInfo info = listLineInfoFor(line);
-    if (info.valid && info.ordered && info.markerStart == markerColumn) {
-      const qsizetype numberStart = pos + info.markerStart;
-      qsizetype numberEnd = numberStart;
-      while (numberEnd < text.size() && text.at(numberEnd).isDigit()) {
-        ++numberEnd;
-      }
-      const QString replacement = QString::number(nextNumber);
-      text.replace(numberStart, numberEnd - numberStart, replacement);
-      const qsizetype delta = replacement.size() - (numberEnd - numberStart);
-      pos = lineEnd + delta;
-      if (sequential) {
-        ++nextNumber;
-      }
-    } else {
-      pos = lineEnd;
-    }
-    pos = nextLineStart(text, pos);
-  }
-  return text;
 }
 
 // The previous ITEM sibling. Authored-split VEPs (zero-width paragraphs synthesized between
@@ -349,6 +287,20 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(const Bl
   case Operation::Delete:
     if (nextOffset >= nextParagraph.size()) {
       if (context.node->type() == BlockType::ListItem) {
+        const auto source = listItemSource(session_->markdownText(), *context.node);
+        if (!source.paragraph && source.children.isValid() && source.children.start == source.content.start) {
+          // The visible empty parent row and the child's marker share one source
+          // line. Delete across that boundary is the forward counterpart of
+          // Backspace at the child's text start: collapse exactly one list level.
+          for (const auto& child : context.node->children()) {
+            if (child->type() == BlockType::List && !child->children().empty()) {
+              BlockEditContext childContext;
+              if (resolver_->fill(*child->children().front(), childContext)) {
+                return buildOutdentListItem(childContext);
+              }
+            }
+          }
+        }
         Command mergeCmd = buildMergeWithNextListItem(context);
         if (mergeCmd.valid)
           return mergeCmd;
@@ -915,23 +867,16 @@ TextBlockCommandBuilder::buildRemoveFollowingThematicBreak(const BlockEditContex
 
 TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(const BlockEditContext& context) const {
   Command command;
-  if (!session_ || !resolver_) {
-    return command;
-  }
-
-  qsizetype lineStart = -1;
-  qsizetype contentStart = -1;
-  qsizetype lineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+  if (!session_ || !resolver_ || !context.node) {
     return command;
   }
 
   const PieceTable& markdown = session_->markdownText();
-  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
+  const auto source = listItemSource(markdown, *context.node);
+  if (!source.isValid()) {
     return command;
   }
+  const auto& info = source.marker;
 
   const qsizetype contentOffset = context.plainInlineEditable
                                       ? context.cursorTextOffset
@@ -946,7 +891,6 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
   QString nextLineContent = context.contentText;
   const qsizetype splitContentOffset = normalizeSplitOffset(nextLineContent, boundedContentOffset);
   const qsizetype splitOffset = context.contentRange.byteStart + splitContentOffset;
-  const qsizetype markerColumn = info.markerStart;
   // When alignIndent is on, the new item's marker lines up under the parent item's *content*
   // column (so `- x`/`- [ ] x` continuations sit beneath the text, not the bullet). Off, alignExtra
   // is 0 and the leading-space count is byte-identical to the historical flat behaviour. Ordered
@@ -958,19 +902,23 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildSplitListItem(con
           ? (info.task ? (info.taskContentStart - info.markerStart) : (info.markerEnd - info.markerStart))
           : 0;
   const QString nextMarker =
-      info.ordered ? QStringLiteral("%1%2 ").arg(info.orderedNumber + 1).arg(info.orderedDelimiter) : info.marker;
+      info.ordered
+          ? QStringLiteral("%1%2 ").arg(orderedListSequential() ? info.orderedNumber + 1 : 1).arg(info.orderedDelimiter)
+          : info.marker;
   const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
-  QString insertion = QLatin1Char('\n') + leadingSpaces(markerColumn + alignExtra) + nextMarker + taskPrefix;
+  QString insertion = QLatin1Char('\n') + listContinuationPrefix(markdown, source) + leadingSpaces(alignExtra) +
+                      nextMarker + taskPrefix;
   insertion = splitPlan.wrap(std::move(insertion));
   nextLineContent.insert(splitContentOffset, insertion);
   command.sourceStart = context.contentRange.byteStart;
   command.removedLength = context.contentRange.byteEnd - context.contentRange.byteStart;
   if (info.ordered) {
-    const qsizetype runEnd =
-        orderedSiblingRunEnd(markdown, lineEnd < markdown.size() ? lineEnd + 1 : lineEnd, markerColumn);
-    const QString tail = markdown.mid(context.contentRange.byteEnd, runEnd - context.contentRange.byteEnd);
+    const MarkdownNode* following = nextListItemInRun(markdown, *context.node);
+    const qsizetype runEnd = qMax(context.contentRange.byteEnd, listSiblingRunEnd(markdown, following));
+    const QString tail = renumberListItems(markdown, {context.contentRange.byteEnd, runEnd}, following,
+                                           info.orderedNumber + 2, orderedListSequential());
     command.removedLength = runEnd - context.contentRange.byteStart;
-    command.insertedText = renumberOrderedSiblings(nextLineContent + tail, markerColumn, info.orderedNumber + 1);
+    command.insertedText = nextLineContent + tail;
   } else {
     command.insertedText = nextLineContent;
   }
@@ -1003,14 +951,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
   qsizetype lineStart = -1;
   qsizetype contentStart = -1;
   qsizetype lineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+  ListLineInfo info;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd, &info)) {
     return command;
   }
   const PieceTable& markdown = session_->markdownText();
-  const ListLineInfo info = listLineInfoFor(markdown.mid(lineStart, lineEnd - lineStart));
-  if (!info.valid) {
-    return command;
-  }
   command.sourceStart = lineStart;
   command.removedLength = lineEnd - lineStart;
   command.insertedText = QLatin1Char('\n');
@@ -1027,12 +972,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     // its numbering at 1 — leaving the literal numbers rendered a second list that started at 4
     // right after a 2-item first list. Nested children (deeper marker column) keep their own
     // numbering; a run already separated by a blank line is left as authored.
-    const qsizetype runStart = lineEnd < markdown.size() ? lineEnd + 1 : lineEnd;
-    const qsizetype runEnd = orderedSiblingRunEnd(markdown, runStart, info.markerStart);
-    if (runEnd > runStart) {
-      const QString tail = markdown.mid(lineEnd, runEnd - lineEnd);
+    const MarkdownNode* following = nextListItemInRun(markdown, *context.node);
+    const qsizetype runEnd = listSiblingRunEnd(markdown, following);
+    if (runEnd > lineEnd) {
+      const QString tail = renumberListItems(markdown, {lineEnd, runEnd}, following, 1, orderedListSequential());
       command.removedLength = runEnd - lineStart;
-      command.insertedText = QLatin1Char('\n') + renumberOrderedSiblings(tail, info.markerStart, 1);
+      command.insertedText = QLatin1Char('\n') + tail;
     }
   }
   if (splitsList) {
@@ -1052,28 +997,20 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
 TextBlockCommandBuilder::Command
 TextBlockCommandBuilder::buildInsertListItemAbove(const BlockEditContext& context) const {
   Command command;
-  if (!session_ || !resolver_) {
+  if (!session_ || !resolver_ || !context.node) {
     return command;
   }
 
-  qsizetype lineStart = -1;
-  qsizetype contentStart = -1;
-  qsizetype lineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+  const auto source = listItemSource(session_->markdownText(), *context.node);
+  if (!source.isValid()) {
     return command;
   }
-
-  const QString line = session_->markdownText().mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
-    return command;
-  }
-
-  const qsizetype markerColumn = info.markerStart;
+  const auto& info = source.marker;
   const QString taskPrefix = info.task ? QStringLiteral("[ ] ") : QString();
-  const QString insertion = leadingSpaces(markerColumn) + info.marker + taskPrefix + QLatin1Char('\n');
+  const QString insertion =
+      info.marker + taskPrefix + QLatin1Char('\n') + listContinuationPrefix(session_->markdownText(), source);
 
-  command.sourceStart = lineStart;
+  command.sourceStart = source.item.start;
   command.removedLength = 0;
   command.insertedText = insertion;
   command.kind = EditTransaction::Kind::SplitParagraph;
@@ -1086,15 +1023,15 @@ TextBlockCommandBuilder::buildInsertListItemAbove(const BlockEditContext& contex
   // one line down — past the inserted marker line, the renumbered marker, and the task prefix — is
   // exact and locates the content start directly.
   const qsizetype followingMarkerWidth =
-      info.ordered ? (QString::number(info.orderedNumber + 1).size() + 2) // renumbered digit + delimiter + space
+      info.ordered ? (QString::number(orderedListSequential() ? info.orderedNumber + 1 : 1).size() + 2)
                    : info.marker.size();
-  command.fallbackSourceOffset = lineStart + insertion.size() + followingMarkerWidth + taskPrefix.size();
+  command.fallbackSourceOffset = source.item.start + insertion.size() + followingMarkerWidth + taskPrefix.size();
   if (info.ordered) {
     const PieceTable& markdown = session_->markdownText();
-    const qsizetype runEnd = orderedSiblingRunEnd(markdown, lineStart, markerColumn);
-    command.removedLength = runEnd - lineStart;
-    command.insertedText = insertion + renumberOrderedSiblings(markdown.mid(lineStart, runEnd - lineStart),
-                                                               markerColumn, info.orderedNumber + 1);
+    const qsizetype runEnd = listSiblingRunEnd(markdown, context.node);
+    command.removedLength = runEnd - source.item.start;
+    command.insertedText = insertion + renumberListItems(markdown, {source.item.start, runEnd}, context.node,
+                                                         info.orderedNumber + 1, orderedListSequential());
   }
   command.structureEdit = true;
   command.valid = true;
@@ -1104,185 +1041,85 @@ TextBlockCommandBuilder::buildInsertListItemAbove(const BlockEditContext& contex
 
 TextBlockCommandBuilder::Command
 TextBlockCommandBuilder::buildMergeWithPreviousListItem(const BlockEditContext& context) const {
-  Command command;
-  if (!session_ || !resolver_ || !context.node) {
-    return command;
-  }
-
-  const MarkdownNode* previous = context.node->previousSibling();
-  if (!previous || previous->type() != BlockType::ListItem) {
-    return command;
-  }
-
-  // Resolve previous item's context to get its line bounds
-  MarkdownNode* prevNode = const_cast<MarkdownNode*>(previous);
-  BlockEditContext prevContext;
-  if (!resolver_->fill(*prevNode, prevContext)) {
-    return command;
-  }
-
-  qsizetype prevLineStart = -1;
-  qsizetype prevContentStart = -1;
-  qsizetype prevLineEnd = -1;
-  if (!resolver_->listItemLineBounds(prevContext, prevLineStart, prevContentStart, prevLineEnd)) {
-    return command;
-  }
-
-  // Get current item's line bounds
-  qsizetype curLineStart = -1;
-  qsizetype curContentStart = -1;
-  qsizetype curLineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, curLineStart, curContentStart, curLineEnd)) {
-    return command;
-  }
-
-  const PieceTable& markdown = session_->markdownText();
-  const QString curLine = markdown.mid(curLineStart, curLineEnd - curLineStart);
-  const ListLineInfo curInfo = listLineInfoFor(curLine);
-  if (!curInfo.valid) {
-    return command;
-  }
-  const qsizetype curContentRealStart = curInfo.task ? curLineStart + curInfo.taskContentStart : curContentStart;
-  const QString curText = markdown.mid(curContentRealStart, curLineEnd - curContentRealStart);
-
-  const QString separator =
-      (!prevContext.contentText.trimmed().isEmpty() && !curText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
-
-  command.sourceStart = prevLineEnd;
-  // When the previous item owns a child sublist, the delete range [prevLineEnd, curContentStart)
-  // spans it — so rebuild to keep the sublist: append the current content to the previous item
-  // (one merged line), then re-emit the previous sublist below it. The current item's own sublist
-  // (after curLineEnd) stays and continues the previous one. Without this, merging "2. / sub / 3."
-  // deleted the "2." sublist. When there is no sublist, the historical single-segment delete is
-  // byte-exact, so keep it.
-  bool prevHasSublist = false;
-  for (const auto& c : previous->children()) {
-    if (c->type() == BlockType::List) {
-      prevHasSublist = true;
-      break;
-    }
-  }
-  qsizetype deleteStart = prevLineEnd;
-  if (prevHasSublist) {
-    const QString prevSublist = markdown.mid(prevLineEnd, curLineStart - prevLineEnd);
-    command.removedLength = qMin(curLineEnd + 1, markdown.size()) - prevLineEnd;
-    command.insertedText = separator + curText + prevSublist;
-    // The caret retreats to the END of the previous item's deepest last line, not its marker-line
-    // end. prevSublist is re-emitted verbatim (preserving every nesting level), so the tail of the
-    // inserted text IS the deepest last line; scanning back over trailing newlines lands the caret
-    // right after that line's last visible char — recursing one level deeper per child sublist,
-    // exactly the "find the deepest last item" behaviour users expect from backspacing an empty
-    // sibling out of a nested list.
-    qsizetype deepestTail = command.insertedText.size();
-    while (deepestTail > 0 && command.insertedText.at(deepestTail - 1) == QLatin1Char('\n')) {
-      --deepestTail;
-    }
-    command.fallbackSourceOffset = command.sourceStart + deepestTail;
-  } else {
-    // The previous item's lazy continuation lines (text between its marker line and this
-    // item's line, when it owns no child sublist) must survive the merge: the naive range
-    // [prevLineEnd, curContentRealStart) spans them and ate them (regression: "1. alpha /
-    //    beta / 2. gamma" backspace at "2." start lost "beta"). When they exist, delete only
-    // this item's marker plus the newline that ends the last continuation line, so the
-    // merged text appends to that line instead.
-    const QString between = markdown.mid(prevLineEnd, curLineStart - prevLineEnd);
-    if (!between.trimmed().isEmpty()) {
-      deleteStart = curLineStart - 1; // the '\n' ending the previous item's last continuation line
-    }
-    command.sourceStart = deleteStart;
-    command.removedLength = curContentRealStart - deleteStart;
-    command.insertedText = separator;
-    command.fallbackSourceOffset = deleteStart + separator.size();
-  }
-  command.kind = EditTransaction::Kind::DeleteText;
-  command.label = QStringLiteral("Merge List Items");
-  command.structureEdit = true;
-  command.valid = true;
-  command.handled = true;
-  return command;
+  const auto* previous = context.node ? context.node->previousSibling() : nullptr;
+  return previous ? buildMergeListItems(*previous, *context.node, true) : Command{};
 }
 
 TextBlockCommandBuilder::Command
 TextBlockCommandBuilder::buildMergeWithNextListItem(const BlockEditContext& context) const {
+  const auto* next = context.node ? context.node->nextSibling() : nullptr;
+  return next ? buildMergeListItems(*context.node, *next, false) : Command{};
+}
+
+TextBlockCommandBuilder::Command
+TextBlockCommandBuilder::buildMergeListItems(const MarkdownNode& left, const MarkdownNode& right, bool backward) const {
   Command command;
-  if (!session_ || !resolver_ || !context.node) {
+  if (!session_ || !resolver_ || left.parent() != right.parent() || left.nextSibling() != &right)
     return command;
-  }
-
-  const MarkdownNode* next = context.node->nextSibling();
-  if (!next || next->type() != BlockType::ListItem) {
-    return command;
-  }
-
-  // Get current item's line bounds
-  qsizetype curLineStart = -1;
-  qsizetype curContentStart = -1;
-  qsizetype curLineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, curLineStart, curContentStart, curLineEnd)) {
-    return command;
-  }
-
-  // Resolve next item's context to get its line bounds
-  MarkdownNode* nextNode = const_cast<MarkdownNode*>(next);
-  BlockEditContext nextContext;
-  if (!resolver_->fill(*nextNode, nextContext)) {
-    return command;
-  }
-
-  qsizetype nextLineStart = -1;
-  qsizetype nextContentStart = -1;
-  qsizetype nextLineEnd = -1;
-  if (!resolver_->listItemLineBounds(nextContext, nextLineStart, nextContentStart, nextLineEnd)) {
-    return command;
-  }
-
   const PieceTable& markdown = session_->markdownText();
-  const QString nextLine = markdown.mid(nextLineStart, nextLineEnd - nextLineStart);
-  const ListLineInfo nextInfo = listLineInfoFor(nextLine);
-  if (!nextInfo.valid) {
+  const auto before = listItemSource(markdown, left);
+  const auto after = listItemSource(markdown, right);
+  if (!before.isValid() || !after.isValid() || before.item.end > after.item.start)
     return command;
+
+  // One source operation for both directions: join complete primary paragraphs,
+  // then keep both sequences of child blocks in order. No child-type dispatch or
+  // first-line bounds: paragraphs, headings, fences, tables and sublists share
+  // exactly the same ownership rules.
+  QString body = rebaseListItemSource(markdown, after.content, after, before);
+  const QString leftText = markdown.mid(before.content.start, before.content.length());
+  QString separator = !leftText.trimmed().isEmpty() && !body.trimmed().isEmpty() ? QStringLiteral(" ") : QString();
+  qsizetype sourceStart = before.content.end;
+  // CommonMark gives an empty marker one column of padding regardless of its
+  // trailing whitespace. Preserve that column when it acquires a paragraph,
+  // otherwise its existing child blocks could become siblings of the item.
+  if (!body.isEmpty() && !before.marker.task && before.content.start == before.firstLine.end) {
+    sourceStart = before.markerToken.end;
+    separator = QLatin1Char(' ');
   }
-  const qsizetype nextContentRealStart = nextInfo.task ? nextLineStart + nextInfo.taskContentStart : nextContentStart;
-  const QString nextText = markdown.mid(nextContentRealStart, nextLineEnd - nextContentRealStart);
 
-  const QString separator =
-      (!context.contentText.trimmed().isEmpty() && !nextText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
+  QString inserted = separator + body;
+  const qsizetype seam = sourceStart + separator.size();
+  const QString prefix = listContentPrefix(markdown, before);
+  const auto appendChildren = [&](const ListItemSource& source, bool moved) {
+    if (!source.children.isValid())
+      return;
+    QString tail = moved ? rebaseListItemSource(markdown, {source.content.end, source.item.end}, source, before)
+                         : markdown.mid(source.content.end, source.item.end - source.content.end);
+    // A child authored beside an empty marker has no separating newline in
+    // its source. Once moved behind text/other children it must become a block
+    // continuation. Two newlines preserve even a non-1 ordered child list or
+    // an indented code block, which cannot interrupt an existing paragraph.
+    if (!source.paragraph && (moved || !body.isEmpty())) {
+      if (source.content.end < source.firstLine.end)
+        tail.prepend(QStringLiteral("\n\n") + prefix);
+      else
+        tail.prepend(QLatin1Char('\n'));
+    }
+    inserted += tail;
+  };
+  appendChildren(before, false);
+  const qsizetype leftTailEnd = sourceStart + inserted.size();
+  appendChildren(after, true);
 
-  qsizetype deleteStart = curLineEnd;
-  // Symmetric to buildMergeWithPreviousListItem: only rebuild when the current item owns a child
-  // sublist (otherwise the historical single-segment delete is byte-exact).
-  bool curHasSublist = false;
-  for (const auto& c : context.node->children()) {
-    if (c->type() == BlockType::List) {
-      curHasSublist = true;
-      break;
+  command.sourceStart = sourceStart;
+  command.removedLength = after.item.end - command.sourceStart;
+  command.insertedText = std::move(inserted);
+  command.fallbackSourceOffset = seam;
+  // Removing a genuinely empty sibling returns to the preceding item's last
+  // editable descendant. Resolve that position structurally, not by trimming
+  // source newlines (a fence's closing marker is not an editable text position).
+  if (backward && after.content.length() == 0 && !after.children.isValid()) {
+    if (auto* tail = resolver_->lastEditableDescendant(const_cast<MarkdownNode&>(left))) {
+      BlockEditContext tailContext;
+      if (resolver_->fill(*tail, tailContext))
+        command.fallbackSourceOffset = qMin(tailContext.contentRange.byteEnd, leftTailEnd);
     }
   }
-  if (curHasSublist) {
-    const QString curSublist = markdown.mid(curLineEnd, nextLineStart - curLineEnd);
-    command.removedLength = qMin(nextLineEnd + 1, markdown.size()) - curLineEnd;
-    command.insertedText = separator + nextText + curSublist;
-  } else {
-    // The current item's lazy continuation lines (text between its marker line and the next
-    // item's line, when it owns no child sublist) must survive the merge: the naive range
-    // [curLineEnd, nextContentRealStart) spans them and ate them (regression: "1. alpha /
-    //    beta / 2. gamma" Delete at the item-1 end lost "beta"). When they exist, delete only
-    // the next item's marker plus the newline that ends the last continuation line, so the
-    // merged text appends to that line instead.
-    const QString between = markdown.mid(curLineEnd, nextLineStart - curLineEnd);
-    if (!between.trimmed().isEmpty()) {
-      deleteStart = nextLineStart - 1; // the '\n' ending the current item's last continuation line
-    }
-    command.removedLength = nextContentRealStart - deleteStart;
-    command.insertedText = separator;
-  }
-  command.sourceStart = deleteStart;
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge List Items");
-  command.fallbackSourceOffset = deleteStart + separator.size();
   command.structureEdit = true;
-  command.valid = true;
-  command.handled = true;
+  command.valid = command.handled = true;
   return command;
 }
 
@@ -1295,15 +1132,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   qsizetype lineStart = -1;
   qsizetype contentStart = -1;
   qsizetype lineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+  ListLineInfo info;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd, &info)) {
     return command;
   }
   const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
-    return command;
-  }
 
   // Outdent aligns this item to the enclosing list's parent-item marker column — the inverse of
   // indent. No outer ListItem means a top-level list: drop the marker to exit into a paragraph.
@@ -1350,12 +1184,31 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   qsizetype outerLineStart = -1;
   qsizetype outerContentStart = -1;
   qsizetype outerLineEnd = -1;
+  ListLineInfo outerInfo;
   if (!resolver_->fill(*outer, outerContext) ||
-      !resolver_->listItemLineBounds(outerContext, outerLineStart, outerContentStart, outerLineEnd)) {
+      !resolver_->listItemLineBounds(outerContext, outerLineStart, outerContentStart, outerLineEnd, &outerInfo)) {
     return command;
   }
-  const ListLineInfo outerInfo = listLineInfoFor(markdown.mid(outerLineStart, outerLineEnd - outerLineStart));
-  if (!outerInfo.valid) {
+
+  if (lineStart == outerLineStart) {
+    // The parent has no text before this sublist ("3. 4. body"). Removing the inner
+    // marker makes its content the parent's content; replacing the physical line's
+    // prefix would delete the parent's marker too. Continuations and descendants
+    // move left by the removed marker width so their structure survives the edit.
+    const qsizetype markerStart = lineStart + info.markerStart;
+    const qsizetype itemEnd = listItemSource(markdown, *context.node).item.end;
+    qsizetype caret = qBound<qsizetype>(0, context.cursorSourceOffset - markerStart, itemEnd - markerStart);
+    command.sourceStart = markerStart;
+    command.removedLength = itemEnd - markerStart;
+    command.insertedText =
+        reindentListItem(markdown.mid(markerStart, itemEnd - markerStart), info.contentStart - info.markerStart, {},
+                         info.markerStart - info.contentStart, caret);
+    command.fallbackSourceOffset = markerStart + caret;
+    command.kind = EditTransaction::Kind::DeleteText;
+    command.label = QStringLiteral("Remove Nested List Marker");
+    command.structureEdit = true;
+    command.valid = true;
+    command.handled = true;
     return command;
   }
 
@@ -1379,20 +1232,20 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildOutdentListItem(c
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Outdent List Item");
 
-  const qsizetype itemEnd =
-      qMax(lineEnd, session_->document().lineOffsets().lineEndOffset(context.node->sourceRange().lineEnd));
+  const qsizetype itemEnd = listItemSource(markdown, *context.node).item.end;
   qsizetype caret = qBound<qsizetype>(0, context.cursorSourceOffset - lineStart, itemEnd - lineStart);
   command.insertedText = reindentListItem(markdown.mid(lineStart, itemEnd - lineStart), prefixEnd, newPrefix,
                                           targetColumn + newMarker.size() - info.contentStart, caret);
   command.removedLength = itemEnd - lineStart;
 
   if (info.ordered) {
-    const qsizetype runEnd = orderedSiblingRunEnd(markdown, nextLineStart(markdown, itemEnd), targetColumn);
-    const QString tail = markdown.mid(itemEnd, runEnd - itemEnd);
+    const MarkdownNode* following = nextListItemInRun(markdown, *outer);
+    const qsizetype runEnd = qMax(itemEnd, listSiblingRunEnd(markdown, following));
     command.removedLength = runEnd - lineStart;
     // The outvented item itself takes outerNextNumber (its new marker), so the outer-list tail that
     // follows must renumber from outerNextNumber + 1, not outerNextNumber (which would duplicate it).
-    command.insertedText += renumberOrderedSiblings(tail, targetColumn, outerNextNumber + 1);
+    command.insertedText +=
+        renumberListItems(markdown, {itemEnd, runEnd}, following, outerNextNumber + 1, orderedListSequential());
   }
 
   command.fallbackSourceOffset = lineStart + caret;
@@ -1416,15 +1269,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   qsizetype lineStart = -1;
   qsizetype contentStart = -1;
   qsizetype lineEnd = -1;
-  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd)) {
+  ListLineInfo info;
+  if (!resolver_->listItemLineBounds(context, lineStart, contentStart, lineEnd, &info)) {
     return command;
   }
   const PieceTable& markdown = session_->markdownText();
   const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
-    return command;
-  }
 
   // The previous sibling becomes this item's parent. Its content column is the minimum a child
   // list marker must reach to nest (CommonMark: child marker column >= parent content column).
@@ -1433,12 +1283,9 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   qsizetype prevLineStart = -1;
   qsizetype prevContentStart = -1;
   qsizetype prevLineEnd = -1;
+  ListLineInfo prevInfo;
   if (!resolver_->fill(*prevNode, prevContext) ||
-      !resolver_->listItemLineBounds(prevContext, prevLineStart, prevContentStart, prevLineEnd)) {
-    return command;
-  }
-  const ListLineInfo prevInfo = listLineInfoFor(markdown.mid(prevLineStart, prevLineEnd - prevLineStart));
-  if (!prevInfo.valid) {
+      !resolver_->listItemLineBounds(prevContext, prevLineStart, prevContentStart, prevLineEnd, &prevInfo)) {
     return command;
   }
 
@@ -1466,8 +1313,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
   command.kind = EditTransaction::Kind::InsertText;
   command.label = QStringLiteral("Indent List Item");
 
-  const qsizetype itemEnd =
-      qMax(lineEnd, session_->document().lineOffsets().lineEndOffset(context.node->sourceRange().lineEnd));
+  const qsizetype itemEnd = listItemSource(markdown, *context.node).item.end;
   qsizetype caret = qBound<qsizetype>(0, context.cursorSourceOffset - lineStart, itemEnd - lineStart);
   command.insertedText = reindentListItem(markdown.mid(lineStart, itemEnd - lineStart), prefixEnd, newPrefix,
                                           targetColumn + newMarker.size() - info.contentStart, caret);
@@ -1477,10 +1323,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
     // The vacated number in the parent list is filled by renumbering the same-column ordered
     // siblings that follow (same pattern as buildInsertListItemAbove / Enter split). The current
     // item's rewritten line plus the renumbered tail form one contiguous replace.
-    const qsizetype runEnd = orderedSiblingRunEnd(markdown, nextLineStart(markdown, itemEnd), info.markerStart);
-    const QString tail = markdown.mid(itemEnd, runEnd - itemEnd);
+    const MarkdownNode* following = nextListItemInRun(markdown, *context.node);
+    const qsizetype runEnd = qMax(itemEnd, listSiblingRunEnd(markdown, following));
     command.removedLength = runEnd - lineStart;
-    command.insertedText += renumberOrderedSiblings(tail, info.markerStart, info.orderedNumber);
+    command.insertedText +=
+        renumberListItems(markdown, {itemEnd, runEnd}, following, info.orderedNumber, orderedListSequential());
   }
 
   command.fallbackSourceOffset = lineStart + caret;

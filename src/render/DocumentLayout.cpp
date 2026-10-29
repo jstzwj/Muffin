@@ -775,6 +775,14 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   slot.viewportGeneration = viewportGeneration_;
   slot.top = replacement->rect().top() - currentShift;
   slot.detailShift = currentShift;
+  if (!selectionOnly) {
+    // A local reparse can replace descendants while preserving the top-level
+    // list/quote identity. Index the new AST subtree as well as its layouts:
+    // otherwise restored selection endpoints exist but their carets cannot be
+    // found until a full document rebuild.
+    removeNestedIndexForTopLevel(node->id());
+    collectNestedToTopLevel(*node, node->id());
+  }
   indexLayoutBlock(*replacement);
   slot.detail = std::move(replacement);
 

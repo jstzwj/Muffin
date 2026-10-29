@@ -37,11 +37,13 @@ public:
   bool current(BlockEditContext& context) const;
   bool forBlock(NodeId blockId, BlockEditContext& context) const;
   bool fill(MarkdownNode& displayNode, BlockEditContext& context) const;
+  // Anchor a visible-only cursor before a structural edit can replace its AST node.
+  CursorPosition sourceAnchoredCursor(CursorPosition cursor) const;
   bool selectionContext(BlockEditContext& context, qsizetype& start, qsizetype& end) const;
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSourceRange(const MarkdownNode& node, qsizetype& start, qsizetype& end) const;
   bool listItemLineBounds(const BlockEditContext& context, qsizetype& lineStart, qsizetype& contentStart,
-                          qsizetype& lineEnd) const;
+                          qsizetype& lineEnd, ListLineInfo* info = nullptr) const;
 
   MarkdownNode* previousEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;
   MarkdownNode* nextEditableTextBlock(const MarkdownNode& node, BlockEditContext& context) const;

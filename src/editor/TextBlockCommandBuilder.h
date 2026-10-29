@@ -51,6 +51,7 @@ public:
   Command buildIndentListItem(const BlockEditContext& context) const;
 
 private:
+  Command buildMergeListItems(const MarkdownNode& left, const MarkdownNode& right, bool backward) const;
   QString paragraphSeparatorFor(const BlockEditContext& context) const;
   Command buildConvertPendingToBlock(const BlockEditContext& context) const;
   Command buildOutdentBlockQuote(const BlockEditContext& context) const;

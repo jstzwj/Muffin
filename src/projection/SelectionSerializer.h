@@ -63,9 +63,7 @@ private:
   bool literalContentSourceRange(const MarkdownDocument& document, const MarkdownNode& node, qsizetype& start,
                                  qsizetype& end) const;
   QString literalMarkdownPrefix(const MarkdownDocument& document, const MarkdownNode& node) const;
-  qsizetype structuredLineStart(const QString& markdown, qsizetype contextSourceStart) const;
-  bool listItemLineBounds(const QString& markdown, const EditableContext& context, qsizetype& lineStart,
-                          qsizetype& contentStart, qsizetype& lineEnd) const;
+  qsizetype structuredLineStart(const MarkdownDocument& document, NodeId block, qsizetype contextSourceStart) const;
   bool isPlainInlineEditable(const MarkdownNode& node, const QString& sourceText) const;
   QString plainTextForMarkdownRange(const QString& markdownText, qsizetype start, qsizetype end) const;
 };

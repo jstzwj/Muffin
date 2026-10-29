@@ -51,6 +51,18 @@ qsizetype pendingMarkerOffsetForSingleLineEdit(const QString& text, qsizetype of
   return insertedText.contains(QLatin1Char('\n')) ? -1 : pendingBlockMarkerOffset(text, offset);
 }
 
+SelectionRange anchoredSelection(DocumentSession* session, SelectionController* selection) {
+  if (!selection || !selection->hasCursor()) {
+    return {};
+  }
+  auto range = selection->selection();
+  const bool collapsed = range.isCollapsed();
+  const BlockEditContextResolver resolver(session, selection);
+  range.anchor = resolver.sourceAnchoredCursor(range.anchor);
+  range.focus = collapsed ? range.anchor : resolver.sourceAnchoredCursor(range.focus);
+  return range;
+}
+
 } // namespace
 
 BlockEditContextResolver InputController::contextResolver() const {
@@ -149,9 +161,8 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
     return;
   }
 
-  const CursorPosition beforeCursor =
-      ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
-  const SelectionRange beforeSelection = ctx_.selection ? ctx_.selection->selection() : SelectionRange();
+  const SelectionRange beforeSelection = anchoredSelection(ctx_.session, ctx_.selection);
+  const CursorPosition beforeCursor = beforeSelection.focus;
   const PieceTable& currentText = ctx_.session->markdownText();
   if (sourceStart + removedLength > currentText.size()) {
     return;
@@ -303,9 +314,8 @@ void InputController::applyEdit(EditTransaction::Kind kind, const QString& label
                                 CursorPosition preferredCursor, qsizetype fallbackSourceOffset,
                                 QVector<LocalEditNodeHint> nodeHints, bool preferLaterEmptyAtOffset) {
   PerfTimer perf("input.applyEdit.diffFallback");
-  const CursorPosition beforeCursor =
-      ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
-  const SelectionRange beforeSelection = ctx_.selection ? ctx_.selection->selection() : SelectionRange();
+  const SelectionRange beforeSelection = anchoredSelection(ctx_.session, ctx_.selection);
+  const CursorPosition beforeCursor = beforeSelection.focus;
   const QString beforeText = ctx_.session->markdownText().toString();
 
   qsizetype prefix = 0;

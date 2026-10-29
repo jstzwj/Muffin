@@ -7,6 +7,7 @@
 #include "document/MarkdownNode.h"
 #include "document/NodeNavigation.h"
 #include "document/SourceRangeUtil.h"
+#include "document/ListItemSource.h"
 #include "editor/SelectionController.h"
 
 #include <QSettings>
@@ -50,17 +51,6 @@ template <typename Text> qsizetype literalContentStartOffsetOf(const Text& markd
   return (newlineAt >= 0 && newlineAt < bound) ? newlineAt + 1 : start;
 }
 
-template <typename Text>
-qsizetype taskContentStartForListLine(const Text& markdown, qsizetype lineStart, qsizetype lineEnd,
-                                      qsizetype markerContentStart) {
-  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid || !info.task) {
-    return markerContentStart;
-  }
-  return lineStart + info.taskContentStart;
-}
-
 bool localSourceOffsetForCursor(const BlockEditContext& context, const CursorPosition& cursor,
                                 qsizetype& localSourceOffset) {
   if (cursor.text.sourceOffset >= context.contentRange.byteStart &&
@@ -101,11 +91,31 @@ bool BlockEditContextResolver::forBlock(NodeId blockId, BlockEditContext& contex
   }
 
   MarkdownNode* node = session_->document().node(blockId);
+  if (node && node->type() == BlockType::Paragraph && node->parent() && node->parent()->type() == BlockType::ListItem &&
+      primaryParagraph(*node->parent()) == node) {
+    node = node->parent();
+  }
   if (!node || !isEditableTextBlock(node->type())) {
     return false;
   }
 
   return fill(*node, context);
+}
+
+CursorPosition BlockEditContextResolver::sourceAnchoredCursor(CursorPosition cursor) const {
+  if (!session_ || !cursor.isValid() || cursor.afterBlock || cursor.text.sourceOffset >= 0) {
+    return cursor;
+  }
+  NodeId block = cursor.blockId;
+  if (const auto* text = session_->document().node(cursor.text.nodeId); text && text->type() == BlockType::TableCell) {
+    block = text->id();
+  }
+  BlockEditContext context;
+  qsizetype localOffset = -1;
+  if (forBlock(block, context) && localSourceOffsetForCursor(context, cursor, localOffset)) {
+    cursor.text.sourceOffset = context.contentRange.byteStart + localOffset;
+  }
+  return cursor;
 }
 
 bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext& context) const {
@@ -165,36 +175,28 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     return true;
   }
 
+  ListItemSource listSource;
   if (displayNode.type() == BlockType::ListItem) {
-    editable = primaryParagraph(displayNode);
+    listSource = listItemSource(session_->markdownText(), displayNode);
+    if (!listSource.isValid()) {
+      return false;
+    }
+    editable = const_cast<MarkdownNode*>(listSource.paragraph);
     if (!editable) {
-      qsizetype lineStart = -1;
-      qsizetype contentStart = -1;
-      qsizetype lineEnd = -1;
-      BlockEditContext markerContext;
-      markerContext.node = &displayNode;
-      markerContext.contentRange.byteStart = lineOffsets.offsetForLineColumn(
-          displayNode.sourceRange().lineStart, qMax(1, displayNode.sourceRange().columnStart));
-      if (markerContext.contentRange.byteStart >= 0 &&
-          listItemLineBounds(markerContext, lineStart, contentStart, lineEnd)) {
-        const qsizetype textStart =
-            taskContentStartForListLine(session_->markdownText(), lineStart, lineEnd, contentStart);
-        context.node = &displayNode;
-        context.editableNode = nullptr;
-        context.blockId = displayNode.id();
-        context.blockType = displayNode.type();
-        context.blockRange.byteStart = lineStart;
-        context.blockRange.byteEnd = lineEnd;
-        context.contentRange.byteStart = textStart;
-        context.contentRange.byteEnd = lineEnd;
-        context.cursorTextOffset = 0;
-        context.cursorSourceOffset = textStart;
-        context.contentText = session_->markdownText().mid(textStart, lineEnd - textStart);
-        context.visibleText = context.contentText;
-        context.plainInlineEditable = context.contentText.trimmed().isEmpty();
-        context.supportsVisibleOffsetMapping = context.plainInlineEditable;
-        return context.plainInlineEditable;
-      }
+      context.node = &displayNode;
+      context.editableNode = nullptr;
+      context.blockId = displayNode.id();
+      context.blockType = displayNode.type();
+      context.blockRange = displayNode.sourceRange();
+      context.contentRange.byteStart = listSource.content.start;
+      context.contentRange.byteEnd = listSource.content.end;
+      context.cursorTextOffset = 0;
+      context.cursorSourceOffset = listSource.content.start;
+      context.contentText.clear();
+      context.visibleText = context.contentText;
+      context.plainInlineEditable = context.contentText.trimmed().isEmpty();
+      context.supportsVisibleOffsetMapping = context.plainInlineEditable;
+      return context.plainInlineEditable;
     }
   }
 
@@ -207,15 +209,17 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   qsizetype start = range.byteEnd > range.byteStart
                         ? range.byteStart
                         : lineOffsets.offsetForLineColumn(range.lineStart, qMax(1, range.columnStart));
-  const qsizetype end =
-      editable->type() == BlockType::Heading
-          ? headingContentEndOffset(*editable, markdown)
-          : (range.byteEnd > range.byteStart ? range.byteEnd : lineOffsets.lineEndOffset(range.lineEnd));
+  qsizetype end = editable->type() == BlockType::Heading
+                      ? headingContentEndOffset(*editable, markdown)
+                      : (range.byteEnd > range.byteStart ? range.byteEnd : lineOffsets.lineEndOffset(range.lineEnd));
   if (start < 0 || end < start) {
     return false;
   }
 
-  if (editable->type() == BlockType::Heading) {
+  if (listSource.isValid()) {
+    start = listSource.content.start;
+    end = listSource.content.end;
+  } else if (editable->type() == BlockType::Heading) {
     while (start < end && markdown.at(start) == QLatin1Char('#')) {
       ++start;
     }
@@ -224,17 +228,6 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
     }
   } else if (editable->type() == BlockType::Paragraph) {
     start = paragraphContentStartIncludingCommonMarkIndent(markdown, start);
-    if (displayNode.type() == BlockType::ListItem) {
-      qsizetype lineStart = start;
-      while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-        --lineStart;
-      }
-      qsizetype lineEnd = start;
-      while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
-        ++lineEnd;
-      }
-      start = taskContentStartForListLine(markdown, lineStart, lineEnd, start);
-    }
   }
 
   context.node = &displayNode;
@@ -249,6 +242,7 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   const bool ownsCursor =
       selection_ && selection_->hasCursor() &&
       (selection_->cursorPosition().blockId == displayNode.id() ||
+       (displayNode.type() == BlockType::ListItem && selection_->cursorPosition().blockId == editable->id()) ||
        (displayNode.type() == BlockType::TableCell && selection_->cursorPosition().text.nodeId == displayNode.id()));
   context.cursorTextOffset = ownsCursor ? selection_->cursorPosition().text.textOffset : 0;
   const qsizetype cursorStoredSourceOffset = ownsCursor ? selection_->cursorPosition().text.sourceOffset : -1;
@@ -256,7 +250,7 @@ bool BlockEditContextResolver::fill(MarkdownNode& displayNode, BlockEditContext&
   InlineProjectionState projectionState;
   if (selection_ && selection_->hasCursor()) {
     auto projectionSelection = selection_->selection();
-    if (ownsCursor && displayNode.type() == BlockType::TableCell)
+    if (ownsCursor && (displayNode.type() == BlockType::TableCell || displayNode.type() == BlockType::ListItem))
       projectionSelection.focus.blockId = displayNode.id();
     projectionState = InlineProjectionState::forSelection(projectionSelection, displayNode.id(), start);
   } else {
@@ -380,27 +374,22 @@ bool BlockEditContextResolver::blockSourceRange(const MarkdownNode& node, qsizet
 }
 
 bool BlockEditContextResolver::listItemLineBounds(const BlockEditContext& context, qsizetype& lineStart,
-                                                  qsizetype& contentStart, qsizetype& lineEnd) const {
+                                                  qsizetype& contentStart, qsizetype& lineEnd,
+                                                  ListLineInfo* markerInfo) const {
   if (!session_ || !context.node || context.node->type() != BlockType::ListItem) {
     return false;
   }
 
-  const PieceTable& markdown = session_->markdownText();
-  lineStart = context.contentRange.byteStart;
-  while (lineStart > 0 && markdown.at(lineStart - 1) != QLatin1Char('\n')) {
-    --lineStart;
-  }
-  lineEnd = context.contentRange.byteStart;
-  while (lineEnd < markdown.size() && markdown.at(lineEnd) != QLatin1Char('\n')) {
-    ++lineEnd;
-  }
-
-  const QString line = markdown.mid(lineStart, lineEnd - lineStart);
-  const ListLineInfo info = listLineInfoFor(line);
-  if (!info.valid) {
+  const auto source = listItemSource(session_->markdownText(), *context.node);
+  if (!source.isValid()) {
     return false;
   }
-  contentStart = lineStart + info.contentStart;
+  lineStart = source.firstLine.start;
+  lineEnd = source.firstLine.end;
+  contentStart = source.markerContentStart();
+  if (markerInfo) {
+    *markerInfo = source.marker;
+  }
   return contentStart >= lineStart && contentStart <= lineEnd;
 }
 

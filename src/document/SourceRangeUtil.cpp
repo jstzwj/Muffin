@@ -25,30 +25,27 @@ bool isMathClosingLine(const MarkdownNode& node, QStringView line) {
 }
 
 MarkdownNode* primaryParagraph(MarkdownNode& node) {
-  for (const auto& child : node.children()) {
-    if (child->type() == BlockType::Paragraph) {
-      return child.get();
-    }
-  }
-  return nullptr;
+  return const_cast<MarkdownNode*>(primaryParagraph(static_cast<const MarkdownNode&>(node)));
 }
 
 const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
-  for (const auto& child : node.children()) {
-    if (child->type() == BlockType::Paragraph) {
-      return child.get();
-    }
-  }
-  return nullptr;
+  // A paragraph after another child block has its own layout and caret. Only
+  // the first child can supply the inline text painted beside the item marker.
+  return !node.children().empty() && node.children().front()->type() == BlockType::Paragraph
+             ? node.children().front().get()
+             : nullptr;
 }
 
 QString listMarkerFor(const QString& line) {
   return listLineInfoFor(line).marker;
 }
 
-ListLineInfo listLineInfoFor(const QString& line) {
+ListLineInfo listLineInfoFor(const QString& line, qsizetype start) {
   ListLineInfo info;
-  qsizetype index = 0;
+  if (start < 0 || start > line.size()) {
+    return info;
+  }
+  qsizetype index = start;
   while (index < line.size() && line.at(index) == QLatin1Char(' ')) {
     ++index;
   }

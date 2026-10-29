@@ -12,6 +12,7 @@
 #include "document/BlockPredicates.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
+#include "document/ListItemSource.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "projection/InlineProjection.h"
 #include "spellcheck/SpellChecker.h"
@@ -1155,11 +1156,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(const MarkdownNod
   InlineLayout::BuildOptions options;
   options.documentPath = documentPath_;
   options.imageResources = imageResources_;
-  options.styleNode = primaryParagraph(node) ? primaryParagraph(node) : &node;
-  QString listSourceText;
-  if (const MarkdownNode* paragraph = primaryParagraph(node)) {
-    listSourceText = sourceTextForEditableNode(*paragraph);
-    const qsizetype contentStart = sourceContentStartForEditableNode(*paragraph);
+  const auto source = listItemSource(md(), node);
+  options.styleNode = source.paragraph ? source.paragraph : &node;
+  const QString listSourceText = source.isValid() ? md().mid(source.content.start, source.content.length()) : QString();
+  if (source.isValid()) {
+    const qsizetype contentStart = source.content.start;
     layout->setContentSourceStart(contentStart);
     options.projectionState = InlineProjectionState::forSelection(selection_, node.id(), contentStart);
     options.sourceBase = contentStart - node.topLevelBlock()->sourceRange().byteStart;
@@ -1176,8 +1177,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(const MarkdownNod
     options.textTransform = static_cast<TextTransform>(theme.textTransformForElement(elementKey, &node));
     options.textShadow = theme.textShadowForElement(elementKey, &node);
     applyPreedit(options);
-    inlineLayout->build(primaryInlinesForListItem(node), listSourceText, theme, contentWidth,
-                        theme.textFontForElement(elementKey, &node), options);
+    inlineLayout->build(source.paragraph ? source.paragraph->inlines() : QVector<InlineNode>(), listSourceText, theme,
+                        contentWidth, theme.textFontForElement(elementKey, &node), options);
   }
   layout->setInlineLayout(std::move(inlineLayout));
 
@@ -1186,14 +1187,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(const MarkdownNod
   qreal flowBottom = y + inlineHeight;
   std::vector<std::unique_ptr<BlockLayout>> children;
 
-  bool skippedPrimaryParagraph = false;
   const MarkdownNode* previousChild = nullptr;
   for (const auto* child : theme.markdownFlow(node)->children(node)) {
     if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) {
       continue;
     }
-    if (!skippedPrimaryParagraph && child->type() == BlockType::Paragraph) {
-      skippedPrimaryParagraph = true;
+    if (child == source.paragraph) {
       previousChild = child;
       continue;
     }
@@ -1746,16 +1745,7 @@ QString BlockLayoutBuilder::textForListMarker(const MarkdownNode& itemNode, cons
 // the split. Returns an invalid info when the marker can't be parsed (e.g. a synthesized node),
 // letting callers fall back to positional.
 ListLineInfo BlockLayoutBuilder::authoredMarkerInfo(const MarkdownNode& itemNode) const {
-  const SourceRange range = itemNode.sourceRange();
-  if (range.byteStart < 0 || range.byteStart > md().size()) {
-    return ListLineInfo{};
-  }
-  const qsizetype lineStart = lineStartOffset(md(), range.byteStart);
-  qsizetype lineEnd = md().indexOf(QLatin1Char('\n'), lineStart);
-  if (lineEnd < 0) {
-    lineEnd = md().size();
-  }
-  return listLineInfoFor(md().mid(lineStart, lineEnd - lineStart));
+  return listItemSource(md(), itemNode).marker;
 }
 
 BlockLayout::ListMarkerKind BlockLayoutBuilder::markerKindForListItem(const MarkdownNode& itemNode) const {
@@ -1907,17 +1897,9 @@ qsizetype BlockLayoutBuilder::sourceContentStartForEditableNode(const MarkdownNo
   } else if (node.type() == BlockType::Paragraph) {
     start = paragraphContentStartIncludingCommonMarkIndent(md(), start);
     if (node.parent() && node.parent()->type() == BlockType::ListItem) {
-      qsizetype lineStart = start;
-      while (lineStart > 0 && md().at(lineStart - 1) != QLatin1Char('\n')) {
-        --lineStart;
-      }
-      qsizetype lineEnd = start;
-      while (lineEnd < md().size() && md().at(lineEnd) != QLatin1Char('\n')) {
-        ++lineEnd;
-      }
-      const ListLineInfo info = listLineInfoFor(md().mid(lineStart, lineEnd - lineStart));
-      if (info.valid && info.task) {
-        start = lineStart + info.taskContentStart;
+      const auto source = listItemSource(md(), *node.parent());
+      if (source.isValid() && source.paragraph == &node) {
+        start = source.content.start;
       }
     }
   }

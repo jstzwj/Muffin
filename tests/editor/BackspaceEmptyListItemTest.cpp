@@ -159,18 +159,86 @@ void testBackspaceOnSoleMarkerOnlyItemMakesProgress() {
   require(h.selection.hasCursor(), "caret must remain valid after full deletion");
 }
 
+void testBackspaceAtSameLineNestedItemStart() {
+  Harness h;
+  h.load(QStringLiteral("1. first\n2. second\n3. 4. body\n4. last"));
+  MarkdownNode* outer = listItemAt(h.session, 0, 2);
+  MarkdownNode* nested = childAt(firstChildOfType(outer, BlockType::List), 0);
+  setCursor(h.selection, nested, 0);
+
+  require(h.input.deleteBackward(), "backspace should remove a same-line nested marker");
+  require(h.session.markdownText().toString() == QStringLiteral("1. first\n2. second\n3. body\n4. last"),
+          "backspace should collapse the empty outer item and keep its number and text");
+  require(h.selection.hasCursor(), "caret must remain valid after collapsing same-line nesting");
+  require(h.selection.cursorPosition().blockId == listItemAt(h.session, 0, 2)->id(),
+          "caret should land in the surviving outer item");
+  require(h.selection.cursorPosition().text.textOffset == 0, "caret should stay before the item text");
+}
+
+void testSameLineNestedMarkerVariants() {
+  struct Case {
+    QString original;
+    QString expected;
+  };
+  const Case cases[] = {
+      {"3. 4. body", "3. body"},
+      {"19. 77. body", "19. body"},
+      {"3) 4) body", "3) body"},
+      {"- - body", "- body"},
+      {"3. - body", "3. body"},
+      {"- 4. body", "- body"},
+      {"3. - [x] body", "3. [x] body"},
+      {"3. 4. **正文**", "3. **正文**"},
+      {"3. 4. body\n      continued\n      - child\n4. last", "3. body\n   continued\n   - child\n4. last"},
+      {"3. 4. body\n   5. sibling\n4. last", "3. body\n   5. sibling\n4. last"},
+      {"3. 4. \n4. last", "3. \n4. last"},
+  };
+  for (const auto& c : cases) {
+    Harness h;
+    h.load(c.original);
+    MarkdownNode* nested = childAt(firstChildOfType(listItemAt(h.session, 0, 0), BlockType::List), 0);
+    setCursor(h.selection, nested, 0);
+    require(h.input.deleteBackward(), "same-line nested Backspace should be handled");
+    require(h.session.markdownText().toString() == c.expected,
+            QStringLiteral("nested Backspace must retain parent, text and descendants: %1 -> %2")
+                .arg(c.original, h.session.markdownText().toString()));
+    require(h.selection.hasCursor(), "nested Backspace must retain a valid caret");
+    require(h.selection.cursorPosition().text.textOffset == 0, "caret must remain at the text start");
+    require(h.undoStack.canUndo(), "removing a nested marker must be undoable");
+  }
+}
+
+void testBackspaceRemovesOneSameLineLevelAtATime() {
+  Harness h;
+  h.load(QStringLiteral("3. 4. 5. body"));
+  MarkdownNode* middle = childAt(firstChildOfType(listItemAt(h.session, 0, 0), BlockType::List), 0);
+  MarkdownNode* inner = childAt(firstChildOfType(middle, BlockType::List), 0);
+  setCursor(h.selection, inner, 0);
+  require(h.input.deleteBackward(), "backspace should remove the deepest same-line level");
+  require(h.session.markdownText().toString() == QStringLiteral("3. 4. body"),
+          "only the innermost level should be removed");
+  require(h.input.deleteBackward(), "the next backspace should remove the remaining nested level");
+  require(h.session.markdownText().toString() == QStringLiteral("3. body"), "outer item should survive");
+  require(h.input.insertText(QStringLiteral("正文")), "typing should work immediately after list repair");
+  require(h.session.markdownText().toString() == QStringLiteral("3. 正文body"),
+          "typing must insert at the restored text position");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
-  testBackspaceEmptyTrailingUnorderedItem();
-  testBackspaceEmptyTrailingOrderedItem();
-  testBackspaceEmptyMiddleItem();
-  testBackspaceSoleEmptyItemStillOutdents();
-  testMarkerOnlyLineIsAListLine();
-  testBackspaceThroughMarkerOnlyItemDeletesList();
-  testBackspaceOnSoleMarkerOnlyItemMakesProgress();
+  runTest("testBackspaceEmptyTrailingUnorderedItem", testBackspaceEmptyTrailingUnorderedItem);
+  runTest("testBackspaceEmptyTrailingOrderedItem", testBackspaceEmptyTrailingOrderedItem);
+  runTest("testBackspaceEmptyMiddleItem", testBackspaceEmptyMiddleItem);
+  runTest("testBackspaceSoleEmptyItemStillOutdents", testBackspaceSoleEmptyItemStillOutdents);
+  runTest("testMarkerOnlyLineIsAListLine", testMarkerOnlyLineIsAListLine);
+  runTest("testBackspaceThroughMarkerOnlyItemDeletesList", testBackspaceThroughMarkerOnlyItemDeletesList);
+  runTest("testBackspaceOnSoleMarkerOnlyItemMakesProgress", testBackspaceOnSoleMarkerOnlyItemMakesProgress);
+  runTest("testBackspaceAtSameLineNestedItemStart", testBackspaceAtSameLineNestedItemStart);
+  runTest("testSameLineNestedMarkerVariants", testSameLineNestedMarkerVariants);
+  runTest("testBackspaceRemovesOneSameLineLevelAtATime", testBackspaceRemovesOneSameLineLevelAtATime);
   QApplication::clipboard()->clear();
   return 0;
 }

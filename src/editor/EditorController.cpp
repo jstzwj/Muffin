@@ -70,11 +70,8 @@ LiteralBlockSpec mathSpec() {
 
 MarkdownNode* primaryParagraphOrSelf(MarkdownNode& node) {
   if (node.type() == BlockType::ListItem) {
-    for (const auto& child : node.children()) {
-      if (child->type() == BlockType::Paragraph) {
-        return child.get();
-      }
-    }
+    if (auto* paragraph = primaryParagraph(node))
+      return paragraph;
   }
   return &node;
 }
@@ -86,11 +83,7 @@ qsizetype selectableTextLength(const MarkdownNode& node) {
   case BlockType::TableCell:
     return InlineProjection::plainTextForInlines(node.inlines()).size();
   case BlockType::ListItem:
-    for (const auto& child : node.children()) {
-      if (child->type() == BlockType::Paragraph || child->type() == BlockType::Heading)
-        return selectableTextLength(*child);
-    }
-    return 0;
+    return primaryParagraph(node) ? selectableTextLength(*primaryParagraph(node)) : 0;
   case BlockType::FrontMatter:
   case BlockType::CodeFence:
   case BlockType::MathBlock:
