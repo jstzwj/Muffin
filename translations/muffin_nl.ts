@@ -981,30 +981,28 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation type="vanished">Een snelle native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="113"/>
+        <location filename="../src/main.cpp" line="111"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="120"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>&lt;folder&gt; openen in de bestandsbrowser van de zijbalk.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="127"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Te openen Markdown- of tekstbestand (of map).</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="185"/>
         <source>Default Markdown editor</source>
-        <translation>Standaard Markdown-editor</translation>
+        <translation type="vanished">Standaard Markdown-editor</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="186"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
-        <translation>Muffin is geregistreerd als editor voor Markdown-bestanden.
+        <translation type="vanished">Muffin is geregistreerd als editor voor Markdown-bestanden.
 Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     </message>
     <message>
@@ -3585,7 +3583,7 @@ Wilt u de downloadpagina openen?</translation>
         <translation>Openen</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="124"/>
+        <location filename="../src/main.cpp" line="122"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>

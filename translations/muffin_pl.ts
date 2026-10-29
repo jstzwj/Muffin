@@ -981,30 +981,28 @@ Szybki, lekki natywny edytor Markdown zbudowany w C++ i Qt 6 Widgets.</translati
         <translation type="vanished">Szybki natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="113"/>
+        <location filename="../src/main.cpp" line="111"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Szybki, lekki, natywny edytor Markdown zbudowany przy użyciu C++ i Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="120"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>Otwórz &lt;folder&gt; w przeglądarce plików na pasku bocznym.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="127"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Plik Markdown lub tekstowy (albo folder) do otwarcia.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="185"/>
         <source>Default Markdown editor</source>
-        <translation>Domyślny edytor Markdown</translation>
+        <translation type="vanished">Domyślny edytor Markdown</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="186"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
-        <translation>Muffin jest zarejestrowany jako edytor plików Markdown.
+        <translation type="vanished">Muffin jest zarejestrowany jako edytor plików Markdown.
 Ustawić go teraz jako domyślny edytor?</translation>
     </message>
     <message>
@@ -3591,7 +3589,7 @@ Czy chcesz otworzyć stronę pobierania?</translation>
         <translation>Otwórz</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="124"/>
+        <location filename="../src/main.cpp" line="122"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>

@@ -22,9 +22,8 @@ namespace muffin {
 // with a hash, so no application can silently become the *default* for an
 // extension. We therefore only register Muffin as an "Open with" candidate;
 // openDefaultAppsSettings() launches the system Default Apps page so the user
-// can confirm the default in one click. The MSI's File Associations feature
-// additionally sets a one-shot launch flag (shouldPromptForDefault()) so the
-// first run after an interactive install offers that redirect.
+// can choose the default explicitly. Registering an "Open with" candidate
+// never triggers a startup prompt or changes the user's default application.
 //
 // On non-Windows builds every method is a no-op stub so callers (the
 // preferences page, main()) compile unchanged.
@@ -52,12 +51,6 @@ public:
   // This is the only supported way on Windows 8+ to let the user make Muffin
   // the default editor for an extension.
   static void openDefaultAppsSettings();
-
-  // One-shot gate the installer sets when the user keeps the File Associations
-  // feature on (signalling "also make it the default"). main() checks this at
-  // launch and, if set, calls openDefaultAppsSettings() once and clears it.
-  static bool shouldPromptForDefault();
-  static void clearPromptForDefault();
 };
 
 } // namespace muffin

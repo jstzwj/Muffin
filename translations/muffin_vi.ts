@@ -981,30 +981,28 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation type="vanished">Trình soạn thảo Markdown gốc nhanh được xây dựng bằng C++ và Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="113"/>
+        <location filename="../src/main.cpp" line="111"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Một trình chỉnh sửa Markdown gốc, nhanh và nhẹ được xây dựng bằng C++ và Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="120"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>Mở &lt;folder&gt; trong trình duyệt tệp ở thanh bên.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="127"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Tệp Markdown, tệp văn bản hoặc thư mục cần mở.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="185"/>
         <source>Default Markdown editor</source>
-        <translation>Trình soạn thảo Markdown mặc định</translation>
+        <translation type="vanished">Trình soạn thảo Markdown mặc định</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="186"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
-        <translation>Muffin đã được đăng ký làm trình soạn thảo cho các tệp Markdown.
+        <translation type="vanished">Muffin đã được đăng ký làm trình soạn thảo cho các tệp Markdown.
 Đặt làm trình soạn thảo mặc định ngay bây giờ?</translation>
     </message>
     <message>
@@ -3583,7 +3581,7 @@ Bạn có muốn mở trang tải xuống không?</translation>
         <translation>Mở</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="124"/>
+        <location filename="../src/main.cpp" line="122"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>

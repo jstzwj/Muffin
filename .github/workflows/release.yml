@@ -307,6 +307,13 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
           cmake --build --preset conan-release --target bundle
 
+      - name: Verify installer integration choices
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & ./build/installer-options-test/IntegrationOptionsTest.exe "./build/Muffin-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.msi"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Upload MSI artifact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

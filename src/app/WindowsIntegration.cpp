@@ -165,6 +165,12 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
   }
 
   notifyShellAssocChanged();
+  // Shared with the MSI and bootstrapper. Store explicit zeroes as DWORDs:
+  // a missing value means an older installation, not an unchecked option.
+  QSettings settings;
+  settings.setValue(QStringLiteral("integration/contextMenu"), isContextMenuEnabled() ? 1 : 0);
+  settings.setValue(QStringLiteral("integration/openWith"), isAssociationEnabled() ? 1 : 0);
+  settings.sync();
 #else
   Q_UNUSED(contextMenu);
   Q_UNUSED(associate);
@@ -194,20 +200,6 @@ void WindowsIntegration::openDefaultAppsSettings() {
   // ms-settings: URIs are resolved by Windows 10+ shell; openUrl launches the
   // Settings app at the Default Apps page.
   QDesktopServices::openUrl(QUrl(QStringLiteral("ms-settings:defaultapps")));
-#endif
-}
-
-bool WindowsIntegration::shouldPromptForDefault() {
-#ifdef Q_OS_WIN
-  return QSettings().value(QStringLiteral("integration/promptDefaultOnLaunch"), false).toBool();
-#else
-  return false;
-#endif
-}
-
-void WindowsIntegration::clearPromptForDefault() {
-#ifdef Q_OS_WIN
-  QSettings().remove(QStringLiteral("integration/promptDefaultOnLaunch"));
 #endif
 }
 

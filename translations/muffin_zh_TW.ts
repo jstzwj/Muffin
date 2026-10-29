@@ -985,30 +985,28 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">一款以 C++ 和 Qt 6 Widgets 建置的快速原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="113"/>
+        <location filename="../src/main.cpp" line="111"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>一款使用 C++ 和 Qt 6 建置的快速、輕量級原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="120"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>在側邊欄檔案瀏覽器中開啟 &lt;folder&gt;。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="127"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>要開啟的 Markdown 或文字檔案（或資料夾）。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="185"/>
         <source>Default Markdown editor</source>
-        <translation>預設 Markdown 編輯器</translation>
+        <translation type="vanished">預設 Markdown 編輯器</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="186"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
-        <translation>Muffin 已註冊為 Markdown 檔案的編輯器。
+        <translation type="vanished">Muffin 已註冊為 Markdown 檔案的編輯器。
 現在要將它設為你的預設編輯器嗎？</translation>
     </message>
     <message>
@@ -3591,7 +3589,7 @@ Would you like to open the download page?</source>
         <translation>開啟</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="124"/>
+        <location filename="../src/main.cpp" line="122"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>

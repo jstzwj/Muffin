@@ -8,7 +8,34 @@
     Language="1033"
     Compressed="yes">
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of Muffin is already installed." />
+    <!-- The registry choices include changes made from the app after install.
+         Migrating the old MSI feature state would overwrite those choices. -->
+    <MajorUpgrade MigrateFeatures="no" DowngradeErrorMessage="A newer version of Muffin is already installed." />
+
+    <Property Id="MUFFINCONTEXTMENUSAVED">
+      <RegistrySearch Id="SavedContextMenu" Root="HKCU" Key="Software\Muffin\Muffin\integration"
+                      Name="contextMenu" Type="raw" />
+    </Property>
+    <Property Id="MUFFINOPENWITHSAVED">
+      <RegistrySearch Id="SavedOpenWith" Root="HKCU" Key="Software\Muffin\Muffin\integration"
+                      Name="openWith" Type="raw" />
+    </Property>
+    <Property Id="MUFFINCONTEXTMENUFOUND">
+      <RegistrySearch Id="ExistingContextMenu" Root="HKCU" Key="SOFTWARE\Classes\Directory\shell\Muffin" Type="raw" />
+    </Property>
+    <Property Id="MUFFINOPENWITHFOUND">
+      <RegistrySearch Id="ExistingOpenWith" Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Type="raw" />
+    </Property>
+
+    <!-- Capture the final feature action state after costing/UI/ADDLOCAL.
+         WriteRegistryValues owns persistence and rollback, so detection,
+         cancel, failed installs and uninstall cannot save a new selection. -->
+    <Property Id="MUFFINCONTEXTMENUSTATE" Value="0" />
+    <Property Id="MUFFINOPENWITHSTATE" Value="0" />
+    <SetProperty Id="MUFFINCONTEXTMENUSTATE" Value="1" Before="InstallInitialize" Sequence="execute"
+                 Condition="&amp;ShellContextMenu = 3 OR &amp;ShellContextMenu = 4 OR (&amp;ShellContextMenu = -1 AND (!ShellContextMenu = 3 OR !ShellContextMenu = 4))" />
+    <SetProperty Id="MUFFINOPENWITHSTATE" Value="1" Before="InstallInitialize" Sequence="execute"
+                 Condition="&amp;FileAssociations = 3 OR &amp;FileAssociations = 4 OR (&amp;FileAssociations = -1 AND (!FileAssociations = 3 OR !FileAssociations = 4))" />
 
     <!-- Publishes the install folder to ARP so the setup UI (and anything
          else) can locate Muffin.exe without a Burn→MSI property round-trip.
@@ -47,14 +74,17 @@
       <ComponentGroupRef Id="MuffinTlsPlugins" />
       <ComponentGroupRef Id="MuffinNetworkinformationPlugins" />
       <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="IntegrationChoices" />
 
       <Feature Id="ShellContextMenu" Title="Explorer context menu" Level="1"
                Description="Adds &quot;Open with Muffin&quot; to the right-click menu for Markdown files, folders, and folder backgrounds.">
+        <Level Value="2" Condition="MUFFINCONTEXTMENUSAVED = &quot;#0&quot; OR (MUFFINCONTEXTMENUSAVED &lt;&gt; &quot;#1&quot; AND (WIX_UPGRADE_DETECTED OR Installed OR MUFFINCONTEXTMENUFOUND OR MUFFINOPENWITHFOUND) AND NOT MUFFINCONTEXTMENUFOUND)" />
         <ComponentGroupRef Id="MuffinContextMenu" />
       </Feature>
 
-      <Feature Id="FileAssociations" Title="Associate Markdown files" Level="1"
-               Description="Registers Muffin as an editor for .md, .markdown, .mdx, .mkd, and .mdown files so it appears in &quot;Open with&quot;. The first launch then offers to make it the default editor.">
+      <Feature Id="FileAssociations" Title="Show Muffin in Open with" Level="1"
+               Description="Lists Muffin in &quot;Open with&quot; for .md, .markdown, .mdx, .mkd, and .mdown files. Your default editor stays unchanged.">
+        <Level Value="2" Condition="MUFFINOPENWITHSAVED = &quot;#0&quot; OR (MUFFINOPENWITHSAVED &lt;&gt; &quot;#1&quot; AND (WIX_UPGRADE_DETECTED OR Installed OR MUFFINCONTEXTMENUFOUND OR MUFFINOPENWITHFOUND) AND NOT MUFFINOPENWITHFOUND)" />
         <ComponentGroupRef Id="MuffinFileAssociations" />
       </Feature>
     </Feature>
@@ -81,6 +111,15 @@
     </StandardDirectory>
 
   </Package>
+
+  <Fragment>
+    <Component Id="IntegrationChoices" Guid="0bf6cc9c-e8eb-4df9-937a-af5aee906953" Directory="TARGETDIR">
+      <RegistryValue Root="HKCU" Key="Software\Muffin\Muffin\integration" Name="contextMenu"
+                     Type="integer" Value="[MUFFINCONTEXTMENUSTATE]" KeyPath="yes" />
+      <RegistryValue Root="HKCU" Key="Software\Muffin\Muffin\integration" Name="openWith"
+                     Type="integer" Value="[MUFFINOPENWITHSTATE]" />
+    </Component>
+  </Fragment>
 
   <!-- Main directory files: exe, dlls, qt.conf -->
   <Fragment>
@@ -244,8 +283,8 @@
        extension's OpenWithProgids so Muffin shows up in "Open with" and can be
        set as the default. OpenWithProgids values are authored as empty
        REG_BINARY (WiX has no REG_NONE authoring); the Windows shell keys off
-       the value name, so this is accepted. The launch-prompt flag is read by
-       Muffin.exe at first run to redirect to the Default Apps page. -->
+       the value name, so this is accepted. Default-app changes are only
+       available from the application's explicit preferences action. -->
   <Fragment>
     <ComponentGroup Id="MuffinFileAssociations" Directory="TARGETDIR">
       <Component Id="MuffinProgId" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5008">
@@ -269,9 +308,6 @@
       </Component>
       <Component Id="Assoc_mdown" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500d">
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdown\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
-      </Component>
-      <Component Id="AssocPromptDefault" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500e">
-        <RegistryValue Root="HKCU" Key="Software\Muffin\Muffin\integration" Name="promptDefaultOnLaunch" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

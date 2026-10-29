@@ -165,6 +165,22 @@ namespace Muffin.Setup
             OnUi(() => _model.OnDetectRelated(older, newer));
         }
 
+        protected override void OnDetectRelatedMsiPackage(DetectRelatedMsiPackageEventArgs e)
+        {
+            if (e.PackageId == "MuffinMsi")
+            {
+                OnUi(() => _model.MsiInstalled = true);
+            }
+        }
+
+        protected override void OnDetectPackageComplete(DetectPackageCompleteEventArgs e)
+        {
+            if (e.PackageId == "MuffinMsi" && e.State == PackageState.Present)
+            {
+                OnUi(() => _model.MsiInstalled = true);
+            }
+        }
+
         protected override void OnPlanMsiFeature(PlanMsiFeatureEventArgs e)
         {
             // Feature selection: burn owns ADDLOCAL/REMOVE; the BA answers

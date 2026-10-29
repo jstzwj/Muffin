@@ -66,6 +66,7 @@ namespace Muffin.Setup
         public bool BundleInstalled { get; private set; }
         public bool IsUpdate { get; private set; }
         public bool NewerVersionInstalled { get; private set; }
+        public bool MsiInstalled { get; set; }
 
         // ----- observable state -----
 
@@ -249,6 +250,20 @@ namespace Muffin.Setup
 
         public void OnDetectComplete(bool quiet)
         {
+            try
+            {
+                var options = IntegrationOptions.Read(Registry.CurrentUser, BundleInstalled || IsUpdate || MsiInstalled);
+                AddContextMenu = options.ContextMenu;
+                AssociateFiles = options.OpenWith;
+            }
+            catch (Exception error) when (error is UnauthorizedAccessException || error is System.Security.SecurityException || error is System.IO.IOException)
+            {
+                // Never re-enable integration just because the old settings
+                // could not be read. Detection must remain read-only.
+                AddContextMenu = false;
+                AssociateFiles = false;
+                _ba.Engine.Log(LogLevel.Error, "Could not read integration choices: " + error.Message);
+            }
             _ba.Engine.Log(LogLevel.Standard, string.Format(
                 "Muffin BA deciding page: installed={0} isUpdate={1} newer={2} quiet={3}",
                 BundleInstalled, IsUpdate, NewerVersionInstalled, quiet));
