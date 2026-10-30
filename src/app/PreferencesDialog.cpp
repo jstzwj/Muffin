@@ -40,8 +40,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
   // Default to the github theme; MainWindow re-themes via setThemeDefinition()
   // before exec() so the dialog matches the active theme.
-  themeDefinition_ = ThemeDefinition::builtIn(QStringLiteral("github")).value();
-  setStyleSheet(dialogStyleSheet(themeDefinition_));
+  setThemeDefinition(ThemeDefinition::builtIn(QStringLiteral("github")).value());
 
   auto* rootLayout = new QHBoxLayout(this);
   rootLayout->setContentsMargins(24, 24, 24, 24);
@@ -172,6 +171,7 @@ void muffin::PreferencesDialog::setCurrentThemeName(const QString& name) {
 
 void muffin::PreferencesDialog::setThemeDefinition(const ThemeDefinition& definition) {
   themeDefinition_ = definition;
+  setPalette(dialogPalette(themeDefinition_));
   setStyleSheet(dialogStyleSheet(themeDefinition_));
 }
 
@@ -283,7 +283,8 @@ QWidget* muffin::PreferencesDialog::makePage(QWidget* parent) {
   scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   auto* page = new QWidget(scroll);
-  page->setStyleSheet(QStringLiteral("background:transparent;"));
+  page->setObjectName(QStringLiteral("preferencesPage"));
+  page->setAttribute(Qt::WA_StyledBackground);
   auto* layout = new QVBoxLayout(page);
   layout->setContentsMargins(22, 26, 34, 26);
   layout->setSpacing(14);

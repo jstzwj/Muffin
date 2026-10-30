@@ -2,6 +2,8 @@
 
 #include "theme/ThemeDefinition.h"
 
+#include <QPalette>
+
 class QString;
 
 namespace muffin {
@@ -25,6 +27,9 @@ QString sidebarStyleSheet(const ThemeDefinition& theme, bool outlineFoldable);
 // bug). The sidebar-title / page-title / placeholder labels are themed via
 // object names (preferencesSidebarTitle / preferencesPageTitle / preferencesPlaceholder).
 QString dialogStyleSheet(const ThemeDefinition& theme);
+// Native subcontrols and child dialogs must use the same tokens as the QSS,
+// even when the operating system uses the opposite light/dark appearance.
+QPalette dialogPalette(const ThemeDefinition& theme);
 QString quickOpenStyleSheet(const ThemeDefinition& theme);
 
 } // namespace muffin

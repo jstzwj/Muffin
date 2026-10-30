@@ -123,6 +123,27 @@ QString quickOpenStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.accent));
 }
 
+QPalette dialogPalette(const ThemeDefinition& d) {
+  const auto& c = d.colors;
+  QPalette palette;
+  palette.setColor(QPalette::Window, c.canvas);
+  palette.setColor(QPalette::WindowText, c.chromeText);
+  palette.setColor(QPalette::Base, c.surface);
+  palette.setColor(QPalette::AlternateBase, c.hover);
+  palette.setColor(QPalette::Text, c.chromeText);
+  palette.setColor(QPalette::Button, c.surface);
+  palette.setColor(QPalette::ButtonText, c.chromeText);
+  palette.setColor(QPalette::PlaceholderText, c.chromeMuted);
+  palette.setColor(QPalette::Highlight, c.chromeSelection);
+  palette.setColor(QPalette::HighlightedText, c.chromeSelectionText);
+  palette.setColor(QPalette::ToolTipBase, c.surface);
+  palette.setColor(QPalette::ToolTipText, c.chromeText);
+  palette.setColor(QPalette::Link, c.accent);
+  for (const auto role : {QPalette::WindowText, QPalette::Text, QPalette::ButtonText, QPalette::PlaceholderText})
+    palette.setColor(QPalette::Disabled, role, c.chromeDisabled);
+  return palette;
+}
+
 QString dialogStyleSheet(const ThemeDefinition& d) {
   const ThemeColors& c = d.colors;
   // Token map (every previously hard-coded colour is now a token):
@@ -147,6 +168,8 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              // (e.g. "上传服务", "标题样式") follow the theme; the objectName rules below
              // override this for the muted/section variants.
              "QLabel { color:%2; background:transparent; }"
+             "QLabel:disabled { color:%9; }"
+             "QWidget#preferencesPage { background:transparent; }"
              "QWidget#preferencesSidebar { background:%3; border:1px solid %4; border-radius:8px; }"
 
              // Settings groups and rows
@@ -218,9 +241,32 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              "QLineEdit:hover { border-color:%7; }"
              "QLineEdit:focus { border-color:%7; }"
              "QLineEdit:disabled { background:%6; color:%9; }"
+             "QLineEdit { selection-background-color:%8; selection-color:%10; }"
              "QSpinBox, QDoubleSpinBox { border:1px solid %4; border-radius:6px; background:%3; padding:4px 10px; min-height:24px; color:%2; }"
              "QSpinBox:focus, QDoubleSpinBox:focus { border-color:%7; }"
              "QSpinBox:disabled, QDoubleSpinBox:disabled { background:%6; color:%9; }"
+
+             // Shortcut command list and editor. Do not inherit the OS palette:
+             // it may be light while the selected document theme is dark.
+             "QTreeWidget#ShortcutCommands { background:%3; color:%2; border:1px solid %4; border-radius:8px;"
+             "  selection-background-color:%8; selection-color:%10; outline:0; font-size:14px; }"
+             "QTreeWidget#ShortcutCommands::item { min-height:20px; padding:6px 10px; border:0; }"
+             "QTreeWidget#ShortcutCommands::item:hover { background:%6; color:%2; }"
+             "QTreeWidget#ShortcutCommands::item:selected { background:%8; color:%10; }"
+             "QTreeWidget#ShortcutCommands QHeaderView { background:%3; }"
+             "QTreeWidget#ShortcutCommands QHeaderView::section { background:%3; color:%5; border:0;"
+             "  border-bottom:1px solid %4; padding:9px 10px; font-size:12px; font-weight:600; }"
+             "QWidget#ShortcutEditor { background:%3; border:1px solid %4; border-radius:8px; }"
+             "QKeySequenceEdit { background:transparent; }"
+             "QPushButton#ShortcutApply { font-weight:600; border-color:%7; }"
+             "QPushButton#ShortcutApply:disabled { border-color:%4; color:%9; }"
+             "QPushButton#ShortcutReset { background:transparent; color:%5; }"
+             "QPushButton#ShortcutReset:hover { background:%6; color:%2; }"
+             "QMessageBox { background:%1; color:%2; }"
+             "QMessageBox QLabel#qt_msgbox_label { font-size:14px; font-weight:600; }"
+             "QMessageBox#ShortcutResetConfirmation QLabel#qt_msgbox_label { min-width:300px; padding-top:6px; }"
+             "QMessageBox#ShortcutResetConfirmation QLabel#qt_msgbox_informativelabel { color:%5; min-width:300px;"
+             "  padding-top:4px; padding-bottom:12px; font-size:13px; }"
 
              // QComboBox dropdown scrollbar (more specific than the page scrollbar below).
              // Trough is opaque surface (not transparent): inside the Win11 transparent

@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QScrollBar>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -16,39 +17,68 @@
 muffin::PrefsShortcutsPage::PrefsShortcutsPage(QWidget* parent) : PreferencesPage(parent) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(22, 26, 22, 26);
-  title_ = makeSectionLabel(this);
-  layout->addWidget(title_);
+  layout->setSpacing(12);
+  auto* heading = new QVBoxLayout;
+  heading->setSpacing(6);
+  title_ = new QLabel(this);
+  title_->setObjectName(QStringLiteral("preferencesPageTitle"));
+  heading->addWidget(title_);
   explanation_ = makeMutedLabel(this);
   explanation_->setWordWrap(true);
-  layout->addWidget(explanation_);
+  heading->addWidget(explanation_);
+  layout->addLayout(heading);
   filter_ = new QLineEdit(this);
   filter_->setObjectName(QStringLiteral("ShortcutFilter"));
+  filter_->setClearButtonEnabled(true);
   layout->addWidget(filter_);
   commands_ = new QTreeWidget(this);
   commands_->setObjectName(QStringLiteral("ShortcutCommands"));
   commands_->setRootIsDecorated(false);
+  commands_->setUniformRowHeights(true);
+  commands_->setSelectionMode(QAbstractItemView::SingleSelection);
+  commands_->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  commands_->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+  commands_->setAllColumnsShowFocus(true);
   commands_->setColumnCount(3);
-  commands_->setMinimumHeight(260);
+  commands_->setMinimumHeight(180);
+  commands_->header()->setStretchLastSection(false);
+  commands_->header()->setSectionsClickable(false);
+  commands_->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   commands_->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+  commands_->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+  commands_->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
   layout->addWidget(commands_, 1);
-  auto* row = new QHBoxLayout;
-  sequence_ = new QKeySequenceEdit(this);
+
+  auto* editor = new QWidget(this);
+  editor->setObjectName(QStringLiteral("ShortcutEditor"));
+  auto* editorLayout = new QVBoxLayout(editor);
+  editorLayout->setContentsMargins(14, 12, 14, 12);
+  editorLayout->setSpacing(10);
+  selectedCommand_ = makeSectionLabel(editor);
+  selectedCommand_->setWordWrap(true);
+  editorLayout->addWidget(selectedCommand_);
+  sequence_ = new QKeySequenceEdit(editor);
   sequence_->setObjectName(QStringLiteral("ShortcutSequence"));
   sequence_->setMaximumSequenceLength(1);
   sequence_->setClearButtonEnabled(true);
-  row->addWidget(sequence_, 1);
-  apply_ = makeButton(this);
+  editorLayout->addWidget(sequence_);
+  message_ = makeMutedLabel(editor);
+  message_->setWordWrap(true);
+  editorLayout->addWidget(message_);
+  auto* row = new QHBoxLayout;
+  row->setSpacing(8);
+  apply_ = makeButton(editor);
   apply_->setObjectName(QStringLiteral("ShortcutApply"));
-  clear_ = makeButton(this);
-  restore_ = makeButton(this);
-  row->addWidget(apply_);
+  clear_ = makeButton(editor);
+  restore_ = makeButton(editor);
   row->addWidget(clear_);
   row->addWidget(restore_);
-  layout->addLayout(row);
-  message_ = makeMutedLabel(this);
-  message_->setWordWrap(true);
-  layout->addWidget(message_);
+  row->addStretch(1);
+  row->addWidget(apply_);
+  editorLayout->addLayout(row);
+  layout->addWidget(editor);
   reset_ = makeButton(this);
+  reset_->setObjectName(QStringLiteral("ShortcutReset"));
   layout->addWidget(reset_, 0, Qt::AlignLeft);
   connect(filter_, &QLineEdit::textChanged, this, &PrefsShortcutsPage::rebuild);
   connect(commands_, &QTreeWidget::currentItemChanged, this, &PrefsShortcutsPage::selectionChanged);
@@ -61,7 +91,20 @@ muffin::PrefsShortcutsPage::PrefsShortcutsPage(QWidget* parent) : PreferencesPag
         sequence_->setKeySequence(command->shortcut);
   });
   connect(reset_, &QPushButton::clicked, this, [this] {
-    if (QMessageBox::question(this, tr("Keyboard Shortcuts"), tr("Restore all default shortcuts?")) == QMessageBox::Yes)
+    // Parent to the themed dialog rather than the page inside its scroll area.
+    // Use an explicit, cancellable action instead of ambiguous Yes/No buttons.
+    QMessageBox confirmation(QMessageBox::Question, tr("Keyboard Shortcuts"), tr("Restore all default shortcuts?"),
+                             QMessageBox::Cancel, window());
+    confirmation.setObjectName(QStringLiteral("ShortcutResetConfirmation"));
+    confirmation.setOption(QMessageBox::Option::DontUseNativeDialog);
+    confirmation.setPalette(window()->palette());
+    confirmation.setInformativeText(tr("All custom shortcuts will be removed. This cannot be undone."));
+    auto* restoreDefaults = confirmation.addButton(tr("Restore Defaults"), QMessageBox::AcceptRole);
+    restoreDefaults->setObjectName(QStringLiteral("ShortcutResetAccept"));
+    confirmation.setDefaultButton(QMessageBox::Cancel);
+    confirmation.setEscapeButton(QMessageBox::Cancel);
+    confirmation.exec();
+    if (confirmation.clickedButton() == restoreDefaults)
       ShortcutSettings::instance().reset();
   });
   connect(&ShortcutSettings::instance(), &ShortcutSettings::changed, this, &PrefsShortcutsPage::rebuild);
@@ -84,6 +127,8 @@ void muffin::PrefsShortcutsPage::retranslateUi() {
 void muffin::PrefsShortcutsPage::rebuild() {
   const auto* current = commands_->currentItem();
   const auto selected = current ? current->data(0, Qt::UserRole).toString() : QString();
+  const int scroll = commands_->verticalScrollBar()->value();
+  const auto query = filter_->text().trimmed();
   const QSignalBlocker blocked(commands_);
   commands_->clear();
   for (const auto& command : commandDeclarations()) {
@@ -93,24 +138,29 @@ void muffin::PrefsShortcutsPage::rebuild() {
     label.remove('&');
     const auto shortcut = ShortcutSettings::instance().sequence(command.id, command.shortcut);
     const auto shown = shortcut.toString(QKeySequence::NativeText);
-    const auto query = filter_->text().trimmed();
+    const auto defaultShortcut = command.shortcut.toString(QKeySequence::NativeText);
     if (!query.isEmpty() && !label.contains(query, Qt::CaseInsensitive) &&
-        !command.id.contains(query, Qt::CaseInsensitive) && !shown.contains(query, Qt::CaseInsensitive))
+        !command.id.contains(query, Qt::CaseInsensitive) && !shown.contains(query, Qt::CaseInsensitive) &&
+        !defaultShortcut.contains(query, Qt::CaseInsensitive))
       continue;
-    auto* item = new QTreeWidgetItem(commands_, {label, shown, command.shortcut.toString(QKeySequence::NativeText)});
+    auto* item = new QTreeWidgetItem(commands_, {label, shown, defaultShortcut});
     item->setData(0, Qt::UserRole, command.id);
     item->setToolTip(0, command.id);
+    item->setToolTip(1, shown);
+    item->setToolTip(2, defaultShortcut);
     if (command.id == selected)
       commands_->setCurrentItem(item);
   }
   if (!commands_->currentItem() && commands_->topLevelItemCount())
     commands_->setCurrentItem(commands_->topLevelItem(0));
+  commands_->verticalScrollBar()->setValue(scroll);
   selectionChanged();
 }
 
 void muffin::PrefsShortcutsPage::selectionChanged() {
   const auto* item = commands_->currentItem();
   const auto* command = item ? commandDeclaration(item->data(0, Qt::UserRole).toString()) : nullptr;
+  selectedCommand_->setText(command ? QString(command->text).remove('&') : tr("No matching commands."));
   sequence_->setEnabled(command);
   restore_->setEnabled(command);
   clear_->setEnabled(command);

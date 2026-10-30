@@ -1411,7 +1411,7 @@ Make it your default editor now?</source>
         <translation type="vanished">Phân tích %1 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="540"/>
+        <location filename="../src/app/MainWindow.cpp" line="557"/>
         <source>Open Folder</source>
         <translation>Mở thư mục</translation>
     </message>
@@ -1425,7 +1425,7 @@ Make it your default editor now?</source>
         <translation type="vanished">Chuyển đổi chế độ nguồn / kết xuất</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1941"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1942"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
         <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
         <source>File</source>
@@ -1457,12 +1457,12 @@ Make it your default editor now?</source>
         <translation>Mở nhanh...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1949"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1950"/>
         <source>Open Recent</source>
         <translation>Mở gần đây</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1953"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
         <source>Reopen with Encoding</source>
         <translation>Mở lại với mã hóa</translation>
     </message>
@@ -1490,7 +1490,7 @@ Make it your default editor now?</source>
         <location filename="../src/app/CommandDeclarations.cpp" line="170"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="305"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="415"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1439"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1441"/>
         <source>Properties</source>
         <translation>Thuộc tính</translation>
     </message>
@@ -1522,12 +1522,12 @@ Make it your default editor now?</source>
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1905"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1906"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Nền tảng:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Tác giả:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;Giấy phép:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Trang web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1967"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1968"/>
         <source>Export</source>
         <translation>Xuất</translation>
     </message>
@@ -1546,7 +1546,7 @@ Make it your default editor now?</source>
         <translation type="vanished">Đóng</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1999"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2000"/>
         <source>Edit</source>
         <translation>Sửa</translation>
     </message>
@@ -1601,7 +1601,7 @@ Make it your default editor now?</source>
         <translation>Dán dạng văn bản thuần</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2016"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2017"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="191"/>
         <source>Select</source>
         <translation>Chọn</translation>
@@ -1637,7 +1637,7 @@ Make it your default editor now?</source>
         <translation>Xóa</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2037"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2038"/>
         <source>Delete Range</source>
         <translation>Xóa phạm vi</translation>
     </message>
@@ -1662,17 +1662,17 @@ Make it your default editor now?</source>
         <translation>Xóa từ hiện tại</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2046"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2047"/>
         <source>Math Tools</source>
         <translation>Công cụ toán học</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2052"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2053"/>
         <source>Smart Punctuation</source>
         <translation>Dấu câu thông minh</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2066"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2067"/>
         <source>Line Breaks</source>
         <translation>Ngắt dòng</translation>
     </message>
@@ -1700,13 +1700,13 @@ Make it your default editor now?</source>
         <translation type="vanished">Kiểm tra chính tả...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2076"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2077"/>
         <source>Find and Replace</source>
         <translation>Tìm và thay thế</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="655"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2093"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2094"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="173"/>
         <source>Paragraph</source>
         <translation>Đoạn văn</translation>
@@ -1726,8 +1726,8 @@ Make it your default editor now?</source>
         <translation>Giảm cấp tiêu đề</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2128"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2199"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2129"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2200"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="130"/>
         <source>Table</source>
         <translation>Bảng</translation>
@@ -1743,12 +1743,12 @@ Make it your default editor now?</source>
         <translation>Khối mã</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2156"/>
         <source>Code Tools</source>
         <translation>Công cụ mã</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2168"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2169"/>
         <source>Alert</source>
         <translation>Cảnh báo</translation>
     </message>
@@ -1773,12 +1773,12 @@ Make it your default editor now?</source>
         <translation>Danh sách tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2110"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2111"/>
         <source>Task Status</source>
         <translation>Trạng thái tác vụ</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2116"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2117"/>
         <source>List Indent</source>
         <translation>Thụt lề danh sách</translation>
     </message>
@@ -1813,7 +1813,7 @@ Make it your default editor now?</source>
         <translation>Mục lục</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2181"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2182"/>
         <source>Front Matter</source>
         <translation>Front Matter</translation>
     </message>
@@ -1833,7 +1833,7 @@ Make it your default editor now?</source>
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2236"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2237"/>
         <source>Format</source>
         <translation>Định dạng</translation>
     </message>
@@ -1878,12 +1878,12 @@ Make it your default editor now?</source>
         <translation>Siêu liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2248"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2249"/>
         <source>Link Actions</source>
         <translation>Thao tác liên kết</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2255"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2256"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="114"/>
         <source>Image</source>
         <translation>Hình ảnh</translation>
@@ -1929,7 +1929,7 @@ Make it your default editor now?</source>
         <translation>Tải lại tất cả hình ảnh</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2272"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2273"/>
         <source>Resize Image</source>
         <translation>Thay đổi kích thước hình ảnh</translation>
     </message>
@@ -1964,7 +1964,7 @@ Make it your default editor now?</source>
         <translation>Tùy chỉnh...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2284"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2285"/>
         <source>Convert Image Syntax</source>
         <translation>Chuyển đổi cú pháp hình ảnh</translation>
     </message>
@@ -2185,7 +2185,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation type="vanished">Xem trước trực tiếp và chỉnh sửa mã nguồn; xuất sang PDF, HTML và nhiều định dạng khác thông qua Pandoc; chèn hình ảnh với sao chép vào thư mục và tải lên bằng lệnh tùy chỉnh; kiểm tra chính tả; chủ đề; tìm và thay thế; dàn ý; mở nhanh; và khôi phục bản nháp chống sự cố.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2209"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2210"/>
         <source>Code</source>
         <translation>Mã</translation>
     </message>
@@ -2209,7 +2209,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Đặt ngôn ngữ...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2227"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2228"/>
         <source>Math</source>
         <translation>Toán học</translation>
     </message>
@@ -2224,7 +2224,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Đặt HTML...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2299"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2300"/>
         <source>View</source>
         <translation>Xem</translation>
     </message>
@@ -2307,17 +2307,17 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Nền tảng:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Tác giả:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Giấy phép:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Trang web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2125"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2126"/>
         <source>Insert</source>
         <translation>Chèn</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2328"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2329"/>
         <source>Theme</source>
         <translation>Chủ đề</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2330"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2331"/>
         <source>Help</source>
         <translation>Trợ giúp</translation>
     </message>
@@ -2362,7 +2362,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>Kiểm tra cập nhật...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1901"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1902"/>
         <source>About</source>
         <translation>Giới thiệu</translation>
     </message>
@@ -2383,7 +2383,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="211"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2218"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2219"/>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -2770,7 +2770,7 @@ Thiết lập trình tải lên trong Tùy chọn → Hình ảnh.</translation>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1904"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1905"/>
         <source>About Muffin</source>
         <translation>Giới thiệu Muffin</translation>
     </message>
@@ -2936,150 +2936,150 @@ Từ: %5
 Thời gian phân tích: %6 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="579"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="590"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="581"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="592"/>
         <source>Unsaved Drafts Found</source>
         <translation>Tìm thấy bản nháp chưa lưu</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="584"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="586"/>
         <source>Muffin found %n unsaved draft(s) from a previous session. Restore one into this window, discard all of them, or keep them for later.</source>
         <translation>
             <numerusform>Muffin tìm thấy %n bản nháp chưa lưu từ phiên trước. Khôi phục một bản vào cửa sổ này, hủy tất cả, hoặc giữ lại để dùng sau.</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="596"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="835"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="598"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="837"/>
         <source>Untitled</source>
         <translation>Chưa đặt tên</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="597"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="599"/>
         <source>%1  —  %2  (%n char(s))</source>
         <translation>
             <numerusform>%1  —  %2  (%n ký tự)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="605"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="607"/>
         <source>Restore</source>
         <translation>Khôi phục</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="606"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="608"/>
         <source>Discard All</source>
         <translation>Hủy tất cả</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="607"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="609"/>
         <source>Later</source>
         <translation>Để sau</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="688"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="690"/>
         <source>No files to open</source>
         <translation>Không có tệp nào để mở</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="709"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="711"/>
         <source>Import</source>
         <translation>Nhập</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="710"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="712"/>
         <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
         <translation>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;Tất cả tệp (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="718"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="735"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="720"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="737"/>
         <source>Import Failed</source>
         <translation>Nhập thất bại</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="719"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="901"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="721"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="903"/>
         <source>Pandoc was not found. Install Pandoc or set its path in Preferences → Export.</source>
         <translation>Không tìm thấy Pandoc. Hãy cài đặt Pandoc hoặc đặt đường dẫn trong Tùy chọn → Xuất.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="723"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="725"/>
         <source>Importing %1…</source>
         <translation>Đang nhập %1…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="736"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="738"/>
         <source>Pandoc could not convert the file.</source>
         <translation>Pandoc không thể chuyển đổi tệp.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="745"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="747"/>
         <source>Imported %1</source>
         <translation>Đã nhập %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="830"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="832"/>
         <source>Nothing to export</source>
         <translation>Không có gì để xuất</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="218"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="253"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="840"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="842"/>
         <source>Export As</source>
         <translation>Xuất thành</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="840"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="842"/>
         <source>%1 files (*%2)</source>
         <translation>Tệp %1 (*%2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="904"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="906"/>
         <source>Exporting %1…</source>
         <translation>Đang xuất %1…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="941"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="943"/>
         <source>Pandoc failed:</source>
         <translation>Pandoc thất bại:</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="234"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="850"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="962"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="852"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="964"/>
         <source>Export Failed</source>
         <translation>Xuất thất bại</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="966"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="968"/>
         <source>Exported to %1</source>
         <translation>Đã xuất ra %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1111"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1113"/>
         <source>Save All</source>
         <translation>Lưu tất cả</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1112"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1114"/>
         <source>Saved %1 file(s). %2 file(s) could not be saved.</source>
         <translation>Đã lưu %1 tệp. %2 tệp không thể lưu.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1142"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1168"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1370"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1144"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1170"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1372"/>
         <source>Delete File</source>
         <translation>Xóa tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1143"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1375"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1145"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1377"/>
         <source>Are you sure you want to move &quot;%1&quot; to the trash?
 
 This action cannot be undone.</source>
@@ -3088,8 +3088,8 @@ This action cannot be undone.</source>
 Hành động này không thể hoàn tác.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1169"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1402"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1171"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1404"/>
         <source>Could not move to trash. Permanently delete &quot;%1&quot;?
 
 This action cannot be undone.</source>
@@ -3098,35 +3098,35 @@ This action cannot be undone.</source>
 Hành động này không thể hoàn tác.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1179"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1410"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1181"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1412"/>
         <source>Delete Failed</source>
         <translation>Xóa thất bại</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1179"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1181"/>
         <source>Could not delete file:
 %1</source>
         <translation>Không thể xóa tệp:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1289"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1291"/>
         <source>Name cannot be empty.</source>
         <translation>Tên không được để trống.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1303"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1305"/>
         <source>An item named &quot;%1&quot; already exists.</source>
         <translation>Một mục có tên &quot;%1&quot; đã tồn tại.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1325"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1327"/>
         <source>Could not rename: %1</source>
         <translation>Không thể đổi tên: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1242"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1244"/>
         <source>Could not create file:
 %1
 
@@ -3137,207 +3137,207 @@ Hành động này không thể hoàn tác.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="850"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="852"/>
         <source>Could not create a temporary export file.</source>
         <translation>Không thể tạo tệp xuất tạm thời.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="870"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="872"/>
         <source>PDF export failed: the printer device could not be opened.</source>
         <translation>Xuất PDF thất bại: không thể mở thiết bị máy in.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="879"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="881"/>
         <source>Image export failed. The image must fit within 64 million pixels and 32,767 pixels in height. Try a smaller width or scale, or export as PDF.</source>
         <translation>Xuất hình ảnh thất bại. Hình ảnh không được vượt quá 64 triệu điểm ảnh và chiều cao 32,767 điểm ảnh. Hãy thử giảm chiều rộng hoặc tỷ lệ, hoặc xuất thành PDF.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="914"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="916"/>
         <source>Export resource was not found: %1</source>
         <translation>Không tìm thấy tài nguyên xuất: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="925"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="927"/>
         <source>Additional arguments cannot override the input format, output format, output path, or defaults file.</source>
         <translation>Các tham số bổ sung không được ghi đè định dạng đầu vào, định dạng đầu ra, đường dẫn đầu ra hoặc tệp tùy chọn mặc định.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="994"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="996"/>
         <source>Unicode</source>
         <translation>Unicode</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="996"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="998"/>
         <source>UTF-8</source>
         <translation>UTF-8</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="997"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="999"/>
         <source>UTF-16 LE</source>
         <translation>UTF-16 LE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="998"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1000"/>
         <source>UTF-16 BE</source>
         <translation>UTF-16 BE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1000"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1002"/>
         <source>Western</source>
         <translation>Tây Âu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1002"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1004"/>
         <source>Western (Windows-1252)</source>
         <translation>Tây Âu (Windows-1252)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1004"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1006"/>
         <source>Cyrillic</source>
         <translation>Kirin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1006"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1008"/>
         <source>Cyrillic (Windows-1251)</source>
         <translation>Kirin (Windows-1251)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1007"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1009"/>
         <source>Cyrillic (ISO-8859-5)</source>
         <translation>Kirin (ISO-8859-5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1008"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1010"/>
         <source>Cyrillic (IBM866)</source>
         <translation>Kirin (IBM866)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1009"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1011"/>
         <source>Cyrillic (IBM855)</source>
         <translation>Kirin (IBM855)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1010"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1012"/>
         <source>Cyrillic (KOI8-R)</source>
         <translation>Kirin (KOI8-R)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1011"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1013"/>
         <source>Cyrillic (Mac)</source>
         <translation>Kirin (Mac)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1013"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1015"/>
         <source>Central European</source>
         <translation>Trung Âu</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1015"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1017"/>
         <source>Central European (Windows-1250)</source>
         <translation>Trung Âu (Windows-1250)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1016"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1018"/>
         <source>Central European (ISO-8859-2)</source>
         <translation>Trung Âu (ISO-8859-2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1018"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1020"/>
         <source>Greek</source>
         <translation>Hy Lạp</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1020"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1022"/>
         <source>Greek (Windows-1253)</source>
         <translation>Hy Lạp (Windows-1253)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1021"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1023"/>
         <source>Greek (ISO-8859-7)</source>
         <translation>Hy Lạp (ISO-8859-7)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1023"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1025"/>
         <source>Hebrew</source>
         <translation>Do Thái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1025"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1027"/>
         <source>Hebrew (Windows-1255)</source>
         <translation>Do Thái (Windows-1255)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1026"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1028"/>
         <source>Hebrew (ISO-8859-8)</source>
         <translation>Do Thái (ISO-8859-8)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1028"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1030"/>
         <source>Chinese Simplified</source>
         <translation>Tiếng Trung giản thể</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1030"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1032"/>
         <source>Chinese Simplified (GB2312)</source>
         <translation>Tiếng Trung giản thể (GB2312)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1031"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1033"/>
         <source>Chinese Simplified (GB18030)</source>
         <translation>Tiếng Trung giản thể (GB18030)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1033"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1035"/>
         <source>Chinese Traditional</source>
         <translation>Tiếng Trung phồn thể</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1035"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1037"/>
         <source>Chinese Traditional (Big5)</source>
         <translation>Tiếng Trung phồn thể (Big5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1037"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1039"/>
         <source>Japanese</source>
         <translation>Tiếng Nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1039"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1041"/>
         <source>Japanese (Shift_JIS)</source>
         <translation>Tiếng Nhật (Shift_JIS)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1040"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1042"/>
         <source>Japanese (EUC-JP)</source>
         <translation>Tiếng Nhật (EUC-JP)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1042"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1044"/>
         <source>Korean</source>
         <translation>Tiếng Hàn</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1044"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1046"/>
         <source>Korean (EUC-KR)</source>
         <translation>Tiếng Hàn (EUC-KR)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1046"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1048"/>
         <source>Thai</source>
         <translation>Tiếng Thái</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1048"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1050"/>
         <source>Thai (TIS-620)</source>
         <translation>Tiếng Thái (TIS-620)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1079"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1081"/>
         <source>Markdown Files (*.md *.markdown);;All Files (*)</source>
         <translation>Tệp Markdown (*.md *.markdown);;Tất cả tệp (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1261"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1263"/>
         <source>Could not create folder:
 %1
 
@@ -3348,7 +3348,7 @@ Hành động này không thể hoàn tác.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1357"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1359"/>
         <source>Could not create a copy:
 %1
 
@@ -3359,12 +3359,12 @@ Hành động này không thể hoàn tác.</translation>
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1370"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1372"/>
         <source>Delete Folder</source>
         <translation>Xóa thư mục</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1373"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1375"/>
         <source>Are you sure you want to move &quot;%1&quot; and all its contents to the trash?
 
 This action cannot be undone.</source>
@@ -3373,32 +3373,32 @@ This action cannot be undone.</source>
 Không thể hoàn tác thao tác này.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1410"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1412"/>
         <source>Could not delete:
 %1</source>
         <translation>Không thể xóa:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1433"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1435"/>
         <source>Folder</source>
         <translation>Thư mục</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1433"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1435"/>
         <source>File</source>
         <comment>properties: entry type</comment>
         <translation>Tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1435"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1437"/>
         <source>Size: %1 bytes
 </source>
         <translation>Kích thước: %1 byte
 </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1436"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1438"/>
         <source>Name: %1
 Type: %2
 Location: %3
@@ -3409,21 +3409,21 @@ Vị trí: %3
 %4Sửa đổi: %5</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1456"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1458"/>
         <source>Could not reveal:
 %1</source>
         <translation>Không thể hiển thị vị trí tệp:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1154"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1479"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1156"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1481"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1154"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1479"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1156"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1481"/>
         <source>The current document has unsaved changes.</source>
         <translation>Tài liệu hiện tại có thay đổi chưa lưu.</translation>
     </message>
@@ -3488,34 +3488,35 @@ Vị trí: %3
         <translation>Tìm trước</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="224"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="225"/>
         <source>File Already Open</source>
         <translation>Tệp đã được mở</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="225"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="226"/>
         <source>This file is already open in another tab. Switch to that tab to edit or save it.</source>
         <translation>Tệp này đã được mở trong một thẻ khác. Hãy chuyển sang thẻ đó để chỉnh sửa hoặc lưu tệp.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="364"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="365"/>
         <source>File Changed on Disk</source>
         <translation>Tệp trên đĩa đã thay đổi</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="366"/>
         <source>The file &quot;%1&quot; has changed outside Muffin. Reload it?
 Unsaved changes in the editor will be lost.</source>
         <translation>Tệp &quot;%1&quot; đã được thay đổi bên ngoài Muffin. Bạn có muốn tải lại không?
 Các thay đổi chưa lưu trong trình soạn thảo sẽ bị mất.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="449"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="450"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="462"/>
         <source>Update Available</source>
         <translation>Có bản cập nhật mới</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="450"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="451"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -3524,27 +3525,27 @@ Would you like to open the download page?</source>
 Bạn có muốn mở trang tải xuống không?</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="459"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="473"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1 đã có sẵn. Sử dụng Trợ giúp &gt; Kiểm tra cập nhật để tải xuống.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="465"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="479"/>
         <source>Up to Date</source>
         <translation>Đã cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="466"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="480"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>Bạn đang sử dụng phiên bản mới nhất của Muffin.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="473"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="487"/>
         <source>Update Check Failed</source>
         <translation>Kiểm tra cập nhật thất bại</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="474"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="488"/>
         <source>Could not check for updates:
 %1</source>
         <translation>Không thể kiểm tra cập nhật:
@@ -3590,15 +3591,15 @@ Bạn có muốn mở trang tải xuống không?</translation>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="297"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="314"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1241"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1243"/>
         <source>New File</source>
         <translation>Tệp mới</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="298"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="315"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1254"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1260"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1256"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1262"/>
         <source>New Folder</source>
         <translation>Thư mục mới</translation>
     </message>
@@ -3609,14 +3610,14 @@ Bạn có muốn mở trang tải xuống không?</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="301"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1079"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1081"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="30"/>
         <source>Move To</source>
         <translation>Di chuyển đến</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="302"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1356"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1358"/>
         <source>Duplicate</source>
         <translation>Tạo bản sao</translation>
     </message>
@@ -3630,7 +3631,7 @@ Bạn có muốn mở trang tải xuống không?</translation>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="308"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="318"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="1455"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="1457"/>
         <location filename="../src/app/MainWindowTabs.cpp" line="507"/>
         <source>Reveal in File Manager</source>
         <translation>Hiển thị trong trình quản lý tệp</translation>
@@ -4015,7 +4016,7 @@ Các tệp được chỉnh sửa sau đó hoặc có thay đổi chưa lưu s�
         <translation>Trình soạn thảo</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="62"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="61"/>
         <source>Categories</source>
         <translation>Danh mục</translation>
     </message>
@@ -4839,59 +4840,59 @@ Các tệp được chỉnh sửa sau đó hoặc có thay đổi chưa lưu s�
 <context>
     <name>muffin::PrefsGeneralPage</name>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="126"/>
         <source>Checking...</source>
         <translation>Đang kiểm tra...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="92"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="98"/>
         <source>Update Available</source>
         <translation>Có bản cập nhật mới</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="93"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="99"/>
         <source>A new version of Muffin (%1) is available.</source>
         <translation>Có phiên bản Muffin mới (%1).</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="107"/>
         <source>Up to Date</source>
         <translation>Đã cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="101"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="107"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>Bạn đang sử dụng phiên bản mới nhất của Muffin.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="109"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="115"/>
         <source>Update Check Failed</source>
         <translation>Kiểm tra cập nhật thất bại</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="109"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="115"/>
         <source>Could not check for updates:
 %1</source>
         <translation>Không thể kiểm tra cập nhật:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="130"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="139"/>
         <source>Language</source>
         <translation>Ngôn ngữ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="131"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="140"/>
         <source>Update</source>
         <translation>Cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="132"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="141"/>
         <source>Check for Updates</source>
         <translation>Kiểm tra cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsGeneralPage.cpp" line="133"/>
+        <location filename="../src/app/PrefsGeneralPage.cpp" line="142"/>
         <source>Automatically check for updates</source>
         <translation>Tự động kiểm tra cập nhật</translation>
     </message>
@@ -5308,80 +5309,95 @@ Các tệp được chỉnh sửa sau đó hoặc có thay đổi chưa lưu s�
 <context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="64"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="72"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="113"/>
         <source>Keyboard Shortcuts</source>
         <translation>Phím tắt</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="64"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
         <source>Restore all default shortcuts?</source>
         <translation>Khôi phục tất cả phím tắt mặc định?</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="73"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="101"/>
+        <source>All custom shortcuts will be removed. This cannot be undone.</source>
+        <translation>Tất cả phím tắt tùy chỉnh sẽ bị xóa. Không thể hoàn tác thao tác này.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="102"/>
+        <source>Restore Defaults</source>
+        <translation>Khôi phục mặc định</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="114"/>
         <source>Select a command and press a key combination. Changes apply to all windows immediately.</source>
         <translation>Chọn một lệnh rồi nhấn tổ hợp phím. Các thay đổi được áp dụng ngay cho tất cả cửa sổ.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="74"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="75"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
         <source>Search commands or shortcuts…</source>
         <translation>Tìm lệnh hoặc phím tắt…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="76"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
         <source>Command</source>
         <translation>Lệnh</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="76"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="77"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
         <source>Shortcut</source>
         <translation>Phím tắt</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="76"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
         <source>Default</source>
         <translation>Mặc định</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="78"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Clear</source>
         <translation>Xóa</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="79"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
         <source>Use Default</source>
         <translation>Dùng mặc định</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="80"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
         <source>Restore All Defaults…</source>
         <translation>Khôi phục tất cả mặc định…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="145"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="161"/>
+        <source>No matching commands.</source>
+        <translation>Không có lệnh phù hợp.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
         <source>Apply</source>
         <translation>Áp dụng</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="145"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
         <source>Reassign</source>
         <translation>Gán lại</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="150"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="198"/>
         <source>This key is reserved for text entry or cursor navigation. Use a modifier key or a function key.</source>
         <translation>Phím này được dành cho việc nhập văn bản hoặc di chuyển con trỏ. Hãy dùng phím bổ trợ hoặc phím chức năng.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="156"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="204"/>
         <source>Used by: %1. Reassigning will clear those shortcuts.</source>
         <translation>Đang được dùng bởi: %1. Việc gán lại sẽ xóa các phím tắt đó.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="158"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
         <source>Clear and Apply removes the shortcut. Use Default and Apply restores it.</source>
         <translation>Nhấn Xóa rồi Áp dụng để xóa phím tắt. Nhấn Dùng mặc định rồi Áp dụng để khôi phục.</translation>
     </message>
@@ -5907,110 +5923,113 @@ Các tệp được chỉnh sửa sau đó hoặc có thay đổi chưa lưu s�
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="164"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="102"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
+        <location filename="../src/main.cpp" line="171"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="193"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="415"/>
         <source>Update Muffin</source>
         <translation>Cập nhật Muffin</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="165"/>
+        <location filename="../src/main.cpp" line="172"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>Bản cập nhật đã bị hủy hoặc không thể cài đặt (mã %1). Phiên làm việc của bạn đã được khôi phục. Bạn có thể thử lại từ Trợ giúp &gt; Kiểm tra cập nhật.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="113"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="204"/>
         <source>Cancel</source>
         <translation>Hủy</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="151"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="242"/>
         <source>Downloading Muffin %1… You can continue writing.</source>
         <translation>Đang tải Muffin %1… Bạn có thể tiếp tục viết.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="155"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="247"/>
         <source>Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.</source>
         <translation>Muffin %1 đã sẵn sàng. Các tài liệu sẽ được kiểm tra thay đổi chưa lưu trước khi khởi động lại. Windows có thể yêu cầu quyền quản trị viên.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="157"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="250"/>
         <source>Preparing to restart…</source>
         <translation>Đang chuẩn bị khởi động lại…</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="161"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="254"/>
         <source>Muffin %1 is available. Download the update now?</source>
         <translation>Đã có Muffin %1. Tải bản cập nhật ngay bây giờ?</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="256"/>
         <source>Restart and Update</source>
         <translation>Khởi động lại và cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="163"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="256"/>
         <source>Download Update</source>
         <translation>Tải bản cập nhật</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="259"/>
         <source>Cancel Download</source>
         <translation>Hủy tải xuống</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="166"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="259"/>
         <source>Later</source>
         <translation>Để sau</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="184"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="279"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>Không thể lưu bản cập nhật tải xuống hoặc dung lượng đã vượt mức dự kiến.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="192"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="287"/>
         <source>The update manifest is too large.</source>
         <translation>Tệp kê khai bản cập nhật quá lớn.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="205"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="300"/>
         <source>Could not download the update: %1</source>
         <translation>Không thể tải bản cập nhật: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="220"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="322"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>Chữ ký bản cập nhật không hợp lệ hoặc gói không tương thích với phiên bản Windows này. Chưa có gì được cài đặt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="231"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="236"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="334"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="339"/>
         <source>Could not create the update download folder.</source>
         <translation>Không thể tạo thư mục tải bản cập nhật.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="245"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="348"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="429"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="438"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>Bản cập nhật tải xuống chưa đầy đủ hoặc đã bị sửa đổi. Chưa có gì được cài đặt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="416"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>Hãy đóng các phiên bản Muffin khác đang chạy trước khi cập nhật. Chỉ bản đã cài đặt mới có thể cập nhật trong ứng dụng.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="313"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="487"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="535"/>
         <source>Could not save the session before updating.</source>
         <translation>Không thể lưu phiên làm việc trước khi cập nhật.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="504"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>Không thể khởi chạy trình cài đặt bản cập nhật. Phiên bản hiện tại của bạn không thay đổi.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="358"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="553"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>Trình cài đặt chưa sẵn sàng. Muffin sẽ tiếp tục mở; vui lòng thử lại.</translation>
     </message>

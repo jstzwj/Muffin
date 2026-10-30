@@ -11,6 +11,8 @@
 #include "app/PreferencesDialog.h"
 #include "app/PrefsExportPage.h"
 #include "app/PrefsShortcutsPage.h"
+#include "app/CommandDeclarations.h"
+#include "theme/ChromeStyleSheet.h"
 #include "editor/ShortcutSettings.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
@@ -47,6 +49,7 @@
 #include <QLayout>
 #include <QLineEdit>
 #include <QInputMethodEvent>
+#include <QHeaderView>
 #include <QKeySequenceEdit>
 #include <QListWidget>
 #include <QPushButton>
@@ -926,6 +929,108 @@ void noteLinkMoveAndConflicts() {
           "stale preview preserves externally edited bytes");
 }
 
+void shortcutPreferencesFollowThemeAndConfirmReset() {
+  const QPalette originalPalette = QApplication::palette();
+  const auto restorePalette = qScopeGuard([&] { QApplication::setPalette(originalPalette); });
+  auto& shortcuts = ShortcutSettings::instance();
+  const auto custom = QKeySequence(QStringLiteral("Ctrl+Alt+F12"));
+  const QString captureDirectory = qEnvironmentVariable("MUFFIN_SHORTCUT_SCREENSHOT_DIR");
+  const auto originalLanguage = LanguageManager::instance().currentLanguageCode();
+  const auto restoreLanguage = qScopeGuard([&] {
+    LanguageManager::instance().setLanguage(originalLanguage);
+    refreshDeclarations();
+  });
+  if (!captureDirectory.isEmpty()) {
+    QDir().mkpath(captureDirectory);
+    LanguageManager::instance().setLanguage(QStringLiteral("zh_CN"));
+    refreshDeclarations();
+  }
+
+  // Keep the same dialog alive through a theme change, with an OS palette
+  // deliberately opposed to each document theme. Test both its view and popup.
+  PreferencesDialog preferences;
+  preferences.findChild<QListWidget*>()->setCurrentRow(7);
+  auto* filter = preferences.findChild<QLineEdit*>("ShortcutFilter");
+  auto* commands = preferences.findChild<QTreeWidget*>("ShortcutCommands");
+  auto* sequence = preferences.findChild<QKeySequenceEdit*>("ShortcutSequence");
+  auto* apply = preferences.findChild<QPushButton*>("ShortcutApply");
+  auto* reset = preferences.findChild<QPushButton*>("ShortcutReset");
+  require(filter && commands && sequence && apply && reset, "shortcut preference controls exist");
+  for (const auto& themeId : {QStringLiteral("github"), QStringLiteral("night"), QStringLiteral("newsprint")}) {
+    const auto definition = ThemeDefinition::builtIn(themeId).value();
+    const auto& colors = definition.colors;
+    QApplication::setPalette(dialogPalette(
+        ThemeDefinition::builtIn(colors.isDark ? QStringLiteral("github") : QStringLiteral("night")).value()));
+    preferences.setThemeDefinition(definition);
+    preferences.resize(1040, 760);
+    preferences.show();
+    QApplication::processEvents();
+    require(commands->palette().color(QPalette::Text) == colors.chromeText &&
+                commands->viewport()->palette().color(QPalette::Base) == colors.surface,
+            "command list uses the document theme instead of the operating system palette");
+    require(commands->palette().color(QPalette::Highlight) == colors.chromeSelection &&
+                commands->palette().color(QPalette::HighlightedText) == colors.chromeSelectionText,
+            "selected command uses a readable paired background and text");
+    require(commands->visualItemRect(commands->topLevelItem(0)).height() >= commands->fontMetrics().height() + 8,
+            "command rows have readable vertical spacing");
+    const auto* input = sequence->findChild<QLineEdit*>();
+    require(input && input->palette().color(QPalette::Text) == colors.chromeText &&
+                input->palette().color(QPalette::Base) == colors.surface,
+            "shortcut recorder follows the same theme as the command list");
+    if (!captureDirectory.isEmpty())
+      require(preferences.grab().save(QDir(captureDirectory).filePath(themeId + ".png")),
+              "capture themed shortcut preferences");
+
+    preferences.resize(880, 620);
+    QApplication::processEvents();
+    auto* editor = preferences.findChild<QWidget*>("ShortcutEditor");
+    require(editor->rect().contains(QRect(apply->mapTo(editor, QPoint()), apply->size())) &&
+                editor->rect().contains(QRect(sequence->mapTo(editor, QPoint()), sequence->size())),
+            "recorder and apply action fit the minimum preferences width");
+
+    shortcuts.setOverride("format.bold", custom);
+    for (bool confirm : {false, true}) {
+      bool handled = false;
+      QTimer::singleShot(0, &preferences, [&] {
+        auto* question = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+        require(question && question->objectName() == "ShortcutResetConfirmation", "reset opens one confirmation");
+        require(question->parentWidget() == &preferences, "reset confirmation belongs to the themed top-level dialog");
+        require(question->width() >= 340, "reset confirmation leaves room for its explanation and action labels");
+        if (!captureDirectory.isEmpty() && !confirm)
+          require(question->grab().save(QDir(captureDirectory).filePath(themeId + ".reset.png")),
+                  "capture themed reset confirmation");
+        require(question->palette().color(QPalette::Window).rgba() == colors.canvas.rgba(),
+                QStringLiteral("%1 reset surface: expected %2, got %3")
+                    .arg(themeId, colors.canvas.name(QColor::HexArgb),
+                         question->palette().color(QPalette::Window).name(QColor::HexArgb)));
+        const auto* text = question->findChild<QLabel*>("qt_msgbox_label");
+        require(text && text->palette().color(QPalette::WindowText) == colors.chromeText,
+                "reset confirmation text remains readable in either theme");
+        require(question->defaultButton() == question->button(QMessageBox::Cancel),
+                "restoring all shortcuts requires an explicit confirmation");
+        auto* restore = question->findChild<QPushButton*>("ShortcutResetAccept");
+        require(restore && question->buttonRole(restore) == QMessageBox::AcceptRole,
+                "restore is an affirmative action next to Cancel");
+        handled = true;
+        if (confirm)
+          restore->click();
+        else
+          QTest::keyClick(question, Qt::Key_Escape);
+      });
+      reset->click();
+      require(handled, "reset confirmation was handled");
+      require(shortcuts.hasOverride("format.bold") != confirm,
+              "cancel preserves custom shortcuts and confirmation removes them");
+      require(QSettings().contains("shortcuts/format.bold") != confirm,
+              "reset decision is also reflected in persisted settings");
+    }
+    filter->setText(QStringLiteral("no-such-shortcut-command"));
+    require(commands->topLevelItemCount() == 0 && !sequence->isEnabled() && !apply->isEnabled(),
+            "empty search cannot modify an unrelated command");
+    filter->clear();
+  }
+}
+
 void configurableShortcuts() {
   auto& shortcuts = ShortcutSettings::instance();
   for (bool source : {false, true}) {
@@ -1368,7 +1473,14 @@ void workspaceSearchAndReplace() {
   panel->activate(true);
   auto* replaceButton = panel->findChild<QPushButton*>("WorkspaceReplacePreview");
   require(replaceButton && replaceButton->isVisible() && replaceButton->isEnabled(),
-          "folder replacement has an available sidebar button");
+          QStringLiteral("folder replacement has an available sidebar button: visible=%1 enabled=%2 sidebar=%3 "
+                         "panel=%4 complete=%5 matches=%6")
+              .arg(replaceButton && replaceButton->isVisible())
+              .arg(replaceButton && replaceButton->isEnabled())
+              .arg(sidebar->isVisible())
+              .arg(static_cast<int>(sidebar->panel()))
+              .arg(panel->result().complete)
+              .arg(panel->result().matches));
   bool previewCanceled = false;
   QTimer::singleShot(0, [&] {
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
@@ -3535,6 +3647,11 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  if (QCoreApplication::arguments().contains(QStringLiteral("--shortcut-preferences"))) {
+    runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
+    runTest("configurableShortcuts", configurableShortcuts);
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update"))) {
     runWindowsUpdateTests();
     return 0;
@@ -3590,6 +3707,7 @@ int main(int argc, char** argv) {
     return 0;
   runTest("continuousEditingWorkflow", continuousEditingWorkflow);
   runTest("configurableShortcuts", configurableShortcuts);
+  runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
   runTest("imeSelectionReplacementWorkflow", imeSelectionReplacementWorkflow);
   runTest("restrictedFormattingActions", restrictedFormattingActions);
   if (QCoreApplication::arguments().contains(QStringLiteral("--editing-workflow")))

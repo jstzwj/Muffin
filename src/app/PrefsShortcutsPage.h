@@ -23,6 +23,7 @@ private:
   QKeySequenceEdit* sequence_ = nullptr;
   QLabel* title_ = nullptr;
   QLabel* explanation_ = nullptr;
+  QLabel* selectedCommand_ = nullptr;
   QLabel* message_ = nullptr;
   QPushButton* apply_ = nullptr;
   QPushButton* clear_ = nullptr;

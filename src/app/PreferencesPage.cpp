@@ -15,7 +15,10 @@
 #include <QVBoxLayout>
 
 muffin::PreferencesPage::PreferencesPage(QWidget* parent) : QWidget(parent) {
-  setStyleSheet(QStringLiteral("background:transparent;"));
+  // Scope the transparent page surface in the dialog stylesheet. An unqualified
+  // per-page rule also overrides inputs, item views and child message boxes.
+  setObjectName(QStringLiteral("preferencesPage"));
+  setAttribute(Qt::WA_StyledBackground);
 }
 
 QLabel* muffin::PreferencesPage::makeSectionLabel(QWidget* parent) const {
