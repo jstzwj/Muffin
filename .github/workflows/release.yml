@@ -74,6 +74,29 @@ jobs:
           echo "MUFFIN_RELEASE_TAG=$tag" >> "$GITHUB_ENV"
           echo "MUFFIN_RELEASE_VERSION=${tag#v}" >> "$GITHUB_ENV"
 
+      # A manual rebuild keeps application sources at the immutable tag, but
+      # uses packaging/test repairs from the selected workflow revision.
+      # Only these non-application files may be overlaid onto the tag.
+      - name: Check out release tooling
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tooling
+          sparse-checkout: |
+            cmake/BuildDMG.cmake
+            tests/installer/UpdateHandoffTest.cs
+          sparse-checkout-cone-mode: false
+
+      - name: Use repaired packaging and checks
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          cp .release-tooling/cmake/BuildDMG.cmake cmake/BuildDMG.cmake
+          cp .release-tooling/tests/installer/UpdateHandoffTest.cs tests/installer/UpdateHandoffTest.cs
+          echo "Application source: $(git rev-parse HEAD)"
+          echo "Release tooling: $(git -C .release-tooling rev-parse HEAD)"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
