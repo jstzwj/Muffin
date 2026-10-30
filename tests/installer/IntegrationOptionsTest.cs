@@ -160,6 +160,13 @@ internal static class IntegrationOptionsTest
                     "MSI stores context-menu choice as a transactional DWORD");
                 Require(Scalar(database, "SELECT `Value` FROM `Registry` WHERE `Name`='openWith'") == "#[MUFFINOPENWITHSTATE]",
                     "MSI stores Open with choice as a transactional DWORD");
+                foreach (var verb in new[] { @".md", @".markdown", @".mdx", @".mkd", @".mdown", @"Directory", @"Directory\Background" })
+                    Require(Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\" + verb + @"\shell\Muffin' AND `Name`='MUIVerb'") == "@[INSTALLFOLDER]Muffin.exe,-1001",
+                        "Explorer verbs use localized resources before the application is launched");
+                Require(Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Muffin.md' AND `Name`='FriendlyTypeName'") == "@[INSTALLFOLDER]Muffin.exe,-1002",
+                    "Explorer document type uses localized resources");
+                Require(Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Muffin.md\shell\open' AND `Name`='MUIVerb'") == "@[INSTALLFOLDER]Muffin.exe,-1003",
+                    "Explorer open action uses localized resources");
                 Require(Scalar(database, "SELECT `Feature_Parent` FROM `Feature` WHERE `Feature`='ShellContextMenu'") == "MainFeature",
                     "integration features remain optional children of the required application");
                 var settingsComponent = Scalar(database, "SELECT `Component_` FROM `Registry` WHERE `Name`='contextMenu'");

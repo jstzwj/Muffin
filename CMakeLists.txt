@@ -189,6 +189,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsGeneralPage.cpp
   src/app/UpdateChecker.cpp
   src/app/WindowsUpdater.cpp
+  src/app/WindowsIntegration.cpp
   src/app/SidebarWidget.cpp
   src/app/StatusBarWidget.cpp
   src/document/DocumentSession.cpp
@@ -198,6 +199,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/editor/SourceEditorWidget.cpp
   src/editor/VirtualSourceEdit.cpp
   src/editor/FindBarWidget.cpp
+  src/editor/TableToolbar.cpp
   src/render/BlockLayoutBuilder.cpp
   src/io/FileController.cpp
   src/io/FilePathOps.cpp
@@ -1598,6 +1600,17 @@ target_link_libraries(muffin-theme-report PRIVATE MuffinCore Qt6::Core)
 
 if(WIN32)
   set_target_properties(Muffin PROPERTIES WIN32_EXECUTABLE TRUE)
+  # Explorer must localize names before the app has ever been launched. Reuse
+  # the TS catalogs rather than maintaining separate installer translations.
+  set(MUFFIN_SHELL_TRANSLATIONS_RC "${CMAKE_CURRENT_BINARY_DIR}/generated/windows-shell-strings.rc")
+  add_custom_command(OUTPUT "${MUFFIN_SHELL_TRANSLATIONS_RC}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_windows_shell_strings.py"
+      --output "${MUFFIN_SHELL_TRANSLATIONS_RC}"
+    DEPENDS scripts/generate_windows_shell_strings.py src/app/WindowsShellResources.h ${MUFFIN_TRANSLATION_SOURCES}
+    VERBATIM)
+  add_custom_target(muffin-shell-translations DEPENDS "${MUFFIN_SHELL_TRANSLATIONS_RC}")
+  add_dependencies(Muffin muffin-shell-translations)
+  target_sources(Muffin PRIVATE "${MUFFIN_SHELL_TRANSLATIONS_RC}")
   # Embed the application icon into the .exe so it shows in Explorer, the
   # taskbar, and Start Menu shortcuts. Use forward slashes in the RC file
   # because backslashes collide with C escapes (e.g. \r in \resources).

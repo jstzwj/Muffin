@@ -981,17 +981,17 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">C++ と Qt 6 Widgets で構築された高速なネイティブ Markdown エディターです。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="114"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>C++ と Qt 6 で構築された、高速で軽量なネイティブ Markdown エディタ。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="121"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>サイドバーのファイルブラウザーで &lt;folder&gt; を開きます。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="131"/>
+        <location filename="../src/main.cpp" line="135"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>開く Markdown ファイル、テキストファイル、またはフォルダー。</translation>
     </message>
@@ -3586,7 +3586,7 @@ Would you like to open the download page?</source>
         <translation>開く</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="129"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>
@@ -4341,7 +4341,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>形式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
         <source>Default Export Folder</source>
         <translation>デフォルトのエクスポートフォルダー</translation>
     </message>
@@ -4350,271 +4350,271 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">自動</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
         <source>Same folder as current file</source>
         <translation>現在のファイルと同じフォルダー</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Custom...</source>
         <translation>カスタム...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Pandoc Path</source>
         <translation>Pandoc パス</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
         <source>(Auto-detect)</source>
         <translation>(自動検出)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="134"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
         <source>Browse...</source>
         <translation>参照...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="195"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>すべてのエクスポート形式に共通のデフォルト設定です。形式を選択すると、個別のオプションを設定できます。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
         <source>Custom Folder</source>
         <translation>カスタムフォルダー</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="213"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>無題の文書には「ドキュメント」フォルダーを使用します。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>All Files (*)</source>
         <translation>すべてのファイル (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>Auto-detect</source>
         <translation>自動検出</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="226"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF、HTML、画像には Muffin のレンダラーを使用します。その他の形式には Pandoc が必要です。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>%1 としてエクスポートする際に使用します。変更はすぐに保存されます。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Theme</source>
         <translation>テーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Current theme</source>
         <translation>現在のテーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Default light theme</source>
         <translation>デフォルトのライトテーマ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Page Size</source>
         <translation>用紙サイズ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="241"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
         <source>Width</source>
         <translation>幅</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Height</source>
         <translation>高さ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
         <source>Landscape</source>
         <translation>横向き</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Page Margins</source>
         <translation>余白</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="267"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Font Size (px)</source>
         <translation>フォントサイズ（px）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
         <source>Start each level-one heading on a new page</source>
         <translation>レベル 1 の見出しの前で改ページする</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Header</source>
         <translation>ヘッダー</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Footer</source>
         <translation>フッター</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
         <source>Show page numbers</source>
         <translation>ページ番号を表示</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>ヘッダーとフッターで使える変数：${title}、${author}、${fileName}、${date}、${pageNo}、${pageCount}。本文と重ならないよう、余白を自動的に確保します。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
         <source>Include a table of contents</source>
         <translation>目次を含める</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>Add to &lt;head&gt;</source>
         <translation>&lt;head&gt; に追加</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add before document content</source>
         <translation>文書の本文の前に追加</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>この形式にはテーマのスタイルシートを追加しません。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
         <source>Width (px)</source>
         <translation>幅（px）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Output Scale</source>
         <translation>出力倍率</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>1 枚の PNG としてエクスポートします。上限は総画素数 6400 万ピクセル、高さ 32,767 ピクセルです。長い文書には PDF を使用してください。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Pandoc が必要です。「一般」でパスを設定してください。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
         <source>Reference Document</source>
         <translation>スタイル参照文書</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
         <source>Custom CSS</source>
         <translation>カスタム CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="298"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
         <source>Title</source>
         <translation>タイトル</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
         <source>Author</source>
         <translation>著者</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>TOC Depth</source>
         <translation>目次の深さ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
         <source>Number sections</source>
         <translation>節に番号を付ける</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Line Wrapping</source>
         <translation>行の折り返し</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Do not wrap</source>
         <translation>折り返さない</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Automatic</source>
         <translation>自動</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Preserve source wrapping</source>
         <translation>元の改行を保持</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Pandoc の追加引数</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="316"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>空白を含むパスは引用符で囲んでください。入力形式、出力形式、出力先パスは Muffin が管理します。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
         <source>After Export</source>
         <translation>エクスポート後</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
         <source>Open the exported file directory</source>
         <translation>エクスポート先のフォルダーを開く</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
         <source>Open the exported file</source>
         <translation>エクスポートしたファイルを開く</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="332"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
         <source>Using: %1</source>
         <translation>使用中: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>有効な実行可能ファイルではありません。自動検出します。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="340"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Detected: %1</source>
         <translation>検出: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc が見つかりません。インストールするか、「参照」をクリックして場所を指定してください。</translation>
     </message>
@@ -5313,13 +5313,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="113"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
         <source>Keyboard Shortcuts</source>
         <translation>キーボードショートカット</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
         <source>Restore all default shortcuts?</source>
         <translation>すべてのショートカットをデフォルトに戻しますか？</translation>
     </message>
@@ -5334,74 +5334,74 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>既定値に戻す</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="114"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
         <source>Select a command and press a key combination. Changes apply to all windows immediately.</source>
         <translation>コマンドを選び、キーの組み合わせを押してください。変更はすべてのウィンドウにすぐに適用されます。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
         <source>Search commands or shortcuts…</source>
         <translation>コマンドやショートカットを検索…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Command</source>
         <translation>コマンド</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
         <source>Shortcut</source>
         <translation>ショートカット</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Default</source>
         <translation>デフォルト</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
         <source>Clear</source>
         <translation>クリア</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="122"/>
         <source>Use Default</source>
         <translation>デフォルトを使用</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="123"/>
         <source>Restore All Defaults…</source>
         <translation>すべてデフォルトに戻す…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="161"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="163"/>
         <source>No matching commands.</source>
         <translation>一致するコマンドがありません。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Apply</source>
         <translation>適用</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Reassign</source>
         <translation>再割り当て</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="200"/>
         <source>This key is reserved for text entry or cursor navigation. Use a modifier key or a function key.</source>
         <translation>このキーは文字入力やカーソル移動に使われます。修飾キーと組み合わせるか、ファンクションキーを使用してください。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
         <source>Used by: %1. Reassigning will clear those shortcuts.</source>
         <translation>使用中：%1。再割り当てすると、これらのショートカットは解除されます。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="208"/>
         <source>Clear and Apply removes the shortcut. Use Default and Apply restores it.</source>
         <translation>「クリア」の後に「適用」を押すとショートカットを解除します。「デフォルトを使用」の後に「適用」を押すと元に戻します。</translation>
     </message>
@@ -5874,6 +5874,39 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
 </context>
 <context>
+    <name>muffin::TableToolbar</name>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="319"/>
+        <source>Resize Table</source>
+        <translation>表のサイズ変更</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="320"/>
+        <source>Align Left</source>
+        <translation>左揃え</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="321"/>
+        <source>Align Center</source>
+        <translation>中央揃え</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="322"/>
+        <source>Align Right</source>
+        <translation>右揃え</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="323"/>
+        <source>More Actions</source>
+        <translation>その他の操作</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="324"/>
+        <source>Delete Table</source>
+        <translation>表を削除</translation>
+    </message>
+</context>
+<context>
     <name>muffin::UpdateChecker</name>
     <message>
         <location filename="../src/app/UpdateChecker.cpp" line="69"/>
@@ -5925,16 +5958,34 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
 </context>
 <context>
+    <name>muffin::WindowsIntegration</name>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="19"/>
+        <source>Open with Muffin</source>
+        <translation>Muffin で開く</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="23"/>
+        <source>Muffin Markdown Document</source>
+        <translation>Muffin Markdown ドキュメント</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="27"/>
+        <source>Open</source>
+        <translation>開く</translation>
+    </message>
+</context>
+<context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="171"/>
+        <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="193"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="415"/>
         <source>Update Muffin</source>
         <translation>Muffin を更新</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="172"/>
+        <location filename="../src/main.cpp" line="176"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>更新がキャンセルされたか、インストールできませんでした（コード %1）。セッションは復元されました。「ヘルプ &gt; 更新を確認」から再試行できます。</translation>
     </message>

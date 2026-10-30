@@ -973,17 +973,17 @@ C++ ve Qt 6 Widgets ile oluşturulmuş hızlı, hafif yerel Markdown düzenleyic
         <translation type="vanished">C++ ve Qt 6 Widgets ile oluşturulmuş hızlı bir yerel Markdown düzenleyici.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="114"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>C++ ve Qt 6 ile oluşturulmuş hızlı, hafif, yerel bir Markdown düzenleyici.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="121"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>Kenar çubuğundaki dosya tarayıcısında &lt;folder&gt; klasörünü aç.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="131"/>
+        <location filename="../src/main.cpp" line="135"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Açılacak Markdown veya metin dosyası (ya da klasör).</translation>
     </message>
@@ -3574,7 +3574,7 @@ Would you like to open the download page?</source>
         <translation>Aç</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="129"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>
@@ -4329,7 +4329,7 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation>Biçimler</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
         <source>Default Export Folder</source>
         <translation>Varsayılan Dışa Aktarma Klasörü</translation>
     </message>
@@ -4338,271 +4338,271 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation type="vanished">Otomatik</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
         <source>Same folder as current file</source>
         <translation>Geçerli dosya ile aynı klasör</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Custom...</source>
         <translation>Özel...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Pandoc Path</source>
         <translation>Pandoc Yolu</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
         <source>(Auto-detect)</source>
         <translation>(Otomatik algıla)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="134"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
         <source>Browse...</source>
         <translation>Gözat...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="195"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>Tüm dışa aktarma biçimleri için ortak varsayılan ayarlar. Biçime özel seçenekleri ayarlamak için bir biçim seçin.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
         <source>Custom Folder</source>
         <translation>Özel klasör</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="213"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>Adsız belgeler Belgeler klasörünü kullanır.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>All Files (*)</source>
         <translation>Tüm dosyalar (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>Auto-detect</source>
         <translation>Otomatik algıla</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="226"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF, HTML ve görüntüler Muffin&apos;in işleme motorunu kullanır. Diğer biçimler Pandoc gerektirir.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>%1 olarak dışa aktarırken kullanılır. Değişiklikler hemen kaydedilir.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Theme</source>
         <translation>Tema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Current theme</source>
         <translation>Geçerli tema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Default light theme</source>
         <translation>Varsayılan açık tema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Page Size</source>
         <translation>Sayfa boyutu</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="241"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
         <source>Width</source>
         <translation>Genişlik</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Height</source>
         <translation>Yükseklik</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
         <source>Landscape</source>
         <translation>Yatay</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Page Margins</source>
         <translation>Sayfa kenar boşlukları</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="267"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Font Size (px)</source>
         <translation>Yazı tipi boyutu (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
         <source>Start each level-one heading on a new page</source>
         <translation>Her birinci düzey başlığı yeni sayfada başlat</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Header</source>
         <translation>Üstbilgi</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Footer</source>
         <translation>Altbilgi</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
         <source>Show page numbers</source>
         <translation>Sayfa numaralarını göster</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>Üstbilgi ve altbilgi değişkenleri: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Belgeyle üst üste gelmemeleri için otomatik olarak yer ayrılır.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
         <source>Include a table of contents</source>
         <translation>İçindekiler tablosu ekle</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>Add to &lt;head&gt;</source>
         <translation>&lt;head&gt; bölümüne ekle</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add before document content</source>
         <translation>Belge içeriğinden önce ekle</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin bu biçime tema stil sayfası eklemez.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
         <source>Width (px)</source>
         <translation>Genişlik (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Output Scale</source>
         <translation>Çıktı ölçeği</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>Tek bir PNG dışa aktarır. Üst sınır: 64 milyon piksel ve 32,767 piksel yükseklik. Daha uzun belgeler için PDF kullanın.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Pandoc gerektirir. Yolunu Genel bölümünde ayarlayın.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
         <source>Reference Document</source>
         <translation>Referans belge</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
         <source>Custom CSS</source>
         <translation>Özel CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="298"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
         <source>Title</source>
         <translation>Başlık</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
         <source>Author</source>
         <translation>Yazar</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>TOC Depth</source>
         <translation>İçindekiler düzey sayısı</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
         <source>Number sections</source>
         <translation>Bölümleri numaralandır</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Line Wrapping</source>
         <translation>Satır kaydırma</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Do not wrap</source>
         <translation>Satırları kaydırma</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Automatic</source>
         <translation>Otomatik</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Preserve source wrapping</source>
         <translation>Kaynak satır sonlarını koru</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Ek Pandoc bağımsız değişkenleri</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="316"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>Boşluk içeren yolları tırnak içine alın. Girdi biçimini, çıktı biçimini ve çıktı yolunu Muffin yönetir.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
         <source>After Export</source>
         <translation>Dışa Aktarmadan Sonra</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
         <source>Open the exported file directory</source>
         <translation>Dışa aktarılan dosyanın dizinini aç</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
         <source>Open the exported file</source>
         <translation>Dışa aktarılan dosyayı aç</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="332"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
         <source>Using: %1</source>
         <translation>Kullanılıyor: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>Geçerli bir yürütülebilir dosya değil; otomatik algılanacak.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="340"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Detected: %1</source>
         <translation>Algılandı: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc bulunamadı. Yükleyin ya da bulmak için «Gözat»a tıklayın.</translation>
     </message>
@@ -5301,13 +5301,13 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
 <context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="113"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
         <source>Keyboard Shortcuts</source>
         <translation>Klavye kısayolları</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
         <source>Restore all default shortcuts?</source>
         <translation>Tüm varsayılan kısayollar geri yüklensin mi?</translation>
     </message>
@@ -5322,74 +5322,74 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
         <translation>Varsayılanları geri yükle</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="114"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
         <source>Select a command and press a key combination. Changes apply to all windows immediately.</source>
         <translation>Bir komut seçin ve bir tuş birleşimine basın. Değişiklikler tüm pencerelere hemen uygulanır.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
         <source>Search commands or shortcuts…</source>
         <translation>Komut veya kısayol ara…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Command</source>
         <translation>Komut</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
         <source>Shortcut</source>
         <translation>Kısayol</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Default</source>
         <translation>Varsayılan</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
         <source>Clear</source>
         <translation>Temizle</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="122"/>
         <source>Use Default</source>
         <translation>Varsayılanı kullan</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="123"/>
         <source>Restore All Defaults…</source>
         <translation>Tüm varsayılanları geri yükle…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="161"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="163"/>
         <source>No matching commands.</source>
         <translation>Eşleşen komut yok.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Apply</source>
         <translation>Uygula</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Reassign</source>
         <translation>Yeniden ata</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="200"/>
         <source>This key is reserved for text entry or cursor navigation. Use a modifier key or a function key.</source>
         <translation>Bu tuş metin girişi veya imleç hareketi için ayrılmıştır. Bir değiştirici tuş ya da işlev tuşu kullanın.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
         <source>Used by: %1. Reassigning will clear those shortcuts.</source>
         <translation>Kullanan: %1. Yeniden atama bu kısayolları temizler.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="208"/>
         <source>Clear and Apply removes the shortcut. Use Default and Apply restores it.</source>
         <translation>Kısayolu kaldırmak için Temizle ve Uygula&apos;ya basın. Geri yüklemek için Varsayılanı kullan ve Uygula&apos;ya basın.</translation>
     </message>
@@ -5862,6 +5862,39 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
     </message>
 </context>
 <context>
+    <name>muffin::TableToolbar</name>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="319"/>
+        <source>Resize Table</source>
+        <translation>Tabloyu Yeniden Boyutlandır</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="320"/>
+        <source>Align Left</source>
+        <translation>Sola Hizala</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="321"/>
+        <source>Align Center</source>
+        <translation>Ortala</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="322"/>
+        <source>Align Right</source>
+        <translation>Sağa Hizala</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="323"/>
+        <source>More Actions</source>
+        <translation>Diğer İşlemler</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="324"/>
+        <source>Delete Table</source>
+        <translation>Tabloyu Sil</translation>
+    </message>
+</context>
+<context>
     <name>muffin::UpdateChecker</name>
     <message>
         <location filename="../src/app/UpdateChecker.cpp" line="69"/>
@@ -5913,16 +5946,34 @@ Daha sonra düzenlenen veya kaydedilmemiş değişiklikler içeren dosyalar atla
     </message>
 </context>
 <context>
+    <name>muffin::WindowsIntegration</name>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="19"/>
+        <source>Open with Muffin</source>
+        <translation>Muffin ile Aç</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="23"/>
+        <source>Muffin Markdown Document</source>
+        <translation>Muffin Markdown Belgesi</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="27"/>
+        <source>Open</source>
+        <translation>Aç</translation>
+    </message>
+</context>
+<context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="171"/>
+        <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="193"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="415"/>
         <source>Update Muffin</source>
         <translation>Muffin&apos;i güncelle</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="172"/>
+        <location filename="../src/main.cpp" line="176"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>Güncelleme iptal edildi veya yüklenemedi (kod %1). Oturumunuz geri yüklendi. Yardım &gt; Güncellemeleri Denetle bölümünden yeniden deneyebilirsiniz.</translation>
     </message>

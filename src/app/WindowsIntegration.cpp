@@ -12,12 +12,20 @@
 
 namespace {
 
-// The label Explorer shows for the Muffin context-menu verb. The registry
-// stores a single (non-localized) string, so this is intentionally English.
-const wchar_t* const kVerbLabel = L"Open with Muffin";
 const wchar_t* const kProgId = L"Muffin.md";
-const wchar_t* const kProgIdDescription = L"Muffin Markdown Document";
 const wchar_t* const kAppName = L"Muffin";
+
+QString contextMenuLabel() {
+  return QCoreApplication::translate("muffin::WindowsIntegration", "Open with Muffin");
+}
+
+QString documentTypeLabel() {
+  return QCoreApplication::translate("muffin::WindowsIntegration", "Muffin Markdown Document");
+}
+
+QString openLabel() {
+  return QCoreApplication::translate("muffin::WindowsIntegration", "Open");
+}
 
 // Marker subkey name under the verb; its (Default) value carries the icon
 // path so the context-menu entry shows the Muffin icon.
@@ -45,6 +53,27 @@ void writeStringValue(HKEY root, const std::wstring& keyPath, const wchar_t* val
   const DWORD bytes = static_cast<DWORD>((data.size() + 1) * sizeof(wchar_t));
   RegSetValueExW(key, valueName, 0, REG_SZ, reinterpret_cast<const BYTE*>(data.c_str()), bytes);
   RegCloseKey(key);
+}
+
+// Open instead of creating: changing a language must not opt users back in.
+bool updateExistingString(const std::wstring& keyPath, const wchar_t* name, const std::wstring& text) {
+  HKEY key = nullptr;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, keyPath.c_str(), 0, KEY_QUERY_VALUE | KEY_SET_VALUE, &key) != ERROR_SUCCESS)
+    return false;
+  DWORD type = 0, bytes = 0;
+  bool same = false;
+  if (RegQueryValueExW(key, name, nullptr, &type, nullptr, &bytes) == ERROR_SUCCESS && type == REG_SZ &&
+      bytes == (text.size() + 1) * sizeof(wchar_t)) {
+    std::wstring previous(bytes / sizeof(wchar_t), L'\0');
+    same = RegQueryValueExW(key, name, nullptr, &type, reinterpret_cast<BYTE*>(previous.data()), &bytes) ==
+               ERROR_SUCCESS &&
+           previous == text + L'\0';
+  }
+  const bool changed =
+      !same && RegSetValueExW(key, name, 0, REG_SZ, reinterpret_cast<const BYTE*>(text.c_str()),
+                              static_cast<DWORD>((text.size() + 1) * sizeof(wchar_t))) == ERROR_SUCCESS;
+  RegCloseKey(key);
+  return changed;
 }
 
 // Write a zero-length REG_NONE value. OpenWithProgids expects the ProgID as a
@@ -111,12 +140,14 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
 #ifdef Q_OS_WIN
   const std::wstring exe = quotedExePath();
   const std::wstring iconValue = exe + L",0";
+  const auto verbLabel = contextMenuLabel().toStdWString();
 
   // --- Context-menu verbs (files + folder + folder background) ---
   for (const QString& ext : markdownExtensions()) {
     const std::wstring verbPath = classesKey(ext.toStdWString() + L"\\shell\\Muffin");
     if (contextMenu) {
-      writeStringValue(HKEY_CURRENT_USER, verbPath, nullptr, kVerbLabel);
+      writeStringValue(HKEY_CURRENT_USER, verbPath, nullptr, verbLabel);
+      writeStringValue(HKEY_CURRENT_USER, verbPath, L"MUIVerb", verbLabel);
       writeStringValue(HKEY_CURRENT_USER, verbPath + L'\\' + kIconSubKey, nullptr, iconValue);
       writeStringValue(HKEY_CURRENT_USER, verbPath + L'\\' + kCommandSubKey, nullptr, exe + L" \"%1\"");
     } else {
@@ -128,7 +159,8 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
 
   const std::wstring dirVerb = classesKey(L"Directory\\shell\\Muffin");
   if (contextMenu) {
-    writeStringValue(HKEY_CURRENT_USER, dirVerb, nullptr, kVerbLabel);
+    writeStringValue(HKEY_CURRENT_USER, dirVerb, nullptr, verbLabel);
+    writeStringValue(HKEY_CURRENT_USER, dirVerb, L"MUIVerb", verbLabel);
     writeStringValue(HKEY_CURRENT_USER, dirVerb + L'\\' + kIconSubKey, nullptr, iconValue);
     writeStringValue(HKEY_CURRENT_USER, dirVerb + L'\\' + kCommandSubKey, nullptr, exe + L" --folder \"%1\"");
   } else {
@@ -139,7 +171,8 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
   // open folder window; it passes the current folder via %V (not %1).
   const std::wstring bgVerb = classesKey(L"Directory\\Background\\shell\\Muffin");
   if (contextMenu) {
-    writeStringValue(HKEY_CURRENT_USER, bgVerb, nullptr, kVerbLabel);
+    writeStringValue(HKEY_CURRENT_USER, bgVerb, nullptr, verbLabel);
+    writeStringValue(HKEY_CURRENT_USER, bgVerb, L"MUIVerb", verbLabel);
     writeStringValue(HKEY_CURRENT_USER, bgVerb + L'\\' + kIconSubKey, nullptr, iconValue);
     writeStringValue(HKEY_CURRENT_USER, bgVerb + L'\\' + kCommandSubKey, nullptr, exe + L" --folder \"%V\"");
   } else {
@@ -149,10 +182,13 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
   // --- File association (ProgID + OpenWithProgids candidate) ---
   const std::wstring progIdKey = classesKey(kProgId);
   if (associate) {
-    writeStringValue(HKEY_CURRENT_USER, progIdKey, nullptr, kProgIdDescription);
+    const auto description = documentTypeLabel().toStdWString();
+    writeStringValue(HKEY_CURRENT_USER, progIdKey, nullptr, description);
+    writeStringValue(HKEY_CURRENT_USER, progIdKey, L"FriendlyTypeName", description);
     writeStringValue(HKEY_CURRENT_USER, progIdKey, L"FriendlyAppName", kAppName);
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\DefaultIcon", nullptr, iconValue);
-    writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open", nullptr, L"Open");
+    writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open", nullptr, openLabel().toStdWString());
+    writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open", L"MUIVerb", openLabel().toStdWString());
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open\\command", nullptr, exe + L" \"%1\"");
     for (const QString& ext : markdownExtensions()) {
       writeNoneValue(HKEY_CURRENT_USER, classesKey(ext.toStdWString() + L"\\OpenWithProgids"), kProgId);
@@ -174,6 +210,28 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
 #else
   Q_UNUSED(contextMenu);
   Q_UNUSED(associate);
+#endif
+}
+
+void WindowsIntegration::refreshLocalizedLabels() {
+#ifdef Q_OS_WIN
+  bool changed = false;
+  const auto verb = contextMenuLabel().toStdWString();
+  const auto updateVerb = [&](const std::wstring& key, const std::wstring& label) {
+    changed |= updateExistingString(key, nullptr, label);
+    changed |= updateExistingString(key, L"MUIVerb", label);
+  };
+  for (const auto& extension : markdownExtensions())
+    updateVerb(classesKey(extension.toStdWString() + L"\\shell\\Muffin"), verb);
+  updateVerb(classesKey(L"Directory\\shell\\Muffin"), verb);
+  updateVerb(classesKey(L"Directory\\Background\\shell\\Muffin"), verb);
+  const auto progId = classesKey(kProgId);
+  const auto description = documentTypeLabel().toStdWString();
+  changed |= updateExistingString(progId, nullptr, description);
+  changed |= updateExistingString(progId, L"FriendlyTypeName", description);
+  updateVerb(progId + L"\\shell\\open", openLabel().toStdWString());
+  if (changed)
+    notifyShellAssocChanged();
 #endif
 }
 

@@ -584,6 +584,8 @@ void EditorView::changeEvent(QEvent* event) {
   QAbstractScrollArea::changeEvent(event);
   if (event->type() == QEvent::LanguageChange) {
     retranslateAccessibility();
+    if (tableToolbar_)
+      tableToolbar_->retranslateUi();
   }
 }
 

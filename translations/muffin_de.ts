@@ -977,17 +977,17 @@ Ein schneller, leichtgewichtiger nativer Markdown-Editor, gebaut mit C++ und Qt 
         <translation type="vanished">Ein schneller nativer Markdown-Editor, entwickelt mit C++ und Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="114"/>
+        <location filename="../src/main.cpp" line="118"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Ein schneller, leichtgewichtiger, nativer Markdown-Editor, erstellt mit C++ und Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="121"/>
+        <location filename="../src/main.cpp" line="125"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>&lt;folder&gt; im Dateibrowser der Seitenleiste öffnen.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="131"/>
+        <location filename="../src/main.cpp" line="135"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Zu öffnende Markdown- oder Textdatei (oder Ordner).</translation>
     </message>
@@ -3584,7 +3584,7 @@ Möchten Sie die Download-Seite öffnen?</translation>
         <translation>Öffnen</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="129"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="295"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Open in New Window</source>
@@ -4339,7 +4339,7 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
         <translation>Formate</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
         <source>Default Export Folder</source>
         <translation>Standardexportordner</translation>
     </message>
@@ -4348,271 +4348,271 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
         <translation type="vanished">Automatisch</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
         <source>Same folder as current file</source>
         <translation>Gleicher Ordner wie aktuelle Datei</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Custom...</source>
         <translation>Benutzerdefiniert...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Pandoc Path</source>
         <translation>Pandoc-Pfad</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
         <source>(Auto-detect)</source>
         <translation>(Automatisch erkennen)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="134"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
         <source>Browse...</source>
         <translation>Durchsuchen...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="195"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>Gemeinsame Standardwerte für alle Exportformate. Wählen Sie ein Format, um dessen eigene Optionen festzulegen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
         <source>Custom Folder</source>
         <translation>Benutzerdefinierter Ordner</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="213"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>Unbenannte Dokumente verwenden den Ordner „Dokumente“.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>All Files (*)</source>
         <translation>Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>Auto-detect</source>
         <translation>Automatisch erkennen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="226"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF, HTML und Bilder verwenden Muffins Renderer. Andere Formate benötigen Pandoc.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>Wird beim Export als %1 verwendet. Änderungen werden sofort gespeichert.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Theme</source>
         <translation>Design</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Current theme</source>
         <translation>Aktuelles Design</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="235"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Default light theme</source>
         <translation>Helles Standarddesign</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
         <source>Page Size</source>
         <translation>Papierformat</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="241"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
         <source>Width</source>
         <translation>Breite</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Height</source>
         <translation>Höhe</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
         <source>Landscape</source>
         <translation>Querformat</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="265"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Page Margins</source>
         <translation>Seitenränder</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="267"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Font Size (px)</source>
         <translation>Schriftgröße (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
         <source>Start each level-one heading on a new page</source>
         <translation>Jede Überschrift erster Ebene auf einer neuen Seite beginnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Header</source>
         <translation>Kopfzeile</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Footer</source>
         <translation>Fußzeile</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
         <source>Show page numbers</source>
         <translation>Seitenzahlen anzeigen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>Variablen für Kopf- und Fußzeilen: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Der erforderliche Platz wird automatisch reserviert, damit sie den Dokumentinhalt nicht überlagern.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
         <source>Include a table of contents</source>
         <translation>Inhaltsverzeichnis einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>Add to &lt;head&gt;</source>
         <translation>Zu &lt;head&gt; hinzufügen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add before document content</source>
         <translation>Vor dem Dokumentinhalt einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin fügt diesem Format kein Design-Stylesheet hinzu.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
         <source>Width (px)</source>
         <translation>Breite (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Output Scale</source>
         <translation>Ausgabeskalierung</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>Exportiert eine PNG-Datei. Maximal 64 Millionen Pixel und 32.767 Pixel Höhe. Verwenden Sie PDF für längere Dokumente.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Benötigt Pandoc. Legen Sie den Pfad unter „Allgemein“ fest.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
         <source>Reference Document</source>
         <translation>Referenzdokument</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
         <source>Custom CSS</source>
         <translation>Benutzerdefiniertes CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="298"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
         <source>Title</source>
         <translation>Titel</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
         <source>Author</source>
         <translation>Autor</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>TOC Depth</source>
         <translation>Tiefe des Inhaltsverzeichnisses</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
         <source>Number sections</source>
         <translation>Abschnitte nummerieren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Line Wrapping</source>
         <translation>Zeilenumbruch</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Do not wrap</source>
         <translation>Kein Umbruch</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Automatic</source>
         <translation>Automatisch</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
         <source>Preserve source wrapping</source>
         <translation>Umbrüche des Quelltexts beibehalten</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Zusätzliche Pandoc-Argumente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="316"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>Setzen Sie Pfade mit Leerzeichen in Anführungszeichen. Muffin verwaltet das Eingabeformat, Ausgabeformat und den Ausgabepfad.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
         <source>After Export</source>
         <translation>Nach dem Export</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
         <source>Open the exported file directory</source>
         <translation>Verzeichnis der exportierten Datei öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
         <source>Open the exported file</source>
         <translation>Exportierte Datei öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="332"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
         <source>Using: %1</source>
         <translation>Verwendet: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>Keine gültige ausführbare Datei; wird automatisch erkannt.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="340"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Detected: %1</source>
         <translation>Erkannt: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc wurde nicht gefunden. Installieren Sie es, oder klicken Sie auf „Durchsuchen“, um es zu finden.</translation>
     </message>
@@ -5311,13 +5311,13 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
 <context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="113"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
         <source>Keyboard Shortcuts</source>
         <translation>Tastenkombinationen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="97"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
         <source>Restore all default shortcuts?</source>
         <translation>Alle Standard-Tastenkombinationen wiederherstellen?</translation>
     </message>
@@ -5332,74 +5332,74 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
         <translation>Standardeinstellungen wiederherstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="114"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
         <source>Select a command and press a key combination. Changes apply to all windows immediately.</source>
         <translation>Wählen Sie einen Befehl und drücken Sie eine Tastenkombination. Änderungen gelten sofort für alle Fenster.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="115"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="116"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
         <source>Search commands or shortcuts…</source>
         <translation>Befehle oder Tastenkombinationen suchen…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Command</source>
         <translation>Befehl</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="118"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
         <source>Shortcut</source>
         <translation>Tastenkombination</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="117"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
         <source>Default</source>
         <translation>Standard</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="119"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
         <source>Clear</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="120"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="122"/>
         <source>Use Default</source>
         <translation>Standard verwenden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="121"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="123"/>
         <source>Restore All Defaults…</source>
         <translation>Alle Standardwerte wiederherstellen…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="161"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="163"/>
         <source>No matching commands.</source>
         <translation>Keine passenden Befehle.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Apply</source>
         <translation>Übernehmen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="195"/>
         <source>Reassign</source>
         <translation>Neu zuweisen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="198"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="200"/>
         <source>This key is reserved for text entry or cursor navigation. Use a modifier key or a function key.</source>
         <translation>Diese Taste ist für Texteingabe oder Cursorbewegungen reserviert. Verwenden Sie eine Zusatztaste oder eine Funktionstaste.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
         <source>Used by: %1. Reassigning will clear those shortcuts.</source>
         <translation>Verwendet von: %1. Durch die Neuzuweisung werden diese Tastenkombinationen entfernt.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsShortcutsPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsShortcutsPage.cpp" line="208"/>
         <source>Clear and Apply removes the shortcut. Use Default and Apply restores it.</source>
         <translation>„Löschen“ und anschließend „Übernehmen“ entfernt die Tastenkombination. „Standard verwenden“ und anschließend „Übernehmen“ stellt sie wieder her.</translation>
     </message>
@@ -5872,6 +5872,39 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
     </message>
 </context>
 <context>
+    <name>muffin::TableToolbar</name>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="319"/>
+        <source>Resize Table</source>
+        <translation>Tabellengröße ändern</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="320"/>
+        <source>Align Left</source>
+        <translation>Linksbündig ausrichten</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="321"/>
+        <source>Align Center</source>
+        <translation>Zentriert ausrichten</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="322"/>
+        <source>Align Right</source>
+        <translation>Rechtsbündig ausrichten</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="323"/>
+        <source>More Actions</source>
+        <translation>Weitere Aktionen</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/TableToolbar.cpp" line="324"/>
+        <source>Delete Table</source>
+        <translation>Tabelle löschen</translation>
+    </message>
+</context>
+<context>
     <name>muffin::UpdateChecker</name>
     <message>
         <location filename="../src/app/UpdateChecker.cpp" line="69"/>
@@ -5923,16 +5956,34 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
     </message>
 </context>
 <context>
+    <name>muffin::WindowsIntegration</name>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="19"/>
+        <source>Open with Muffin</source>
+        <translation>Mit Muffin öffnen</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="23"/>
+        <source>Muffin Markdown Document</source>
+        <translation>Muffin-Markdown-Dokument</translation>
+    </message>
+    <message>
+        <location filename="../src/app/WindowsIntegration.cpp" line="27"/>
+        <source>Open</source>
+        <translation>Öffnen</translation>
+    </message>
+</context>
+<context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="171"/>
+        <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="193"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="415"/>
         <source>Update Muffin</source>
         <translation>Muffin aktualisieren</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="172"/>
+        <location filename="../src/main.cpp" line="176"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>Die Aktualisierung wurde abgebrochen oder konnte nicht installiert werden (Code %1). Ihre Sitzung wurde wiederhergestellt. Sie können es unter Hilfe &gt; Nach Updates suchen erneut versuchen.</translation>
     </message>

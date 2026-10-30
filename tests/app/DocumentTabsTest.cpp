@@ -650,6 +650,64 @@ void exportPreferencesAndOutputs() {
   QSettings().remove("export/docx/arguments");
 }
 
+void exportPathRowsFitControls() {
+  QSettings().setValue("preferences/lastCategory", "export");
+  QSettings().setValue("export/lastPage", 0);
+  PreferencesDialog preferences;
+  auto* page = preferences.findChild<PrefsExportPage*>();
+  auto* formats = page->findChild<QListWidget*>("ExportFormats");
+  const auto originalLanguage = LanguageManager::instance().currentLanguageCode();
+  const auto restoreLanguage = qScopeGuard([&] {
+    LanguageManager::instance().setLanguage(originalLanguage);
+    refreshDeclarations();
+  });
+  const auto captures = qEnvironmentVariable("MUFFIN_EXPORT_PATH_SCREENSHOT_DIR");
+  if (!captures.isEmpty())
+    QDir().mkpath(captures);
+  for (const auto& language : {QStringLiteral("en"), QStringLiteral("zh_CN")}) {
+    LanguageManager::instance().setLanguage(language);
+    QApplication::processEvents();
+    for (const auto& theme : {QStringLiteral("github"), QStringLiteral("night")}) {
+      preferences.setThemeDefinition(ThemeDefinition::builtIn(theme).value());
+      for (const auto size : {QSize(1040, 720), QSize(880, 620)}) {
+        preferences.resize(size);
+        preferences.show();
+        for (int row : {0, 5, 6, 8, 0}) {
+          formats->setCurrentRow(row);
+          if (row == 0) {
+            auto* folder = page->findChild<QComboBox*>("ExportDefaultFolder");
+            folder->setCurrentIndex(folder->currentIndex() == 0 ? 1 : 0);
+          }
+          QTest::qWait(20);
+          for (const auto* name :
+               {"ExportCustomFolder", "ExportPandocPath", "ExportReferenceDocument", "ExportEpubCss"}) {
+            auto* field = page->findChild<QLineEdit*>(name);
+            if (!field)
+              continue;
+            auto* container = field->parentWidget();
+            auto* browse = container->findChild<QPushButton*>();
+            require(field->isVisible() && browse, "rebuilt path field is visible with its browse action");
+            for (const auto* control : {static_cast<QWidget*>(field), static_cast<QWidget*>(browse)}) {
+              require(container->rect().contains(control->geometry()),
+                      QStringLiteral("%1 fits its row (%2, %3, width=%4): row height=%5, control y=%6 height=%7")
+                          .arg(name, language, theme)
+                          .arg(size.width())
+                          .arg(container->height())
+                          .arg(control->y())
+                          .arg(control->height()));
+              require(control->height() >= control->minimumSizeHint().height(),
+                      "path controls retain their style-derived minimum height");
+            }
+          }
+          if (!captures.isEmpty() && row == 0 && size.width() == 1040)
+            require(preferences.grab().save(QDir(captures).filePath(language + '-' + theme + ".png")),
+                    "capture export path controls");
+        }
+      }
+    }
+  }
+}
+
 void noteLinkRewriting() {
   const QString root = QDir::tempPath() + QStringLiteral("/muffin-notes");
   const auto oldPath = root + QStringLiteral("/notes/方案.md");
@@ -3652,6 +3710,10 @@ int main(int argc, char** argv) {
     runTest("configurableShortcuts", configurableShortcuts);
     return 0;
   }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--export-path-layout"))) {
+    runTest("exportPathRowsFitControls", exportPathRowsFitControls);
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update"))) {
     runWindowsUpdateTests();
     return 0;
@@ -3697,6 +3759,7 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--sidebar-file-open")))
     return 0;
   runTest("exportPreferencesAndOutputs", exportPreferencesAndOutputs);
+  runTest("exportPathRowsFitControls", exportPathRowsFitControls);
   if (QCoreApplication::arguments().contains(QStringLiteral("--export-options")))
     return 0;
   runTest("noteLinkRewriting", noteLinkRewriting);

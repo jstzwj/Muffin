@@ -25,6 +25,7 @@ public:
 
   void update(const HitTestResult& hit, const DocumentLayout* layout, qreal scrollY, const QRect& viewportRect);
   void forceHide();
+  void retranslateUi();
 
 signals:
   void columnAlignmentRequested(TableAlignment alignment);

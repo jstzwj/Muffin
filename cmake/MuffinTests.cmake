@@ -610,8 +610,9 @@ target_compile_definitions(MuffinGuiPerformanceProbe PRIVATE
   MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}" MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinSidebarInteractionTest SOURCE tests/app/SidebarInteractionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 if(WIN32)
-  muffin_add_test(NAME MuffinWindowsIntegrationTest SOURCE tests/app/WindowsIntegrationTest.cpp LINK Qt6::Gui EXTRA_SOURCES src/app/WindowsIntegration.cpp EXTRA_LINK advapi32 shell32)
+  muffin_add_test(NAME MuffinWindowsIntegrationTest SOURCE tests/app/WindowsIntegrationTest.cpp LINK Qt6::Gui EXTRA_SOURCES src/app/WindowsIntegration.cpp src/translations.qrc "${MUFFIN_SHELL_TRANSLATIONS_RC}" EXTRA_LINK advapi32 shell32)
   target_include_directories(MuffinWindowsIntegrationTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  add_dependencies(MuffinWindowsIntegrationTest muffin-shell-translations)
   find_program(MUFFIN_TEST_DOTNET_COMMAND dotnet)
   if(MUFFIN_TEST_DOTNET_COMMAND)
     add_test(NAME MuffinInstallerOptionsTest

@@ -41,6 +41,10 @@ public:
   // touched. Explorer is notified to refresh associations immediately.
   static void applyIntegration(bool contextMenu, bool associate);
 
+  // Refresh only labels in existing registrations after startup/language
+  // changes. Never creates keys or changes the user's integration choices.
+  static void refreshLocalizedLabels();
+
   // Query the current state from the registry (true if the corresponding
   // Muffin keys exist). Used to initialize the preferences UI from the single
   // source of truth rather than a separate preference mirror.

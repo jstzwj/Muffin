@@ -126,6 +126,10 @@ void muffin::PrefsExportPage::rebuildPage() {
     auto* row = new QWidget(card);
     auto* layout = new QHBoxLayout(row);
     layout->setContentsMargins(0, 0, 0, 0);
+    // Propagate the styled controls' minimum size to the form's field widget.
+    // Otherwise a newly rebuilt row can keep its pre-polish height and clip
+    // the taller line edit and browse button at the bottom.
+    layout->setSizeConstraint(QLayout::SetMinimumSize);
     auto* field = new QLineEdit(row);
     field->setObjectName(name);
     field->setText(QSettings().value(key).toString());

@@ -5,6 +5,7 @@
 #include "render/DocumentLayout.h"
 
 #include <QBoxLayout>
+#include <QCoreApplication>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
@@ -250,11 +251,11 @@ void TableToolbar::ensureToolbar() {
   layout->setContentsMargins(4, 3, 4, 3);
   layout->setSpacing(1);
 
-  auto makeButton = [this, layout](IconKind iconKind, const QString& tooltip) {
+  auto makeButton = [this, layout](IconKind iconKind, const char* name) {
     auto* button = new QToolButton(toolbar_);
+    button->setObjectName(QString::fromLatin1(name));
     button->setIcon(toolbarIcon(iconKind));
     button->setIconSize(QSize(16, 16));
-    button->setToolTip(tooltip);
     button->setAutoRaise(true);
     button->setFocusPolicy(Qt::NoFocus);
     button->setCursor(Qt::PointingHandCursor);
@@ -263,12 +264,13 @@ void TableToolbar::ensureToolbar() {
     return button;
   };
 
-  resizeButton_ = makeButton(IconKind::Resize, QStringLiteral("调整表格大小"));
-  alignLeftButton_ = makeButton(IconKind::AlignLeft, QStringLiteral("左对齐"));
-  alignCenterButton_ = makeButton(IconKind::AlignCenter, QStringLiteral("居中对齐"));
-  alignRightButton_ = makeButton(IconKind::AlignRight, QStringLiteral("右对齐"));
-  moreButton_ = makeButton(IconKind::More, QStringLiteral("更多操作"));
-  deleteButton_ = makeButton(IconKind::Delete, QStringLiteral("删除表格"));
+  resizeButton_ = makeButton(IconKind::Resize, "ResizeTableButton");
+  alignLeftButton_ = makeButton(IconKind::AlignLeft, "TableAlignLeftButton");
+  alignCenterButton_ = makeButton(IconKind::AlignCenter, "TableAlignCenterButton");
+  alignRightButton_ = makeButton(IconKind::AlignRight, "TableAlignRightButton");
+  moreButton_ = makeButton(IconKind::More, "TableMoreActionsButton");
+  deleteButton_ = makeButton(IconKind::Delete, "DeleteTableButton");
+  retranslateUi();
 
   toolbar_->setStyleSheet(QStringLiteral("QWidget#tableFloatingToolbar {"
                                          "  background:rgba(244,246,248,248);"
@@ -305,6 +307,21 @@ void TableToolbar::ensureToolbar() {
   connect(moreButton_, &QToolButton::clicked, this,
           [this] { emit moreActionsRequested(moreButton_->mapToGlobal(QPoint(0, moreButton_->height()))); });
   connect(deleteButton_, &QToolButton::clicked, this, [this] { emit deleteRequested(); });
+}
+
+void TableToolbar::retranslateUi() {
+  if (!toolbar_)
+    return;
+  const auto setLabel = [](QToolButton* button, const QString& label) {
+    button->setToolTip(label);
+    button->setAccessibleName(label);
+  };
+  setLabel(resizeButton_, QCoreApplication::translate("muffin::TableToolbar", "Resize Table"));
+  setLabel(alignLeftButton_, QCoreApplication::translate("muffin::TableToolbar", "Align Left"));
+  setLabel(alignCenterButton_, QCoreApplication::translate("muffin::TableToolbar", "Align Center"));
+  setLabel(alignRightButton_, QCoreApplication::translate("muffin::TableToolbar", "Align Right"));
+  setLabel(moreButton_, QCoreApplication::translate("muffin::TableToolbar", "More Actions"));
+  setLabel(deleteButton_, QCoreApplication::translate("muffin::TableToolbar", "Delete Table"));
 }
 
 void TableToolbar::show(const BlockLayout& table, qreal scrollY, const QRect& viewportRect) {

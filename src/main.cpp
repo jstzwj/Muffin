@@ -4,6 +4,7 @@
 #include "app/DwmPopupBorderFilter.h"
 #include "app/FileOpenDispatcher.h"
 #include "app/LanguageManager.h"
+#include "app/WindowsIntegration.h"
 #include "app/WindowsUpdater.h"
 #include "editor/EditorAccessibility.h"
 #include "theme/FontRendering.h"
@@ -100,6 +101,9 @@ int main(int argc, char* argv[]) {
   muffin::DwmPopupBorderFilter::install(app);
 
   muffin::LanguageManager::instance().initialize();
+  muffin::WindowsIntegration::refreshLocalizedLabels();
+  QObject::connect(&muffin::LanguageManager::instance(), &muffin::LanguageManager::languageChanged, &app,
+                   [] { muffin::WindowsIntegration::refreshLocalizedLabels(); });
 
   // Screen-reader adapters for the two editor canvases (rendered + source mode). Installed
   // before any editor widget exists; inert until something queries accessibility.

@@ -2,6 +2,8 @@
 #include "app/LanguageManager.h"
 #include "app/StatusBarWidget.h"
 #include "app/SidebarWidget.h"
+#include "document/DocumentSession.h"
+#include "document/MarkdownNode.h"
 #include "editor/EditorView.h"
 #include "editor/VirtualSourceEdit.h"
 #include "image/CustomCommandUploader.h"
@@ -75,7 +77,22 @@ int main(int argc, char** argv) {
   QSettings::setDefaultFormat(QSettings::IniFormat);
   QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsDir.path());
 
+  muffin::DocumentSession tableSession;
+  tableSession.setMarkdownText(QStringLiteral("| A | B |\n| --- | --- |\n| x | y |\n"), false);
   muffin::EditorView rendered;
+  rendered.resize(800, 600);
+  rendered.setDocument(tableSession.document());
+  rendered.show();
+  app.processEvents();
+  const auto* table = tableSession.document().root().children().front().get();
+  muffin::HitTestResult tableHit;
+  tableHit.zone = muffin::HitTestResult::Zone::TableCell;
+  tableHit.blockId = table->id();
+  tableHit.textNodeId = table->children().front()->children().front()->id();
+  tableHit.tableRow = 0;
+  tableHit.tableColumn = 0;
+  tableHit.textOffset = 0;
+  rendered.setCursorHit(tableHit);
   muffin::VirtualSourceEdit source;
   muffin::StatusBarWidget statusBar;
   muffin::SidebarWidget sidebar;
@@ -117,6 +134,18 @@ int main(int argc, char** argv) {
     require(source.accessibleDescription() == translated("muffin::VirtualSourceEdit", "Plain-text Markdown source"),
             QStringLiteral("Source editor description must follow language changes"));
     verifyStatusBarTooltips(statusBar, manager.effectiveLanguageCode() != QStringLiteral("en"));
+    for (const auto& entry :
+         {qMakePair("ResizeTableButton", "Resize Table"), qMakePair("TableAlignLeftButton", "Align Left"),
+          qMakePair("TableAlignCenterButton", "Align Center"), qMakePair("TableAlignRightButton", "Align Right"),
+          qMakePair("TableMoreActionsButton", "More Actions"), qMakePair("DeleteTableButton", "Delete Table")}) {
+      const auto* button = rendered.findChild<QToolButton*>(QString::fromLatin1(entry.first));
+      const auto label = translated("muffin::TableToolbar", entry.second);
+      require(button && button->toolTip() == label && button->accessibleName() == label,
+              QStringLiteral("Existing table toolbar hints and accessible names follow language changes: %1 / %2")
+                  .arg(code, QString::fromLatin1(entry.first)));
+      if (manager.effectiveLanguageCode() != QStringLiteral("en"))
+        require(label != QString::fromLatin1(entry.second), QStringLiteral("Table toolbar hints are translated"));
+    }
     for (const auto& entry :
          {qMakePair("RefreshFoldersButton", "Refresh Files"), qMakePair("SortFilesButton", "Sort Files")}) {
       auto* button = sidebar.findChild<QToolButton*>(QString::fromLatin1(entry.first));
