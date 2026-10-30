@@ -40,9 +40,23 @@ internal static class UpdateHandoffTest
         Require(rejected, "invalid update command never becomes an ordinary installation");
     }
 
+    private static bool IsRejectedBundleLog(int exitCode, string log)
+    {
+        var rejected = log.IndexOf("e000: Invalid update handoff:", StringComparison.Ordinal);
+        var shutdown = log.IndexOf("i500: Shutting down,", StringComparison.Ordinal);
+        var detect = log.IndexOf("i100: Detect begin", StringComparison.Ordinal);
+        // Burn can run its own detection after i500, inside i502/i599 cleanup
+        // (notably on elevated runners). That read-only engine cleanup is not
+        // a BA Detect request and must not be mistaken for starting an update.
+        return exitCode == 1602 && rejected >= 0 && shutdown > rejected &&
+               (detect < 0 || detect > shutdown) &&
+               !log.Contains("i200: Plan begin") && !log.Contains("i300: Apply begin");
+    }
+
     internal static void RunBundle(string bundle)
     {
-        var directory = Path.Combine(Path.GetTempPath(), "MuffinBundleCommandTest-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(),
+                                     "MuffinBundleCommandTest-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         var log = Path.Combine(directory, "bundle.log");
         // Full display is deliberate: even an old BA that misses MuffinUpdate
@@ -65,21 +79,35 @@ internal static class UpdateHandoffTest
             var logs = new StringBuilder();
             foreach (var path in Directory.GetFiles(directory, "*.log")) logs.Append(File.ReadAllText(path));
             var text = logs.ToString();
-            var rejected = process.ExitCode == 1602 && text.Contains("Invalid update handoff:") &&
-                           !text.Contains("Detect begin") && !text.Contains("Plan begin") && !text.Contains("Apply begin");
+            var rejected = IsRejectedBundleLog(process.ExitCode, text);
             if (!rejected)
             {
                 Console.Error.WriteLine("Bundle exit code: {0} (0x{0:X8})", process.ExitCode);
                 Console.Error.WriteLine(text);
             }
-            Require(rejected, "real Burn command is consumed and rejected before detection or installation; logs: " + directory);
+            Require(rejected, "real Burn command is rejected before BA detection or installation; logs: " + directory);
         }
         Directory.Delete(directory, true);
-        Console.WriteLine("Real setup bundle: update command consumed, invalid mode rejected before Detect/Plan/Apply");
+        Console.WriteLine("Real setup bundle: invalid mode rejected before BA Detect/Plan/Apply; Burn cleanup allowed");
     }
 
     internal static void Run()
     {
+        const string rejection = "[0000:0000]e000: Invalid update handoff: ArgumentException\n";
+        const string shutdown = "[0000:0000]i500: Shutting down, exit code: 0x642\n";
+        const string detect = "[0000:0000]i100: Detect begin, 1 packages\n";
+        const string cleanup = "[0000:0000]i502: Cleanup begin.\n";
+        Require(IsRejectedBundleLog(1602, rejection + shutdown), "ordinary rejection is accepted");
+        Require(IsRejectedBundleLog(1602, rejection + shutdown + cleanup + detect),
+                "Burn's post-shutdown cleanup detection is accepted");
+        Require(!IsRejectedBundleLog(1602, detect + rejection + shutdown), "BA detection before rejection is forbidden");
+        Require(!IsRejectedBundleLog(1602, rejection + detect + shutdown), "BA detection before shutdown is forbidden");
+        Require(!IsRejectedBundleLog(1602, rejection + shutdown + "i200: Plan begin"), "planning is always forbidden");
+        Require(!IsRejectedBundleLog(1602, rejection + shutdown + "i300: Apply begin"), "applying is always forbidden");
+        Require(!IsRejectedBundleLog(0, rejection + shutdown), "incorrect exit status is rejected");
+        Require(!IsRejectedBundleLog(1602, shutdown), "missing handoff validation is rejected");
+        Require(!IsRejectedBundleLog(1602, rejection), "missing shutdown boundary is rejected");
+
         Require(UpdateHandoff.FromCommand(Command(null)) == null &&
                 UpdateHandoff.FromCommand(Command("/norestart OtherVariable=value")) == null,
                 "ordinary installation has no editor handoff");

@@ -341,6 +341,14 @@ jobs:
         run: |
           ./scripts/Sign-WindowsUpdate.ps1 -Installer "./build/Muffin-Setup-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.exe" -Version "${{ env.MUFFIN_RELEASE_VERSION }}" -Architecture "${{ matrix.conan-arch == 'armv8' && 'arm64' || 'x64' }}"
 
+      - name: Upload failed update entry logs
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-entry-logs-${{ matrix.artifact-suffix }}
+          path: ${{ runner.temp }}/MuffinBundleCommandTest-*/*.log
+          if-no-files-found: ignore
+
       - name: Upload MSI artifact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
