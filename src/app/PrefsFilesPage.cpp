@@ -1,5 +1,6 @@
 #include "app/PrefsFilesPage.h"
 #include "app/FileOpenDispatcher.h"
+#include "app/PreferencesSpinBox.h"
 
 #include "app/WindowsIntegration.h"
 #include "app/FileOpenProtection.h"
@@ -22,9 +23,9 @@
 
 namespace {
 
-class FileSizeSpinBox final : public QDoubleSpinBox {
+class FileSizeSpinBox final : public muffin::PreferencesSpinBox<QDoubleSpinBox> {
 public:
-  explicit FileSizeSpinBox(QWidget* parent) : QDoubleSpinBox(parent) {
+  explicit FileSizeSpinBox(QWidget* parent) : PreferencesSpinBox(parent) {
     // GB needs fractional values to display an existing KB/MB threshold
     // without rounding it to a different number of bytes.
     setDecimals(12);

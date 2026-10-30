@@ -4,19 +4,26 @@
 #include <QPainter>
 #include <QStyle>
 #include <QStyleOptionSpinBox>
+#include <QWheelEvent>
 
 namespace muffin {
 
-// Keep Qt's editing, stepping and accessibility; paint only the two chevrons.
+// Keep Qt's editing, button/key stepping and accessibility; paint only the two chevrons.
 // The stylesheet places the buttons, and those same rectangles drive painting
 // and Qt's hit testing at every display scale.
-template <typename Base> class PreferencesSpinBox final : public Base {
+template <typename Base> class PreferencesSpinBox : public Base {
 public:
   explicit PreferencesSpinBox(QWidget* parent = nullptr) : Base(parent) {
     this->setProperty("preferencesStepButtons", true);
   }
 
 protected:
+  void wheelEvent(QWheelEvent* event) override {
+    // Preferences save immediately. Even a focused field must leave wheel
+    // gestures to its enclosing scroll area instead of changing a setting.
+    event->ignore();
+  }
+
   void paintEvent(QPaintEvent* event) override {
     Base::paintEvent(event);
     if (this->buttonSymbols() != QAbstractSpinBox::UpDownArrows)
