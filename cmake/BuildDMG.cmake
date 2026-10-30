@@ -52,12 +52,32 @@ execute_process(
     /Applications "${DMG_STAGING}/Applications"
 )
 
+# hdiutil's automatic source-folder estimate can undersize the filesystem,
+# especially for sparse or compressed files. Size the volume from logical
+# file lengths, allowing a block per entry, 25% headroom and 64 MiB for HFS+
+# metadata. Do not follow framework aliases or the Applications symlink.
+cmake_policy(SET CMP0009 NEW)
+file(GLOB_RECURSE DMG_ENTRIES LIST_DIRECTORIES true "${DMG_STAGING}/*")
+set(DMG_CONTENT_BYTES 0)
+foreach(DMG_ENTRY IN LISTS DMG_ENTRIES)
+  if(NOT IS_DIRECTORY "${DMG_ENTRY}" AND NOT IS_SYMLINK "${DMG_ENTRY}")
+    file(SIZE "${DMG_ENTRY}" DMG_FILE_BYTES)
+    math(EXPR DMG_CONTENT_BYTES "${DMG_CONTENT_BYTES} + ${DMG_FILE_BYTES}")
+  endif()
+endforeach()
+list(LENGTH DMG_ENTRIES DMG_ENTRY_COUNT)
+math(EXPR DMG_SIZE_KIB
+  "(${DMG_CONTENT_BYTES} + ${DMG_ENTRY_COUNT} * 4096) * 5 / 4 / 1024 + 65536")
+message(STATUS "DMG volume capacity: ${DMG_SIZE_KIB} KiB (${DMG_CONTENT_BYTES} content bytes)")
+
 # Create the DMG
 set(DMG_OUTPUT "${CMAKE_BINARY_DIR}/Muffin-${MUFFIN_VERSION}-macos-arm64.dmg")
 execute_process(
   COMMAND hdiutil create
     -volname "Muffin"
     -srcfolder "${DMG_STAGING}"
+    -fs HFS+
+    -size "${DMG_SIZE_KIB}k"
     -ov
     -format UDZO
     "${DMG_OUTPUT}"

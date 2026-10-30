@@ -1,7 +1,7 @@
 name: Diagnostics
 
 # Manually-triggered probes for release-pipeline problems. These jobs build
-# nothing -- they exist so an environment-specific failure (tool install,
+# only small fixtures -- they exist so an environment-specific failure (tool install,
 # package download, runner image drift) can be interrogated in minutes
 # instead of through full release reruns.
 
@@ -16,8 +16,36 @@ on:
         options:
           - wix-extension
           - update-bundle
+          - dmg
 
 jobs:
+  dmg:
+    name: DMG logical capacity probe
+    if: inputs.probe == 'dmg'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package a sparse app payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="$RUNNER_TEMP/muffin-dmg-probe"
+          mkdir -p "$probe/dist/Muffin.app/Contents/Frameworks"
+          # Logical size, rather than allocated disk blocks, must determine
+          # the image capacity. This also exercises a framework alias.
+          mkfile -n 128m "$probe/dist/Muffin.app/Contents/Frameworks/payload.dylib"
+          ln -s payload.dylib "$probe/dist/Muffin.app/Contents/Frameworks/alias.dylib"
+          cd "$probe"
+          cmake -DDIST_DIR="$probe/dist" -DMUFFIN_VERSION=0.0.1 \
+            -DMACDEPLOYQT=/usr/bin/true -P "$GITHUB_WORKSPACE/cmake/BuildDMG.cmake"
+          hdiutil verify Muffin-0.0.1-macos-arm64.dmg
+          mkdir mounted
+          hdiutil attach -readonly -nobrowse -mountpoint "$probe/mounted" Muffin-0.0.1-macos-arm64.dmg
+          cmp dist/Muffin.app/Contents/Frameworks/payload.dylib mounted/Muffin.app/Contents/Frameworks/payload.dylib
+          test "$(readlink mounted/Applications)" = /Applications
+          test "$(readlink mounted/Muffin.app/Contents/Frameworks/alias.dylib)" = payload.dylib
+          hdiutil detach "$probe/mounted"
+
   update-bundle:
     name: Update bundle probe ${{ matrix.arch }}
     if: inputs.probe == 'update-bundle'
