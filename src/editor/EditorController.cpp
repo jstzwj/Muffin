@@ -478,12 +478,13 @@ const UndoStack& EditorController::undoStack() const {
 }
 
 void EditorController::applyMarkdownTextWithUndo(QString text, const QString& label) {
-  if (!session_) {
+  if (!session_ || !session_->isEditingAllowed()) {
     return;
   }
   const QString beforeText = session_->markdownText().toString();
   const CursorPosition beforeCursor = selection_.hasCursor() ? selection_.cursorPosition() : CursorPosition();
-  session_->applyMarkdownText(std::move(text), true);
+  if (!session_->applyMarkdownText(std::move(text), true))
+    return;
   const QString afterText = session_->markdownText().toString();
   // applyMarkdownText re-parses but doesn't resolve a caret; reuse the pre-edit caret so undo/redo
   // restores it to a known spot. The batch op's own caret move (e.g. Find jumping to the match) is
@@ -534,11 +535,11 @@ BrushQueue& EditorController::brushQueue() {
 }
 
 bool EditorController::canUndo() const {
-  return undoStack_.canUndo();
+  return session_ && session_->isEditingAllowed() && undoStack_.canUndo();
 }
 
 bool EditorController::canRedo() const {
-  return undoStack_.canRedo();
+  return session_ && session_->isEditingAllowed() && undoStack_.canRedo();
 }
 
 void EditorController::undo() {

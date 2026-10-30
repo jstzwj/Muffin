@@ -134,6 +134,8 @@ bool ClipboardController::copy() {
 }
 
 bool ClipboardController::cut() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   if (!copy()) {
     return false;
   }
@@ -141,6 +143,8 @@ bool ClipboardController::cut() {
 }
 
 bool ClipboardController::paste() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   if (!inputController_) {
     return false;
   }

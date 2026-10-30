@@ -103,6 +103,8 @@ QString zoneName(muffin::HitTestResult::Zone zone) {
 } // namespace
 
 muffin::MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+  lockEditingEnabled_ = QSettings().value(QStringLiteral("editor/lockEditingEnabled"), true).toBool();
+  lockEditingPerTab_ = QSettings().value(QStringLiteral("editor/lockEditingScope"), 0).toInt() == 0;
   setupUi();
   setupMenuBar();
   setupStatusBar();
@@ -126,10 +128,6 @@ muffin::MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   updateTitle();
   loadAppearanceSettings();
   showBlockSourceEnabled_ = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
-  // 锁定编辑 的作用范围与功能开关（Preferences → Editor）。缓存一份，避免每次命令状态
-  // 求值都去读一次注册表。
-  lockEditingEnabled_ = QSettings().value(QStringLiteral("editor/lockEditingEnabled"), true).toBool();
-  lockEditingPerTab_ = QSettings().value(QStringLiteral("editor/lockEditingScope"), 0).toInt() == 0;
   // Apply markdown parse preferences (markdown/autoLink, markdown/inlineMath, ...) before the first
   // real parse. parseOptions_ defaults to all-on, so this is a no-op re-parse unless the user has
   // disabled an extension.
@@ -411,7 +409,7 @@ void muffin::MainWindow::updateTitle() {
   const QString name =
       tab_->pendingOpenPath.isEmpty() ? tab_->session.displayName() : QFileInfo(tab_->pendingOpenPath).fileName();
   // 锁定编辑时，状态标记紧跟标题栏的 “Muffin”。
-  const QString lockMarker = editingLocked() ? QStringLiteral(" (已锁定编辑)") : QString();
+  const QString lockMarker = editingLocked() ? tr(" (Editing Locked)") : QString();
   setWindowTitle(QStringLiteral("%1%2 - Muffin%3").arg(name, marker, lockMarker));
 }
 
@@ -444,6 +442,7 @@ void muffin::MainWindow::setEditingLocked(bool locked) {
     }
   }
   syncLockEditingAction();
+  updateContextActions();
   updateTitle();
 }
 
@@ -459,7 +458,15 @@ void muffin::MainWindow::syncLockEditingAction() {
   const bool locked = editingLocked();
   const QSignalBlocker blocker(action);
   action->setChecked(locked);
-  action->setText(locked ? tr("解锁编辑") : tr("锁定编辑"));
+  action->setText(locked ? tr("Unlock Editing") : tr("Lock Editing"));
+}
+
+QString muffin::MainWindow::commandEditingDisabledReason() const {
+  if (editingLocked())
+    return tr("Editing is locked. Unlock editing to change this document.");
+  if (tab_->session.isOpenInProgress())
+    return tr("The document is still loading.");
+  return {};
 }
 
 // 偏好变更后重新读取 editor/lockEditing*，并把状态重新落到每个页签上。
@@ -485,7 +492,7 @@ void muffin::MainWindow::applyLockEditingSettings() {
     applyEditingLockedTo(document);
   }
   syncLockEditingAction();
-  updateEditActions();
+  updateContextActions();
   updateTitle();
 }
 
@@ -499,9 +506,6 @@ void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
   const bool locked = lockEditingEnabled_ && (lockEditingPerTab_ ? document->editingLocked : editingLocked_);
   if (document->renderView) {
     document->renderView->setEditingLocked(locked);
-  }
-  if (document->editor) {
-    document->editor->setReadOnly(locked);
   }
   document->session.setEditingReadOnly(locked);
 }

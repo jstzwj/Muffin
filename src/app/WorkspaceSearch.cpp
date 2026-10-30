@@ -186,7 +186,8 @@ FileResult searchFile(const QString& path, const WorkspaceQuery& query, const Op
     result.skipped = WorkspaceSkipReason::RegexTooLarge;
     return result;
   }
-  file.replaceable = !file.modified && before.isWritable() && before.size() <= query.maxReplaceBytes;
+  file.replaceable =
+      !file.modified && !(buffer && buffer->readOnly) && before.isWritable() && before.size() <= query.maxReplaceBytes;
   QCryptographicHash hash(QCryptographicHash::Sha256);
   QString window;
   qsizetype base = 0, next = 0;

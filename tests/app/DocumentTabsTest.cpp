@@ -58,6 +58,7 @@
 #include <QProgressDialog>
 #include <QPlainTextEdit>
 #include <QProxyStyle>
+#include <QRadioButton>
 #include <QScrollBar>
 #include <QScopeGuard>
 #include <QSettings>
@@ -1204,6 +1205,272 @@ void shortcutPreferencesFollowThemeAndConfirmReset() {
             "empty search cannot modify an unrelated command");
     filter->clear();
   }
+}
+
+void lockedEditingPreservesUndoAndRejectsChanges() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  SettingsOverride scope("editor/lockEditingScope", 0);
+  for (bool source : {false, true}) {
+    Fixture f;
+    auto* document = f.open(f.file("locked-history.md", "Alpha\n"));
+    if (source)
+      action(f.window, "Source Code Mode")->trigger();
+    QWidget* input = source ? static_cast<QWidget*>(document->editor->findChild<VirtualSourceEdit*>())
+                            : static_cast<QWidget*>(document->renderView);
+    if (source) {
+      document->editor->setCursorPosition(5);
+      document->editor->insertText("B");
+    } else {
+      document->editorController.setCursorForSourceOffset(5);
+      require(document->editorController.inputController().insertText("B"), "type before locking");
+    }
+    require(document->session.markdownText().toString() == "AlphaB\n" && document->backend->canUndo(),
+            "typing produces one undo step");
+    auto* lock = f.window.findChild<QAction*>("edit.lock_editing");
+    require(lock && lock->shortcut() == QKeySequence("F12"), "lock is a registered command");
+    lock->trigger();
+    require(f.window.editingLocked() && document->session.editingReadOnly() && document->editor->isReadOnly(),
+            "both editors observe session lock");
+    const auto selection = document->editorController.selection().selection();
+    const auto sourceCursor = document->editor->cursorPosition();
+    require(!action(f.window, "Undo")->isEnabled() && !action(f.window, "Paste")->isEnabled() &&
+                !action(f.window, "Bold")->isEnabled() && action(f.window, "Copy")->isEnabled() &&
+                action(f.window, "Find...")->isEnabled(),
+            "lock disables editing commands and preserves reading commands");
+    require(!action(f.window, "Bold")->toolTip().isEmpty(), "disabled editing commands explain the lock");
+    action(f.window, "Undo")->trigger();
+    document->editorController.undo(); // Defensive boundary, even when bypassing the menu.
+    document->editor->undo();
+    document->editorController.applyMarkdownTextWithUndo("Rejected\n", "Rejected replacement");
+    document->editor->replaceAllWithUndo("Rejected\n");
+    require(!document->session.applyMarkdownText("Rejected\n", true) &&
+                !document->session.applyTextDelta(0, 0, "Rejected", true),
+            "full and incremental edits explicitly report rejection");
+    input->setFocus();
+    QApplication::processEvents();
+    QTest::keyClick(input, Qt::Key_Backspace);
+    QTest::keyClick(input, Qt::Key_Return);
+    QTest::keyClick(input, Qt::Key_Tab);
+    QTest::keyClick(input, Qt::Key_A);
+    QInputMethodEvent ime;
+    ime.setCommitString(QStringLiteral("中文"));
+    QApplication::sendEvent(input, &ime);
+    require(document->session.markdownText().toString() == "AlphaB\n" &&
+                document->editor->cursorPosition() == sourceCursor &&
+                document->editorController.selection().selection().focus.blockId == selection.focus.blockId &&
+                document->editorController.selection().selection().focus.text.sourceOffset ==
+                    selection.focus.text.sourceOffset,
+            "rejected typing, IME, deletion and replacement do not move the caret or change text");
+    lock->trigger();
+    require(document->backend->canUndo() && !document->backend->canRedo(), "rejected undo preserves history");
+    action(f.window, "Undo")->trigger();
+    require(document->session.markdownText().toString() == "Alpha\n", "unlock permits the original undo");
+    lock->trigger();
+    action(f.window, "Redo")->trigger();
+    lock->trigger();
+    action(f.window, "Redo")->trigger();
+    require(document->session.markdownText().toString() == "AlphaB\n", "redo inserts the character exactly once");
+    if (!source) {
+      document->editorController.applyMarkdownTextWithUndo("Snapshot\n", "Snapshot replacement");
+      lock->trigger();
+      document->editorController.undo();
+      lock->trigger();
+      document->editorController.undo();
+      require(document->session.markdownText().toString() == "AlphaB\n", "snapshot history also survives locking");
+    }
+  }
+}
+
+void lockedEditingScopesSurviveLoading() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  for (bool perTab : {true, false}) {
+    SettingsOverride scope("editor/lockEditingScope", perTab ? 0 : 1);
+    Fixture f;
+    auto* first = f.open(f.file("locked-a.md", "First\n"));
+    action(f.window, "Source Code Mode")->trigger();
+    f.window.setEditingLocked(true);
+    auto* second = f.open(f.file("locked-b.md", "Second\n"));
+    require(second->session.editingReadOnly() == !perTab && second->editor->isReadOnly() == !perTab,
+            "newly loaded tab respects the configured lock scope");
+    f.tabs->setCurrentWidget(first);
+    require(f.window.editingLocked() && first->editor->isReadOnly(), "returning to a locked tab preserves its lock");
+    first->session.setOpenConfirmationPending(true);
+    f.window.setEditingLocked(false);
+    require(first->editor->isReadOnly() && !first->session.isEditingAllowed(),
+            "unlocking does not remove loading protection");
+    require(!first->session.applyMarkdownText("Wrong buffer", true), "loading refuses full-parse edit fallback");
+    first->session.setOpenConfirmationPending(false);
+    require(!first->editor->isReadOnly(), "loading protection releases after confirmation ends");
+    first->session.openDocumentAsync("Reloaded\n");
+    f.window.setEditingLocked(true);
+    waitUntil([&] { return !first->session.isAsyncParseInProgress(); }, "locked reload finishes");
+    require(first->editor->isReadOnly() && first->session.markdownText().toString() == "Reloaded\n",
+            "async completion retains the user lock while allowing file loading");
+    const auto cursor = first->editor->cursorPosition();
+    first->editor->insertText("Rejected");
+    require(!first->editor->canUndo() && first->editor->cursorPosition() == cursor,
+            "locked source input cannot create phantom undo records");
+    f.window.setEditingLocked(false);
+    require(!first->editor->isReadOnly(), "explicit unlock restores editing");
+  }
+}
+
+void lockedEditingPreferencesSyncAcrossWindows() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  SettingsOverride scope("editor/lockEditingScope", 0);
+  Fixture first;
+  Fixture second;
+  first.open(first.file("first-window.md", "First\n"));
+  first.open(first.file("other-tab.md", "Other\n"));
+  first.window.setEditingLocked(true);
+  second.window.setEditingLocked(true);
+  const auto editPreferences = [&](const std::function<void(PreferencesDialog&)>& change) {
+    QTimer::singleShot(0, &first.window, [&] {
+      auto* dialog = first.window.findChild<PreferencesDialog*>();
+      require(dialog, "lock preferences dialog exists");
+      change(*dialog);
+      dialog->accept();
+    });
+    action(first.window, "Preferences...")->trigger();
+  };
+  const auto selectScope = [&](const QString& label) {
+    editPreferences([&](PreferencesDialog& dialog) {
+      for (auto* radio : dialog.findChildren<QRadioButton*>()) {
+        if (radio->text() == label) {
+          radio->setChecked(true);
+          return;
+        }
+      }
+      require(false, "lock scope radio exists");
+    });
+  };
+  selectScope("One lock for the whole window");
+  require(!first.window.lockEditingPerTab() && !second.window.lockEditingPerTab(),
+          "scope changes apply to all existing windows");
+  for (int i = 0; i < first.tabs->count(); ++i)
+    require(static_cast<DocumentTab*>(first.tabs->widget(i))->session.editingReadOnly(),
+            "window scope locks every tab from the active tab's state");
+  selectScope("Each tab locks on its own");
+  require(first.window.lockEditingPerTab() && second.window.lockEditingPerTab() && first.window.editingLocked(),
+          "returning to per-tab mode retains visible lock states in each window");
+  editPreferences([](PreferencesDialog& dialog) {
+    for (auto* check : dialog.findChildren<QCheckBox*>()) {
+      if (check->text() == "Enable locked editing") {
+        check->setChecked(false);
+        return;
+      }
+    }
+    require(false, "lock preference checkbox exists");
+  });
+  require(!first.window.lockEditingEnabled() && !second.window.lockEditingEnabled() && !first.window.editingLocked() &&
+              !second.window.editingLocked(),
+          "disabling the feature releases every window");
+  for (auto* window : {&first.window, &second.window}) {
+    auto* tabs = window->findChild<QTabWidget*>("DocumentTabs");
+    for (int i = 0; i < tabs->count(); ++i)
+      require(!static_cast<DocumentTab*>(tabs->widget(i))->editor->isReadOnly(), "all tabs release the user lock");
+    require(!window->findChild<QAction*>("edit.lock_editing")->isEnabled(), "disabled lock command is unavailable");
+  }
+  Fixture later;
+  require(!later.window.lockEditingEnabled() && !later.window.findChild<QAction*>("edit.lock_editing")->isEnabled(),
+          "new windows inherit a disabled feature before command initialization");
+}
+
+void lockedEditingUsesShortcutPreferences() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  SettingsOverride scope("editor/lockEditingScope", 0);
+  auto& shortcuts = ShortcutSettings::instance();
+  const auto cleanup = qScopeGuard([&] {
+    for (const auto& id : {"edit.lock_editing", "edit.select_all", "edit.copy"})
+      shortcuts.clearOverride(QLatin1String(id));
+  });
+  for (bool source : {false, true}) {
+    Fixture f;
+    auto* document = f.open(f.file("locked-shortcuts.md", "Read this\n"));
+    if (source)
+      action(f.window, "Source Code Mode")->trigger();
+    else
+      document->editorController.setCursorForSourceOffset(0);
+    QWidget* input = source ? static_cast<QWidget*>(document->editor->findChild<VirtualSourceEdit*>())
+                            : static_cast<QWidget*>(document->renderView);
+    PrefsShortcutsPage page;
+    auto* filter = page.findChild<QLineEdit*>("ShortcutFilter");
+    auto* sequence = page.findChild<QKeySequenceEdit*>("ShortcutSequence");
+    auto* apply = page.findChild<QPushButton*>("ShortcutApply");
+    const auto assign = [&](const QString& id, const QKeySequence& key) {
+      filter->setText(id);
+      sequence->setKeySequence(key);
+      require(apply->isEnabled(), "shortcut preference accepts the new combination");
+      apply->click();
+    };
+    assign("edit.lock_editing", QKeySequence("Ctrl+Alt+F9"));
+    assign("edit.select_all", QKeySequence("Ctrl+Alt+F10"));
+    assign("edit.copy", QKeySequence("Ctrl+Alt+F11"));
+    input->setFocus();
+    QApplication::processEvents();
+    QTest::keyClick(input, Qt::Key_F9, Qt::ControlModifier | Qt::AltModifier);
+    require(f.window.editingLocked(), "custom lock shortcut activates reading mode");
+    QTest::keyClick(input, Qt::Key_F12);
+    require(f.window.editingLocked(), "old lock shortcut is inactive after reassignment");
+    QTest::keyClick(input, Qt::Key_F10, Qt::ControlModifier | Qt::AltModifier);
+    QApplication::clipboard()->setText("sentinel");
+    QTest::keyClick(input, Qt::Key_F11, Qt::ControlModifier | Qt::AltModifier);
+    require(QApplication::clipboard()->text() == "Read this\n", "custom select-all and copy work while locked");
+    assign("edit.lock_editing", QKeySequence());
+    input->setFocus();
+    QTest::keyClick(input, Qt::Key_F9, Qt::ControlModifier | Qt::AltModifier);
+    require(f.window.editingLocked(), "clearing the shortcut removes it without releasing the lock");
+    assign("edit.lock_editing", QKeySequence("F12"));
+    input->setFocus();
+    QTest::keyClick(input, Qt::Key_F12);
+    require(!f.window.editingLocked(), "restoring the default shortcut unlocks the document");
+    for (const auto& id : {"edit.lock_editing", "edit.select_all", "edit.copy"})
+      shortcuts.clearOverride(QLatin1String(id));
+  }
+}
+
+void lockedSourceInputPreservesReadingPosition() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  Fixture f;
+  const QString text = QStringLiteral("Read this paragraph.\n\n").repeated(1000);
+  auto* document = f.open(f.file("locked-reading.md", text));
+  action(f.window, "Source Code Mode")->trigger();
+  auto* source = document->editor->findChild<VirtualSourceEdit*>();
+  document->editor->setCursorPosition(0);
+  f.window.setEditingLocked(true);
+  source->setFocus();
+  QApplication::processEvents();
+  source->verticalScrollBar()->setValue(source->verticalScrollBar()->maximum() / 2);
+  QApplication::processEvents();
+  const int scroll = source->verticalScrollBar()->value();
+  require(scroll > 0, "reading position is away from the source caret");
+  for (auto key : {Qt::Key_A, Qt::Key_Backspace, Qt::Key_Return, Qt::Key_Tab})
+    QTest::keyClick(source, key);
+  require(document->session.markdownText().toString() == text && document->editor->cursorPosition() == 0 &&
+              source->verticalScrollBar()->value() == scroll && !document->backend->canUndo(),
+          "rejected input leaves text, history, caret and reading position unchanged");
+}
+
+void lockedEditingRetranslatesItsState() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  const auto restore = qScopeGuard([] { LanguageManager::instance().setLanguage("en"); });
+  Fixture f;
+  f.open(f.file("translated-lock.md", "Text\n"));
+  auto* lock = f.window.findChild<QAction*>("edit.lock_editing");
+  require(lock->text() == "Lock Editing", "English menu starts with an English action");
+  lock->trigger();
+  require(lock->text() == "Unlock Editing" && f.window.windowTitle().endsWith(" (Editing Locked)"),
+          "English lock state is translatable");
+  LanguageManager::instance().setLanguage("zh_CN");
+  QApplication::processEvents();
+  require(lock->isChecked() && lock->text() == QStringLiteral("解锁编辑") &&
+              !f.window.windowTitle().contains("Editing Locked"),
+          "language change keeps the current action and title state");
+  lock->trigger();
+  LanguageManager::instance().setLanguage("en");
+  QApplication::processEvents();
+  require(!lock->isChecked() && lock->text() == "Lock Editing" && !f.window.windowTitle().contains("Editing Locked"),
+          "unlocked state also survives retranslation");
 }
 
 void configurableShortcuts() {
@@ -3822,6 +4089,18 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  const auto runLockedEditingTests = [] {
+    runTest("lockedEditingPreservesUndoAndRejectsChanges", lockedEditingPreservesUndoAndRejectsChanges);
+    runTest("lockedEditingScopesSurviveLoading", lockedEditingScopesSurviveLoading);
+    runTest("lockedEditingPreferencesSyncAcrossWindows", lockedEditingPreferencesSyncAcrossWindows);
+    runTest("lockedEditingUsesShortcutPreferences", lockedEditingUsesShortcutPreferences);
+    runTest("lockedSourceInputPreservesReadingPosition", lockedSourceInputPreservesReadingPosition);
+    runTest("lockedEditingRetranslatesItsState", lockedEditingRetranslatesItsState);
+  };
+  if (QCoreApplication::arguments().contains(QStringLiteral("--locked-editing"))) {
+    runLockedEditingTests();
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--shortcut-preferences"))) {
     runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
     runTest("configurableShortcuts", configurableShortcuts);
@@ -3896,6 +4175,7 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--note-links")))
     return 0;
   runTest("continuousEditingWorkflow", continuousEditingWorkflow);
+  runLockedEditingTests();
   runTest("configurableShortcuts", configurableShortcuts);
   runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
   runTest("imeSelectionReplacementWorkflow", imeSelectionReplacementWorkflow);

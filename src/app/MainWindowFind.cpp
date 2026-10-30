@@ -151,6 +151,8 @@ void muffin::MainWindow::performFindPrevious() {
 
 void muffin::MainWindow::performReplace(const QString& findText, const QString& replaceText, bool regularExpression,
                                         bool caseSensitive) {
+  if (!tab_->session.isEditingAllowed())
+    return;
   if (findText.isEmpty()) {
     return;
   }
@@ -194,6 +196,8 @@ void muffin::MainWindow::performReplace(const QString& findText, const QString& 
 
 void muffin::MainWindow::performReplaceAll(const QString& findText, const QString& replaceText, bool regularExpression,
                                            bool caseSensitive) {
+  if (!tab_->session.isEditingAllowed())
+    return;
   if (findText.isEmpty()) {
     return;
   }

@@ -306,7 +306,7 @@ muffin::WorkspaceReplaceReport muffin::WorkspaceReplace::restore(const QString& 
     const auto buffer = buffers.constFind(WorkspaceFileIndex::pathKey(path));
     const auto backupName = entry.value("backup").toString();
     if (QFileInfo(backupName).fileName() != backupName || !ordinaryPath(root, path) ||
-        (buffer != buffers.cend() && (buffer->modified || buffer->busy))) {
+        (buffer != buffers.cend() && (buffer->modified || buffer->busy || buffer->readOnly))) {
       report.skipped.append(path);
       complete = false;
       continue;

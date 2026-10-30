@@ -356,8 +356,7 @@ bool applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsiz
     return false;
   }
   text.replace(replaceStart, replaceLength, replacement);
-  session.applyMarkdownText(std::move(text), true);
-  return true;
+  return session.applyMarkdownText(std::move(text), true);
 }
 
 NodeId topLevelBlockIdFor(DocumentSession& session, NodeId nodeId) {
@@ -439,9 +438,9 @@ void requestRefreshForNodes(BrushQueue& brushQueue, DocumentSession& session, co
 
 } // namespace
 
-void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
-  if (!session_) {
-    return;
+bool EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
+  if (!session_ || !session_->isEditingAllowed()) {
+    return false;
   }
 
   UndoPerfTimer perf("undo.applySnapshot");
@@ -469,7 +468,8 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
                               << " appliedLocally=" << appliedLocally;
   if (!appliedLocally) {
     UndoPerfTimer fullParsePerf("undo.snapshot.fullParseFallback");
-    session_->applyMarkdownText(target, true, snapshot.demoteAtOffsets);
+    if (!session_->applyMarkdownText(target, true, snapshot.demoteAtOffsets))
+      return false;
   }
 
   const CursorPosition cursor = remapSnapshotCursor(snapshot.cursor);
@@ -483,6 +483,7 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   } else {
     brushQueue_.requestFullRefresh();
   }
+  return true;
 }
 
 // Applies one popped undo/redo transaction. Returns true when the state change landed
@@ -490,7 +491,7 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
 // must then put the transaction back on its original stack (UndoStack::restoreUndo/
 // restoreRedo), because takeUndo/takeRedo already moved it to the opposite stack.
 bool EditorController::applyTransaction(const EditTransaction& transaction, bool undo) {
-  if (!session_ || !transaction.isValid()) {
+  if (!session_ || !session_->isEditingAllowed() || !transaction.isValid()) {
     return false;
   }
 
@@ -500,8 +501,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
                               << " textDelta=" << transaction.isTextDeltaCommand();
 
   if (transaction.isSnapshot()) {
-    applySnapshot(undo ? transaction.before() : transaction.after());
-    return true;
+    return applySnapshot(undo ? transaction.before() : transaction.after());
   }
 
   if (transaction.isTableCommand()) {
@@ -686,7 +686,8 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     text.replace(replaceStart, replaceEnd - replaceStart, replacement);
     {
       UndoPerfTimer fullParsePerf("undo.textDelta.fullParseFallback");
-      session_->applyMarkdownText(std::move(text), true);
+      if (!session_->applyMarkdownText(std::move(text), true))
+        return false;
     }
     brushQueue_.requestFullRefresh();
   } else {

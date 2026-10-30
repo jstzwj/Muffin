@@ -101,10 +101,14 @@ muffin::OpenSearchBuffers muffin::MainWindow::openSearchBuffers() const {
       const auto key = WorkspaceFileIndex::pathKey(path);
       const bool modified = document->session.document().isModified();
       const bool busy = document->session.isOpenInProgress();
+      const bool readOnly = document->session.editingReadOnly();
       const bool large = document->session.markdownText().size() * 2 > 8 * 1024 * 1024;
       const auto text = busy || large ? QString() : document->session.markdownText().toString();
       auto snapshot = !busy && large ? std::make_shared<const PieceTable>(document->session.markdownText()) : nullptr;
       const auto existing = buffers.constFind(key);
+      const bool anyReadOnly = readOnly || (existing != buffers.cend() && existing->readOnly);
+      if (existing != buffers.cend())
+        buffers[key].readOnly = anyReadOnly;
       if (existing != buffers.cend() && existing->busy)
         continue;
       if (existing != buffers.cend() && existing->modified && modified &&
@@ -115,7 +119,7 @@ muffin::OpenSearchBuffers muffin::MainWindow::openSearchBuffers() const {
         continue;
       }
       if (existing == buffers.cend() || modified || busy)
-        buffers.insert(key, {text, modified, busy, std::move(snapshot)});
+        buffers.insert(key, {text, modified, busy, std::move(snapshot), anyReadOnly});
     }
   }
   return buffers;
@@ -307,8 +311,8 @@ void muffin::MainWindow::previewWorkspaceReplace() {
         QStringList skipped;
         for (const auto& change : selected) {
           const auto buffer = current.constFind(WorkspaceFileIndex::pathKey(change.path));
-          if (buffer != current.cend() &&
-              (buffer->modified || buffer->busy || !WorkspaceSearch::bufferMatches(*buffer, change.beforeText)))
+          if (buffer != current.cend() && (buffer->modified || buffer->busy || buffer->readOnly ||
+                                           !WorkspaceSearch::bufferMatches(*buffer, change.beforeText)))
             skipped.append(change.path);
           else
             safe.append(change);

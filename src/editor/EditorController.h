@@ -105,7 +105,7 @@ private:
   MarkdownNode* htmlImageBlockAtCursor() const;
   bool enterLiteralEditMode(HitTestResult::Zone zone);
   LiteralBlockController* literalForZone(HitTestResult::Zone zone);
-  void applySnapshot(const DocumentSnapshot& snapshot);
+  bool applySnapshot(const DocumentSnapshot& snapshot);
   // Returns true when the transaction's state change landed (directly or via the
   // full-reparse fallback); false when nothing was applied and the caller must
   // restore the transaction to its original undo/redo stack.

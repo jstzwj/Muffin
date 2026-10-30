@@ -1,4 +1,5 @@
 #include "editor/VirtualSourceEdit.h"
+#include "editor/EditorKeyRouting.h"
 #include "editor/ShortcutSettings.h"
 
 #include "document/DocumentSession.h"
@@ -291,8 +292,11 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
   if (session_ == session)
     return;
   QObject::disconnect(replacementConnection_);
+  QObject::disconnect(editingConnection_);
   session_ = session;
   if (session_) {
+    editingConnection_ =
+        connect(session_, &DocumentSession::editingAvailabilityChanged, this, [this] { updateReadOnlyState(); });
     replacementConnection_ = connect(session_, &DocumentSession::documentAboutToBeReplaced, this, [this] {
       undoStack_.clear();
       redoStack_.clear();
@@ -306,6 +310,7 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
   undoStack_.clear();
   redoStack_.clear();
   syncFromSession(false);
+  updateReadOnlyState();
 }
 
 void VirtualSourceEdit::syncFromSession(bool preserveCursor) {
@@ -334,6 +339,7 @@ void VirtualSourceEdit::notifyDocumentChanged() {
 
 void VirtualSourceEdit::setStandaloneText(QString text) {
   QObject::disconnect(replacementConnection_);
+  QObject::disconnect(editingConnection_);
   session_ = nullptr;
   standalone_ = PieceTable(std::move(text));
   cursor_ = anchor_ = 0;
@@ -341,6 +347,7 @@ void VirtualSourceEdit::setStandaloneText(QString text) {
   redoStack_.clear();
   resetGeometryIndex(false);
   emitCursorPosition();
+  updateReadOnlyState();
 }
 
 QString VirtualSourceEdit::text() const {
@@ -469,7 +476,7 @@ void VirtualSourceEdit::toggleInlineMarkup(const QString& prefix, const QString&
 }
 
 bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString& inserted, bool recordUndo) {
-  if (readOnly_ || (session_ && session_->isOpenInProgress()))
+  if (isReadOnly())
     return false;
   start = boundedOffset(start);
   end = qBound(start, end, source().size());
@@ -498,7 +505,10 @@ bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString&
         if (pendingOffset >= 0)
           pendingOffsets.append(pendingOffset);
       }
-      session_->applyMarkdownText(std::move(nextText), true, std::move(pendingOffsets));
+      if (!session_->applyMarkdownText(std::move(nextText), true, std::move(pendingOffsets))) {
+        applyingEdit_ = false;
+        return false;
+      }
     }
   } else {
     standaloneSource().replace(start, end, inserted);
@@ -629,10 +639,10 @@ void VirtualSourceEdit::moveCurrentLineDown() {
 }
 
 bool VirtualSourceEdit::canUndo() const {
-  return !readOnly_ && !undoStack_.isEmpty();
+  return !isReadOnly() && !undoStack_.isEmpty();
 }
 bool VirtualSourceEdit::canRedo() const {
-  return !readOnly_ && !redoStack_.isEmpty();
+  return !isReadOnly() && !redoStack_.isEmpty();
 }
 
 bool VirtualSourceEdit::applyEditRecord(const EditRecord& record, bool reverse) {
@@ -974,7 +984,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
       restLayout.endLayout();
       restLayout.draw(&painter, QPointF(cursorRect.left() + preeditAdvance, cursorRect.top()));
     }
-  } else if (hasFocus() && cursorVisible_) {
+  } else if (!isReadOnly() && hasFocus() && cursorVisible_) {
     const QRect cursorRect = cursorRectForOffset(cursor_);
     painter.fillRect(QRect(cursorRect.left(), cursorRect.top(), 2, cursorRect.height()), colors_.text);
   }
@@ -1128,13 +1138,22 @@ void VirtualSourceEdit::setReadOnly(bool readOnly) {
   if (readOnly_ == readOnly)
     return;
   readOnly_ = readOnly;
-  if (readOnly_)
-    preedit_.clear();
-  viewport()->update();
+  updateReadOnlyState();
 }
 
 bool VirtualSourceEdit::isReadOnly() const {
-  return readOnly_;
+  return readOnly_ || (session_ && !session_->isEditingAllowed());
+}
+
+void VirtualSourceEdit::updateReadOnlyState() {
+  if (isReadOnly()) {
+    preedit_.clear();
+    preeditFormats_.clear();
+    preeditCursor_ = -1;
+  }
+  setAttribute(Qt::WA_InputMethodEnabled, !isReadOnly());
+  resetCursorBlink();
+  viewport()->update();
 }
 
 ViewportPosition VirtualSourceEdit::viewportPosition() const {
@@ -1202,12 +1221,12 @@ void VirtualSourceEdit::keyPressEvent(QKeyEvent* event) {
     if (hasSelection())
       QApplication::clipboard()->setText(selectedText());
   } else if (shortcuts.matches(*event, QStringLiteral("edit.cut"), QKeySequence::Cut)) {
-    if (!readOnly_ && hasSelection()) {
+    if (!isReadOnly() && hasSelection()) {
       QApplication::clipboard()->setText(selectedText());
       applyEdit(selectionStart(), selectionEnd(), {}, true);
     }
   } else if (shortcuts.matches(*event, QStringLiteral("edit.paste"), QKeySequence::Paste)) {
-    if (!readOnly_)
+    if (!isReadOnly())
       insertText(QApplication::clipboard()->text());
   } else if (shortcuts.matches(*event, QStringLiteral("edit.undo"), QKeySequence::Undo)) {
     undo();
@@ -1216,6 +1235,10 @@ void VirtualSourceEdit::keyPressEvent(QKeyEvent* event) {
   } else if (shortcuts.matches(*event, QStringLiteral("edit.select_all"), QKeySequence::SelectAll)) {
     selectAll();
   } else {
+    if (isReadOnly() && !editor_keys::isCursorNavigationKey(event->key())) {
+      event->accept();
+      return; // Rejected input must not scroll back to an off-screen caret.
+    }
     switch (event->key()) {
     case Qt::Key_Left: {
       qsizetype next = cursor_;
@@ -1337,13 +1360,15 @@ void VirtualSourceEdit::focusOutEvent(QFocusEvent* event) {
 }
 
 void VirtualSourceEdit::resetCursorBlink() {
-  cursorVisible_ = true;
-  if (hasFocus() && QApplication::cursorFlashTime() > 0)
+  cursorVisible_ = !isReadOnly();
+  if (!isReadOnly() && hasFocus() && QApplication::cursorFlashTime() > 0)
     cursorTimer_->start();
+  else
+    cursorTimer_->stop();
 }
 
 void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {
-  if (readOnly_) {
+  if (isReadOnly()) {
     event->ignore();
     return;
   }
@@ -1372,6 +1397,8 @@ void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {
 
 QVariant VirtualSourceEdit::inputMethodQuery(Qt::InputMethodQuery query) const {
   switch (query) {
+  case Qt::ImEnabled:
+    return !isReadOnly();
   case Qt::ImCursorRectangle:
     return cursorRectForOffset(cursor_);
   case Qt::ImCursorPosition:
@@ -1410,7 +1437,7 @@ void VirtualSourceEdit::contextMenuEvent(QContextMenuEvent* event) {
         QAction* replacement = menu.addAction(suggestion, this, [this, wordStart, wordEnd, suggestion] {
           applyEdit(wordStart, wordEnd, suggestion, true);
         });
-        replacement->setEnabled(!readOnly_);
+        replacement->setEnabled(!isReadOnly());
       }
     }
     menu.addAction(QCoreApplication::translate("muffin::EditorView", "Ignore \"%1\"").arg(word), this, [this, word] {
@@ -1442,7 +1469,7 @@ void VirtualSourceEdit::contextMenuEvent(QContextMenuEvent* event) {
                                         [this] { insertText(QApplication::clipboard()->text()); });
   cutAction->setEnabled(hasSelection());
   copyAction->setEnabled(hasSelection());
-  if (readOnly_) {
+  if (isReadOnly()) {
     undoAction->setEnabled(false);
     redoAction->setEnabled(false);
     cutAction->setEnabled(false);

@@ -83,6 +83,29 @@ void search() {
   const auto limited = WorkspaceSearch::run(q, {}, cancel);
   require(!limited.complete && !limited.error.isEmpty(), "backtracking limit is an error, not zero matches");
 }
+void lockedBuffersRemainSearchable() {
+  QTemporaryDir dir, recovery;
+  const auto path = dir.filePath("locked.md");
+  const auto original = QString::fromUtf8("术语\n");
+  write(path, original.toUtf8());
+  const auto cancel = std::make_shared<std::atomic_bool>(false);
+  OpenSearchBuffers buffers{{WorkspaceFileIndex::pathKey(path), {original, false, false, {}, true}}};
+  auto result = WorkspaceSearch::run(query(dir.path()), buffers, cancel);
+  require(result.matches == 1 && !result.files.first().replaceable && !result.files.first().modified,
+          "locked clean buffers remain searchable without being marked dirty or replaceable");
+  QStringList skipped;
+  require(WorkspaceReplace::prepare(result, QString::fromUtf8("概念"), &skipped).isEmpty() && skipped.contains(path),
+          "folder replacement preview excludes locked files");
+  result = WorkspaceSearch::run(query(dir.path()), {}, cancel);
+  skipped.clear();
+  const auto changes = WorkspaceReplace::prepare(result, QString::fromUtf8("概念"), &skipped);
+  const auto report = WorkspaceReplace::apply(dir.path(), changes, recovery.path(), cancel);
+  require(report.changed.size() == 1, "unlocked replacement creates recovery data");
+  buffers[WorkspaceFileIndex::pathKey(path)].text = QString::fromUtf8("概念\n");
+  const auto restore = WorkspaceReplace::restore(report.backupDirectory, buffers, cancel);
+  require(restore.changed.isEmpty() && restore.skipped.contains(path), "folder recovery respects a newly locked file");
+}
+
 void replacementAndRecovery() {
   QTemporaryDir dir, recovery;
   const auto path = dir.filePath("note.md"), other = dir.filePath("other.md"), mixed = dir.filePath("mixed.md");
@@ -478,6 +501,7 @@ int main(int argc, char** argv) {
     return 0;
   }
   runTest("workspace contents", search);
+  runTest("locked buffers remain searchable", lockedBuffersRemainSearchable);
   runTest("preview write and durable recovery", replacementAndRecovery);
   runTest("encodings and regex captures", encodingAndCaptures);
   runTest("query generations", panelGeneration);

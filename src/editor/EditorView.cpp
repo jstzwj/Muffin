@@ -543,7 +543,9 @@ void EditorView::setEditingLocked(bool locked) {
     return;
   }
   editingLocked_ = locked;
+  setAttribute(Qt::WA_InputMethodEnabled, !locked);
   if (locked) {
+    resetComposition();
     // No blinking caret, no inline popups: the page becomes read-only chrome-wise,
     // while selection (mouse/keyboard) and the context menu stay available.
     cursorVisible_ = false;
@@ -1223,7 +1225,7 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
     return cursor.toRect();
   }
   case Qt::ImEnabled:
-    return true;
+    return !editingLocked_;
   case Qt::ImFont:
     return preeditFont();
   case Qt::ImSurroundingText: {

@@ -100,6 +100,7 @@ public:
   bool commandOnImage() const;
   bool commandOnLocalImage() const;
   CursorFormatState commandInlineFormats() const;
+  QString commandEditingDisabledReason() const;
 
   // 锁定编辑 (locked editing). The rendered view drops its caret and inline popups,
   // the source view goes read-only, and the session rejects incremental edits, while
@@ -175,6 +176,7 @@ private:
   // so MainWindow carries no friend coupling and the binding lives with the
   // window like the other MainWindow*.cpp partials.
   void bindCommands();
+  bool commandEnabled(const CommandDeclaration& declaration) const;
   void restorePersistentActionStates();
   void updateFileActions();
   void updateEditActions();

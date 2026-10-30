@@ -19,6 +19,7 @@ QAction* muffin::MainWindow::registerAction(QMenu* menu, const QString& id) {
   }
 
   QAction* action = menu->addAction(decl->text);
+  action->setObjectName(id);
   if (!decl->shortcut.isEmpty()) {
     action->setShortcut(decl->shortcut);
   }
@@ -176,6 +177,8 @@ void muffin::MainWindow::retranslateUi() {
   // setupMenuBar() (clear+rebuild) here: deleting and recreating menu actions
   // while Qt still has LanguageChange events pending for them corrupts the heap.
   retranslateMenuTexts();
+  syncLockEditingAction();
+  updateTitle();
 
   if (QAction* action = commands_.action(QStringLiteral("view.sidebar"))) {
     action->setChecked(sidebarChecked);

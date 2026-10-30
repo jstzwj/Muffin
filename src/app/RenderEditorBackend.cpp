@@ -39,6 +39,8 @@ bool RenderEditorBackend::maybeCopyWholeBlock(ClipboardController& clipboard, bo
 }
 
 void RenderEditorBackend::cut() {
+  if (!session_.isEditingAllowed())
+    return;
   ClipboardController& clipboard = controller_.clipboardController();
   if (!maybeCopyWholeBlock(clipboard, /*cut=*/true)) {
     clipboard.cut();
@@ -57,6 +59,8 @@ void RenderEditorBackend::paste() {
 }
 
 void RenderEditorBackend::deleteRange(DeleteTarget target) {
+  if (!session_.isEditingAllowed())
+    return;
   InputController& input = controller_.inputController();
   switch (target) {
   case DeleteTarget::Forward:

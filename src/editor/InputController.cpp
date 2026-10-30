@@ -160,15 +160,6 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
       return false;
     }
     if (event->type() == QEvent::KeyPress) {
-      // 锁定编辑: swallow everything except caret/selection movement and copy, before any edit
-      // handler runs. This filter fires before EditorView::event, so it is the first gate.
-      if (ctx_.view && ctx_.view->editingLocked()) {
-        auto* lockedKey = static_cast<QKeyEvent*>(event);
-        if (!editor_keys::isNavigationKeyWhileLocked(lockedKey->key(), lockedKey->modifiers())) {
-          lockedKey->accept();
-          return true;
-        }
-      }
       // While an async open parse is in flight (parseBusy) document_ is the stale pre-open text:
       // swallow the keystroke entirely so it can't drive a local edit, which would land on that
       // stale text and supersede (discard) the worker's parsed result for the file being opened.
@@ -192,8 +183,8 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 
 bool InputController::insertText(QString text) {
   clearVerticalNavigationX();
-  if (ctx_.session && ctx_.session->isOpenInProgress()) {
-    return false; // document_ holds stale pre-open text during async parse — drop input (same gate as KeyPress)
+  if (ctx_.session && !ctx_.session->isEditingAllowed()) {
+    return false;
   }
   if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
     return insertIntoEmptyDocument(std::move(text));
@@ -260,6 +251,8 @@ bool InputController::insertText(QString text) {
 }
 
 bool InputController::insertParagraphBreak() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   clearVerticalNavigationX();
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(QStringLiteral("\n"));
@@ -398,6 +391,8 @@ bool InputController::caretRestsOnNonTextBlock() const {
 }
 
 bool InputController::deleteBackward() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   clearVerticalNavigationX();
   reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
@@ -431,6 +426,8 @@ bool InputController::deleteBackward() {
 }
 
 bool InputController::deleteForward() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   clearVerticalNavigationX();
   reconcileLiteralEditorForCursor();
   if (hasActiveLiteralEditor()) {
@@ -475,6 +472,8 @@ bool InputController::outdentListItem() {
 }
 
 bool InputController::deleteSelection() {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return false;
   if (hasActiveLiteralEditor()) {
     return deleteSelectionInActiveLiteral();
   }
@@ -766,6 +765,12 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
 
   // While the emoji completion popup is open, arrows/Enter/Tab/Esc drive it; any other key hides
   // it and then falls through so the keystroke keeps editing normally.
+  // Custom command shortcuts have already been resolved above or by QAction. Only reject raw
+  // editing keys here; do not use a second, hard-coded shortcut list for read-only mode.
+  if (!ctx_.session->isEditingAllowed() && !editor_keys::isCursorNavigationKey(event->key())) {
+    hideEmojiPopup();
+    return true;
+  }
   if (emojiCompleter_ && emojiCompleter_->isVisible()) {
     switch (event->key()) {
     case Qt::Key_Down:

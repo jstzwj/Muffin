@@ -19,9 +19,18 @@ Q_LOGGING_CATEGORY(actionDetailProbe, "muffin.perf.detail", QtWarningMsg)
 
 namespace {
 void updateCommandHint(QAction* action, const CommandDeclaration& declaration, const MainWindow& window) {
-  if (!declaration.disabledReason)
+  if (declaration.requiresEditableDocument && !action->isEnabled()) {
+    const auto reason = window.commandEditingDisabledReason();
+    if (!reason.isEmpty()) {
+      action->setToolTip(reason);
+      action->setStatusTip(reason);
+      return;
+    }
+  }
+  if (!declaration.disabledReason && !declaration.requiresEditableDocument)
     return;
-  const auto reason = action->isEnabled() ? QString() : declaration.disabledReason(window);
+  const auto reason =
+      action->isEnabled() || !declaration.disabledReason ? QString() : declaration.disabledReason(window);
   action->setToolTip(reason);
   action->setStatusTip(reason);
 }
@@ -35,9 +44,19 @@ void MainWindow::bindCommands() {
   for (const CommandDeclaration& decl : commandDeclarations()) {
     if (decl.handler) {
       auto handler = decl.handler;
-      commands_.bind(decl.id, [this, handler = std::move(handler)] { handler(*this); });
+      const bool requiresEditable = decl.requiresEditableDocument;
+      commands_.bind(decl.id, [this, requiresEditable, handler = std::move(handler)] {
+        if (!requiresEditable || tab_->session.isEditingAllowed())
+          handler(*this);
+      });
     }
   }
+}
+
+bool MainWindow::commandEnabled(const CommandDeclaration& declaration) const {
+  if (declaration.requiresEditableDocument && !tab_->session.isEditingAllowed())
+    return false;
+  return declaration.enabled ? declaration.enabled(*this) : declaration.enabledInitial;
 }
 
 // ---- composite editor-state queries ----------------------------------------
@@ -161,10 +180,10 @@ void MainWindow::updateActionsForCategory(CommandCategory category) {
     if (!action) {
       continue;
     }
-    if (decl.enabled) {
+    if (decl.enabled || decl.requiresEditableDocument) {
       QElapsedTimer t;
       t.start();
-      const bool enabled = decl.enabled(*this);
+      const bool enabled = commandEnabled(decl);
       const double ms = t.nsecsElapsed() / 1000000.0;
       if (ms > 5.0) {
         qCDebug(actionProbe).nospace() << "actionProbe.slowEnabled id=" << decl.id << " " << ms << " ms";
@@ -190,8 +209,8 @@ void MainWindow::updateAllActions() {
   commandContextSnapshotActive_ = true;
   for (const CommandDeclaration& decl : commandDeclarations()) {
     if (QAction* action = commands_.action(decl.id)) {
-      if (decl.enabled) {
-        action->setEnabled(decl.enabled(*this));
+      if (decl.enabled || decl.requiresEditableDocument) {
+        action->setEnabled(commandEnabled(decl));
       }
       if (decl.checked) {
         action->setChecked(decl.checked(*this));
@@ -261,8 +280,8 @@ void MainWindow::updateContextActions() {
     if (!action) {
       continue;
     }
-    if (decl.enabled) {
-      action->setEnabled(decl.enabled(*this));
+    if (decl.enabled || decl.requiresEditableDocument) {
+      action->setEnabled(commandEnabled(decl));
     }
     if (decl.checked) {
       action->setChecked(decl.checked(*this));

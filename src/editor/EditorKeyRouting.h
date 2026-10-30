@@ -29,10 +29,9 @@ inline bool isEditorOwnedCtrlKey(int key, bool shift) {
   }
 }
 
-// Keys still delivered to the view while 锁定编辑 (locked editing) is on: caret/selection
-// movement, scrolling and copy. Everything else — typing, Backspace/Delete, Tab, Ctrl+Z/Y/V/X,
-// formatting — is swallowed by InputController before it can reach the edit handlers.
-inline bool isNavigationKeyWhileLocked(int key, Qt::KeyboardModifiers modifiers) {
+// Raw canvas navigation only. Command shortcuts are resolved through ShortcutSettings/QAction,
+// independently of these keys, so rebinding Copy or Select All also works in read-only mode.
+inline bool isCursorNavigationKey(int key) {
   switch (key) {
   case Qt::Key_Left:
   case Qt::Key_Right:
@@ -42,10 +41,8 @@ inline bool isNavigationKeyWhileLocked(int key, Qt::KeyboardModifiers modifiers)
   case Qt::Key_End:
   case Qt::Key_PageUp:
   case Qt::Key_PageDown:
+  case Qt::Key_Escape:
     return true;
-  case Qt::Key_C: // copy
-  case Qt::Key_A: // select all
-    return modifiers.testFlag(Qt::ControlModifier) && !modifiers.testFlag(Qt::AltModifier);
   default:
     return false;
   }

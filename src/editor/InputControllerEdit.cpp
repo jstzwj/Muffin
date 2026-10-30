@@ -129,7 +129,7 @@ bool InputController::editParagraph(TextBlockCommandBuilder::Operation operation
 }
 
 bool InputController::applyTextCommand(const TextBlockCommandBuilder::Command& command) {
-  if (!command.valid) {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed() || !command.valid) {
     return false;
   }
   if (!command.handled) {
@@ -157,7 +157,7 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
                                      qsizetype fallbackSourceOffset, QVector<LocalEditNodeHint> nodeHints,
                                      bool preferLaterEmptyAtOffset, bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
-  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0) {
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed() || sourceStart < 0 || removedLength < 0) {
     return;
   }
 
@@ -213,7 +213,8 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
     }
     qCDebug(inputEditPerf).nospace() << "applyLocalEdit.fullReparseFallback label=" << label << " start=" << sourceStart
                                      << " removedLen=" << removedLength << " insertedLen=" << insertedText.size();
-    ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets));
+    if (!ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets)))
+      return;
   }
 
   CursorPosition nextCursor;
@@ -314,6 +315,8 @@ void InputController::applyEdit(EditTransaction::Kind kind, const QString& label
                                 CursorPosition preferredCursor, qsizetype fallbackSourceOffset,
                                 QVector<LocalEditNodeHint> nodeHints, bool preferLaterEmptyAtOffset) {
   PerfTimer perf("input.applyEdit.diffFallback");
+  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
+    return;
   const SelectionRange beforeSelection = anchoredSelection(ctx_.session, ctx_.selection);
   const CursorPosition beforeCursor = beforeSelection.focus;
   const QString beforeText = ctx_.session->markdownText().toString();
@@ -342,7 +345,8 @@ void InputController::applyEdit(EditTransaction::Kind kind, const QString& label
     if (editedOffset >= 0) {
       demoteOffsets.append(editedOffset);
     }
-    ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets));
+    if (!ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets)))
+      return;
   }
   CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
   if (ctx_.selection) {

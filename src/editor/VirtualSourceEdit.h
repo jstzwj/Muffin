@@ -193,10 +193,12 @@ private:
   void moveCursorTo(qsizetype position, bool keepAnchor);
   std::pair<qsizetype, qsizetype> wordRangeAt(qsizetype position) const;
   void resetCursorBlink();
+  void updateReadOnlyState();
   void emitCursorPosition();
   void scrollContentsBy(int dx, int dy) override;
 
   QMetaObject::Connection replacementConnection_;
+  QMetaObject::Connection editingConnection_;
   DocumentSession* session_ = nullptr;
   PieceTable standalone_;
   SourceLineHeightIndex heights_;

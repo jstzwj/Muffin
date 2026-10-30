@@ -48,6 +48,8 @@ enum class CommandCategory {
 struct CommandDeclaration {
   QString id;
   CommandCategory category = CommandCategory::Other;
+  // Used by menu state and dispatch alike, including user-assigned shortcuts.
+  bool requiresEditableDocument = false;
   QString text; // label, authored as muffin::MainWindow::tr(...)
   QKeySequence shortcut;
   bool checkable = false;

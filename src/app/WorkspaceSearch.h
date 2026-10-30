@@ -14,6 +14,7 @@ struct OpenSearchBuffer {
   bool busy = false;
   // Immutable piece-table copy: large open notes do not materialize on the UI thread.
   std::shared_ptr<const PieceTable> snapshot;
+  bool readOnly = false;
 };
 using OpenSearchBuffers = QHash<QString, OpenSearchBuffer>;
 struct WorkspaceQuery {

@@ -97,12 +97,14 @@ public:
   // (full path: parseAndStore sets lastParseWasLocalEdit_=false, so the rendered view rebuilds via
   // the `parsed` signal). No-op (no re-parse) when unchanged, so callers can invoke unconditionally.
   void setParseOptions(ParseOptions options);
-  void applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
+  // False means the edit was rejected; callers must not advance selection or undo history.
+  bool applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
   // 锁定编辑 / locked editing: reject every incremental user edit (typing, IME commit, paste,
   // drag, format/paragraph/table commands, undo) while open/parse/save flows keep working.
   // Set by MainWindow's edit.lock_editing command.
   void setEditingReadOnly(bool readOnly);
   bool editingReadOnly() const { return editingReadOnly_; }
+  bool isEditingAllowed() const { return !editingReadOnly_ && !isOpenInProgress(); }
   bool applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText, bool modified,
                       QVector<LocalEditNodeHint> nodeHints = {});
   bool applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified);
@@ -118,6 +120,7 @@ signals:
   void filePathChanged(QString path);
   void parsed(qint64 elapsedMs);
   void parseBusy(bool busy); // true while an async open parse is in flight (view shows a loading state)
+  void editingAvailabilityChanged(bool editable);
   void modifiedChanged(bool modified);
   void externalFileChanged(); // the file changed on disk vs. our last known baseline
 

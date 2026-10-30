@@ -183,15 +183,15 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   wireBoolSetting(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"));
   wireBoolSetting(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"));
   wireBoolSetting(lockEditingEnabledCheck_, QStringLiteral("editor/lockEditingEnabled"));
-  connect(lockPerTabRadio_, &QRadioButton::toggled, this,
-          [](bool checked) { QSettings().setValue(QStringLiteral("editor/lockEditingScope"), checked ? 0 : 1); });
+  connect(lockPerTabRadio_, &QRadioButton::toggled, this, [this](bool checked) {
+    QSettings().setValue(QStringLiteral("editor/lockEditingScope"), checked ? 0 : 1);
+    emit lockEditingSettingsChanged();
+  });
   connect(lockEditingEnabledCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
     lockPerTabRadio_->setEnabled(enabled);
     lockPerWindowRadio_->setEnabled(enabled);
     emit lockEditingSettingsChanged();
   });
-  connect(lockPerTabRadio_, &QRadioButton::toggled, this, [this](bool) { emit lockEditingSettingsChanged(); });
-  connect(lockPerWindowRadio_, &QRadioButton::toggled, this, [this](bool) { emit lockEditingSettingsChanged(); });
   connect(lineBreakLfRadio_, &QRadioButton::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("editor/defaultLineBreak"), checked ? 0 : 1); });
   connect(spellCheckEnabledCheck_, &QCheckBox::toggled, this, [](bool on) { SpellChecker::instance().setEnabled(on); });

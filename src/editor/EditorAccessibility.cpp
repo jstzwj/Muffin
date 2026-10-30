@@ -106,7 +106,9 @@ public:
   QAccessible::Role role() const override { return QAccessible::EditableText; }
   QAccessible::State state() const override {
     QAccessible::State s = QAccessibleWidget::state();
-    s.editable = true;
+    const auto* controller = editorController();
+    s.editable = controller && controller->session() && controller->session()->isEditingAllowed();
+    s.readOnly = !s.editable;
     s.multiLine = true;
     s.selectableText = true;
     return s;

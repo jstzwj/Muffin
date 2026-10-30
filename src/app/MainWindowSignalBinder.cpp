@@ -284,9 +284,11 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
           [this, tab] { queueExternalFileChange(tab); });
   connect(&tab->fileController, &FileController::documentBecameClean, tab->windowConnections,
           [this, tab](const QString& path) { clearDraftSnapshot(path, tab->draftKey); });
-  connect(&tab->session, &DocumentSession::parseBusy, tab->windowConnections, [tab](bool busy) {
-    tab->renderView->setLoading(busy && tab->pendingOpenPath.isEmpty());
-    tab->editor->setReadOnly(busy);
+  connect(&tab->session, &DocumentSession::parseBusy, tab->windowConnections,
+          [tab](bool busy) { tab->renderView->setLoading(busy && tab->pendingOpenPath.isEmpty()); });
+  connect(&tab->session, &DocumentSession::editingAvailabilityChanged, tab->windowConnections, [this, tab] {
+    if (tab == tab_)
+      scheduleEditorStateRefresh();
   });
   connect(&tab->session, &DocumentSession::parsed, tab->windowConnections, [this, tab] {
     QTimer::singleShot(0, tab->windowConnections, [this, tab] { applySearchNavigation(tab); });

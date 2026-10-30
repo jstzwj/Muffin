@@ -565,6 +565,7 @@ struct muffin::DocumentSession::AsyncParseResult {
 
 muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
   connect(&document_, &MarkdownDocument::modifiedChanged, this, &DocumentSession::modifiedChanged);
+  connect(this, &DocumentSession::parseBusy, this, [this] { emit editingAvailabilityChanged(isEditingAllowed()); });
   newDocument();
   fileWatcher_ = new QFileSystemWatcher(this);
   connect(fileWatcher_, &QFileSystemWatcher::fileChanged, this, &DocumentSession::onFileChanged);
@@ -744,18 +745,22 @@ void muffin::DocumentSession::setMarkdownText(QString text, bool modified) {
 }
 
 void muffin::DocumentSession::updateFromEditor(QString text) {
-  parseAndStore(std::move(text), true);
+  applyMarkdownText(std::move(text), true);
 }
 
 void muffin::DocumentSession::setEditingReadOnly(bool readOnly) {
+  if (editingReadOnly_ == readOnly)
+    return;
   editingReadOnly_ = readOnly;
+  emit editingAvailabilityChanged(isEditingAllowed());
 }
 
-void muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
-  if (editingReadOnly_)
-    return; // 锁定编辑: every caller of this API is a user edit (typing, paste, format, undo)
+bool muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
+  if (!isEditingAllowed())
+    return false;
   parseAndStore(std::move(text), modified, std::move(demoteAtOffsets));
   emit documentTextChanged(document_.markdownText().toString());
+  return true;
 }
 
 bool muffin::DocumentSession::isAsyncParseInProgress() const {
@@ -775,20 +780,10 @@ void muffin::DocumentSession::setOpenConfirmationPending(bool pending) {
 
 bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText,
                                              bool modified, QVector<LocalEditNodeHint> nodeHints) {
-  if (editingReadOnly_) {
-    warnLocalEditRejected("editing locked", sourceStart,
-                          sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
-                          insertedText.size(), document_.pieceText().size());
-    return false; // 锁定编辑: covers undo/redo and the render facade too
-  }
-  // While an async open parse is in flight, document_ still holds the STALE pre-open text. A local
-  // edit now would land on the wrong content, and bumping parseGeneration_ to "win" would discard
-  // the worker's result for the file the user actually opened — silent data loss. Reject the edit
-  // and leave the worker to finish instead. InputController drops keystrokes upstream so this branch
-  // is normally unreachable; it guards undo / table-snapshot / render-facade paths that bypass it.
-  // Do NOT bump parseGeneration_ here — that self-supersede is exactly what loses the open.
-  if (isOpenInProgress()) {
-    warnLocalEditRejected("async open parse in flight", sourceStart,
+  // Reject edits before touching history or parseGeneration_. During an async open the current
+  // document is still the old buffer; superseding the worker here would discard the opened file.
+  if (!isEditingAllowed()) {
+    warnLocalEditRejected(editingReadOnly_ ? "editing locked" : "async open in progress", sourceStart,
                           sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
                           insertedText.size(), document_.pieceText().size());
     return false;
@@ -817,7 +812,7 @@ bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype re
 
 bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot,
                                                  bool modified) {
-  if (editingReadOnly_) {
+  if (!isEditingAllowed()) {
     return false; // 锁定编辑: table structure/content changes are user edits
   }
   if (tableSnapshot.type() != BlockType::Table) {
@@ -844,7 +839,7 @@ bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex,
 
 bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex,
                                                 const MarkdownNode& nodeSnapshot, bool modified) {
-  if (editingReadOnly_) {
+  if (!isEditingAllowed()) {
     return false; // 锁定编辑: block rewrites are user edits
   }
   if (nodeType == BlockType::Unknown || nodeSnapshot.type() != nodeType) {
@@ -872,7 +867,7 @@ bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeTyp
 bool muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
                                                 qsizetype targetSourceOffset, qsizetype removedLength,
                                                 QString insertedText, bool modified) {
-  if (editingReadOnly_) {
+  if (!isEditingAllowed()) {
     return false; // 锁定编辑: node insertion/removal are user edits
   }
   if (!nodeId.isValid() || nodeType == BlockType::Unknown) {
