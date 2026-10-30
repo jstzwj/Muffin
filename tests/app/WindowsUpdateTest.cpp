@@ -7,6 +7,8 @@
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLabel>
+#include <QPushButton>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QThread>
@@ -154,6 +156,23 @@ struct WindowsUpdaterTestAccess {
       waitUntil([&] { return updater.state_ != WindowsUpdater::State::Downloading; });
       require(updater.state_ == (scenario == 0 ? WindowsUpdater::State::Ready : WindowsUpdater::State::Failed),
               "only a complete, matching HTTP 200 download becomes installable");
+      if (scenario == 0) {
+        const auto stagedPath = updater.staging_->filePath(QStringLiteral("update.exe"));
+        const auto package = updater.package_;
+        updater.state_ = WindowsUpdater::State::Installing;
+        updater.failRestart(QStringLiteral("handoff failed"));
+        require(updater.state_ == WindowsUpdater::State::Ready && !updater.restartPending() &&
+                    updater.label_->text() == QStringLiteral("handoff failed") && updater.primary_->isEnabled() &&
+                    updater.primary_->text() == WindowsUpdater::tr("Restart and Update"),
+                "handoff failure releases the restart guard and offers restart, with the error visible");
+        QFile staged(stagedPath);
+        require(updater.package_->sha256 == package->sha256 && staged.open(QIODevice::ReadOnly) &&
+                    staged.readAll() == body,
+                "retry retains the verified installer instead of requiring another download");
+        updater.download();
+        require(updater.state_ == WindowsUpdater::State::Ready && !updater.reply_,
+                "a retryable handoff failure cannot accidentally start another download");
+      }
       if (updater.dialog_)
         delete updater.dialog_.data();
     }

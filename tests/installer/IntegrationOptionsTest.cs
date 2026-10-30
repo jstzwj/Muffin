@@ -220,6 +220,11 @@ internal static class IntegrationOptionsTest
         if (UpdateHandoffTest.Child(args)) return 0;
         try
         {
+            if (args.Length == 2 && args[0] == "--update-bundle")
+            {
+                UpdateHandoffTest.RunBundle(args[1]);
+                return 0;
+            }
             UpdateHandoffTest.Run();
             TestRegistryChoices();
             if (args.Length > 0) TestPackage(args[0]);

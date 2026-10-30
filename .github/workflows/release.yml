@@ -325,6 +325,14 @@ jobs:
           & ./build/installer-options-test/IntegrationOptionsTest.exe $msiPath
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Verify setup bundle update entry
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $bundlePath = (Resolve-Path -LiteralPath "./build/Muffin-Setup-${{ env.MUFFIN_RELEASE_VERSION }}-${{ matrix.artifact-suffix }}.exe").Path
+          & ./build/installer-options-test/IntegrationOptionsTest.exe --update-bundle $bundlePath
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Sign Windows in-app update
         if: runner.os == 'Windows'
         shell: pwsh

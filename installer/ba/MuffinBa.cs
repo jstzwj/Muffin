@@ -83,14 +83,12 @@ namespace Muffin.Setup
                 _applyHandle = _hiddenSource.Handle;
             }
 
-            var updateToken = Engine.GetVariableString("MuffinUpdate");
-            if (!string.IsNullOrEmpty(updateToken))
+            try
             {
-                try
+                _update = UpdateHandoff.FromCommand(_command);
+                if (_update != null)
                 {
-                    if (_command.Action != LaunchAction.Install || _command.Display != Display.Passive)
-                        throw new ArgumentException("In-app updates require passive install mode.");
-                    _update = UpdateHandoff.Parse(updateToken);
+                    Engine.Log(LogLevel.Standard, "Muffin update handoff: waiting for editor approval and exit");
                     // Do not block the BA dispatcher: it must paint progress
                     // while the editor finishes its save-and-exit workflow.
                     System.Threading.ThreadPool.QueueUserWorkItem(_ =>
@@ -105,21 +103,32 @@ namespace Muffin.Setup
                         }
                         _dispatcher.BeginInvoke(new Action(() =>
                         {
-                            if (ready) Engine.Detect();
-                            else { _exitCode = 1602; RequestShutdown(); }
+                            if (ready)
+                            {
+                                Engine.Log(LogLevel.Standard, "Muffin update handoff: editor exited; starting detection");
+                                Engine.Detect();
+                            }
+                            else
+                            {
+                                Engine.Log(LogLevel.Standard, "Muffin update handoff: canceled; no installation started");
+                                _exitCode = 1602;
+                                RequestShutdown();
+                            }
                         }));
                     });
                 }
-                catch (Exception error)
+                else
                 {
-                    Engine.Log(LogLevel.Error, "Invalid update handoff: " + error.GetType().Name);
-                    _exitCode = 1602;
-                    _dispatcher.BeginInvoke(new Action(RequestShutdown));
+                    Engine.Detect();
                 }
             }
-            else
+            catch (Exception error)
             {
-                Engine.Detect();
+                // A malformed update request must never fall through into an
+                // ordinary installation while the editor is still running.
+                Engine.Log(LogLevel.Error, "Invalid update handoff: " + error.GetType().Name);
+                _exitCode = 1602;
+                _dispatcher.BeginInvoke(new Action(RequestShutdown));
             }
 
             Dispatcher.Run();

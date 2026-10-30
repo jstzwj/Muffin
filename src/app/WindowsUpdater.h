@@ -48,6 +48,7 @@ private:
   void downloadInstaller();
   void cancel();
   void fail(const QString& message);
+  void failRestart(const QString& message);
   void restart();
   void get(const QUrl& url, qint64 limit, const std::function<void(const QByteArray&)>& completed);
   QNetworkAccessManager network_;

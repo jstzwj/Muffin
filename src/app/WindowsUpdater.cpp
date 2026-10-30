@@ -14,9 +14,11 @@
 #include <QProcess>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QUuid>
 #include <QVBoxLayout>
 #include <QVersionNumber>
 #include <utility>
@@ -73,9 +75,10 @@ void cleanupCompletedDownloads(QSettings& settings) {
       pending.append(path); // The bundle may still be exiting. Retry next launch.
       continue;
     }
-    for (const auto& name : {QStringLiteral("update.ready"), QStringLiteral("update.ready.cancel"),
-                             QStringLiteral("update.ready.decision")})
-      QFile::remove(directory.filePath(name));
+    const QRegularExpression marker(QStringLiteral("^update(?:-[0-9a-f]{32})?\\.ready(?:\\.cancel|\\.decision)?$"));
+    for (const auto& name : directory.entryList(QDir::Files))
+      if (marker.match(name).hasMatch())
+        QFile::remove(directory.filePath(name));
     QFile::remove(directory.filePath(QStringLiteral("update.finished")));
     temporary.rmdir(folder.fileName()); // Leave any unrecognized files alone.
   }
@@ -184,6 +187,7 @@ void muffin::WindowsUpdater::showUpdate(const UpdateRelease& release, QWidget* p
   if (state_ != State::Downloading && state_ != State::Ready && !restartPending()) {
     release_ = release;
     state_ = State::Available;
+    error_.clear();
   }
   // Independent of a Preferences dialog / document window lifetime.
   dialog_ = new UpdateDialog([this] { return restartPending(); });
@@ -244,8 +248,10 @@ void muffin::WindowsUpdater::refresh() {
     progress_->setValue(release_.size > 0 ? int(written_ * 1000 / release_.size) : 0);
   } else if (state_ == State::Ready) {
     label_->setText(
-        tr("Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.")
-            .arg(release_.version));
+        error_.isEmpty()
+            ? tr("Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.")
+                  .arg(release_.version)
+            : error_);
   } else if (restartPending()) {
     label_->setText(tr("Preparing to restart…"));
   } else if (state_ == State::Failed) {
@@ -313,6 +319,7 @@ void muffin::WindowsUpdater::download() {
   if (state_ != State::Available && state_ != State::Failed)
     return;
   state_ = State::Downloading;
+  error_.clear();
   file_.reset();
   written_ = 0;
   refresh();
@@ -385,6 +392,14 @@ void muffin::WindowsUpdater::fail(const QString& message) {
   refresh();
 }
 
+void muffin::WindowsUpdater::failRestart(const QString& message) {
+  // The verified download is still usable. Retry the handoff, and recheck its
+  // size/hash under the same file lock, without downloading it again.
+  state_ = State::Ready;
+  error_ = message;
+  refresh();
+}
+
 void muffin::WindowsUpdater::interruptRestart() {
   if (restartPending())
     restartInterrupted_ = true;
@@ -402,6 +417,7 @@ void muffin::WindowsUpdater::restart() {
   // first one so another click, close request or forwarded file cannot alter
   // the prepared set of windows.
   state_ = State::Preparing;
+  error_.clear();
   restartInterrupted_ = false;
   emit preparingRestart();
   refresh();
@@ -484,10 +500,13 @@ void muffin::WindowsUpdater::restart() {
     for (const auto& window : windows)
       if (window)
         window->finishUpdateClose(false);
-    fail(tr("Could not save the session before updating."));
+    failRestart(tr("Could not save the session before updating."));
     return;
   }
-  const QString ready = staging_->filePath(QStringLiteral("update.ready"));
+  // Never reuse an attempt's decisions: a late helper from a canceled attempt
+  // must not acknowledge or authorize a later retry of the same download.
+  const QString ready =
+      staging_->filePath(QStringLiteral("update-%1.ready").arg(QUuid::createUuid().toString(QUuid::Id128)));
   const QString token = QStringLiteral("%1:%2:%3")
                             .arg(QCoreApplication::applicationPid())
                             .arg(QString::fromLatin1(QCoreApplication::applicationFilePath().toUtf8().toBase64()),
@@ -501,7 +520,7 @@ void muffin::WindowsUpdater::restart() {
     for (const auto& window : windows)
       if (window)
         window->finishUpdateClose(false);
-    fail(tr("Could not start the update installer. Your current version is unchanged."));
+    failRestart(tr("Could not start the update installer. Your current version is unchanged."));
     return;
   }
   // The helper marks completion; a later startup removes only completed
@@ -532,7 +551,7 @@ void muffin::WindowsUpdater::restart() {
         for (const auto& window : windows)
           if (window)
             window->finishUpdateClose(false);
-        fail(tr("Could not save the session before updating."));
+        failRestart(tr("Could not save the session before updating."));
         return;
       }
       commit.close();
@@ -550,7 +569,7 @@ void muffin::WindowsUpdater::restart() {
       for (const auto& window : windows)
         if (window)
           window->finishUpdateClose(false);
-      fail(tr("The installer did not become ready. Muffin will stay open; please try again."));
+      failRestart(tr("The installer did not become ready. Muffin will stay open; please try again."));
     }
   });
   timer->start(100);

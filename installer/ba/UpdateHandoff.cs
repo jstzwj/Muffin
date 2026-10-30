@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using WixToolset.Mba.Core;
 
 namespace Muffin.Setup
 {
@@ -23,6 +24,45 @@ namespace Muffin.Setup
             _ready = ready;
         }
 
+        internal static UpdateHandoff FromCommand(IBootstrapperCommand command)
+        {
+            // Burn filters its own switches, but custom BAs must explicitly
+            // consume variable assignments. Hidden/Overridable authoring does
+            // not copy command-line values into Engine.GetVariableString().
+            // Whitelist this one protocol argument rather than accepting
+            // arbitrary overrides of installer variables.
+            string token = null;
+            var parsed = command.ParseCommandLine();
+            foreach (var variable in parsed.Variables)
+            {
+                if (!string.Equals(variable.Key, "MuffinUpdate", StringComparison.OrdinalIgnoreCase)) continue;
+                if (token != null || string.IsNullOrEmpty(variable.Value))
+                    throw new ArgumentException("Missing or duplicate update handoff.");
+                token = variable.Value;
+            }
+            foreach (var argument in parsed.UnknownCommandLineArgs)
+            {
+                var name = argument.TrimStart('-', '/');
+                var separator = name.IndexOf('=');
+                if (separator >= 0) name = name.Substring(0, separator);
+                if (string.Equals(name, "MuffinUpdate", StringComparison.OrdinalIgnoreCase))
+                    throw new ArgumentException("Invalid update handoff assignment.");
+            }
+            if (token == null) return null; // Ordinary interactive/quiet installation.
+            if (command.Action != LaunchAction.Install || command.Display != Display.Passive)
+                throw new ArgumentException("In-app updates require passive install mode.");
+            return Parse(token);
+        }
+
+        private static bool IsReadyName(string name)
+        {
+            // Keep compatibility with editors released before per-attempt IDs.
+            if (name == "update.ready") return true;
+            return name.StartsWith("update-", StringComparison.Ordinal) &&
+                   name.EndsWith(".ready", StringComparison.Ordinal) && name.Length == 45 &&
+                   Guid.TryParseExact(name.Substring(7, 32), "N", out _);
+        }
+
         internal static UpdateHandoff Parse(string token)
         {
             var parts = token.Split(':');
@@ -31,7 +71,7 @@ namespace Muffin.Setup
             var application = Path.GetFullPath(Encoding.UTF8.GetString(Convert.FromBase64String(parts[1])));
             var ready = Path.GetFullPath(Encoding.UTF8.GetString(Convert.FromBase64String(parts[2])));
             if (!string.Equals(Path.GetFileName(application), "Muffin.exe", StringComparison.OrdinalIgnoreCase) ||
-                Path.GetFileName(ready) != "update.ready" || !Directory.Exists(Path.GetDirectoryName(ready)))
+                !IsReadyName(Path.GetFileName(ready)) || !Directory.Exists(Path.GetDirectoryName(ready)))
                 throw new ArgumentException("Invalid update handoff paths.");
             var parent = Process.GetProcessById(pid);
             try
