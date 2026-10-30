@@ -444,6 +444,10 @@ QFont EditorView::preeditFont() const {
 }
 
 void EditorView::paintInsertionCursor(QPainter& painter) const {
+  if (editingLocked_) {
+    lastPaintedCaretDocumentRect_ = {}; // 锁定编辑: the caret is never drawn
+    return;
+  }
   if (!preedit_.isEmpty()) {
     return; // a composition is active — paintPreedit drew the composition caret and owns the rect
   }
@@ -511,6 +515,9 @@ void EditorView::paintHeadingBadge(QPainter& painter) const {
 }
 
 void EditorView::paintHtmlHoverOverlay(QPainter& painter) const {
+  if (editingLocked_) {
+    return; // 锁定编辑: the HTML source-editing toggle button stays hidden
+  }
   htmlHover_.paint(painter, htmlHoverInputs(), viewport()->rect());
 }
 

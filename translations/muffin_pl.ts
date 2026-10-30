@@ -4317,6 +4317,31 @@ Pliki edytowane później lub zawierające niezapisane zmiany zostaną pominięt
         <source>Disable Typewriter / Focus Mode</source>
         <translation>Wyłącz tryb maszyny do pisania / tryb skupienia</translation>
     </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
+        <source>Locked Editing</source>
+        <translation>Locked Editing</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
+        <source>Read-only reading mode: hides the caret and inline popups, rejects typing</source>
+        <translation>Read-only reading mode: hides the caret and inline popups, rejects typing</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
+        <source>Enable locked editing</source>
+        <translation>Enable locked editing</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <source>Each tab locks on its own</source>
+        <translation>Each tab locks on its own</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <source>One lock for the whole window</source>
+        <translation>One lock for the whole window</translation>
+    </message>
 </context>
 <context>
     <name>muffin::PrefsExportPage</name>

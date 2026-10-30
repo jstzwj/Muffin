@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add **锁定编辑 / 解锁编辑** (locked editing, Edit menu + editor context menu, F12): a read-only reading mode that hides the blinking caret and the inline floating controls (table toolbar, code-fence language editor, HTML source toggle), rejects keyboard/IME/drop input, and disables every incremental edit at the session layer — while mouse selection, right-click menus, scrolling and copy keep working. Preferences → Editor gains a **Locked Editing** card to turn the feature off and to choose its scope: each tab locks on its own (default) or one lock covers the whole window. The window title shows `(已锁定编辑)` for the locked document.
+
 ### Fixed
 
 - Keep plain Tab in the source editor instead of moving focus away, and preserve selected text when inserting a source-mode hyperlink.

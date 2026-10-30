@@ -538,8 +538,37 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   ensureCursorVisible();
 }
 
+void EditorView::setEditingLocked(bool locked) {
+  if (editingLocked_ == locked) {
+    return;
+  }
+  editingLocked_ = locked;
+  if (locked) {
+    // No blinking caret, no inline popups: the page becomes read-only chrome-wise,
+    // while selection (mouse/keyboard) and the context menu stay available.
+    cursorVisible_ = false;
+    caretBlinkOn_ = false;
+    if (cursorTimer_) {
+      cursorTimer_->stop();
+    }
+    if (tableToolbar_) {
+      tableToolbar_->forceHide();
+    }
+    if (codeLanguageEditor_) {
+      codeLanguageEditor_->forceHide();
+    }
+  } else {
+    updateCursorHitFromPosition();
+  }
+  viewport()->update();
+}
+
 void EditorView::resetCaretBlink() {
   caretBlinkOn_ = true;
+  if (editingLocked_) {
+    cursorTimer_->stop(); // 锁定编辑: the caret stays hidden even when the view has focus
+    return;
+  }
   // Flash time 0 means "no blinking" (accessibility); no focus means no blink (offscreen tests
   // stay deterministic); an active composition replaces the caret entirely.
   if (hasFocus() && QApplication::cursorFlashTime() > 0 && preedit_.isEmpty()) {
@@ -746,7 +775,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     setFocus(Qt::MouseFocusReason);
     const NodeId htmlToggleBlockId = editingHtmlBlockId_.isValid() ? editingHtmlBlockId_ : htmlHover_.visibleBlockId();
-    if (htmlHoverButtonViewportRect().contains(event->position()) && htmlToggleBlockId.isValid()) {
+    if (!editingLocked_ && htmlHoverButtonViewportRect().contains(event->position()) && htmlToggleBlockId.isValid()) {
       emit htmlEditToggleRequested(htmlToggleBlockId);
       event->accept();
       return;
@@ -754,7 +783,8 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     const HitTestResult hit = hitTest(event->position());
     // Click anywhere on a rendered HTML block to enter source editing mode.
     // When already editing this block, fall through to normal cursor placement.
-    if (hit.isValid() && hit.zone == HitTestResult::Zone::Html && editingHtmlBlockId_ != hit.blockId) {
+    if (!editingLocked_ && hit.isValid() && hit.zone == HitTestResult::Zone::Html &&
+        editingHtmlBlockId_ != hit.blockId) {
       emit htmlEditToggleRequested(hit.blockId);
       event->accept();
       return;
@@ -1127,6 +1157,10 @@ bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPoint
 }
 
 void EditorView::inputMethodEvent(QInputMethodEvent* event) {
+  if (editingLocked_) {
+    event->ignore(); // 锁定编辑: no IME composition, no commit
+    return;
+  }
   // Composition is a temporary display splice in the caret block's layout.
   // Only the eventual commitString changes the document.
   const QString previousPreedit = preedit_;
@@ -1305,12 +1339,20 @@ void EditorView::updateCodeLanguageEditor() {
   if (!codeLanguageEditor_) {
     return;
   }
+  if (editingLocked_) {
+    codeLanguageEditor_->forceHide(); // 锁定编辑: no floating code-fence language editor
+    return;
+  }
   codeLanguageEditor_->update(cursorPosition_, cursorHit_, layout_.get(), document_.data(), scrollY(),
                               viewport()->height());
 }
 
 void EditorView::updateTableToolbar() {
   if (!tableToolbar_) {
+    return;
+  }
+  if (editingLocked_) {
+    tableToolbar_->forceHide(); // 锁定编辑: no “调整表格大小” toolbar over a table cell
     return;
   }
   tableToolbar_->update(cursorHit_, layout_.get(), scrollY(), viewport()->rect());
@@ -1578,6 +1620,10 @@ void EditorView::updateMouseCursor(QPointF viewportPos) {
 }
 
 void EditorView::dragEnterEvent(QDragEnterEvent* event) {
+  if (editingLocked_) {
+    event->ignore(); // 锁定编辑: no file/image drops inserted into the document
+    return;
+  }
   // Accept any local file/folder; dropEvent routes by type. Only image drops are
   // inserted inline — everything else is handed to the main window.
   if (event->mimeData()->hasUrls()) {
@@ -1612,6 +1658,10 @@ void EditorView::moveCaretToViewportPos(QPointF viewportPos) {
 }
 
 void EditorView::dropEvent(QDropEvent* event) {
+  if (editingLocked_) {
+    event->ignore(); // 锁定编辑 (defence in depth; dragEnterEvent already refuses)
+    return;
+  }
   if (!event->mimeData()->hasUrls()) {
     event->ignore();
     return;

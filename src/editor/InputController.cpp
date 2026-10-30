@@ -160,6 +160,15 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
       return false;
     }
     if (event->type() == QEvent::KeyPress) {
+      // 锁定编辑: swallow everything except caret/selection movement and copy, before any edit
+      // handler runs. This filter fires before EditorView::event, so it is the first gate.
+      if (ctx_.view && ctx_.view->editingLocked()) {
+        auto* lockedKey = static_cast<QKeyEvent*>(event);
+        if (!editor_keys::isNavigationKeyWhileLocked(lockedKey->key(), lockedKey->modifiers())) {
+          lockedKey->accept();
+          return true;
+        }
+      }
       // While an async open parse is in flight (parseBusy) document_ is the stale pre-open text:
       // swallow the keystroke entirely so it can't drive a local edit, which would land on that
       // stale text and supersede (discard) the worker's parsed result for the file being opened.

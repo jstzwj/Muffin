@@ -72,6 +72,8 @@ public:
   qsizetype lastFindOffset = -1;
   bool renderViewDirty = false;
   bool pinned = false;
+  // 锁定编辑（独立标签页作用范围）：每个页签自己记住状态，切换页签互不影响。
+  bool editingLocked = false;
   // Preserve the serialized state until both parsing and first activation have
   // completed. Saving/closing an unopened background page must not replace it
   // with the temporary empty layout or startup caret.

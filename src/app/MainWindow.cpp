@@ -126,6 +126,10 @@ muffin::MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   updateTitle();
   loadAppearanceSettings();
   showBlockSourceEnabled_ = QSettings().value(QStringLiteral("editor/showBlockSource"), false).toBool();
+  // 锁定编辑 的作用范围与功能开关（Preferences → Editor）。缓存一份，避免每次命令状态
+  // 求值都去读一次注册表。
+  lockEditingEnabled_ = QSettings().value(QStringLiteral("editor/lockEditingEnabled"), true).toBool();
+  lockEditingPerTab_ = QSettings().value(QStringLiteral("editor/lockEditingScope"), 0).toInt() == 0;
   // Apply markdown parse preferences (markdown/autoLink, markdown/inlineMath, ...) before the first
   // real parse. parseOptions_ defaults to all-on, so this is a no-op re-parse unless the user has
   // disabled an extension.
@@ -406,7 +410,100 @@ void muffin::MainWindow::updateTitle() {
   const QString marker = tab_->session.document().isModified() ? QStringLiteral(" *") : QString();
   const QString name =
       tab_->pendingOpenPath.isEmpty() ? tab_->session.displayName() : QFileInfo(tab_->pendingOpenPath).fileName();
-  setWindowTitle(QStringLiteral("%1%2 - Muffin").arg(name, marker));
+  // 锁定编辑时，状态标记紧跟标题栏的 “Muffin”。
+  const QString lockMarker = editingLocked() ? QStringLiteral(" (已锁定编辑)") : QString();
+  setWindowTitle(QStringLiteral("%1%2 - Muffin%3").arg(name, marker, lockMarker));
+}
+
+// 生效状态：功能在偏好里关掉时永远是「未锁定」；「独立标签页」读当前页签自己的状态，
+// 「全局窗口」读窗口状态。
+bool muffin::MainWindow::editingLocked() const {
+  if (!lockEditingEnabled_) {
+    return false;
+  }
+  return lockEditingPerTab_ ? (tab_ != nullptr && tab_->editingLocked) : editingLocked_;
+}
+
+void muffin::MainWindow::setEditingLocked(bool locked) {
+  if (!lockEditingEnabled_) {
+    return;
+  }
+  if (lockEditingPerTab_) {
+    if (tab_ == nullptr || tab_->editingLocked == locked) {
+      return;
+    }
+    tab_->editingLocked = locked;
+    applyEditingLockedTo(tab_);
+  } else {
+    if (editingLocked_ == locked) {
+      return;
+    }
+    editingLocked_ = locked;
+    for (DocumentTab* document : documentTabs()) {
+      applyEditingLockedTo(document);
+    }
+  }
+  syncLockEditingAction();
+  updateTitle();
+}
+
+void muffin::MainWindow::toggleEditingLocked() {
+  setEditingLocked(!editingLocked());
+}
+
+void muffin::MainWindow::syncLockEditingAction() {
+  QAction* action = commands_.action(QStringLiteral("edit.lock_editing"));
+  if (action == nullptr) {
+    return;
+  }
+  const bool locked = editingLocked();
+  const QSignalBlocker blocker(action);
+  action->setChecked(locked);
+  action->setText(locked ? tr("解锁编辑") : tr("锁定编辑"));
+}
+
+// 偏好变更后重新读取 editor/lockEditing*，并把状态重新落到每个页签上。
+// 切换作用范围时保持用户当前看到的状态：窗口 → 独立标签页时把窗口状态下发到各页签；
+// 独立标签页 → 窗口时以当前页签的状态作为新的窗口状态。
+void muffin::MainWindow::applyLockEditingSettings() {
+  const bool wasPerTab = lockEditingPerTab_;
+  lockEditingEnabled_ = QSettings().value(QStringLiteral("editor/lockEditingEnabled"), true).toBool();
+  lockEditingPerTab_ = QSettings().value(QStringLiteral("editor/lockEditingScope"), 0).toInt() == 0;
+  if (!lockEditingEnabled_) {
+    editingLocked_ = false;
+    for (DocumentTab* document : documentTabs()) {
+      document->editingLocked = false;
+    }
+  } else if (lockEditingPerTab_ && !wasPerTab) {
+    for (DocumentTab* document : documentTabs()) {
+      document->editingLocked = editingLocked_;
+    }
+  } else if (!lockEditingPerTab_ && wasPerTab) {
+    editingLocked_ = tab_ != nullptr && tab_->editingLocked;
+  }
+  for (DocumentTab* document : documentTabs()) {
+    applyEditingLockedTo(document);
+  }
+  syncLockEditingAction();
+  updateEditActions();
+  updateTitle();
+}
+
+// Push the effective lock onto one tab: the rendered view hides its caret and
+// inline popups, the source view goes read-only, and the session rejects every
+// incremental edit (typing, paste, format, undo).
+void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
+  if (document == nullptr) {
+    return;
+  }
+  const bool locked = lockEditingEnabled_ && (lockEditingPerTab_ ? document->editingLocked : editingLocked_);
+  if (document->renderView) {
+    document->renderView->setEditingLocked(locked);
+  }
+  if (document->editor) {
+    document->editor->setReadOnly(locked);
+  }
+  document->session.setEditingReadOnly(locked);
 }
 
 void muffin::MainWindow::updateStatus() {
