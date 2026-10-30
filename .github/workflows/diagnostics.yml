@@ -15,8 +15,68 @@ on:
         type: choice
         options:
           - wix-extension
+          - update-bundle
 
 jobs:
+  update-bundle:
+    name: Update bundle probe ${{ matrix.arch }}
+    if: inputs.probe == 'update-bundle'
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install WiX
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 4.0.5
+          wix extension add WixToolset.UI.wixext/4.0.5 --global
+          wix extension add WixToolset.Bal.wixext/4.0.5 --global
+      - name: Build update entry probe
+        shell: pwsh
+        env:
+          PROBE_ARCH: ${{ matrix.arch }}
+        run: |
+          $sourceRoot = $PWD.Path
+          $probeRoot = Join-Path $env:RUNNER_TEMP 'muffin-bundle-probe'
+          $probeDist = Join-Path $probeRoot 'dist'
+          New-Item -ItemType Directory -Force -Path $probeRoot | Out-Null
+          dotnet build tests/installer/IntegrationOptionsTest.csproj -c Release -o "$probeRoot/test" "-p:BaseIntermediateOutputPath=$probeRoot/obj/"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # The invalid update request must exit before Detect/Plan/Apply.
+          # Inert payloads keep this probe small and cannot run the editor.
+          [xml]$msiSource = Get-Content cmake/Muffin.wxs -Raw
+          foreach ($file in $msiSource.SelectNodes('//*[local-name()="File"]')) {
+            $relative = $file.Source.Replace('$(var.DistDir)/', '')
+            $path = Join-Path $probeDist $relative
+            New-Item -ItemType Directory -Force -Path (Split-Path $path) | Out-Null
+            [IO.File]::WriteAllText($path, 'Muffin installer probe; never installed.')
+          }
+          $wixPath = (Get-Command wix).Source
+          $dotnetPath = (Get-Command dotnet).Source
+          Push-Location $probeRoot
+          try {
+            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DMSI_ARCH=$env:PROBE_ARCH" -DMUFFIN_VERSION=0.0.1 -P "$sourceRoot/cmake/BuildMSI.cmake"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DDOTNET_COMMAND=$dotnetPath" "-DMSI_ARCH=$env:PROBE_ARCH" -DMUFFIN_VERSION=0.0.1 -P "$sourceRoot/cmake/BuildBundle.cmake"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & "$probeRoot/test/IntegrationOptionsTest.exe" --update-bundle "$probeRoot/Muffin-Setup-0.0.1-windows-$env:PROBE_ARCH.exe"
+            exit $LASTEXITCODE
+          } finally { Pop-Location }
+      - name: Upload bundle probe logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-bundle-probe-${{ matrix.arch }}
+          path: ${{ runner.temp }}/MuffinBundleCommandTest-*/*.log
+          if-no-files-found: ignore
+
   wix-extension:
     name: WiX UI extension install probe
     if: inputs.probe == 'wix-extension'

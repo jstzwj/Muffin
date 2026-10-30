@@ -65,9 +65,14 @@ internal static class UpdateHandoffTest
             var logs = new StringBuilder();
             foreach (var path in Directory.GetFiles(directory, "*.log")) logs.Append(File.ReadAllText(path));
             var text = logs.ToString();
-            Require(process.ExitCode == 1602 && text.Contains("Invalid update handoff:") &&
-                    !text.Contains("Detect begin") && !text.Contains("Plan begin") && !text.Contains("Apply begin"),
-                    "real Burn command is consumed and rejected before detection or installation; logs: " + directory);
+            var rejected = process.ExitCode == 1602 && text.Contains("Invalid update handoff:") &&
+                           !text.Contains("Detect begin") && !text.Contains("Plan begin") && !text.Contains("Apply begin");
+            if (!rejected)
+            {
+                Console.Error.WriteLine("Bundle exit code: {0} (0x{0:X8})", process.ExitCode);
+                Console.Error.WriteLine(text);
+            }
+            Require(rejected, "real Burn command is consumed and rejected before detection or installation; logs: " + directory);
         }
         Directory.Delete(directory, true);
         Console.WriteLine("Real setup bundle: update command consumed, invalid mode rejected before Detect/Plan/Apply");
