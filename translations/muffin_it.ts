@@ -3998,53 +3998,58 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
 <context>
     <name>muffin::PreferencesDialog</name>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="210"/>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="220"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="222"/>
         <source>Preferences</source>
         <translation>Preferenze</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Files</source>
         <translation>File</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Editor</source>
         <translation>Editor</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="61"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="63"/>
         <source>Categories</source>
         <translation>Categorie</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Image</source>
         <translation>Immagine</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Export</source>
         <translation>Esportazione</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Appearance</source>
         <translation>Aspetto</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>General</source>
         <translation>Generale</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Keyboard Shortcuts</source>
         <translation>Scorciatoie da tastiera</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="243"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
+        <source>Search</source>
+        <translation>Cerca</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="253"/>
         <source>No settings available.</source>
         <translation>Nessuna impostazione disponibile.</translation>
     </message>
@@ -4314,28 +4319,28 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
         <translation type="vanished">Eseguibili (*.exe);;Tutti i file (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>General</source>
         <translation>Generale</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>HTML (without Styles)</source>
         <translation>HTML (senza stili)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>Image</source>
         <translation>Immagine</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="68"/>
         <location filename="../src/app/PrefsExportPage.cpp" line="69"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="70"/>
         <source>Formats</source>
         <translation>Formati</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="207"/>
         <source>Default Export Folder</source>
         <translation>Cartella predefinita per l&apos;esportazione</translation>
     </message>
@@ -4344,271 +4349,271 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
         <translation type="vanished">Automatico</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
         <source>Same folder as current file</source>
         <translation>Stessa cartella del file corrente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Custom...</source>
         <translation>Personalizzata...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>Pandoc Path</source>
         <translation>Percorso Pandoc</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>(Auto-detect)</source>
         <translation>(Rilevamento automatico)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="139"/>
         <source>Browse...</source>
         <translation>Sfoglia...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="200"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>Impostazioni predefinite comuni a tutti i formati di esportazione. Selezionare un formato per configurarne le opzioni.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="211"/>
         <source>Custom Folder</source>
         <translation>Cartella personalizzata</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>I documenti senza titolo usano la cartella Documenti.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>All Files (*)</source>
         <translation>Tutti i file (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="222"/>
         <source>Auto-detect</source>
         <translation>Rileva automaticamente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="231"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF, HTML e immagini usano il motore di rendering di Muffin. Gli altri formati richiedono Pandoc.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="238"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>Usato per l’esportazione in %1. Le modifiche vengono salvate immediatamente.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Theme</source>
         <translation>Tema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Current theme</source>
         <translation>Tema corrente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Default light theme</source>
         <translation>Tema chiaro predefinito</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Page Size</source>
         <translation>Formato pagina</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Width</source>
         <translation>Larghezza</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="247"/>
         <source>Height</source>
         <translation>Altezza</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Landscape</source>
         <translation>Orizzontale</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
         <source>Page Margins</source>
         <translation>Margini pagina</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="291"/>
         <source>Font Size (px)</source>
         <translation>Dimensione carattere (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Start each level-one heading on a new page</source>
         <translation>Iniziare ogni titolo di primo livello su una nuova pagina</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Header</source>
         <translation>Intestazione</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
         <source>Footer</source>
         <translation>Piè di pagina</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Show page numbers</source>
         <translation>Mostra i numeri di pagina</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>Variabili per intestazione e piè di pagina: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Lo spazio viene riservato automaticamente per evitare sovrapposizioni con il contenuto del documento.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>Include a table of contents</source>
         <translation>Includere un indice</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add to &lt;head&gt;</source>
         <translation>Aggiungere a &lt;head&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
         <source>Add before document content</source>
         <translation>Aggiungere prima del contenuto del documento</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="287"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin non aggiunge il foglio di stile del tema a questo formato.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Width (px)</source>
         <translation>Larghezza (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Output Scale</source>
         <translation>Scala di uscita</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>Esporta un file PNG. Massimo: 64 milioni di pixel e 32.767 pixel di altezza. Usare PDF per i documenti più lunghi.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Richiede Pandoc. Configurarne il percorso in Generale.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="297"/>
         <source>Reference Document</source>
         <translation>Documento di riferimento</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
         <source>Custom CSS</source>
         <translation>CSS personalizzato</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="303"/>
         <source>Title</source>
         <translation>Titolo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
         <source>Author</source>
         <translation>Autore</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
         <source>TOC Depth</source>
         <translation>Profondità dell’indice</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
         <source>Number sections</source>
         <translation>Numerare le sezioni</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Line Wrapping</source>
         <translation>A capo automatico</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Do not wrap</source>
         <translation>Non andare a capo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Automatic</source>
         <translation>Automatico</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Preserve source wrapping</source>
         <translation>Mantenere gli a capo del sorgente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Argomenti Pandoc aggiuntivi</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>Racchiudere tra virgolette i percorsi contenenti spazi. Muffin gestisce il formato di ingresso, il formato di uscita e il percorso di uscita.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
         <source>After Export</source>
         <translation>Dopo l&apos;esportazione</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
         <source>Open the exported file directory</source>
         <translation>Apri la cartella del file esportato</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="328"/>
         <source>Open the exported file</source>
         <translation>Aprire il file esportato</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Using: %1</source>
         <translation>In uso: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>Non è un eseguibile valido; verrà rilevato automaticamente.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="345"/>
         <source>Detected: %1</source>
         <translation>Rilevato: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc non è stato trovato. Installalo oppure fai clic su «Sfoglia» per individuarlo.</translation>
     </message>
@@ -5305,6 +5310,84 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
     </message>
 </context>
 <context>
+    <name>muffin::PrefsSearchPage</name>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="120"/>
+        <source>Search scope</source>
+        <translation>Ambito di ricerca</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="121"/>
+        <source>Applies to folder search and Quick Open. Changes take effect on the next search.</source>
+        <translation>Si applica alla ricerca nelle cartelle e all’apertura rapida. Le modifiche hanno effetto dalla ricerca successiva.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="122"/>
+        <source>File extensions to search</source>
+        <translation>Estensioni dei file da cercare</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="123"/>
+        <source>Separate extensions with commas, for example: md, txt. Use * for all file types; leave empty to search no files.</source>
+        <translation>Separa le estensioni con virgole, ad esempio: md, txt. Usa * per tutti i tipi di file; lascia vuoto per non cercare alcun file.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="125"/>
+        <source>Ignored files and folders</source>
+        <translation>File e cartelle ignorati</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="126"/>
+        <source>One rule per line: build/ ignores folders, *.bak ignores files, /drafts/ matches the search root, and ! includes a match again. Uses gitignore-style wildcards.</source>
+        <translation>Una regola per riga: build/ ignora le cartelle, *.bak ignora i file, /drafts/ si applica alla radice di ricerca e ! include nuovamente una corrispondenza. Usa caratteri jolly nello stile di gitignore.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="128"/>
+        <source>Include hidden files and folders</source>
+        <translation>Includi file e cartelle nascosti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="129"/>
+        <source>Read .gitignore files automatically</source>
+        <translation>Leggi automaticamente i file .gitignore</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="130"/>
+        <source>Read .ignore files automatically</source>
+        <translation>Leggi automaticamente i file .ignore</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="131"/>
+        <source>Reads rules in the search root and its subfolders. .ignore takes priority over .gitignore; the rules above take priority over both. Ignored folders are not traversed. Symbolic links are always skipped.</source>
+        <translation>Legge le regole nella radice di ricerca e nelle relative sottocartelle. .ignore ha priorità su .gitignore; le regole sopra hanno priorità su entrambi. Le cartelle ignorate non vengono esplorate. I collegamenti simbolici vengono sempre saltati.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="133"/>
+        <source>Content search limits</source>
+        <translation>Limiti della ricerca nei contenuti</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="134"/>
+        <source>Maximum file size</source>
+        <translation>Dimensione massima dei file</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="135"/>
+        <source>Maximum file size for regex</source>
+        <translation>Dimensione massima dei file per le espressioni regolari</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="136"/>
+        <source>Regex searches obey both limits. File size does not restrict Quick Open. Folder replacement keeps its separate 8 MiB safety limit. File opening protection is configured on the Files page.</source>
+        <translation>Le ricerche con espressioni regolari rispettano entrambi i limiti. La dimensione dei file non limita l’apertura rapida. La sostituzione nelle cartelle mantiene il proprio limite di sicurezza di 8 MiB. La protezione all’apertura dei file si configura nella pagina File.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="138"/>
+        <source>Restore search defaults</source>
+        <translation>Ripristina le impostazioni di ricerca predefinite</translation>
+    </message>
+</context>
+<context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
         <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
@@ -5403,53 +5486,53 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
 <context>
     <name>muffin::QuickOpenDialog</name>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="81"/>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="286"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="82"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="292"/>
         <source>Quick Open</source>
         <translation>Apertura rapida</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="88"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="89"/>
         <source>Matching files</source>
         <translation>File corrispondenti</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="245"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
         <source>Scanning folder…</source>
         <translation>Scansione della cartella…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="246"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="252"/>
         <source>No matching files</source>
         <translation>Nessun file corrispondente</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="247"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
         <source>%1 matching files</source>
         <translation>%1 file corrispondenti</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="249"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="255"/>
         <source> · Showing the first %1; type to narrow results</source>
         <translation> · Sono mostrati i primi %1; digita per restringere i risultati</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="257"/>
         <source> · File limit reached; results are incomplete</source>
         <translation> · Limite di file raggiunto; risultati incompleti</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="259"/>
         <source> · %1 unreadable folders skipped</source>
         <translation> · %1 cartelle illeggibili ignorate</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="287"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="293"/>
         <source>Search file names or paths…</source>
         <translation>Cerca nomi di file o percorsi…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="288"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="294"/>
         <source>Open and recent files</source>
         <translation>File aperti e recenti</translation>
     </message>
@@ -5461,124 +5544,134 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
 <context>
     <name>muffin::SearchPanelWidget</name>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="301"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="304"/>
         <source> · Unsaved</source>
         <translation> · Non salvato</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="321"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="324"/>
         <source>Open a folder to search its contents.</source>
         <translation>Apri una cartella per cercare nel suo contenuto.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="323"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="326"/>
         <source>Search failed: %1</source>
         <translation>Ricerca non riuscita: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="325"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="328"/>
         <source>Search text files in this folder and its subfolders.</source>
         <translation>Cerca nei file di testo di questa cartella e delle sue sottocartelle.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="327"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="330"/>
         <source>%1 matches in %2 files</source>
         <translation>%1 corrispondenze in %2 file</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="329"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="332"/>
         <source> · Searching…</source>
         <translation> · Ricerca in corso…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="331"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="334"/>
         <source> · Incomplete results; search again before replacing</source>
         <translation> · Risultati incompleti; ripeti la ricerca prima di sostituire</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="333"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="336"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
         <source>%1 files searched</source>
         <translation>%1 file esaminati</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="335"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="338"/>
         <source> · %1 files or folders skipped</source>
         <translation> · %1 file o cartelle ignorati</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="337"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="390"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
         <source>Result limit reached</source>
         <translation>Limite di risultati raggiunto</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="346"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="343"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
         <source>Search details</source>
         <translation>Dettagli della ricerca</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Path</source>
         <translation>Percorso</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Reason</source>
         <translation>Motivo</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="360"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
         <source>File size exceeds %1 MiB</source>
         <translation>La dimensione del file supera %1 MiB</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="366"/>
         <source>Regular expression search is limited to %1 MiB per file</source>
         <translation>La ricerca con espressioni regolari è limitata a %1 MiB per file</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="367"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
         <source>File is loading or has conflicting unsaved versions</source>
         <translation>Il file è in fase di caricamento o presenta versioni non salvate in conflitto</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
         <source>Cannot read file or folder</source>
         <translation>Impossibile leggere il file o la cartella</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
         <source>Unsupported encoding or binary content</source>
         <translation>Codifica non supportata o contenuto binario</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
         <source>File changed during search</source>
         <translation>Il file è stato modificato durante la ricerca</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
         <source>Search exceeded its resource limit</source>
         <translation>La ricerca ha superato il limite di risorse</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="385"/>
         <source>Ignored directory</source>
         <translation>Cartella ignorata</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="388"/>
+        <source>Excluded by search ignore rules</source>
+        <translation>Escluso dalle regole di esclusione della ricerca</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="391"/>
+        <source>Cannot read ignore rules (UTF-8, up to 4 MiB)</source>
+        <translation>Impossibile leggere le regole di esclusione (UTF-8, fino a 4 MiB)</translation>
     </message>
     <message>
         <source>No folder open</source>
         <translation type="vanished">Nessuna cartella aperta</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="398"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
         <source>Search contents…</source>
         <translation>Cerca nel contenuto…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
         <source>Search contents</source>
         <translation>Cerca nel contenuto</translation>
     </message>
@@ -5592,44 +5685,44 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="402"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>Distingui maiuscole e minuscole</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="404"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>Espressione regolare</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="406"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="415"/>
         <source>Replace with…</source>
         <translation>Sostituisci con…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="416"/>
         <source>Replace with</source>
         <translation>Sostituisci con</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="409"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="417"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="418"/>
         <source>Replace</source>
         <translation>Sostituisci</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="410"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="419"/>
         <source>Preview folder replacement…</source>
         <translation>Anteprima della sostituzione nella cartella…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="420"/>
         <source>Search</source>
         <translation>Cerca</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="421"/>
         <source>Stop</source>
         <translation>Interrompi</translation>
     </message>
@@ -5638,7 +5731,7 @@ I file modificati in seguito o contenenti modifiche non salvate verranno ignorat
         <translation type="vanished">Annulla la sostituzione nella cartella…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="422"/>
         <source>Content search results</source>
         <translation>Risultati della ricerca nel contenuto</translation>
     </message>

@@ -4026,53 +4026,58 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PreferencesDialog</name>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="210"/>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="220"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="222"/>
         <source>Preferences</source>
         <translation>偏好设置</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Files</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Editor</source>
         <translation>编辑器</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="61"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="63"/>
         <source>Categories</source>
         <translation>分类</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Export</source>
         <translation>导出</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Appearance</source>
         <translation>外观</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Keyboard Shortcuts</source>
         <translation>键盘快捷键</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="243"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="253"/>
         <source>No settings available.</source>
         <translation>没有可用设置。</translation>
     </message>
@@ -4342,28 +4347,28 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">可执行文件 (*.exe);;所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>General</source>
         <translation>通用</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>HTML (without Styles)</source>
         <translation>HTML（不含样式）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="68"/>
         <location filename="../src/app/PrefsExportPage.cpp" line="69"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="70"/>
         <source>Formats</source>
         <translation>格式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="207"/>
         <source>Default Export Folder</source>
         <translation>默认导出文件夹</translation>
     </message>
@@ -4372,271 +4377,271 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">自动</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
         <source>Same folder as current file</source>
         <translation>与当前文件相同的文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Custom...</source>
         <translation>自定义...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>Pandoc Path</source>
         <translation>Pandoc 路径</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>(Auto-detect)</source>
         <translation>（自动检测）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="139"/>
         <source>Browse...</source>
         <translation>浏览...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="200"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>所有导出格式共用的默认设置。选择一种格式可配置其专属选项。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="211"/>
         <source>Custom Folder</source>
         <translation>自定义文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>未命名文档使用系统“文档”文件夹。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>All Files (*)</source>
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="222"/>
         <source>Auto-detect</source>
         <translation>自动检测</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="231"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF、HTML 和图片使用 Muffin 的渲染器。其他格式需要 Pandoc。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="238"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>导出为 %1 时使用。更改会立即保存。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Theme</source>
         <translation>主题</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Current theme</source>
         <translation>当前主题</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Default light theme</source>
         <translation>默认浅色主题</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Page Size</source>
         <translation>页面大小</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Width</source>
         <translation>宽度</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="247"/>
         <source>Height</source>
         <translation>高度</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Landscape</source>
         <translation>横向</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
         <source>Page Margins</source>
         <translation>页边距</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="291"/>
         <source>Font Size (px)</source>
         <translation>字号（px）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Start each level-one heading on a new page</source>
         <translation>每个一级标题另起一页</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Header</source>
         <translation>页眉</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
         <source>Footer</source>
         <translation>页脚</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Show page numbers</source>
         <translation>显示页码</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>页眉和页脚可用变量：${title}、${author}、${fileName}、${date}、${pageNo}、${pageCount}。系统会自动预留空间，避免与文档内容重叠。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>Include a table of contents</source>
         <translation>包含目录</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add to &lt;head&gt;</source>
         <translation>添加到 &lt;head&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
         <source>Add before document content</source>
         <translation>添加到文档内容之前</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="287"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin 不会为此格式添加主题样式表。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Width (px)</source>
         <translation>宽度（px）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Output Scale</source>
         <translation>输出缩放比例</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>导出为一张 PNG。总像素数上限为 6400 万，高度上限为 32,767 像素。较长的文档请使用 PDF。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>需要 Pandoc。请在“通用”中配置其路径。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="297"/>
         <source>Reference Document</source>
         <translation>参考样式文档</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
         <source>Custom CSS</source>
         <translation>自定义 CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="303"/>
         <source>Title</source>
         <translation>标题</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
         <source>Author</source>
         <translation>作者</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
         <source>TOC Depth</source>
         <translation>目录层级</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
         <source>Number sections</source>
         <translation>为章节编号</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Line Wrapping</source>
         <translation>换行方式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Do not wrap</source>
         <translation>不换行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Automatic</source>
         <translation>自动</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Preserve source wrapping</source>
         <translation>保留源文档换行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Pandoc 附加参数</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>包含空格的路径需加引号。输入格式、输出格式和输出路径由 Muffin 管理。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
         <source>After Export</source>
         <translation>导出后</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
         <source>Open the exported file directory</source>
         <translation>打开导出文件所在目录</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="328"/>
         <source>Open the exported file</source>
         <translation>打开导出的文件</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Using: %1</source>
         <translation>使用：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>不是有效的可执行文件；将自动检测。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="345"/>
         <source>Detected: %1</source>
         <translation>检测到：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>未找到 Pandoc。请安装它，或点击“浏览”以定位。</translation>
     </message>
@@ -5333,6 +5338,84 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
 </context>
 <context>
+    <name>muffin::PrefsSearchPage</name>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="120"/>
+        <source>Search scope</source>
+        <translation>搜索范围</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="121"/>
+        <source>Applies to folder search and Quick Open. Changes take effect on the next search.</source>
+        <translation>适用于文件夹搜索和快速打开。更改将在下次搜索时生效。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="122"/>
+        <source>File extensions to search</source>
+        <translation>要搜索的文件扩展名</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="123"/>
+        <source>Separate extensions with commas, for example: md, txt. Use * for all file types; leave empty to search no files.</source>
+        <translation>用逗号分隔扩展名，例如：md, txt。使用 * 搜索所有文件类型；留空则不搜索任何文件。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="125"/>
+        <source>Ignored files and folders</source>
+        <translation>忽略的文件和文件夹</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="126"/>
+        <source>One rule per line: build/ ignores folders, *.bak ignores files, /drafts/ matches the search root, and ! includes a match again. Uses gitignore-style wildcards.</source>
+        <translation>每行一条规则：build/ 忽略文件夹，*.bak 忽略文件，/drafts/ 从搜索根目录匹配，! 重新包含匹配项。支持 gitignore 风格的通配符。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="128"/>
+        <source>Include hidden files and folders</source>
+        <translation>包含隐藏文件和文件夹</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="129"/>
+        <source>Read .gitignore files automatically</source>
+        <translation>自动读取 .gitignore 文件</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="130"/>
+        <source>Read .ignore files automatically</source>
+        <translation>自动读取 .ignore 文件</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="131"/>
+        <source>Reads rules in the search root and its subfolders. .ignore takes priority over .gitignore; the rules above take priority over both. Ignored folders are not traversed. Symbolic links are always skipped.</source>
+        <translation>读取搜索根目录及其子文件夹中的规则。.ignore 的优先级高于 .gitignore；上方的规则优先于两者。不会遍历被忽略的文件夹。始终跳过符号链接。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="133"/>
+        <source>Content search limits</source>
+        <translation>内容搜索限制</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="134"/>
+        <source>Maximum file size</source>
+        <translation>最大文件大小</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="135"/>
+        <source>Maximum file size for regex</source>
+        <translation>正则表达式搜索的最大文件大小</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="136"/>
+        <source>Regex searches obey both limits. File size does not restrict Quick Open. Folder replacement keeps its separate 8 MiB safety limit. File opening protection is configured on the Files page.</source>
+        <translation>正则表达式搜索同时受这两项限制。快速打开不受文件大小限制。文件夹替换仍有单独的 8 MiB 安全限制。文件打开保护可在“文件”页面配置。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="138"/>
+        <source>Restore search defaults</source>
+        <translation>恢复搜索默认设置</translation>
+    </message>
+</context>
+<context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
         <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
@@ -5431,53 +5514,53 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::QuickOpenDialog</name>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="81"/>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="286"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="82"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="292"/>
         <source>Quick Open</source>
         <translation>快速打开</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="88"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="89"/>
         <source>Matching files</source>
         <translation>匹配的文件</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="245"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
         <source>Scanning folder…</source>
         <translation>正在扫描文件夹…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="246"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="252"/>
         <source>No matching files</source>
         <translation>没有匹配的文件</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="247"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
         <source>%1 matching files</source>
         <translation>%1 个匹配的文件</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="249"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="255"/>
         <source> · Showing the first %1; type to narrow results</source>
         <translation> · 显示前 %1 项；继续输入以缩小结果范围</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="257"/>
         <source> · File limit reached; results are incomplete</source>
         <translation> · 已达到文件数量上限；结果不完整</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="259"/>
         <source> · %1 unreadable folders skipped</source>
         <translation> · 已跳过 %1 个无法读取的文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="287"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="293"/>
         <source>Search file names or paths…</source>
         <translation>搜索文件名或路径…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="288"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="294"/>
         <source>Open and recent files</source>
         <translation>已打开和最近使用的文件</translation>
     </message>
@@ -5489,124 +5572,134 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::SearchPanelWidget</name>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="301"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="304"/>
         <source> · Unsaved</source>
         <translation> · 未保存</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="321"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="324"/>
         <source>Open a folder to search its contents.</source>
         <translation>打开文件夹后即可搜索其中的内容。</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="323"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="326"/>
         <source>Search failed: %1</source>
         <translation>搜索失败：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="325"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="328"/>
         <source>Search text files in this folder and its subfolders.</source>
         <translation>搜索此文件夹及其子文件夹中的文本文件。</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="327"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="330"/>
         <source>%1 matches in %2 files</source>
         <translation>%2 个文件中有 %1 处匹配</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="329"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="332"/>
         <source> · Searching…</source>
         <translation> · 正在搜索…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="331"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="334"/>
         <source> · Incomplete results; search again before replacing</source>
         <translation> · 结果不完整；请在替换前重新搜索</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="333"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="336"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
         <source>%1 files searched</source>
         <translation>已搜索 %1 个文件</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="335"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="338"/>
         <source> · %1 files or folders skipped</source>
         <translation> · 已跳过 %1 个文件或文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="337"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="390"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
         <source>Result limit reached</source>
         <translation>已达到结果数量上限</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="346"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="343"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
         <source>Search details</source>
         <translation>搜索详情</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Path</source>
         <translation>路径</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Reason</source>
         <translation>原因</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="360"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
         <source>File size exceeds %1 MiB</source>
         <translation>文件大小超过 %1 MiB</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="366"/>
         <source>Regular expression search is limited to %1 MiB per file</source>
         <translation>正则表达式搜索仅支持不超过 %1 MiB 的文件</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="367"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
         <source>File is loading or has conflicting unsaved versions</source>
         <translation>文件正在加载，或存在相互冲突的未保存版本</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
         <source>Cannot read file or folder</source>
         <translation>无法读取文件或文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
         <source>Unsupported encoding or binary content</source>
         <translation>编码不受支持，或内容为二进制数据</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
         <source>File changed during search</source>
         <translation>文件在搜索期间发生更改</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
         <source>Search exceeded its resource limit</source>
         <translation>搜索超出资源限制</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="385"/>
         <source>Ignored directory</source>
         <translation>已忽略的目录</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="388"/>
+        <source>Excluded by search ignore rules</source>
+        <translation>已被搜索忽略规则排除</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="391"/>
+        <source>Cannot read ignore rules (UTF-8, up to 4 MiB)</source>
+        <translation>无法读取忽略规则（UTF-8，最大 4 MiB）</translation>
     </message>
     <message>
         <source>No folder open</source>
         <translation type="vanished">未打开文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="398"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
         <source>Search contents…</source>
         <translation>搜索内容…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
         <source>Search contents</source>
         <translation>搜索内容</translation>
     </message>
@@ -5620,44 +5713,44 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="402"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>区分大小写</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="404"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>正则表达式</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="406"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="415"/>
         <source>Replace with…</source>
         <translation>替换为…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="416"/>
         <source>Replace with</source>
         <translation>替换为</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="409"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="417"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="418"/>
         <source>Replace</source>
         <translation>替换</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="410"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="419"/>
         <source>Preview folder replacement…</source>
         <translation>预览文件夹替换…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="420"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="421"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
@@ -5666,7 +5759,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">撤销文件夹替换…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="422"/>
         <source>Content search results</source>
         <translation>内容搜索结果</translation>
     </message>

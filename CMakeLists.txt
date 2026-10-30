@@ -185,6 +185,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsMarkdownPage.cpp
   src/app/PrefsExportPage.cpp
   src/app/PrefsShortcutsPage.cpp
+  src/app/PrefsSearchPage.cpp
   src/app/PrefsAppearancePage.cpp
   src/app/PrefsGeneralPage.cpp
   src/app/UpdateChecker.cpp
@@ -1135,6 +1136,8 @@ add_executable(Muffin
   src/app/PrefsExportPage.h
   src/app/PrefsShortcutsPage.cpp
   src/app/PrefsShortcutsPage.h
+  src/app/PrefsSearchPage.cpp
+  src/app/PrefsSearchPage.h
   src/app/PrefsAppearancePage.cpp
   src/app/PrefsAppearancePage.h
   src/app/PrefsGeneralPage.cpp
@@ -1161,6 +1164,10 @@ set(MUFFIN_UI_SOURCES
   src/app/QuickOpenDialog.h
   src/app/WorkspaceFiles.cpp
   src/app/WorkspaceFiles.h
+  src/app/SearchSettings.cpp
+  src/app/SearchSettings.h
+  src/app/WorkspaceIgnoreRules.cpp
+  src/app/WorkspaceIgnoreRules.h
   src/app/FileOpenProtection.cpp
   src/app/FileOpenProtection.h
   third_party/katex/src/fontMetricsData.js

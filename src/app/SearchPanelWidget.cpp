@@ -1,7 +1,7 @@
 #include "app/SearchPanelWidget.h"
 #include <QDialog>
 #include <QDialogButtonBox>
-#include "app/FileOpenProtection.h"
+#include "app/SearchSettings.h"
 #include "theme/ThemeDefinition.h"
 #include <QCheckBox>
 #include <QDir>
@@ -239,8 +239,11 @@ void muffin::SearchPanelWidget::startSearch(const OpenSearchBuffers& buffers) {
   query.root = root_;
   query.pattern = query_->text();
   query.options = {regex_->isChecked(), case_->isChecked()};
-  query.extensions = WorkspaceFileIndex::textExtensions();
-  query.maxFileBytes = qMin(query.maxFileBytes, file_open_protection::sizeLimitBytes());
+  const auto settings = SearchSettings::load();
+  query.extensions = settings.extensions;
+  query.scanOptions = settings.scan;
+  query.maxFileBytes = settings.maxFileBytes;
+  query.maxRegexBytes = settings.maxRegexBytes;
   results_->clear();
   result_ = {};
   result_.query = query;
@@ -380,6 +383,12 @@ void muffin::SearchPanelWidget::showDetails() {
       break;
     case WorkspaceSkipReason::IgnoredDirectory:
       reason = tr("Ignored directory");
+      break;
+    case WorkspaceSkipReason::IgnoredFile:
+      reason = tr("Excluded by search ignore rules");
+      break;
+    case WorkspaceSkipReason::UnreadableIgnoreFile:
+      reason = tr("Cannot read ignore rules (UTF-8, up to 4 MiB)");
       break;
     }
     auto* item = new QTreeWidgetItem(files, {QDir(root_).relativeFilePath(detail.path), reason});

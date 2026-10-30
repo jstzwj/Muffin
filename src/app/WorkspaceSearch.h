@@ -19,6 +19,7 @@ using OpenSearchBuffers = QHash<QString, OpenSearchBuffer>;
 struct WorkspaceQuery {
   QString root, pattern, includePath, excludePath;
   QStringList extensions;
+  WorkspaceScanOptions scanOptions;
   SearchOptions options;
   qint64 maxFileBytes = 512 * 1024 * 1024;
   qint64 maxRegexBytes = 32 * 1024 * 1024;
@@ -49,7 +50,9 @@ enum class WorkspaceSkipReason {
   InvalidText,
   Changed,
   ResourceLimit,
-  IgnoredDirectory
+  IgnoredDirectory,
+  IgnoredFile,
+  UnreadableIgnoreFile
 };
 struct WorkspaceSkip {
   QString path;

@@ -24,6 +24,7 @@ class PrefsFilesPage;
 class PrefsImagePage;
 class PrefsMarkdownPage;
 class PrefsShortcutsPage;
+class PrefsSearchPage;
 
 class PreferencesDialog final : public QDialog {
   Q_OBJECT
@@ -77,6 +78,7 @@ private:
   PrefsExportPage* exportPage_ = nullptr;
   PrefsAppearancePage* appearancePage_ = nullptr;
   PrefsShortcutsPage* shortcutsPage_ = nullptr;
+  PrefsSearchPage* searchPage_ = nullptr;
 };
 
 } // namespace muffin

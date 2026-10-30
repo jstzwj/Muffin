@@ -1,5 +1,6 @@
 #include "app/WorkspaceFiles.h"
 #include "app/QuickOpenDialog.h"
+#include "app/SearchSettings.h"
 #include "theme/ThemeDefinition.h"
 #include "../TestUtils.h"
 #include <QApplication>
@@ -17,14 +18,133 @@
 #include <QStyledItemDelegate>
 #include <QTemporaryDir>
 #include <QThread>
+#include <QSet>
 
 using namespace muffin;
 namespace {
-void write(const QString& path) {
+void waitUntil(const std::function<bool()>& ready);
+void write(const QString& path, const QByteArray& bytes = "note") {
   QDir().mkpath(QFileInfo(path).absolutePath());
   QFile file(path);
   require(file.open(QIODevice::WriteOnly), "create fixture");
-  file.write("note");
+  file.write(bytes);
+}
+QSet<QString> relativeFiles(const QString& root, const WorkspaceFiles& files) {
+  QSet<QString> paths;
+  for (const auto& path : files.paths)
+    paths.insert(QDir(root).relativeFilePath(path));
+  return paths;
+}
+void ignoreFiles() {
+  QTemporaryDir dir;
+  auto cancel = std::make_shared<std::atomic_bool>(false);
+  WorkspaceScanOptions options;
+  options.ignorePatterns.clear();
+  const QStringList names = {
+      "visible.md",    "root.md",        "deep/root.md", "test.tmp",       "keep.tmp",
+      "deep/test.tmp", "deep/nested.md", "cache/no.md",  "blocks/drop.md", "blocks/allowed/yes.md",
+      "a/draft1.md",   "a/x/draft2.md",  "a/x/live.md",  "#hash.md",       "!literal.md",
+      "space name.md", "trail.md",       "a.md",         "b.md",           "c.md",
+      "1.md",          "q1.md",          "q12.md",       "build/kept.md"};
+  for (const auto& name : names)
+    write(dir.filePath(name));
+  write(
+      dir.filePath(".gitignore"),
+      QByteArray::fromHex("efbbbf") +
+          "# comment\n*.tmp\n!keep.tmp\n/root.md\ncache/\n!cache/no.md\nblocks/*\n!blocks/allowed/\n"
+          "a/**/draft?.md\n\\#hash.md\n\\!literal.md\nspace\\ name.md\ntrail.md   \n[ab].md\n[[:digit:]].md\nq?.md\n");
+  write(dir.filePath("deep/.gitignore"), "!test.tmp\nnested.md\n");
+  write(dir.filePath(".ignore"), "!root.md\nkeep.tmp\n");
+  write(dir.filePath("deep/.ignore"), "!nested.md\n");
+  const auto found = WorkspaceFileIndex::scan(dir.path(), {"md", "tmp"}, cancel, options);
+  const QSet<QString> expected = {
+      "visible.md",  "root.md", "deep/root.md", "deep/test.tmp", "deep/nested.md", "blocks/allowed/yes.md",
+      "a/x/live.md", "c.md",    "q12.md",       "build/kept.md"};
+  require(relativeFiles(dir.path(), found) == expected,
+          "nested ignore files, precedence, negation, anchoring, globstars, escaping and character classes");
+  require(found.ignoredDirectories.contains(dir.filePath("cache")) &&
+              found.ignoredFiles.contains(dir.filePath("test.tmp")),
+          "excluded files and pruned directories are explained");
+  options.readIgnore = false;
+  const auto gitOnly = relativeFiles(dir.path(), WorkspaceFileIndex::scan(dir.path(), {"md", "tmp"}, cancel, options));
+  require(!gitOnly.contains("root.md") && gitOnly.contains("keep.tmp") && !gitOnly.contains("deep/nested.md"),
+          ".ignore can be disabled independently");
+  options.readGitIgnore = false;
+  require(WorkspaceFileIndex::scan(dir.path(), {"md", "tmp"}, cancel, options).paths.size() == names.size(),
+          "turning off both ignore file formats includes every otherwise eligible file");
+  options.ignorePatterns = "build/\n*.tmp\n!keep.tmp\n";
+  const auto custom = relativeFiles(dir.path(), WorkspaceFileIndex::scan(dir.path(), {"md", "tmp"}, cancel, options));
+  require(!custom.contains("build/kept.md") && custom.contains("keep.tmp") && !custom.contains("deep/test.tmp"),
+          "editable search exclusions apply to both files and directories");
+  options.ignorePatterns.clear();
+  write(dir.filePath(".ignore"), QByteArray("invalid\0rule", 12));
+  options.readIgnore = true;
+  require(WorkspaceFileIndex::scan(dir.path(), {"md"}, cancel, options)
+              .unreadableIgnoreFiles.contains(dir.filePath(".ignore")),
+          "invalid ignore file is reported rather than silently changing scope");
+}
+void preferencesScope() {
+  SettingsOverride extensions("search/extensions", "md"), ignored("search/ignorePatterns", "build/"),
+      hidden("search/includeHidden", false), git("search/readGitIgnore", true), ignore("search/readIgnore", true),
+      size("search/maxFileBytes", 100 * 1024 * 1024), regex("search/maxRegexBytes", 32 * 1024 * 1024),
+      category("preferences/lastCategory", "search"), openingExtensions("files/textExtensions", "cpp"),
+      openingLimit("files/sizeLimitBytes", 1024);
+  QSettings().setValue("search/extensions", "*.MD, txt");
+  QSettings().setValue("search/ignorePatterns", "drafts/\n*.bak");
+  QSettings().setValue("search/maxFileBytes", 12 * 1024 * 1024);
+  QSettings().setValue("search/maxRegexBytes", 6 * 1024 * 1024);
+  QSettings().setValue("search/readGitIgnore", false);
+  QSettings().setValue("search/includeHidden", true);
+  const auto settings = SearchSettings::load();
+  require(settings.extensions == QStringList({"md", "txt"}) && settings.scan.ignorePatterns == "drafts/\n*.bak" &&
+              settings.scan.includeHidden && !settings.scan.readGitIgnore && settings.scan.readIgnore &&
+              settings.maxFileBytes == 12 * 1024 * 1024 && settings.maxRegexBytes == 6 * 1024 * 1024,
+          QStringLiteral("search snapshot: extensions=%1 rules=%2 hidden=%3 git=%4 ignore=%5 bytes=%6 regex=%7")
+              .arg(settings.extensions.join(','), settings.scan.ignorePatterns)
+              .arg(settings.scan.includeHidden)
+              .arg(settings.scan.readGitIgnore)
+              .arg(settings.scan.readIgnore)
+              .arg(settings.maxFileBytes)
+              .arg(settings.maxRegexBytes));
+  QTemporaryDir dir;
+  write(dir.filePath("note.txt"));
+  write(dir.filePath("drafts/draft.txt"));
+  write(dir.filePath("build/new.txt"));
+  write(dir.filePath("old.md.bak"));
+  write(dir.filePath("source.cpp"));
+  QuickOpenDialog picker;
+  picker.setCandidates({dir.filePath("drafts/draft.txt"), dir.filePath("source.cpp")});
+  picker.setWorkspace(dir.path(), settings.extensions);
+  auto* results = picker.findChild<QListWidget*>("QuickOpenResults");
+  waitUntil([&] { return results->count() == 2; });
+  for (int i = 0; i < results->count(); ++i)
+    require(results->item(i)->data(Qt::UserRole).toString().endsWith("note.txt") ||
+                results->item(i)->data(Qt::UserRole).toString().endsWith("new.txt"),
+            "Quick Open obeys search scope and history cannot bypass exclusions");
+  auto cancel = std::make_shared<std::atomic_bool>(false);
+  const auto all = WorkspaceFileIndex::scan(dir.path(), {"*"}, cancel, settings.scan);
+  require(all.paths.size() == 3, "wildcard extension includes all file types while honoring exclusions");
+  require(WorkspaceFileIndex::scan(dir.path(), {}, cancel, settings.scan).paths.isEmpty(),
+          "empty extension list searches no files");
+}
+void hiddenFiles() {
+  QTemporaryDir dir;
+  write(dir.filePath("visible.md"));
+  write(dir.filePath(".hidden.md"));
+  write(dir.filePath(".private/note.md"));
+#ifdef Q_OS_WIN
+  for (const auto& name : {QStringLiteral(".hidden.md"), QStringLiteral(".private")}) {
+    const auto path = QDir::toNativeSeparators(dir.filePath(name));
+    require(SetFileAttributesW(reinterpret_cast<LPCWSTR>(path.utf16()), FILE_ATTRIBUTE_HIDDEN), "hide Windows fixture");
+  }
+#endif
+  auto cancel = std::make_shared<std::atomic_bool>(false);
+  WorkspaceScanOptions options;
+  require(WorkspaceFileIndex::scan(dir.path(), {"md"}, cancel, options).paths.size() == 1,
+          "hidden entries excluded by default");
+  options.includeHidden = true;
+  require(WorkspaceFileIndex::scan(dir.path(), {"md"}, cancel, options).paths.size() == 3,
+          "hidden entries included on request");
 }
 void waitUntil(const std::function<bool()>& ready) {
   QElapsedTimer timer;
@@ -150,7 +270,15 @@ void pickerPresentation() {
 }
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
+  QTemporaryDir settingsDirectory;
+  QCoreApplication::setOrganizationName("MuffinTests");
+  QCoreApplication::setApplicationName("WorkspaceFiles");
+  QSettings::setDefaultFormat(QSettings::IniFormat);
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsDirectory.path());
   runTest("path matching", matching);
+  runTest("project and user ignore rules", ignoreFiles);
+  runTest("hidden search entries", hiddenFiles);
+  runTest("search preference scope and file picker", preferencesScope);
   runTest("recursive scan and picker", scanAndPicker);
   runTest("picker ranking", pickerRanking);
   runTest("picker native selection and text editing", pickerPresentation);

@@ -4004,53 +4004,58 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PreferencesDialog</name>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="210"/>
-        <location filename="../src/app/PreferencesDialog.cpp" line="212"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="220"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="222"/>
         <source>Preferences</source>
         <translation>환경설정</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Files</source>
         <translation>파일</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Editor</source>
         <translation>편집기</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="61"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="63"/>
         <source>Categories</source>
         <translation>범주</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Image</source>
         <translation>이미지</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>Appearance</source>
         <translation>모양</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="216"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="226"/>
         <source>General</source>
         <translation>일반</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="217"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
         <source>Keyboard Shortcuts</source>
         <translation>키보드 단축키</translation>
     </message>
     <message>
-        <location filename="../src/app/PreferencesDialog.cpp" line="243"/>
+        <location filename="../src/app/PreferencesDialog.cpp" line="227"/>
+        <source>Search</source>
+        <translation>검색</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PreferencesDialog.cpp" line="253"/>
         <source>No settings available.</source>
         <translation>사용 가능한 설정이 없습니다.</translation>
     </message>
@@ -4320,28 +4325,28 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">실행 파일 (*.exe);;모든 파일 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>General</source>
         <translation>일반</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>HTML (without Styles)</source>
         <translation>HTML (스타일 제외)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="71"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="72"/>
         <source>Image</source>
         <translation>이미지</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="68"/>
         <location filename="../src/app/PrefsExportPage.cpp" line="69"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="70"/>
         <source>Formats</source>
         <translation>형식</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="207"/>
         <source>Default Export Folder</source>
         <translation>기본 내보내기 폴더</translation>
     </message>
@@ -4350,271 +4355,271 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">자동</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
         <source>Same folder as current file</source>
         <translation>현재 파일과 같은 폴더</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="203"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Custom...</source>
         <translation>사용자 지정...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>Pandoc Path</source>
         <translation>Pandoc 경로</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
         <source>(Auto-detect)</source>
         <translation>(자동 감지)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="138"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="139"/>
         <source>Browse...</source>
         <translation>찾아보기...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="200"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>모든 내보내기 형식에 공통으로 적용되는 기본 설정입니다. 형식을 선택하면 해당 형식의 옵션을 설정할 수 있습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="210"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="211"/>
         <source>Custom Folder</source>
         <translation>사용자 지정 폴더</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>제목 없는 문서는 시스템의 문서 폴더를 사용합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="219"/>
         <source>All Files (*)</source>
         <translation>모든 파일 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="222"/>
         <source>Auto-detect</source>
         <translation>자동 감지</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="230"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="231"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF, HTML 및 이미지는 Muffin의 렌더러를 사용합니다. 다른 형식에는 Pandoc이 필요합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="238"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>%1 형식으로 내보낼 때 사용합니다. 변경 사항은 즉시 저장됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Theme</source>
         <translation>테마</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Current theme</source>
         <translation>현재 테마</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="240"/>
         <source>Default light theme</source>
         <translation>기본 밝은 테마</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="244"/>
         <source>Page Size</source>
         <translation>용지 크기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Width</source>
         <translation>너비</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="247"/>
         <source>Height</source>
         <translation>높이</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>Landscape</source>
         <translation>가로 방향</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="270"/>
         <source>Page Margins</source>
         <translation>페이지 여백</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="271"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="291"/>
         <source>Font Size (px)</source>
         <translation>글꼴 크기 (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
         <source>Start each level-one heading on a new page</source>
         <translation>각 1단계 제목을 새 페이지에서 시작</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="273"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
         <source>Header</source>
         <translation>머리글</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="274"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
         <source>Footer</source>
         <translation>바닥글</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Show page numbers</source>
         <translation>페이지 번호 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>머리글과 바닥글에서 사용할 수 있는 변수: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. 문서 내용과 겹치지 않도록 공간이 자동으로 확보됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="280"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="308"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
         <source>Include a table of contents</source>
         <translation>목차 포함</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Add to &lt;head&gt;</source>
         <translation>&lt;head&gt;에 추가</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
         <source>Add before document content</source>
         <translation>문서 내용 앞에 추가</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="287"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin은 이 형식에 테마 스타일시트를 추가하지 않습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
         <source>Width (px)</source>
         <translation>너비 (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>Output Scale</source>
         <translation>출력 배율</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>하나의 PNG 이미지로 내보냅니다. 총 픽셀 수는 최대 6400만 픽셀, 높이는 최대 32,767 픽셀입니다. 긴 문서는 PDF를 사용하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Pandoc이 필요합니다. 일반 설정에서 경로를 지정하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="297"/>
         <source>Reference Document</source>
         <translation>스타일 참조 문서</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="299"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="300"/>
         <source>Custom CSS</source>
         <translation>사용자 지정 CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="302"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="303"/>
         <source>Title</source>
         <translation>제목</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="275"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="304"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="305"/>
         <source>Author</source>
         <translation>작성자</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="309"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="310"/>
         <source>TOC Depth</source>
         <translation>목차 수준</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="314"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="315"/>
         <source>Number sections</source>
         <translation>섹션에 번호 매기기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Line Wrapping</source>
         <translation>줄 바꿈</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Do not wrap</source>
         <translation>줄 바꾸지 않음</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Automatic</source>
         <translation>자동</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Preserve source wrapping</source>
         <translation>원본 줄 바꿈 유지</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Pandoc 추가 인수</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>공백이 포함된 경로는 따옴표로 묶으세요. 입력 형식, 출력 형식 및 출력 경로는 Muffin이 관리합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
         <source>After Export</source>
         <translation>내보내기 후</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
         <source>Open the exported file directory</source>
         <translation>내보낸 파일 디렉터리 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="328"/>
         <source>Open the exported file</source>
         <translation>내보낸 파일 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
         <source>Using: %1</source>
         <translation>사용 중: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>올바른 실행 파일이 아닙니다. 자동으로 감지합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="345"/>
         <source>Detected: %1</source>
         <translation>감지됨: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc를 찾을 수 없습니다. 설치하거나 &apos;찾아보기&apos;를 클릭하여 위치를 지정하세요.</translation>
     </message>
@@ -5311,6 +5316,84 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
 </context>
 <context>
+    <name>muffin::PrefsSearchPage</name>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="120"/>
+        <source>Search scope</source>
+        <translation>검색 범위</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="121"/>
+        <source>Applies to folder search and Quick Open. Changes take effect on the next search.</source>
+        <translation>폴더 검색과 빠른 열기에 적용됩니다. 변경 사항은 다음 검색부터 적용됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="122"/>
+        <source>File extensions to search</source>
+        <translation>검색할 파일 확장자</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="123"/>
+        <source>Separate extensions with commas, for example: md, txt. Use * for all file types; leave empty to search no files.</source>
+        <translation>확장자는 md, txt와 같이 쉼표로 구분합니다. *를 사용하면 모든 파일 형식을 검색하며, 비워 두면 파일을 검색하지 않습니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="125"/>
+        <source>Ignored files and folders</source>
+        <translation>무시할 파일 및 폴더</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="126"/>
+        <source>One rule per line: build/ ignores folders, *.bak ignores files, /drafts/ matches the search root, and ! includes a match again. Uses gitignore-style wildcards.</source>
+        <translation>한 줄에 규칙 하나를 입력합니다. build/는 폴더를, *.bak는 파일을 무시하며, /drafts/는 검색 루트를 기준으로 일치하는 항목을 찾습니다. !는 일치하는 항목을 다시 포함합니다. gitignore 방식의 와일드카드를 사용합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="128"/>
+        <source>Include hidden files and folders</source>
+        <translation>숨김 파일 및 폴더 포함</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="129"/>
+        <source>Read .gitignore files automatically</source>
+        <translation>.gitignore 파일 자동으로 읽기</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="130"/>
+        <source>Read .ignore files automatically</source>
+        <translation>.ignore 파일 자동으로 읽기</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="131"/>
+        <source>Reads rules in the search root and its subfolders. .ignore takes priority over .gitignore; the rules above take priority over both. Ignored folders are not traversed. Symbolic links are always skipped.</source>
+        <translation>검색 루트와 하위 폴더의 규칙을 읽습니다. .ignore는 .gitignore보다 우선하며, 위의 규칙은 둘 모두보다 우선합니다. 무시된 폴더 내부는 탐색하지 않습니다. 심볼릭 링크는 항상 건너뜁니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="133"/>
+        <source>Content search limits</source>
+        <translation>내용 검색 제한</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="134"/>
+        <source>Maximum file size</source>
+        <translation>최대 파일 크기</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="135"/>
+        <source>Maximum file size for regex</source>
+        <translation>정규식 검색의 최대 파일 크기</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="136"/>
+        <source>Regex searches obey both limits. File size does not restrict Quick Open. Folder replacement keeps its separate 8 MiB safety limit. File opening protection is configured on the Files page.</source>
+        <translation>정규식 검색에는 두 제한이 모두 적용됩니다. 빠른 열기는 파일 크기의 영향을 받지 않습니다. 폴더 바꾸기에는 별도의 8 MiB 안전 제한이 계속 적용됩니다. 파일 열기 보호는 파일 페이지에서 설정합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsSearchPage.cpp" line="138"/>
+        <source>Restore search defaults</source>
+        <translation>검색 기본값 복원</translation>
+    </message>
+</context>
+<context>
     <name>muffin::PrefsShortcutsPage</name>
     <message>
         <location filename="../src/app/PrefsShortcutsPage.cpp" line="96"/>
@@ -5409,53 +5492,53 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::QuickOpenDialog</name>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="81"/>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="286"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="82"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="292"/>
         <source>Quick Open</source>
         <translation>빠른 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="88"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="89"/>
         <source>Matching files</source>
         <translation>일치하는 파일</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="245"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
         <source>Scanning folder…</source>
         <translation>폴더 검색 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="246"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="252"/>
         <source>No matching files</source>
         <translation>일치하는 파일 없음</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="247"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
         <source>%1 matching files</source>
         <translation>일치하는 파일 %1개</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="249"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="255"/>
         <source> · Showing the first %1; type to narrow results</source>
         <translation> · 처음 %1개 표시 중; 계속 입력하여 결과를 좁히세요</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="251"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="257"/>
         <source> · File limit reached; results are incomplete</source>
         <translation> · 파일 수 제한에 도달하여 결과가 불완전합니다</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="253"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="259"/>
         <source> · %1 unreadable folders skipped</source>
         <translation> · 읽을 수 없는 폴더 %1개 건너뜀</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="287"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="293"/>
         <source>Search file names or paths…</source>
         <translation>파일 이름 또는 경로 검색…</translation>
     </message>
     <message>
-        <location filename="../src/app/QuickOpenDialog.cpp" line="288"/>
+        <location filename="../src/app/QuickOpenDialog.cpp" line="294"/>
         <source>Open and recent files</source>
         <translation>열린 파일 및 최근 파일</translation>
     </message>
@@ -5467,124 +5550,134 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::SearchPanelWidget</name>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="301"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="304"/>
         <source> · Unsaved</source>
         <translation> · 저장되지 않음</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="321"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="324"/>
         <source>Open a folder to search its contents.</source>
         <translation>폴더를 열어 내용을 검색하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="323"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="326"/>
         <source>Search failed: %1</source>
         <translation>검색 실패: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="325"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="328"/>
         <source>Search text files in this folder and its subfolders.</source>
         <translation>이 폴더와 하위 폴더의 텍스트 파일을 검색합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="327"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="330"/>
         <source>%1 matches in %2 files</source>
         <translation>파일 %2개에서 %1개 일치</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="329"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="332"/>
         <source> · Searching…</source>
         <translation> · 검색 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="331"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="334"/>
         <source> · Incomplete results; search again before replacing</source>
         <translation> · 결과가 불완전합니다. 바꾸기 전에 다시 검색하세요</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="333"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="336"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
         <source>%1 files searched</source>
         <translation>파일 %1개 검색됨</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="335"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="338"/>
         <source> · %1 files or folders skipped</source>
         <translation> · 파일 또는 폴더 %1개 건너뜀</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="337"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="390"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
         <source>Result limit reached</source>
         <translation>결과 수 제한에 도달했습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="340"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="346"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="343"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="349"/>
         <source>Search details</source>
         <translation>검색 상세 정보</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Path</source>
         <translation>경로</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="352"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="355"/>
         <source>Reason</source>
         <translation>이유</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="360"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
         <source>File size exceeds %1 MiB</source>
         <translation>파일 크기가 %1 MiB를 초과합니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="363"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="366"/>
         <source>Regular expression search is limited to %1 MiB per file</source>
         <translation>정규식 검색은 파일당 %1 MiB로 제한됩니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="367"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
         <source>File is loading or has conflicting unsaved versions</source>
         <translation>파일을 불러오는 중이거나 저장되지 않은 버전 간 충돌이 있습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="370"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
         <source>Cannot read file or folder</source>
         <translation>파일 또는 폴더를 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="373"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
         <source>Unsupported encoding or binary content</source>
         <translation>지원하지 않는 인코딩이거나 바이너리 데이터입니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="376"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
         <source>File changed during search</source>
         <translation>검색 중 파일이 변경되었습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="379"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
         <source>Search exceeded its resource limit</source>
         <translation>검색이 리소스 제한을 초과했습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="382"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="385"/>
         <source>Ignored directory</source>
         <translation>무시된 디렉터리</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="388"/>
+        <source>Excluded by search ignore rules</source>
+        <translation>검색 무시 규칙에 따라 제외됨</translation>
+    </message>
+    <message>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="391"/>
+        <source>Cannot read ignore rules (UTF-8, up to 4 MiB)</source>
+        <translation>무시 규칙을 읽을 수 없음(UTF-8, 최대 4 MiB)</translation>
     </message>
     <message>
         <source>No folder open</source>
         <translation type="vanished">열린 폴더 없음</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="398"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
         <source>Search contents…</source>
         <translation>내용 검색…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="399"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
         <source>Search contents</source>
         <translation>내용 검색</translation>
     </message>
@@ -5598,44 +5691,44 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="402"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>대소문자 구분</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="404"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>정규식</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="406"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="415"/>
         <source>Replace with…</source>
         <translation>바꿀 내용…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="407"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="416"/>
         <source>Replace with</source>
         <translation>바꿀 내용</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="408"/>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="409"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="417"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="418"/>
         <source>Replace</source>
         <translation>바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="410"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="419"/>
         <source>Preview folder replacement…</source>
         <translation>폴더 바꾸기 미리 보기…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="420"/>
         <source>Search</source>
         <translation>검색</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="421"/>
         <source>Stop</source>
         <translation>중지</translation>
     </message>
@@ -5644,7 +5737,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">폴더 바꾸기 실행 취소…</translation>
     </message>
     <message>
-        <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
+        <location filename="../src/app/SearchPanelWidget.cpp" line="422"/>
         <source>Content search results</source>
         <translation>내용 검색 결과</translation>
     </message>

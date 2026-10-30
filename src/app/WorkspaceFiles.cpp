@@ -1,10 +1,12 @@
 #include "app/WorkspaceFiles.h"
-#include "app/FileOpenProtection.h"
+#include "app/SearchSettings.h"
+#include "app/WorkspaceIgnoreRules.h"
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSet>
-#include <QSettings>
+#include <QStringDecoder>
 
 namespace {
 int segmentScore(const QString& needle, const QString& haystack) {
@@ -30,10 +32,11 @@ int segmentScore(const QString& needle, const QString& haystack) {
 }
 }
 QStringList muffin::WorkspaceFileIndex::textExtensions() {
-  return file_open_protection::normalizedTextExtensions(
-      QSettings()
-          .value(QLatin1String(file_open_protection::kTextExtensions), file_open_protection::defaultTextExtensions())
-          .toString());
+  return SearchSettings::load().extensions;
+}
+QString muffin::WorkspaceScanOptions::defaultIgnorePatterns() {
+  return QStringLiteral(
+      ".git/\n.hg/\n.svn/\nnode_modules/\nbuild/\ndist/\nout/\ntarget/\n.cache/\n.conan/\n.venv/\n__pycache__/");
 }
 QString muffin::WorkspaceFileIndex::pathKey(const QString& path) {
   if (path.isEmpty())
@@ -55,15 +58,30 @@ bool muffin::WorkspaceFileIndex::contains(const QString& root, const QString& pa
 }
 muffin::WorkspaceFiles muffin::WorkspaceFileIndex::scan(const QString& root, const QStringList& extensions,
                                                         const SearchCancellation& cancel, int limit) {
+  // Reference maintenance (e.g. renaming a linked note) must not inherit the
+  // user's search scope or newly added project ignore files.
+  WorkspaceScanOptions options;
+  options.readGitIgnore = options.readIgnore = false;
+  return scan(root, extensions, cancel, options, limit);
+}
+muffin::WorkspaceFiles muffin::WorkspaceFileIndex::scan(const QString& root, const QStringList& extensions,
+                                                        const SearchCancellation& cancel,
+                                                        const WorkspaceScanOptions& options, int limit) {
   WorkspaceFiles result;
   if (root.isEmpty() || !QFileInfo(root).isDir())
     return result;
-  static const QSet<QString> excluded = {".git", ".hg",    ".svn",   "node_modules", "build", "dist",
-                                         "out",  "target", ".cache", ".conan",       ".venv", "__pycache__"};
-  QStringList pending{QFileInfo(root).absoluteFilePath()};
+  const QDir rootDirectory(QFileInfo(root).absoluteFilePath());
+  WorkspaceIgnoreRules customRules;
+  customRules.append(options.ignorePatterns);
+  struct Directory {
+    QString path;
+    WorkspaceIgnoreRules gitRules, ignoreRules;
+  };
+  QVector<Directory> pending{{rootDirectory.absolutePath(), {}, {}}};
   QSet<QString> visited;
   while (!pending.isEmpty() && !(cancel && cancel->load())) {
-    const QString directory = pending.takeLast();
+    auto current = pending.takeLast();
+    const auto& directory = current.path;
     const QFileInfo info(directory);
     if (info.isSymLink() || info.isJunction() || !contains(root, directory))
       continue;
@@ -75,27 +93,65 @@ muffin::WorkspaceFiles muffin::WorkspaceFileIndex::scan(const QString& root, con
       result.unreadableDirectories.append(directory);
       continue;
     }
-    const auto entries = QDir(directory).entryInfoList(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+    auto loadRules = [&](const QString& name, WorkspaceIgnoreRules& rules) {
+      const auto path = QDir(directory).filePath(name);
+      const QFileInfo source(path);
+      if (!source.exists() || source.isSymLink() || source.isJunction())
+        return;
+      QFile file(path);
+      constexpr qint64 limitBytes = 4 * 1024 * 1024;
+      if (!file.open(QIODevice::ReadOnly)) {
+        result.unreadableIgnoreFiles.append(path);
+        return;
+      }
+      const auto bytes = file.read(limitBytes + 1);
+      QStringDecoder decoder(QStringDecoder::Utf8);
+      const QString text = decoder.decode(bytes);
+      const auto final = decoder.finalize();
+      if (file.error() != QFileDevice::NoError || bytes.size() > limitBytes || decoder.hasError() ||
+          final.invalidChars || text.contains(QChar(0))) {
+        result.unreadableIgnoreFiles.append(path);
+        return;
+      }
+      auto base = rootDirectory.relativeFilePath(directory);
+      rules.append(text, base == "." ? QString() : base);
+    };
+    if (options.readGitIgnore)
+      loadRules(QStringLiteral(".gitignore"), current.gitRules);
+    if (options.readIgnore)
+      loadRules(QStringLiteral(".ignore"), current.ignoreRules);
+    QDir::Filters filters = QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot;
+    if (options.includeHidden)
+      filters |= QDir::Hidden | QDir::System;
+    const auto entries = QDir(directory).entryInfoList(filters, QDir::Name);
     for (const auto& entry : entries) {
       if (cancel && cancel->load())
         return result;
       if (entry.isSymLink() || entry.isJunction())
         continue;
+      const auto relative = rootDirectory.relativeFilePath(entry.absoluteFilePath());
+      const bool ignored = customRules.ignored(
+          relative, entry.isDir(),
+          current.ignoreRules.ignored(relative, entry.isDir(), current.gitRules.ignored(relative, entry.isDir())));
       if (entry.isDir()) {
-        if (!excluded.contains(entry.fileName().toCaseFolded()))
-          pending.append(entry.absoluteFilePath());
+        if (!ignored)
+          pending.append({entry.absoluteFilePath(), current.gitRules, current.ignoreRules});
         else
           result.ignoredDirectories.append(entry.absoluteFilePath());
       } else if (entry.isFile()) {
         bool allowed = false;
         for (const auto& ext : extensions) {
-          if (entry.fileName().endsWith('.' + ext, Qt::CaseInsensitive)) {
+          if (ext == "*" || entry.fileName().endsWith('.' + ext, Qt::CaseInsensitive)) {
             allowed = true;
             break;
           }
         }
         if (!allowed)
           continue;
+        if (ignored) {
+          result.ignoredFiles.append(entry.absoluteFilePath());
+          continue;
+        }
         if (result.paths.size() >= limit) {
           result.truncated = true;
           return result;

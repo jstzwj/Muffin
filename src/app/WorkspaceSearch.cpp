@@ -381,14 +381,18 @@ muffin::WorkspaceSearch::run(const WorkspaceQuery& query, const OpenSearchBuffer
     result.complete = false;
     return result;
   }
-  const auto index = WorkspaceFileIndex::scan(query.root, query.extensions, cancel);
-  result.complete = !index.truncated;
+  const auto index = WorkspaceFileIndex::scan(query.root, query.extensions, cancel, query.scanOptions);
+  result.complete = !index.truncated && index.unreadableIgnoreFiles.isEmpty();
   for (const auto& path : index.unreadableDirectories) {
     result.skipped.append(path);
     result.details.append({path, WorkspaceSkipReason::Unreadable});
   }
   for (const auto& path : index.ignoredDirectories)
     result.details.append({path, WorkspaceSkipReason::IgnoredDirectory});
+  for (const auto& path : index.ignoredFiles)
+    result.details.append({path, WorkspaceSkipReason::IgnoredFile});
+  for (const auto& path : index.unreadableIgnoreFiles)
+    result.details.append({path, WorkspaceSkipReason::UnreadableIgnoreFile});
   std::atomic<qsizetype> nextFile{0};
   std::atomic_bool stop{false};
   std::mutex publish;

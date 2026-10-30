@@ -27,6 +27,14 @@ Type Markdown and it is formatted instantly. A few essentials:
 
 Insert tables, math (`$E=mc^2$`), footnotes, and fenced code blocks — Muffin renders all of GitHub‑Flavored Markdown.
 
+## Search scope
+
+**Preferences → Search** configures folder content search and `Ctrl+P` Quick Open independently of file opening protection. Set the allowed extensions, ignored files and folders, hidden-file visibility, and whether to read `.gitignore` and `.ignore` in the search root and its subfolders. Changes apply to the next search.
+
+Write one ignore rule per line, such as `build/`, `*.bak`, or `/drafts/`. Rules support `*`, `?`, `**`, character classes, and `!` exceptions. `.ignore` takes priority over `.gitignore`; preference rules take priority over both. An ignored directory is not traversed, so its parent directories must be allowed before an exception inside it can take effect. Use `*` in the extensions field to search all file types, or leave it empty to search no files. Binary content and unsupported encodings are still skipped.
+
+Content search defaults to 100 MiB per file, with an additional 32 MiB limit for regular expressions. Both are configurable up to 512 MiB. File size does not limit Quick Open; folder replacement retains a separate 8 MiB limit. **Search details** explains ignored items and files skipped because of size, permissions, or encoding.
+
 ## Tips
 
 - In live editing, paste browser or office HTML to keep headings, emphasis, lists, links and tables. Spreadsheet cells copied as tab-separated text become a Markdown table. Use **Edit → Paste as Plain Text** to keep only text; code blocks and source mode always paste literal text.

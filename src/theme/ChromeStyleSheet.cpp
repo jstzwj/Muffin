@@ -170,6 +170,9 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              "QLabel { color:%2; background:transparent; }"
              "QLabel:disabled { color:%9; }"
              "QWidget#preferencesPage { background:transparent; }"
+             "QPlainTextEdit#SearchIgnorePatterns { background:%3; color:%2; border:1px solid %4;"
+             " border-radius:6px; padding:6px; selection-background-color:%8; selection-color:%10; }"
+             "QPlainTextEdit#SearchIgnorePatterns:focus { border-color:%7; }"
              "QWidget#preferencesSidebar { background:%3; border:1px solid %4; border-radius:8px; }"
 
              // Settings groups and rows
@@ -243,8 +246,23 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              "QLineEdit:disabled { background:%6; color:%9; }"
              "QLineEdit { selection-background-color:%8; selection-color:%10; }"
              "QSpinBox, QDoubleSpinBox { border:1px solid %4; border-radius:6px; background:%3; padding:4px 10px; min-height:24px; color:%2; }"
+             "QSpinBox:hover:!disabled, QDoubleSpinBox:hover:!disabled { border-color:%7; }"
              "QSpinBox:focus, QDoubleSpinBox:focus { border-color:%7; }"
-             "QSpinBox:disabled, QDoubleSpinBox:disabled { background:%6; color:%9; }"
+             "QSpinBox:disabled, QDoubleSpinBox:disabled { background:%1; color:%9; }"
+             // Fully style the step controls: a styled frame alone leaves the
+             // native Windows side-by-side, raised buttons inside the field.
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::up-button { subcontrol-origin:border; subcontrol-position:top right;"
+             "  width:24px; height:16px; top:1px; right:1px; border:0; border-top-right-radius:5px; background:transparent; }"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::down-button { subcontrol-origin:border; subcontrol-position:bottom right;"
+             "  width:24px; height:16px; bottom:1px; right:1px; border:0; border-bottom-right-radius:5px; background:transparent; }"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::up-button:hover:!disabled:!off,"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::down-button:hover:!disabled:!off { background:%6; }"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::up-button:pressed:!disabled:!off,"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::down-button:pressed:!disabled:!off { background:%8; }"
+             // PreferencesSpinBox paints palette-based vector chevrons in these
+             // hit rectangles; suppress the platform's bitmap/font arrows.
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::up-arrow,"
+             "QAbstractSpinBox[preferencesStepButtons=\"true\"]::down-arrow { image:none; }"
 
              // Shortcut command list and editor. Do not inherit the OS palette:
              // it may be light while the selected document theme is dark.

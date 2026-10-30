@@ -6,6 +6,7 @@
 // anonymous namespace at file scope (which the rule permits).
 
 #include "app/QuickOpenDialog.h"
+#include "app/SearchSettings.h"
 #include "theme/ThemeDefinition.h"
 #include "theme/ChromeStyleSheet.h"
 
@@ -121,7 +122,10 @@ void muffin::QuickOpenDialog::setWorkspace(const QString& root, const QStringLis
     retranslateUi();
     return;
   }
-  candidates_.removeIf([&](const QString& path) { return !WorkspaceFileIndex::contains(root, path); });
+  // History must not bypass the workspace's extension, hidden or ignore rules.
+  // With a workspace, candidates come exclusively from the filtered scan.
+  candidates_.clear();
+  applyFilter(filterEdit_->text());
   cancel_ = std::make_shared<std::atomic_bool>(false);
   const auto cancellation = cancel_;
   scanning_ = true;
@@ -140,11 +144,13 @@ void muffin::QuickOpenDialog::setWorkspace(const QString& root, const QStringLis
     }
     scanning_ = false;
     truncated_ = result.truncated;
-    unreadable_ = result.unreadableDirectories.size();
+    unreadable_ = result.unreadableDirectories.size() + result.unreadableIgnoreFiles.size();
     applyFilter(filterEdit_->text());
   });
-  watcher->setFuture(QtConcurrent::run(
-      [root, extensions, cancellation] { return WorkspaceFileIndex::scan(root, extensions, cancellation); }));
+  const auto options = SearchSettings::load().scan;
+  watcher->setFuture(QtConcurrent::run([root, extensions, cancellation, options] {
+    return WorkspaceFileIndex::scan(root, extensions, cancellation, options);
+  }));
   retranslateUi();
 }
 

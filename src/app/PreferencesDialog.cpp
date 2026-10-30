@@ -11,6 +11,7 @@
 #include "app/PrefsMarkdownPage.h"
 #include "app/PrefsExportPage.h"
 #include "app/PrefsShortcutsPage.h"
+#include "app/PrefsSearchPage.h"
 
 #include <QEvent>
 #include <QHBoxLayout>
@@ -27,8 +28,9 @@ namespace {
 // of always landing on General. The translated labels can't be used as keys — they change with the
 // UI language.
 const QStringList kCategoryKeys = {
-    QStringLiteral("general"), QStringLiteral("appearance"), QStringLiteral("editor"), QStringLiteral("markdown"),
-    QStringLiteral("image"),   QStringLiteral("files"),      QStringLiteral("export"), QStringLiteral("shortcuts"),
+    QStringLiteral("general"),  QStringLiteral("appearance"), QStringLiteral("editor"),
+    QStringLiteral("markdown"), QStringLiteral("image"),      QStringLiteral("files"),
+    QStringLiteral("search"),   QStringLiteral("export"),     QStringLiteral("shortcuts"),
 };
 const QString kLastCategorySetting = QStringLiteral("preferences/lastCategory");
 } // namespace
@@ -115,7 +117,15 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
     contentStack_->addWidget(scroll);
   }
 
-  // Page 6: Export
+  // Page 6: Search
+  {
+    auto* scroll = makeScrollArea();
+    searchPage_ = new PrefsSearchPage(scroll);
+    scroll->setWidget(searchPage_);
+    contentStack_->addWidget(scroll);
+  }
+
+  // Page 7: Export
   {
     auto* scroll = makeScrollArea();
     exportPage_ = new PrefsExportPage(scroll);
@@ -213,8 +223,8 @@ void muffin::PreferencesDialog::retranslateUi() {
   }
 
   const QStringList categories = {
-      tr("General"), tr("Appearance"), tr("Editor"), QStringLiteral("Markdown"),
-      tr("Image"),   tr("Files"),      tr("Export"), tr("Keyboard Shortcuts"),
+      tr("General"), tr("Appearance"), tr("Editor"), QStringLiteral("Markdown"), tr("Image"),
+      tr("Files"),   tr("Search"),     tr("Export"), tr("Keyboard Shortcuts"),
   };
 
   int currentRow = categoryList_->currentRow();
@@ -264,6 +274,9 @@ void muffin::PreferencesDialog::retranslateUi() {
   }
   if (shortcutsPage_) {
     shortcutsPage_->retranslateUi();
+  }
+  if (searchPage_) {
+    searchPage_->retranslateUi();
   }
   // General page handles its own retranslation via LanguageManager
 }

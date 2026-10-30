@@ -1,4 +1,5 @@
 #include "app/PrefsExportPage.h"
+#include "app/PreferencesSpinBox.h"
 #include "export/ExportOptions.h"
 #include "export/PandocRunner.h"
 #include <QCheckBox>
@@ -162,7 +163,7 @@ void muffin::PrefsExportPage::rebuildPage() {
   };
   const auto number = [&](const QString& label, const QString& key, int fallback, int minimum, int maximum,
                           const QString& name = {}) {
-    auto* field = new QSpinBox(card);
+    auto* field = new PreferencesSpinBox<QSpinBox>(card);
     field->setObjectName(name);
     field->setRange(minimum, maximum);
     field->setValue(QSettings().value(key, fallback).toInt());
@@ -173,7 +174,7 @@ void muffin::PrefsExportPage::rebuildPage() {
   };
   const auto decimal = [&](const QString& label, const QString& key, double fallback, double minimum, double maximum,
                            const QString& name) {
-    auto* field = new QDoubleSpinBox(card);
+    auto* field = new PreferencesSpinBox<QDoubleSpinBox>(card);
     field->setObjectName(name);
     field->setDecimals(1);
     field->setRange(minimum, maximum);

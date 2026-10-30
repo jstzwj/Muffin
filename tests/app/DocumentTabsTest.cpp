@@ -11,6 +11,7 @@
 #include "app/PreferencesDialog.h"
 #include "app/PrefsExportPage.h"
 #include "app/PrefsShortcutsPage.h"
+#include "app/SearchSettings.h"
 #include "app/CommandDeclarations.h"
 #include "theme/ChromeStyleSheet.h"
 #include "editor/ShortcutSettings.h"
@@ -48,6 +49,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QInputMethodEvent>
 #include <QHeaderView>
 #include <QKeySequenceEdit>
@@ -65,6 +67,7 @@
 #include <QStandardPaths>
 #include <QSpinBox>
 #include <QStyleFactory>
+#include <QStyleOptionSpinBox>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -650,6 +653,120 @@ void exportPreferencesAndOutputs() {
   QSettings().remove("export/docx/arguments");
 }
 
+void searchPreferences() {
+  SettingsOverride extensions("search/extensions", "md"), ignored("search/ignorePatterns", "build/"),
+      hidden("search/includeHidden", false), git("search/readGitIgnore", true), ignore("search/readIgnore", true),
+      size("search/maxFileBytes", 100 * 1024 * 1024), regex("search/maxRegexBytes", 32 * 1024 * 1024),
+      category("preferences/lastCategory", "search"), openingExtensions("files/textExtensions", "cpp"),
+      openingLimit("files/sizeLimitBytes", 1024);
+  PreferencesDialog preferences;
+  auto* extensionEdit = preferences.findChild<QLineEdit*>("SearchExtensions");
+  auto* patterns = preferences.findChild<QPlainTextEdit*>("SearchIgnorePatterns");
+  auto* maxSize = preferences.findChild<QSpinBox*>("SearchMaxFileMiB");
+  auto* maxRegex = preferences.findChild<QSpinBox*>("SearchMaxRegexMiB");
+  require(extensionEdit && patterns && maxSize && maxRegex, "search preference controls exist");
+  preferences.show();
+  QApplication::processEvents();
+  require(extensionEdit->isVisible() && patterns->isVisible(), "search category restores by stable key");
+  extensionEdit->setText("*.MD, txt");
+  patterns->setPlainText("drafts/\n*.bak");
+  maxSize->setValue(12);
+  maxRegex->setValue(6);
+  preferences.findChild<QCheckBox*>("SearchReadGitIgnore")->setChecked(false);
+  preferences.findChild<QCheckBox*>("SearchIncludeHidden")->setChecked(true);
+  const auto settings = SearchSettings::load();
+  require(settings.extensions == QStringList({"md", "txt"}) && settings.scan.ignorePatterns == "drafts/\n*.bak" &&
+              settings.scan.includeHidden && !settings.scan.readGitIgnore && settings.scan.readIgnore &&
+              settings.maxFileBytes == 12 * 1024 * 1024 && settings.maxRegexBytes == 6 * 1024 * 1024,
+          "all search controls save immediately without changing opening protection");
+  require(QSettings().value("files/textExtensions").toString() == "cpp" &&
+              QSettings().value("files/sizeLimitBytes").toLongLong() == 1024,
+          "file protection preferences remain independent");
+  const auto screenshots = qEnvironmentVariable("MUFFIN_SEARCH_PREFS_SCREENSHOT_DIR");
+  for (const auto& theme : {QStringLiteral("github"), QStringLiteral("night")}) {
+    const auto definition = ThemeDefinition::builtIn(theme).value();
+    preferences.setThemeDefinition(definition);
+    QApplication::processEvents();
+    require(patterns->palette().color(QPalette::Text) == definition.colors.chromeText &&
+                patterns->palette().color(QPalette::Base) == definition.colors.surface,
+            "multiline rules follow the theme");
+    if (!screenshots.isEmpty()) {
+      QDir().mkpath(screenshots);
+      preferences.grab().save(QDir(screenshots).filePath(theme + ".png"));
+    }
+  }
+  preferences.findChild<QPushButton*>("SearchResetDefaults")->click();
+  const auto reset = SearchSettings::load();
+  require(reset.maxFileBytes == 100 * 1024 * 1024 && reset.maxRegexBytes == 32 * 1024 * 1024 &&
+              reset.scan.readGitIgnore && reset.scan.readIgnore && !reset.scan.includeHidden &&
+              reset.scan.ignorePatterns == WorkspaceScanOptions::defaultIgnorePatterns() &&
+              reset.extensions.contains("md") && !reset.extensions.contains("cpp"),
+          "restore every search default");
+}
+
+void exportNumberControls() {
+  QSettings().setValue("preferences/lastCategory", "export");
+  QSettings().setValue("export/lastPage", 1);
+  QSettings().setValue("export/pdf/paper", "A4");
+  const auto captures = qEnvironmentVariable("MUFFIN_EXPORT_NUMBER_SCREENSHOT_DIR");
+  const auto originalLanguage = LanguageManager::instance().currentLanguageCode();
+  const auto restoreLanguage = qScopeGuard([&] { LanguageManager::instance().setLanguage(originalLanguage); });
+  if (!captures.isEmpty()) {
+    QDir().mkpath(captures);
+    LanguageManager::instance().setLanguage("zh_CN");
+  }
+  PreferencesDialog preferences;
+  auto* page = preferences.findChild<PrefsExportPage*>();
+  auto* paper = page->findChild<QComboBox*>("ExportPdfPaper");
+  auto* margin = page->findChild<QDoubleSpinBox*>("ExportPdfMargin");
+  auto* font = page->findChild<QSpinBox*>("ExportPdfFontSize");
+  auto* width = page->findChild<QDoubleSpinBox*>("ExportPdfWidth");
+  for (const auto& theme : {QStringLiteral("github"), QStringLiteral("night")}) {
+    preferences.setThemeDefinition(ThemeDefinition::builtIn(theme).value());
+    preferences.show();
+    QApplication::processEvents();
+    paper->setCurrentIndex(paper->findData("A4"));
+    require(!width->isEnabled(), "preset paper dimensions remain disabled");
+    margin->setValue(15);
+    font->setValue(16);
+    for (auto* spin : {static_cast<QAbstractSpinBox*>(margin), static_cast<QAbstractSpinBox*>(font)}) {
+      QStyleOptionSpinBox option;
+      option.initFrom(spin);
+      option.buttonSymbols = spin->buttonSymbols();
+      const QRect up = spin->style()->subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxUp, spin);
+      const QRect down = spin->style()->subControlRect(QStyle::CC_SpinBox, &option, QStyle::SC_SpinBoxDown, spin);
+      require(spin->rect().contains(up) && spin->rect().contains(down) && !up.intersects(down) &&
+                  up.center().y() < down.center().y(),
+              "stacked step buttons fit the field and have distinct click targets");
+      const auto value = [spin, margin, font] { return spin == margin ? margin->value() : font->value(); };
+      const double before = value();
+      QTest::mouseClick(spin, Qt::LeftButton, Qt::NoModifier, up.center());
+      require(value() == before + 1, "upper chevron increments the value");
+      QTest::mouseClick(spin, Qt::LeftButton, Qt::NoModifier, down.center());
+      require(value() == before, "lower chevron decrements the value");
+      QTest::keyClick(spin, Qt::Key_Up);
+      require(value() == before + 1, "keyboard stepping is retained");
+      QTest::keyClick(spin, Qt::Key_Down);
+      require(value() == before, "keyboard stepping reverses the change");
+    }
+    require(QSettings().value("export/pdf/margin").toDouble() == margin->value() &&
+                QSettings().value("export/pdf/fontSize").toInt() == font->value(),
+            "button and keyboard edits retain immediate preference persistence");
+    margin->setValue(margin->minimum());
+    QTest::keyClick(margin, Qt::Key_Down);
+    require(margin->value() == margin->minimum(), "stepping still respects numeric bounds");
+    margin->setValue(15);
+    font->clearFocus();
+    preferences.setFocus();
+    QTest::mouseMove(&preferences, QPoint(5, 5));
+    QApplication::processEvents();
+    if (!captures.isEmpty())
+      require(preferences.grab().save(QDir(captures).filePath(theme + ".png")), "capture export number controls");
+    paper->setCurrentIndex(paper->findData("Custom"));
+    require(width->isEnabled(), "custom page dimensions remain editable");
+  }
+}
+
 void exportPathRowsFitControls() {
   QSettings().setValue("preferences/lastCategory", "export");
   QSettings().setValue("export/lastPage", 0);
@@ -1007,7 +1124,7 @@ void shortcutPreferencesFollowThemeAndConfirmReset() {
   // Keep the same dialog alive through a theme change, with an OS palette
   // deliberately opposed to each document theme. Test both its view and popup.
   PreferencesDialog preferences;
-  preferences.findChild<QListWidget*>()->setCurrentRow(7);
+  preferences.findChild<QListWidget*>()->setCurrentRow(8);
   auto* filter = preferences.findChild<QLineEdit*>("ShortcutFilter");
   auto* commands = preferences.findChild<QTreeWidget*>("ShortcutCommands");
   auto* sequence = preferences.findChild<QKeySequenceEdit*>("ShortcutSequence");
@@ -3714,6 +3831,14 @@ int main(int argc, char** argv) {
     runTest("exportPathRowsFitControls", exportPathRowsFitControls);
     return 0;
   }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--export-number-controls"))) {
+    runTest("exportNumberControls", exportNumberControls);
+    return 0;
+  }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--search-preferences"))) {
+    runTest("searchPreferences", searchPreferences);
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update"))) {
     runWindowsUpdateTests();
     return 0;
@@ -3759,6 +3884,8 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--sidebar-file-open")))
     return 0;
   runTest("exportPreferencesAndOutputs", exportPreferencesAndOutputs);
+  runTest("exportNumberControls", exportNumberControls);
+  runTest("searchPreferences", searchPreferences);
   runTest("exportPathRowsFitControls", exportPathRowsFitControls);
   if (QCoreApplication::arguments().contains(QStringLiteral("--export-options")))
     return 0;

@@ -20,6 +20,7 @@
 #include <QTimer>
 #include <QDialog>
 #include <QTextStream>
+#include <QPushButton>
 #include <algorithm>
 
 using namespace muffin;
@@ -244,6 +245,58 @@ void coverageDetails() {
   require(QMetaObject::invokeMethod(summary, "linkActivated", Q_ARG(QString, QStringLiteral("details"))),
           "activate details link");
 }
+void configuredScope() {
+  SettingsOverride extensions("search/extensions", "txt"), ignored("search/ignorePatterns", "drafts/\n*.bak"),
+      hidden("search/includeHidden", false), git("search/readGitIgnore", true), ignore("search/readIgnore", true),
+      size("search/maxFileBytes", 1024 * 1024), regex("search/maxRegexBytes", 1024 * 1024),
+      openingExtensions("files/textExtensions", "cpp"), openingSize("files/sizeLimitBytes", 1024);
+  QTemporaryDir dir;
+  write(dir.filePath("note.txt"), "needle");
+  write(dir.filePath("markdown.md"), "needle");
+  write(dir.filePath("drafts/draft.txt"), "needle");
+  write(dir.filePath("project.txt"), "needle");
+  write(dir.filePath(".gitignore"), "project.txt\n");
+  write(dir.filePath("large.txt"), QByteArray(2 * 1024 * 1024, 'x') + "needle");
+  SearchPanelWidget panel;
+  panel.setRoot(dir.path());
+  panel.findChild<QLineEdit*>("WorkspaceSearchQuery")->setText("needle");
+  auto search = [&] {
+    panel.startSearch({});
+    QElapsedTimer timer;
+    timer.start();
+    auto* summary = panel.findChild<QLabel*>("WorkspaceSearchSummary");
+    while (summary->text().contains("Searching") && timer.elapsed() < 5000) {
+      QApplication::processEvents();
+      QThread::msleep(5);
+    }
+    require(!summary->text().contains("Searching"), "configured search finishes");
+  };
+  search();
+  require(panel.result().matches == 1 && panel.result().files.first().path == dir.filePath("note.txt") &&
+              panel.result().query.maxFileBytes == 1024 * 1024,
+          QStringLiteral("configured search: matches=%1 files=%2 extensions=%3 limit=%4")
+              .arg(panel.result().matches)
+              .arg(panel.result().files.size())
+              .arg(panel.result().query.extensions.join(','))
+              .arg(panel.result().query.maxFileBytes));
+  const auto hasReason = [&](WorkspaceSkipReason reason) {
+    return std::any_of(panel.result().details.begin(), panel.result().details.end(),
+                       [reason](const auto& detail) { return detail.reason == reason; });
+  };
+  require(hasReason(WorkspaceSkipReason::TooLarge) && hasReason(WorkspaceSkipReason::IgnoredFile) &&
+              hasReason(WorkspaceSkipReason::IgnoredDirectory),
+          "coverage distinguishes size and ignore exclusions");
+  QSettings().setValue("search/readGitIgnore", false);
+  QSettings().setValue("search/maxFileBytes", 3 * 1024 * 1024);
+  search();
+  require(panel.result().matches == 3 && panel.result().searchedFiles == 3,
+          "the next search captures changed scope without restarting the editor");
+  QSettings().setValue("search/readIgnore", true);
+  write(dir.filePath(".ignore"), QByteArray("broken\0rule", 11));
+  search();
+  require(!panel.result().complete && hasReason(WorkspaceSkipReason::UnreadableIgnoreFile),
+          "unreadable ignore rules mark coverage incomplete and prevent unsafe directory replacement");
+}
 void streamingAndParallelism() {
   QTemporaryDir directory;
   QString text(255, u'a');
@@ -414,6 +467,11 @@ void benchmark(const QString& path, const QString& pattern) {
 }
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
+  QTemporaryDir settingsDirectory;
+  QCoreApplication::setOrganizationName("MuffinTests");
+  QCoreApplication::setApplicationName("WorkspaceSearch");
+  QSettings::setDefaultFormat(QSettings::IniFormat);
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsDirectory.path());
   const auto arguments = app.arguments();
   if (arguments.size() >= 4 && arguments[1] == "--benchmark") {
     benchmark(arguments[2], arguments[3]);
@@ -425,6 +483,7 @@ int main(int argc, char** argv) {
   runTest("query generations", panelGeneration);
   runTest("narrow match context", narrowMatchPreview);
   runTest("search coverage details", coverageDetails);
+  runTest("configured search coverage", configuredScope);
   runTest("streaming and parallel search", streamingAndParallelism);
   runTest("regex compatibility and lazy preview", regexCompatibilityAndStalePreview);
   runTest("100 MiB search", largeFile);
