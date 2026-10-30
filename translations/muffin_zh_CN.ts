@@ -4298,6 +4298,31 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>CRLF（Windows 风格）</translation>
     </message>
     <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
+        <source>Locked Editing</source>
+        <translation>锁定编辑</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
+        <source>Read-only reading mode: hides the caret and inline popups, rejects typing</source>
+        <translation>只读阅读模式：隐藏光标与行内浮层，拒绝输入</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
+        <source>Enable locked editing</source>
+        <translation>启用锁定编辑</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <source>Each tab locks on its own</source>
+        <translation>独立标签页（各标签页分别锁定）</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <source>One lock for the whole window</source>
+        <translation>全局窗口（整个窗口一起锁定）</translation>
+    </message>
+    <message>
         <location filename="../src/app/PrefsEditorPage.cpp" line="206"/>
         <source>Spell Check</source>
         <translation>拼写检查</translation>

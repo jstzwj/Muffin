@@ -113,7 +113,26 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   lbLayout->addWidget(lineBreakCrlfRadio_);
   cardColumn->addWidget(lbCard);
 
-  // --- Card 7: Spell Check ---
+  // --- Card 7: Locked Editing ---
+  auto* lockCard = makeCard(this);
+  auto* lockLayout = makeCardLayout(lockCard);
+  lockEditingLabel_ = makeSectionLabel(lockCard);
+  lockEditingDescLabel_ = makeMutedLabel(lockCard);
+  lockEditingDescLabel_->setWordWrap(true);
+  lockEditingEnabledCheck_ = new QCheckBox(lockCard);
+  lockEditingEnabledCheck_->setChecked(true);
+  lockPerTabRadio_ = new QRadioButton(lockCard);
+  lockPerWindowRadio_ = new QRadioButton(lockCard);
+  lockPerTabRadio_->setChecked(true);
+  lockLayout->addWidget(lockEditingLabel_);
+  lockLayout->addWidget(lockEditingDescLabel_);
+  lockLayout->addSpacing(2);
+  lockLayout->addWidget(lockEditingEnabledCheck_);
+  lockLayout->addWidget(lockPerTabRadio_);
+  lockLayout->addWidget(lockPerWindowRadio_);
+  cardColumn->addWidget(lockCard);
+
+  // --- Card 8: Spell Check ---
   auto* spellCard = makeCard(this);
   auto* spellLayout = makeCardLayout(spellCard);
   spellCheckLabel_ = makeSectionLabel(spellCard);
@@ -134,7 +153,7 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   spellLayout->addLayout(spellLangRow);
   cardColumn->addWidget(spellCard);
 
-  // --- Card 8: Typewriter Mode ---
+  // --- Card 9: Typewriter Mode ---
   auto* twCard = makeCard(this);
   twCard->setProperty("lastSettingsRow", true);
   auto* twLayout = makeCardLayout(twCard);
@@ -163,6 +182,16 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   wireBoolSetting(showMermaidAsSourceCheck_, QStringLiteral("editor/showMermaidAsSource"));
   wireBoolSetting(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"));
   wireBoolSetting(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"));
+  wireBoolSetting(lockEditingEnabledCheck_, QStringLiteral("editor/lockEditingEnabled"));
+  connect(lockPerTabRadio_, &QRadioButton::toggled, this,
+          [](bool checked) { QSettings().setValue(QStringLiteral("editor/lockEditingScope"), checked ? 0 : 1); });
+  connect(lockEditingEnabledCheck_, &QCheckBox::toggled, this, [this](bool enabled) {
+    lockPerTabRadio_->setEnabled(enabled);
+    lockPerWindowRadio_->setEnabled(enabled);
+    emit lockEditingSettingsChanged();
+  });
+  connect(lockPerTabRadio_, &QRadioButton::toggled, this, [this](bool) { emit lockEditingSettingsChanged(); });
+  connect(lockPerWindowRadio_, &QRadioButton::toggled, this, [this](bool) { emit lockEditingSettingsChanged(); });
   connect(lineBreakLfRadio_, &QRadioButton::toggled, this,
           [](bool checked) { QSettings().setValue(QStringLiteral("editor/defaultLineBreak"), checked ? 0 : 1); });
   connect(spellCheckEnabledCheck_, &QCheckBox::toggled, this, [](bool on) { SpellChecker::instance().setEnabled(on); });
@@ -203,6 +232,12 @@ void muffin::PrefsEditorPage::retranslateUi() {
   lineBreakLfRadio_->setText(tr("LF (Unix Style)"));
   lineBreakCrlfRadio_->setText(tr("CRLF (Windows Style)"));
 
+  lockEditingLabel_->setText(tr("Locked Editing"));
+  lockEditingDescLabel_->setText(tr("Read-only reading mode: hides the caret and inline popups, rejects typing"));
+  lockEditingEnabledCheck_->setText(tr("Enable locked editing"));
+  lockPerTabRadio_->setText(tr("Each tab locks on its own"));
+  lockPerWindowRadio_->setText(tr("One lock for the whole window"));
+
   spellCheckLabel_->setText(tr("Spell Check"));
   spellCheckEnabledCheck_->setText(tr("Enable spell checking"));
   spellCheckLanguageLabel_->setText(tr("Language"));
@@ -232,6 +267,17 @@ void muffin::PrefsEditorPage::loadSettings() {
     lineBreakCrlfRadio_->setChecked(true);
   }
 
+  loadCheck(lockEditingEnabledCheck_, QStringLiteral("editor/lockEditingEnabled"), true);
+  {
+    const QSignalBlocker perTabBlocker(lockPerTabRadio_);
+    const QSignalBlocker perWindowBlocker(lockPerWindowRadio_);
+    if (QSettings().value(QStringLiteral("editor/lockEditingScope"), 0).toInt() == 0) {
+      lockPerTabRadio_->setChecked(true);
+    } else {
+      lockPerWindowRadio_->setChecked(true);
+    }
+  }
+
   // Spell check: the enable state and the bundled-dictionary language dropdown (combo
   // item data is the locale code). Source of truth is the SpellChecker singleton, which
   // already read the settings at construction.
@@ -255,4 +301,6 @@ void muffin::PrefsEditorPage::loadSettings() {
   spellCheckLanguageCombo_->setCurrentIndex(spellIndex < 0 ? 0 : spellIndex);
   spellCheckLanguageCombo_->blockSignals(false);
   loadCheck(typewriterCursorMiddleCheck_, QStringLiteral("editor/typewriterCursorMiddle"), true);
+  lockPerTabRadio_->setEnabled(lockEditingEnabledCheck_->isChecked());
+  lockPerWindowRadio_->setEnabled(lockEditingEnabledCheck_->isChecked());
 }

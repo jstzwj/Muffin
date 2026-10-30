@@ -129,6 +129,7 @@ void muffin::MainWindow::configureTab(DocumentTab* document) {
   document->renderView->setContentWidthPx(contentWidthPx_);
   document->renderView->setFocusMode(focusMode_);
   document->renderView->setTypewriterMode(typewriterMode_);
+  applyEditingLockedTo(document); // a tab opened while 锁定编辑 starts locked too
   document->renderView->setTypewriterCursorMiddle(
       QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   if (const QAction* wrap = commands_.action(QStringLiteral("view.word_wrap"))) {
@@ -375,6 +376,8 @@ void muffin::MainWindow::activateTab(int index) {
     tab_->fileController.save(tab_->session, this);
   }
   tab_ = next;
+  applyEditingLockedTo(tab_); // 独立标签页: 各页签保持自己的锁定状态; 全局窗口: 统一重新落状态
+  syncLockEditingAction();
   if (pendingNavigation_ && pendingNavigation_->destination != next)
     pendingNavigation_.reset();
   QTimer::singleShot(0, next->windowConnections, [this, next] { applySearchNavigation(next); });

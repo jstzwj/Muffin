@@ -199,6 +199,11 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
   addCommand(QStringLiteral("edit.find"));
   addCommand(QStringLiteral("edit.replace"));
 
+  // 锁定/解锁编辑 always available from the editor's right-click menu; the action's
+  // own label flips with the state, so a locked document offers “解锁编辑”.
+  menu.addSeparator();
+  addCommand(QStringLiteral("edit.lock_editing"));
+
   menu.exec(globalPos);
 }
 

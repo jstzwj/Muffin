@@ -747,7 +747,13 @@ void muffin::DocumentSession::updateFromEditor(QString text) {
   parseAndStore(std::move(text), true);
 }
 
+void muffin::DocumentSession::setEditingReadOnly(bool readOnly) {
+  editingReadOnly_ = readOnly;
+}
+
 void muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
+  if (editingReadOnly_)
+    return; // 锁定编辑: every caller of this API is a user edit (typing, paste, format, undo)
   parseAndStore(std::move(text), modified, std::move(demoteAtOffsets));
   emit documentTextChanged(document_.markdownText().toString());
 }
@@ -769,6 +775,12 @@ void muffin::DocumentSession::setOpenConfirmationPending(bool pending) {
 
 bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText,
                                              bool modified, QVector<LocalEditNodeHint> nodeHints) {
+  if (editingReadOnly_) {
+    warnLocalEditRejected("editing locked", sourceStart,
+                          sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
+                          insertedText.size(), document_.pieceText().size());
+    return false; // 锁定编辑: covers undo/redo and the render facade too
+  }
   // While an async open parse is in flight, document_ still holds the STALE pre-open text. A local
   // edit now would land on the wrong content, and bumping parseGeneration_ to "win" would discard
   // the worker's result for the file the user actually opened — silent data loss. Reject the edit
@@ -805,6 +817,9 @@ bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype re
 
 bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot,
                                                  bool modified) {
+  if (editingReadOnly_) {
+    return false; // 锁定编辑: table structure/content changes are user edits
+  }
   if (tableSnapshot.type() != BlockType::Table) {
     return false;
   }
@@ -829,6 +844,9 @@ bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex,
 
 bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex,
                                                 const MarkdownNode& nodeSnapshot, bool modified) {
+  if (editingReadOnly_) {
+    return false; // 锁定编辑: block rewrites are user edits
+  }
   if (nodeType == BlockType::Unknown || nodeSnapshot.type() != nodeType) {
     return false;
   }
@@ -854,6 +872,9 @@ bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeTyp
 bool muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
                                                 qsizetype targetSourceOffset, qsizetype removedLength,
                                                 QString insertedText, bool modified) {
+  if (editingReadOnly_) {
+    return false; // 锁定编辑: node insertion/removal are user edits
+  }
   if (!nodeId.isValid() || nodeType == BlockType::Unknown) {
     return false;
   }

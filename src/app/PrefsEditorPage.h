@@ -20,6 +20,8 @@ public:
 
 signals:
   void disableTypewriterFocusRequested();
+  // 锁定编辑 的功能开关或作用范围被改动，主窗口需要重新落状态。
+  void lockEditingSettingsChanged();
 
 private:
   void loadSettings();
@@ -43,6 +45,11 @@ private:
   QLabel* lineBreakDescLabel_ = nullptr;
   QRadioButton* lineBreakLfRadio_ = nullptr;
   QRadioButton* lineBreakCrlfRadio_ = nullptr;
+  QLabel* lockEditingLabel_ = nullptr;
+  QLabel* lockEditingDescLabel_ = nullptr;
+  QCheckBox* lockEditingEnabledCheck_ = nullptr;
+  QRadioButton* lockPerTabRadio_ = nullptr;
+  QRadioButton* lockPerWindowRadio_ = nullptr;
   QLabel* spellCheckLabel_ = nullptr;
   QCheckBox* spellCheckEnabledCheck_ = nullptr;
   QLabel* spellCheckLanguageLabel_ = nullptr;
