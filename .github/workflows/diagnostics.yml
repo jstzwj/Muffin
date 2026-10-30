@@ -90,9 +90,9 @@ jobs:
           $dotnetPath = (Get-Command dotnet).Source
           Push-Location $probeRoot
           try {
-            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DMSI_ARCH=$env:PROBE_ARCH" -DMUFFIN_VERSION=0.0.1 -P "$sourceRoot/cmake/BuildMSI.cmake"
+            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DMSI_ARCH=$env:PROBE_ARCH" "-DMUFFIN_VERSION=0.0.1" -P "$sourceRoot/cmake/BuildMSI.cmake"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DDOTNET_COMMAND=$dotnetPath" "-DMSI_ARCH=$env:PROBE_ARCH" -DMUFFIN_VERSION=0.0.1 -P "$sourceRoot/cmake/BuildBundle.cmake"
+            cmake "-DSOURCE_DIR=$sourceRoot" "-DDIST_DIR=$probeDist" "-DWIX_COMMAND=$wixPath" "-DDOTNET_COMMAND=$dotnetPath" "-DMSI_ARCH=$env:PROBE_ARCH" "-DMUFFIN_VERSION=0.0.1" -P "$sourceRoot/cmake/BuildBundle.cmake"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             & "$probeRoot/test/IntegrationOptionsTest.exe" --update-bundle "$probeRoot/Muffin-Setup-0.0.1-windows-$env:PROBE_ARCH.exe"
             exit $LASTEXITCODE
