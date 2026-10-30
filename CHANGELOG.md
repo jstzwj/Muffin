@@ -7,16 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Add **锁定编辑 / 解锁编辑** (locked editing, Edit menu + editor context menu, F12): a read-only reading mode that hides the blinking caret and the inline floating controls (table toolbar, code-fence language editor, HTML source toggle), rejects keyboard/IME/drop input, and disables every incremental edit at the session layer — while mouse selection, right-click menus, scrolling and copy keep working. Preferences → Editor gains a **Locked Editing** card to turn the feature off and to choose its scope: each tab locks on its own (default) or one lock covers the whole window. The window title shows `(已锁定编辑)` for the locked document.
-
 ### Fixed
 
 - Keep plain Tab in the source editor instead of moving focus away, and preserve selected text when inserting a source-mode hyperlink.
 - Restore the selected range and its direction when undoing text replacement or deletion in live editing, and keep those operations separate from neighbouring typing.
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
+
+## [0.7.9] - 2026-10-31
+
+### Added
+
+- Add **Lock Editing / Unlock Editing** to the Edit and editor context menus, with F12 as the default shortcut. Keep selection, copying, searching and scrolling available while preventing document edits. Choose per-tab or whole-window locking in Editor preferences. ([#10](https://github.com/jstzwj/Muffin/pull/10))
+- Integrate locking with the existing keyboard shortcut preferences, including reassignment, clearing and restoring defaults. Localize the lock state, preferences and disabled-command explanations in all 14 translated languages.
+
+### Fixed
+
+- Preserve undo/redo history and caret positions when an edit is rejected while locked, and keep source mode read-only after asynchronous loading completes.
+- Synchronize lock preferences across existing windows and preserve reading position when source-mode input is rejected. Keep locked notes searchable while excluding them from folder replacement and recovery.
+- Correct the Windows in-app update installer handoff and allow safe restart retries when the installer is not ready.
+- Prevent mouse-wheel scrolling over preference number fields from accidentally changing their values.
 
 ## [0.7.4] - 2026-10-21
 
