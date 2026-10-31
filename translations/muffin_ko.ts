@@ -1044,7 +1044,7 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::DocumentSession</name>
     <message>
-        <location filename="../src/document/DocumentSession.cpp" line="590"/>
+        <location filename="../src/document/DocumentSession.cpp" line="589"/>
         <source>Untitled</source>
         <translation>제목 없음</translation>
     </message>
@@ -1053,13 +1053,13 @@ Make it your default editor now?</source>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1427"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1432"/>
         <source>(no spelling suggestions)</source>
         <translation>(맞춤법 제안 없음)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="90"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1438"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1443"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; 무시</translation>
     </message>
@@ -1412,32 +1412,38 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/MainWindow.cpp" line="412"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="872"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="876"/>
         <source> (Editing Locked)</source>
         <translation> (편집 잠김)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Unlock Editing</source>
         <translation>편집 잠금 해제</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="594"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Lock Editing</source>
         <translation>편집 잠금</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="466"/>
+        <location filename="../src/app/MainWindow.cpp" line="474"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="871"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="875"/>
         <source>Editing is locked. Unlock editing to change this document.</source>
         <translation>편집이 잠겨 있습니다. 이 문서를 수정하려면 편집 잠금을 해제하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="468"/>
+        <location filename="../src/app/MainWindow.cpp" line="476"/>
         <source>The document is still loading.</source>
         <translation>아직 문서를 불러오는 중입니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="658"/>
+        <location filename="../src/app/MainWindow.cpp" line="667"/>
         <source>Open Folder</source>
         <translation>폴더 열기</translation>
     </message>
@@ -1453,7 +1459,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2050"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>File</source>
         <translation>파일</translation>
     </message>
@@ -2474,9 +2480,9 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="288"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="507"/>
         <source>Close Tab</source>
         <translation>탭 닫기</translation>
     </message>
@@ -3528,25 +3534,25 @@ Location: %3
         <translation>이 파일은 이미 다른 탭에서 열려 있습니다. 편집하거나 저장하려면 해당 탭으로 전환하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="369"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="367"/>
         <source>File Changed on Disk</source>
         <translation>디스크의 파일이 변경됨</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="370"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="368"/>
         <source>The file &quot;%1&quot; has changed outside Muffin. Reload it?
 Unsaved changes in the editor will be lost.</source>
         <translation>파일 &quot;%1&quot;이(가) Muffin 외부에서 변경되었습니다. 다시 불러오시겠습니까?
 편집기에서 저장하지 않은 변경 사항은 사라집니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="454"/>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="466"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="452"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="464"/>
         <source>Update Available</source>
         <translation>업데이트 가능</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="455"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="453"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -3555,27 +3561,27 @@ Would you like to open the download page?</source>
 다운로드 페이지를 여시겠습니까?</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="477"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="475"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1을(를) 사용할 수 있습니다. 도움말 &gt; 업데이트 확인에서 다운로드하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="483"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="481"/>
         <source>Up to Date</source>
         <translation>최신 버전</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="484"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="482"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>Muffin의 최신 버전을 사용 중입니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="491"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="489"/>
         <source>Update Check Failed</source>
         <translation>업데이트 확인 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="492"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="490"/>
         <source>Could not check for updates:
 %1</source>
         <translation>업데이트를 확인할 수 없습니다:
@@ -3654,7 +3660,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="504"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="549"/>
         <source>Copy Path</source>
         <translation>경로 복사</translation>
     </message>
@@ -3662,7 +3668,7 @@ Would you like to open the download page?</source>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="313"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="323"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1463"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="510"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="555"/>
         <source>Reveal in File Manager</source>
         <translation>파일 관리자에서 표시</translation>
     </message>
@@ -3684,85 +3690,85 @@ Would you like to open the download page?</source>
         <translation>모두 바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Unpin Tab</source>
         <translation>탭 고정 해제</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="222"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="259"/>
         <source>Open Documents</source>
         <translation>열린 문서</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="226"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="229"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="263"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="266"/>
         <source>New Tab</source>
         <translation>새 탭</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="495"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="533"/>
         <source>Close Others</source>
         <translation>다른 탭 닫기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="496"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="534"/>
         <source>Close Tabs to the Right</source>
         <translation>오른쪽 탭 닫기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="497"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="535"/>
         <source>Close Saved Tabs</source>
         <translation>저장된 탭 닫기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="498"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="536"/>
         <source>Close All Tabs</source>
         <translation>모든 탭 닫기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Pin Tab</source>
         <translation>탭 고정</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="506"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="551"/>
         <source>Reveal in Finder</source>
         <translation>Finder에서 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="508"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="553"/>
         <source>Reveal in File Explorer</source>
         <translation>파일 탐색기에서 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="514"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="559"/>
         <source>Move Tab to New Window</source>
         <translation>탭을 새 창으로 이동</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="517"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="562"/>
         <source>Copy Tab to New Window</source>
         <translation>탭을 새 창으로 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="161"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="165"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>이 파일이 변경되었습니다. 다시 검색하여 일치 항목을 갱신하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="196"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="200"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>이 일치 항목은 실시간 미리 보기에서 정확히 선택할 수 없어 소스 모드로 표시합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="221"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
         <source>Preview Folder Replacement</source>
         <translation>폴더 바꾸기 미리 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3775,19 +3781,19 @@ Replace with: %3</source>
         <translation type="vanished">포함할 경로: %1 · 제외할 경로: %2 · 대소문자 구분: %3 · 정규식: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>Yes</source>
         <translation>예</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>No</source>
         <translation>아니요</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>Matches</source>
         <translation>일치 항목</translation>
     </message>
@@ -3831,7 +3837,7 @@ Search folder: %3</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="96"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="255"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="259"/>
         <source>Skipped</source>
         <translation>건너뜀</translation>
     </message>
@@ -3896,24 +3902,24 @@ Some originals could not be restored. Backups: %1</source>
         <translation>링크가 업데이트되었습니다. 원본은 %1에 백업되었습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="257"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>저장하지 않은 변경 사항이 있거나, 변경되었거나, 읽을 수 없거나, 너무 크거나, 줄바꿈 형식이 혼합되어 있거나, 손실 없이 쓸 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Replacement preview</source>
         <translation>바꾸기 미리 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="267"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="271"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … 미리 보기가 잘렸습니다. 파일 전체가 처리됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="274"/>
         <source>Before:
 %1
 
@@ -3926,29 +3932,29 @@ After:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>저장하지 않은 변경 사항이 있는 파일은 건너뜁니다. 원본은 복구할 수 있도록 백업됩니다. 이 미리 보기 이후 변경된 파일은 덮어쓰지 않습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="289"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="293"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>파일 %2개의 일치 항목 %1개 바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="321"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
         <source>Folder Replacement</source>
         <translation>폴더 바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="322"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="326"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>파일 %1개 변경됨; %2개 건너뜀.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -3956,19 +3962,19 @@ Recovery folder: %1</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="602"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="356"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="360"/>
         <source>Undo Folder Replacement</source>
         <translation>폴더 바꾸기 실행 취소</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
         <source>No folder replacement is available to restore.</source>
         <translation>복원할 수 있는 폴더 바꾸기 작업이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="338"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -3979,29 +3985,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 이후에 편집되었거나 저장하지 않은 변경 사항이 있는 파일은 건너뜁니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
         <source>Restore Originals</source>
         <translation>원본 복원</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Open Recovery Folder</source>
         <translation>복구 폴더 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="357"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="361"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>파일 %1개 복원됨; %2개 건너뜀.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Updating files…</source>
         <translation>파일 업데이트 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Stop after current file</source>
         <translation>현재 파일 처리 후 중지</translation>
     </message>
@@ -4212,107 +4218,107 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsEditorPage</name>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
         <source>Default Indent</source>
         <translation>기본 들여쓰기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
         <translation>메뉴 모음 또는 단축키로 생성된 참조 및 목록에만 적용됩니다</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="213"/>
         <source>Align Indent</source>
         <translation>들여쓰기 맞춤</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="215"/>
         <source>Use Paired Symbols</source>
         <translation>쌍 기호 사용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
         <source>Match brackets and quotes</source>
         <translation>괄호 및 따옴표 짝 맞추기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
         <source>Match Markdown characters</source>
         <translation>Markdown 문자 짝 맞추기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="219"/>
         <source>Autocomplete</source>
         <translation>자동 완성</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
         <source>Enable Emoji autocomplete</source>
         <translation>이모지 자동 완성 사용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="222"/>
         <source>Live Rendering</source>
         <translation>실시간 렌더링</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
         <source>Show Markdown source of the current block element</source>
         <translation>현재 블록 요소의 Markdown 소스 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
         <source>Show Mermaid diagrams as source code instead of rendering</source>
         <translation>Mermaid 다이어그램을 렌더링하지 않고 소스 코드로 표시</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="226"/>
         <source>Default Copy Behavior</source>
         <translation>기본 복사 동작</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
         <source>Copy Markdown source when copying plain text</source>
         <translation>일반 텍스트 복사 시 Markdown 소스 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="229"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
         <source>Copy or cut the entire line when no text is selected</source>
         <translation>선택한 텍스트가 없을 때 전체 줄 복사 또는 잘라내기</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="230"/>
         <source>Default Line Break</source>
         <translation>기본 줄 바꿈</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
         <source>Default line break for new files</source>
         <translation>새 파일의 기본 줄 바꿈</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
         <source>LF (Unix Style)</source>
         <translation>LF (Unix 스타일)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="234"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
         <source>CRLF (Windows Style)</source>
         <translation>CRLF (Windows 스타일)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="241"/>
         <source>Spell Check</source>
         <translation>맞춤법 검사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
         <source>Enable spell checking</source>
         <translation>맞춤법 검사 사용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="244"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
         <source>Language</source>
         <translation>언어</translation>
     </message>
@@ -4325,42 +4331,42 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">중국어 간체</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="245"/>
         <source>Typewriter Mode</source>
         <translation>타자기 모드</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
         <source>Always keep the cursor in the middle of the screen</source>
         <translation>항상 커서를 화면 중앙에 유지</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
         <source>Disable Typewriter / Focus Mode</source>
         <translation>타자기 / 집중 모드 비활성화</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="235"/>
         <source>Locked Editing</source>
         <translation>편집 잠금</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
         <source>Read-only reading mode: hides the caret and inline popups, rejects typing</source>
         <translation>읽기 전용 모드: 커서와 인라인 팝업을 숨기고 입력을 차단합니다</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
         <source>Enable locked editing</source>
         <translation>편집 잠금 활성화</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
         <source>Each tab locks on its own</source>
         <translation>탭마다 개별적으로 잠금</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
         <source>One lock for the whole window</source>
         <translation>창 전체를 한 번에 잠금</translation>
     </message>
@@ -5741,13 +5747,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">제외할 경로(단어 또는 경로 일부)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="236"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>대소문자 구분</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="238"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>정규식</translation>
@@ -6053,50 +6059,54 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::UpdateChecker</name>
     <message>
-        <location filename="../src/app/UpdateChecker.cpp" line="69"/>
         <source>The update server returned an invalid version.</source>
-        <translation>업데이트 서버에서 잘못된 버전을 반환했습니다.</translation>
+        <translation type="vanished">업데이트 서버에서 잘못된 버전을 반환했습니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/UpdateChecker.cpp" line="83"/>
+        <source>Could not reach the update service. Please try again later or download Muffin from the official release page.</source>
+        <translation>업데이트 서비스에 연결할 수 없습니다. 나중에 다시 시도하거나 공식 릴리스 페이지에서 Muffin을 다운로드하세요.</translation>
     </message>
 </context>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="271"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
         <source>Markdown source editor</source>
         <translation>Markdown 소스 편집기</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="273"/>
         <source>Plain-text Markdown source</source>
         <translation>일반 텍스트 Markdown 소스</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1447"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1452"/>
         <source>Undo</source>
         <translation>실행 취소</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1449"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1454"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1453"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1458"/>
         <source>Cut</source>
         <translation>잘라내기</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1459"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1464"/>
         <source>Copy</source>
         <translation>복사</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1463"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1468"/>
         <source>Paste</source>
         <translation>붙여넣기</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1474"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1479"/>
         <source>Select All</source>
         <translation>모두 선택</translation>
     </message>
@@ -6124,7 +6134,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     <message>
         <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="197"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="431"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="444"/>
         <source>Update Muffin</source>
         <translation>Muffin 업데이트</translation>
     </message>
@@ -6180,6 +6190,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="311"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>다운로드한 업데이트를 저장할 수 없거나 예상 크기를 초과했습니다.</translation>
     </message>
@@ -6189,46 +6200,46 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>업데이트 매니페스트가 너무 큽니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="306"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="319"/>
         <source>Could not download the update: %1</source>
         <translation>업데이트를 다운로드할 수 없습니다: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="342"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>업데이트 서명이 유효하지 않거나 패키지가 이 Windows 버전과 호환되지 않습니다. 아무것도 설치되지 않았습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="341"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="346"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="354"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="359"/>
         <source>Could not create the update download folder.</source>
         <translation>업데이트 다운로드 폴더를 만들 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="355"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="454"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="368"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="458"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="467"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>다운로드한 업데이트가 불완전하거나 수정되었습니다. 아무것도 설치되지 않았습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="432"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>업데이트하기 전에 실행 중인 다른 Muffin 인스턴스를 닫으세요. 설치된 버전만 앱 내에서 업데이트할 수 있습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="503"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="554"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="516"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="567"/>
         <source>Could not save the session before updating.</source>
         <translation>업데이트 전에 세션을 저장할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="523"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="536"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>업데이트 설치 프로그램을 시작할 수 없습니다. 현재 버전은 변경되지 않았습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="572"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="585"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>설치 프로그램이 준비되지 않았습니다. Muffin은 계속 열려 있습니다. 다시 시도하세요.</translation>
     </message>
@@ -6262,7 +6273,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WorkspaceSearch</name>
     <message>
-        <location filename="../src/app/WorkspaceSearch.cpp" line="380"/>
+        <location filename="../src/app/WorkspaceSearch.cpp" line="381"/>
         <source>Folder is unavailable</source>
         <translation>폴더를 사용할 수 없습니다</translation>
     </message>

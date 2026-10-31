@@ -1044,7 +1044,7 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
 <context>
     <name>muffin::DocumentSession</name>
     <message>
-        <location filename="../src/document/DocumentSession.cpp" line="590"/>
+        <location filename="../src/document/DocumentSession.cpp" line="589"/>
         <source>Untitled</source>
         <translation>Naamloos</translation>
     </message>
@@ -1053,13 +1053,13 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1427"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1432"/>
         <source>(no spelling suggestions)</source>
         <translation>(geen spellingssuggesties)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="90"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1438"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1443"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; negeren</translation>
     </message>
@@ -1412,32 +1412,38 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindow.cpp" line="412"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="872"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="876"/>
         <source> (Editing Locked)</source>
         <translation> (Bewerken vergrendeld)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Unlock Editing</source>
         <translation>Bewerken ontgrendelen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="594"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Lock Editing</source>
         <translation>Bewerken vergrendelen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="466"/>
+        <location filename="../src/app/MainWindow.cpp" line="474"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="871"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="875"/>
         <source>Editing is locked. Unlock editing to change this document.</source>
         <translation>Bewerken is vergrendeld. Ontgrendel het om dit document te wijzigen.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="468"/>
+        <location filename="../src/app/MainWindow.cpp" line="476"/>
         <source>The document is still loading.</source>
         <translation>Het document wordt nog geladen.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="658"/>
+        <location filename="../src/app/MainWindow.cpp" line="667"/>
         <source>Open Folder</source>
         <translation>Map openen</translation>
     </message>
@@ -1453,7 +1459,7 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2050"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>File</source>
         <translation>Bestand</translation>
     </message>
@@ -2470,9 +2476,9 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="288"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="507"/>
         <source>Close Tab</source>
         <translation>Tabblad sluiten</translation>
     </message>
@@ -3526,25 +3532,25 @@ Locatie: %3
         <translation>Dit bestand is al geopend in een ander tabblad. Ga naar dat tabblad om het te bewerken of op te slaan.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="369"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="367"/>
         <source>File Changed on Disk</source>
         <translation>Bestand op schijf gewijzigd</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="370"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="368"/>
         <source>The file &quot;%1&quot; has changed outside Muffin. Reload it?
 Unsaved changes in the editor will be lost.</source>
         <translation>Het bestand &quot;%1&quot; is buiten Muffin gewijzigd. Opnieuw laden?
 Niet-opgeslagen wijzigingen in de editor gaan verloren.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="454"/>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="466"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="452"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="464"/>
         <source>Update Available</source>
         <translation>Update beschikbaar</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="455"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="453"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -3553,27 +3559,27 @@ Would you like to open the download page?</source>
 Wilt u de downloadpagina openen?</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="477"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="475"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1 is beschikbaar. Gebruik Help &gt; Controleren op updates om te downloaden.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="483"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="481"/>
         <source>Up to Date</source>
         <translation>Actueel</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="484"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="482"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>U gebruikt de nieuwste versie van Muffin.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="491"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="489"/>
         <source>Update Check Failed</source>
         <translation>Updatecontrole mislukt</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="492"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="490"/>
         <source>Could not check for updates:
 %1</source>
         <translation>Kan niet controleren op updates:
@@ -3652,7 +3658,7 @@ Wilt u de downloadpagina openen?</translation>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="504"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="549"/>
         <source>Copy Path</source>
         <translation>Pad kopiëren</translation>
     </message>
@@ -3660,7 +3666,7 @@ Wilt u de downloadpagina openen?</translation>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="313"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="323"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1463"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="510"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="555"/>
         <source>Reveal in File Manager</source>
         <translation>Weergeven in bestandsbeheerder</translation>
     </message>
@@ -3682,85 +3688,85 @@ Wilt u de downloadpagina openen?</translation>
         <translation>Alles vervangen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Unpin Tab</source>
         <translation>Tabblad losmaken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="222"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="259"/>
         <source>Open Documents</source>
         <translation>Geopende documenten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="226"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="229"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="263"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="266"/>
         <source>New Tab</source>
         <translation>Nieuw tabblad</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="495"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="533"/>
         <source>Close Others</source>
         <translation>Andere tabbladen sluiten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="496"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="534"/>
         <source>Close Tabs to the Right</source>
         <translation>Tabbladen rechts sluiten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="497"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="535"/>
         <source>Close Saved Tabs</source>
         <translation>Opgeslagen tabbladen sluiten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="498"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="536"/>
         <source>Close All Tabs</source>
         <translation>Alle tabbladen sluiten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Pin Tab</source>
         <translation>Tabblad vastmaken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="506"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="551"/>
         <source>Reveal in Finder</source>
         <translation>Weergeven in Finder</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="508"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="553"/>
         <source>Reveal in File Explorer</source>
         <translation>Weergeven in Verkenner</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="514"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="559"/>
         <source>Move Tab to New Window</source>
         <translation>Tabblad naar nieuw venster verplaatsen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="517"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="562"/>
         <source>Copy Tab to New Window</source>
         <translation>Tabblad naar nieuw venster kopiëren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="161"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="165"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>Dit bestand is gewijzigd. Zoek opnieuw om de overeenkomsten bij te werken.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="196"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="200"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>Deze overeenkomst kan niet nauwkeurig worden geselecteerd in het livevoorbeeld. Ze wordt in de bronmodus weergegeven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="221"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
         <source>Preview Folder Replacement</source>
         <translation>Voorbeeld van vervanging in map</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3773,19 +3779,19 @@ Vervangen door: %3</translation>
         <translation type="vanished">Paden opnemen: %1 · Paden uitsluiten: %2 · Hoofdlettergevoelig: %3 · Reguliere expressie: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>No</source>
         <translation>Nee</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>Matches</source>
         <translation>Overeenkomsten</translation>
     </message>
@@ -3829,7 +3835,7 @@ Zoekmap: %3</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="96"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="255"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="259"/>
         <source>Skipped</source>
         <translation>Overgeslagen</translation>
     </message>
@@ -3894,24 +3900,24 @@ Sommige originelen konden niet worden hersteld. Reservekopieën: %1</translation
         <translation>Links bijgewerkt. Reservekopieën van de originelen opgeslagen in %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="257"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>Niet opgeslagen, gewijzigd, onleesbaar, te groot, met gemengde regeleinden of niet zonder verlies te schrijven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Replacement preview</source>
         <translation>Vervangingsvoorbeeld</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="267"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="271"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … Voorbeeld ingekort; het volledige bestand wordt verwerkt.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="274"/>
         <source>Before:
 %1
 
@@ -3924,29 +3930,29 @@ Na:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>Bestanden met niet-opgeslagen wijzigingen worden overgeslagen. Van de originelen worden reservekopieën gemaakt voor herstel. Bestanden die sinds dit voorbeeld zijn gewijzigd, worden niet overschreven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="289"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="293"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>%1 overeenkomsten in %2 bestanden vervangen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="321"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
         <source>Folder Replacement</source>
         <translation>Vervanging in map</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="322"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="326"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>%1 bestanden gewijzigd; %2 overgeslagen.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -3954,19 +3960,19 @@ Herstelmap: %1</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="602"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="356"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="360"/>
         <source>Undo Folder Replacement</source>
         <translation>Vervanging in map ongedaan maken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
         <source>No folder replacement is available to restore.</source>
         <translation>Er is geen vervanging in een map om ongedaan te maken.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="338"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -3977,29 +3983,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worden overgeslagen.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
         <source>Restore Originals</source>
         <translation>Originelen herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Open Recovery Folder</source>
         <translation>Herstelmap openen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="357"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="361"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>%1 bestanden hersteld; %2 overgeslagen.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Updating files…</source>
         <translation>Bestanden bijwerken…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Stop after current file</source>
         <translation>Stoppen na huidig bestand</translation>
     </message>
@@ -4210,107 +4216,107 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::PrefsEditorPage</name>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
         <source>Default Indent</source>
         <translation>Standaard inspringing</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
         <translation>Alleen effectief voor verwijzingen en lijsten die via de menubalk of sneltoetsen worden gegenereerd</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="213"/>
         <source>Align Indent</source>
         <translation>Inspringing uitlijnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="215"/>
         <source>Use Paired Symbols</source>
         <translation>Gepaarde symbolen gebruiken</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
         <source>Match brackets and quotes</source>
         <translation>Haakjes en aanhalingstekens paren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
         <source>Match Markdown characters</source>
         <translation>Markdown-tekens paren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="219"/>
         <source>Autocomplete</source>
         <translation>Automatisch aanvullen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
         <source>Enable Emoji autocomplete</source>
         <translation>Emoji automatisch aanvullen inschakelen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="222"/>
         <source>Live Rendering</source>
         <translation>Live weergave</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
         <source>Show Markdown source of the current block element</source>
         <translation>Markdown-bron van het huidige blokelement tonen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
         <source>Show Mermaid diagrams as source code instead of rendering</source>
         <translation>Mermaid-diagrammen als broncode tonen in plaats van ze te renderen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="226"/>
         <source>Default Copy Behavior</source>
         <translation>Standaard kopieergedrag</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
         <source>Copy Markdown source when copying plain text</source>
         <translation>Markdown-bron kopiëren bij het kopiëren van platte tekst</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="229"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
         <source>Copy or cut the entire line when no text is selected</source>
         <translation>De hele regel kopiëren of knippen als geen tekst is geselecteerd</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="230"/>
         <source>Default Line Break</source>
         <translation>Standaard regeleinde</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
         <source>Default line break for new files</source>
         <translation>Standaard regeleinde voor nieuwe bestanden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
         <source>LF (Unix Style)</source>
         <translation>LF (Unix-stijl)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="234"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
         <source>CRLF (Windows Style)</source>
         <translation>CRLF (Windows-stijl)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="241"/>
         <source>Spell Check</source>
         <translation>Spellingcontrole</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
         <source>Enable spell checking</source>
         <translation>Spellingcontrole inschakelen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="244"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
         <source>Language</source>
         <translation>Taal</translation>
     </message>
@@ -4323,42 +4329,42 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Chinees (Vereenvoudigd)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="245"/>
         <source>Typewriter Mode</source>
         <translation>Typemachinemodus</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
         <source>Always keep the cursor in the middle of the screen</source>
         <translation>De cursor altijd in het midden van het scherm houden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
         <source>Disable Typewriter / Focus Mode</source>
         <translation>Typemachine- / Focusmodus uitschakelen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="235"/>
         <source>Locked Editing</source>
         <translation>Bewerkingsvergrendeling</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
         <source>Read-only reading mode: hides the caret and inline popups, rejects typing</source>
         <translation>Alleen-lezenmodus: verbergt de tekstcursor en inline pop-ups en blokkeert typen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
         <source>Enable locked editing</source>
         <translation>Bewerkingsvergrendeling inschakelen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
         <source>Each tab locks on its own</source>
         <translation>Elk tabblad afzonderlijk vergrendelen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
         <source>One lock for the whole window</source>
         <translation>Eén vergrendeling voor het hele venster</translation>
     </message>
@@ -5739,13 +5745,13 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Paden uitsluiten (woorden of padsegmenten)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="236"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>Hoofdlettergevoelig</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="238"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>Reguliere expressie</translation>
@@ -6051,50 +6057,54 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::UpdateChecker</name>
     <message>
-        <location filename="../src/app/UpdateChecker.cpp" line="69"/>
         <source>The update server returned an invalid version.</source>
-        <translation>De updateserver heeft een ongeldige versie geretourneerd.</translation>
+        <translation type="vanished">De updateserver heeft een ongeldige versie geretourneerd.</translation>
+    </message>
+    <message>
+        <location filename="../src/app/UpdateChecker.cpp" line="83"/>
+        <source>Could not reach the update service. Please try again later or download Muffin from the official release page.</source>
+        <translation>De updateservice is niet bereikbaar. Probeer het later opnieuw of download Muffin via de officiële releasepagina.</translation>
     </message>
 </context>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="271"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
         <source>Markdown source editor</source>
         <translation>Markdown-broncode-editor</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="273"/>
         <source>Plain-text Markdown source</source>
         <translation>Markdown-broncode als platte tekst</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1447"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1452"/>
         <source>Undo</source>
         <translation>Ongedaan maken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1449"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1454"/>
         <source>Redo</source>
         <translation>Opnieuw</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1453"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1458"/>
         <source>Cut</source>
         <translation>Knippen</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1459"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1464"/>
         <source>Copy</source>
         <translation>Kopiëren</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1463"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1468"/>
         <source>Paste</source>
         <translation>Plakken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1474"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1479"/>
         <source>Select All</source>
         <translation>Alles selecteren</translation>
     </message>
@@ -6122,7 +6132,7 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
     <message>
         <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="197"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="431"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="444"/>
         <source>Update Muffin</source>
         <translation>Muffin bijwerken</translation>
     </message>
@@ -6178,6 +6188,7 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="311"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>De gedownloade update kon niet worden opgeslagen of is groter dan verwacht.</translation>
     </message>
@@ -6187,46 +6198,46 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation>Het updatemanifest is te groot.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="306"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="319"/>
         <source>Could not download the update: %1</source>
         <translation>De update kon niet worden gedownload: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="342"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>De handtekening van de update is ongeldig of het pakket is niet geschikt voor deze versie van Windows. Er is niets geïnstalleerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="341"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="346"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="354"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="359"/>
         <source>Could not create the update download folder.</source>
         <translation>De downloadmap voor de update kon niet worden gemaakt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="355"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="454"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="368"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="458"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="467"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>De gedownloade update is onvolledig of is gewijzigd. Er is niets geïnstalleerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="432"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>Sluit andere actieve exemplaren van Muffin voordat u bijwerkt. Alleen geïnstalleerde exemplaren kunnen vanuit de app worden bijgewerkt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="503"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="554"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="516"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="567"/>
         <source>Could not save the session before updating.</source>
         <translation>De sessie kon niet worden opgeslagen vóór het bijwerken.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="523"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="536"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>Het installatieprogramma voor de update kon niet worden gestart. Uw huidige versie is ongewijzigd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="572"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="585"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>Het installatieprogramma is niet gereed gekomen. Muffin blijft geopend; probeer het opnieuw.</translation>
     </message>
@@ -6260,7 +6271,7 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::WorkspaceSearch</name>
     <message>
-        <location filename="../src/app/WorkspaceSearch.cpp" line="380"/>
+        <location filename="../src/app/WorkspaceSearch.cpp" line="381"/>
         <source>Folder is unavailable</source>
         <translation>Map is niet beschikbaar</translation>
     </message>

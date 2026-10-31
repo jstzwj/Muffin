@@ -1044,7 +1044,7 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::DocumentSession</name>
     <message>
-        <location filename="../src/document/DocumentSession.cpp" line="590"/>
+        <location filename="../src/document/DocumentSession.cpp" line="589"/>
         <source>Untitled</source>
         <translation>无标题</translation>
     </message>
@@ -1053,13 +1053,13 @@ Make it your default editor now?</source>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1427"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1432"/>
         <source>(no spelling suggestions)</source>
         <translation>(无拼写建议)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="90"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1438"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1443"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>忽略“%1”</translation>
     </message>
@@ -1412,32 +1412,38 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/MainWindow.cpp" line="412"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="872"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="876"/>
         <source> (Editing Locked)</source>
         <translation> (编辑已锁定)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Unlock Editing</source>
         <translation>解锁编辑</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="461"/>
+        <location filename="../src/app/MainWindow.cpp" line="469"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="594"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="540"/>
         <source>Lock Editing</source>
         <translation>锁定编辑</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="466"/>
+        <location filename="../src/app/MainWindow.cpp" line="474"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="871"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="875"/>
         <source>Editing is locked. Unlock editing to change this document.</source>
         <translation>编辑已锁定。请解锁编辑以更改此文档。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="468"/>
+        <location filename="../src/app/MainWindow.cpp" line="476"/>
         <source>The document is still loading.</source>
         <translation>文档仍在加载中。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindow.cpp" line="658"/>
+        <location filename="../src/app/MainWindow.cpp" line="667"/>
         <source>Open Folder</source>
         <translation>打开文件夹</translation>
     </message>
@@ -1453,7 +1459,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2050"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>File</source>
         <translation>文件(&amp;F)</translation>
     </message>
@@ -2459,9 +2465,9 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="288"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="469"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="507"/>
         <source>Close Tab</source>
         <translation>关闭标签页</translation>
     </message>
@@ -3550,25 +3556,25 @@ Location: %3
         <translation>此文件已在另一个标签页中打开。请切换到该标签页进行编辑或保存。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="369"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="367"/>
         <source>File Changed on Disk</source>
         <translation>磁盘上的文件已更改</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="370"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="368"/>
         <source>The file &quot;%1&quot; has changed outside Muffin. Reload it?
 Unsaved changes in the editor will be lost.</source>
         <translation>文件“%1”已被其他程序修改。要重新加载吗？
 编辑器中未保存的更改将丢失。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="454"/>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="466"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="452"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="464"/>
         <source>Update Available</source>
         <translation>发现新版本</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="455"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="453"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -3577,27 +3583,27 @@ Would you like to open the download page?</source>
 是否打开下载页面？</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="477"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="475"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1 已发布。使用&quot;帮助 &gt; 检查更新&quot;进行下载。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="483"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="481"/>
         <source>Up to Date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="484"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="482"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>您正在使用最新版本的 Muffin。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="491"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="489"/>
         <source>Update Check Failed</source>
         <translation>检查更新失败</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="492"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="490"/>
         <source>Could not check for updates:
 %1</source>
         <translation>无法检查更新：
@@ -3676,7 +3682,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="504"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="549"/>
         <source>Copy Path</source>
         <translation>复制路径</translation>
     </message>
@@ -3684,7 +3690,7 @@ Would you like to open the download page?</source>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="313"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="323"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1463"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="510"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="555"/>
         <source>Reveal in File Manager</source>
         <translation>在文件管理器中显示</translation>
     </message>
@@ -3706,85 +3712,85 @@ Would you like to open the download page?</source>
         <translation>全部替换</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="201"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="235"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="236"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="273"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Unpin Tab</source>
         <translation>取消固定标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="222"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="259"/>
         <source>Open Documents</source>
         <translation>已打开的文档</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="226"/>
-        <location filename="../src/app/MainWindowTabs.cpp" line="229"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="263"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="266"/>
         <source>New Tab</source>
         <translation>新建标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="495"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="533"/>
         <source>Close Others</source>
         <translation>关闭其他标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="496"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="534"/>
         <source>Close Tabs to the Right</source>
         <translation>关闭右侧标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="497"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="535"/>
         <source>Close Saved Tabs</source>
         <translation>关闭已保存的标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="498"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="536"/>
         <source>Close All Tabs</source>
         <translation>关闭所有标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="500"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="538"/>
         <source>Pin Tab</source>
         <translation>固定标签页</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="506"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="551"/>
         <source>Reveal in Finder</source>
         <translation>在访达中显示</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="508"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="553"/>
         <source>Reveal in File Explorer</source>
         <translation>在文件资源管理器中显示</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="514"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="559"/>
         <source>Move Tab to New Window</source>
         <translation>将标签页移到新窗口</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowTabs.cpp" line="517"/>
+        <location filename="../src/app/MainWindowTabs.cpp" line="562"/>
         <source>Copy Tab to New Window</source>
         <translation>将标签页复制到新窗口</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="161"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="165"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>此文件已更改。请重新搜索以更新匹配结果。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="196"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="200"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>无法在实时预览中精确选中此匹配项，已切换到源码模式显示。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="221"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
         <source>Preview Folder Replacement</source>
         <translation>预览文件夹替换</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="225"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3797,19 +3803,19 @@ Replace with: %3</source>
         <translation type="vanished">包含路径：%1 · 排除路径：%2 · 区分大小写：%3 · 正则表达式：%4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>Yes</source>
         <translation>是</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="235"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="237"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="239"/>
         <source>No</source>
         <translation>否</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="248"/>
         <source>Matches</source>
         <translation>匹配项</translation>
     </message>
@@ -3853,7 +3859,7 @@ Search folder: %3</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="96"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="255"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="259"/>
         <source>Skipped</source>
         <translation>已跳过</translation>
     </message>
@@ -3918,24 +3924,24 @@ Some originals could not be restored. Backups: %1</source>
         <translation>链接已更新。原文件已备份至 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="257"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>存在未保存的更改、文件已更改、无法读取、文件过大、混用换行符，或无法无损写入。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="261"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Replacement preview</source>
         <translation>替换预览</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="267"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="271"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … 预览已截断；将处理完整文件。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="274"/>
         <source>Before:
 %1
 
@@ -3948,29 +3954,29 @@ After:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>将跳过有未保存更改的文件。原文件会备份以便恢复。预览后发生更改的文件不会被覆盖。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="289"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="293"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>替换 %2 个文件中的 %1 处匹配项</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="321"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
         <source>Folder Replacement</source>
         <translation>文件夹替换</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="322"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="326"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>已更改 %1 个文件；已跳过 %2 个。
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="325"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -3978,19 +3984,19 @@ Recovery folder: %1</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="602"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="356"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="360"/>
         <source>Undo Folder Replacement</source>
         <translation>撤销文件夹替换</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="337"/>
         <source>No folder replacement is available to restore.</source>
         <translation>没有可恢复的文件夹替换记录。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="338"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4001,29 +4007,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 将跳过替换后又被编辑或有未保存更改的文件。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
         <source>Restore Originals</source>
         <translation>恢复原文件</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Open Recovery Folder</source>
         <translation>打开恢复文件夹</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="357"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="361"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>已恢复 %1 个文件；已跳过 %2 个。
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Updating files…</source>
         <translation>正在更新文件…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="400"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="404"/>
         <source>Stop after current file</source>
         <translation>处理完当前文件后停止</translation>
     </message>
@@ -4234,132 +4240,132 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsEditorPage</name>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
         <source>Default Indent</source>
         <translation>默认缩进</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="211"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
         <translation>仅对通过菜单栏或快捷键生成的引用和列表有效</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="213"/>
         <source>Align Indent</source>
         <translation>对齐缩进</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="215"/>
         <source>Use Paired Symbols</source>
         <translation>使用成对符号</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="216"/>
         <source>Match brackets and quotes</source>
         <translation>匹配括号和引号</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="217"/>
         <source>Match Markdown characters</source>
         <translation>匹配 Markdown 字符</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="219"/>
         <source>Autocomplete</source>
         <translation>自动补全</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="220"/>
         <source>Enable Emoji autocomplete</source>
         <translation>启用表情符号自动补全</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="222"/>
         <source>Live Rendering</source>
         <translation>实时渲染</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="223"/>
         <source>Show Markdown source of the current block element</source>
         <translation>显示当前块级元素的 Markdown 源码</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="224"/>
         <source>Show Mermaid diagrams as source code instead of rendering</source>
         <translation>不渲染 Mermaid 图表，而是显示源代码</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="226"/>
         <source>Default Copy Behavior</source>
         <translation>默认复制行为</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="227"/>
         <source>Copy Markdown source when copying plain text</source>
         <translation>复制纯文本时复制 Markdown 源码</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="229"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="228"/>
         <source>Copy or cut the entire line when no text is selected</source>
         <translation>未选中文本时复制或剪切整行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="230"/>
         <source>Default Line Break</source>
         <translation>默认换行符</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="231"/>
         <source>Default line break for new files</source>
         <translation>新建文件的默认换行符</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="232"/>
         <source>LF (Unix Style)</source>
         <translation>LF（Unix 风格）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="234"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="233"/>
         <source>CRLF (Windows Style)</source>
         <translation>CRLF（Windows 风格）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="235"/>
         <source>Locked Editing</source>
         <translation>锁定编辑</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="236"/>
         <source>Read-only reading mode: hides the caret and inline popups, rejects typing</source>
         <translation>只读阅读模式：隐藏光标与行内浮层，拒绝输入</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="237"/>
         <source>Enable locked editing</source>
         <translation>启用锁定编辑</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="238"/>
         <source>Each tab locks on its own</source>
         <translation>独立标签页（各标签页分别锁定）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="240"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="239"/>
         <source>One lock for the whole window</source>
         <translation>全局窗口（整个窗口一起锁定）</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="241"/>
         <source>Spell Check</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="242"/>
         <source>Enable spell checking</source>
         <translation>启用拼写检查</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="244"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="243"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
@@ -4372,17 +4378,17 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">简体中文</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="245"/>
         <source>Typewriter Mode</source>
         <translation>打字机模式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="246"/>
         <source>Always keep the cursor in the middle of the screen</source>
         <translation>始终保持光标在屏幕中间</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="247"/>
         <source>Disable Typewriter / Focus Mode</source>
         <translation>禁用打字机 / 专注模式</translation>
     </message>
@@ -5763,13 +5769,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">排除路径（词语或路径片段）</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="232"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="236"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="411"/>
         <source>Match case</source>
         <translation>区分大小写</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="238"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="413"/>
         <source>Regular expression</source>
         <translation>正则表达式</translation>
@@ -6075,50 +6081,54 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::UpdateChecker</name>
     <message>
-        <location filename="../src/app/UpdateChecker.cpp" line="69"/>
         <source>The update server returned an invalid version.</source>
-        <translation>更新服务器返回了无效的版本号。</translation>
+        <translation type="vanished">更新服务器返回了无效的版本号。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/UpdateChecker.cpp" line="83"/>
+        <source>Could not reach the update service. Please try again later or download Muffin from the official release page.</source>
+        <translation>无法连接到更新服务。请稍后重试，或从官方发布页面下载 Muffin。</translation>
     </message>
 </context>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="271"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
         <source>Markdown source editor</source>
         <translation>Markdown 源码编辑器</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="272"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="273"/>
         <source>Plain-text Markdown source</source>
         <translation>纯文本 Markdown 源码</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1447"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1452"/>
         <source>Undo</source>
         <translation>撤销</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1449"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1454"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1453"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1458"/>
         <source>Cut</source>
         <translation>剪切</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1459"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1464"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1463"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1468"/>
         <source>Paste</source>
         <translation>粘贴</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1474"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1479"/>
         <source>Select All</source>
         <translation>全选</translation>
     </message>
@@ -6146,7 +6156,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     <message>
         <location filename="../src/main.cpp" line="175"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="197"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="431"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="444"/>
         <source>Update Muffin</source>
         <translation>更新 Muffin</translation>
     </message>
@@ -6202,6 +6212,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
     </message>
     <message>
         <location filename="../src/app/WindowsUpdater.cpp" line="285"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="311"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>无法保存下载的更新，或下载大小超出预期。</translation>
     </message>
@@ -6211,46 +6222,46 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>更新清单过大。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="306"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="319"/>
         <source>Could not download the update: %1</source>
         <translation>无法下载更新：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="329"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="342"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>更新签名无效，或安装包与此 Windows 版本不兼容。未安装任何内容。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="341"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="346"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="354"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="359"/>
         <source>Could not create the update download folder.</source>
         <translation>无法创建更新下载文件夹。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="355"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="454"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="368"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="458"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="467"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>下载的更新不完整或已被修改。未安装任何内容。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="432"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="445"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>更新前请关闭其他正在运行的 Muffin 实例。只有已安装的版本才能在应用内更新。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="503"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="554"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="516"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="567"/>
         <source>Could not save the session before updating.</source>
         <translation>无法在更新前保存会话。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="523"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="536"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>无法启动更新安装程序。当前版本未发生更改。</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="572"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="585"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>安装程序未能准备就绪。Muffin 将保持打开，请重试。</translation>
     </message>
@@ -6284,7 +6295,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WorkspaceSearch</name>
     <message>
-        <location filename="../src/app/WorkspaceSearch.cpp" line="380"/>
+        <location filename="../src/app/WorkspaceSearch.cpp" line="381"/>
         <source>Folder is unavailable</source>
         <translation>文件夹不可用</translation>
     </message>

@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
 
+## [0.7.10] - 2026-10-31
+
+### Added
+
+- Add Lock Editing / Unlock Editing to document tab context menus and show a lock indicator beside the filename while editing is locked.
+- Mirror the same GitHub-built release artifacts to CNB, verify public downloads before advancing the static update catalog, and preserve the existing Windows update signing key.
+
+### Fixed
+
+- Check static release catalogs from CNB with a GitHub static-asset fallback instead of calling the anonymous GitHub Releases API, avoiding its shared-IP API quota. ([#12](https://github.com/jstzwj/Muffin/issues/12))
+- Revalidate cached update catalogs with ETag, honor source rate-limit cooldowns, back off automatic checks after failures, and show readable errors without reporting an offline cache as a fresh check.
+- Retry failed CNB package and manifest downloads from the matching GitHub release, restarting from byte zero and preserving signature, size and SHA-256 checks.
+
 ## [0.7.9] - 2026-10-31
 
 ### Added

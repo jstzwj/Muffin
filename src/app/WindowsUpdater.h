@@ -50,7 +50,8 @@ private:
   void fail(const QString& message);
   void failRestart(const QString& message);
   void restart();
-  void get(const QUrl& url, qint64 limit, const std::function<void(const QByteArray&)>& completed);
+  void get(const QUrl& url, qint64 limit, const std::function<void(const QByteArray&)>& completed,
+           bool allowFallback = true);
   QNetworkAccessManager network_;
   QPointer<QNetworkReply> reply_;
   UpdateRelease release_;

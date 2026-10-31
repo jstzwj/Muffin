@@ -1,0 +1,2 @@
+# Verify the existing Windows ECDSA P-256 manifests before mirroring artifacts.
+cryptography==46.0.3

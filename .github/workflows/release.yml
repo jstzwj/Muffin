@@ -399,22 +399,49 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish GitHub Release
+    name: Publish GitHub release and mirror to CNB
     needs: build
     runs-on: ubuntu-latest
+    # Serialize publication across tags: a historical rebuild must not race the
+    # stable feed pointer of a newer release.
+    concurrency:
+      group: muffin-release-publication
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
+      - name: Check out publication tooling
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+
+      - name: Set up publication Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install signature verifier
+        run: python -m pip install -r requirements-release.txt
+
+      - name: Test publication contracts
+        run: python scripts/test_publish_cnb_release.py
+
       - name: Download distribution artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts
 
-      - name: Publish release
+      - name: Prepare static update catalogs
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: python scripts/publish_cnb_release.py --tag "$RELEASE_TAG" --assets release-artifacts --output update-metadata --prepare-only
+
+      - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
           name: Muffin ${{ inputs.tag || github.ref_name }}
+          make_latest: legacy
           files: |
             release-artifacts/**/*.7z
             release-artifacts/**/*.tar.gz
@@ -422,3 +449,10 @@ jobs:
             release-artifacts/**/*.exe
             release-artifacts/**/*.dmg
             release-artifacts/**/*.update.json
+            update-metadata/github/muffin-update.json
+
+      - name: Mirror the same build artifacts to CNB, then advance update channel
+        env:
+          CNB_RELEASE_TOKEN: ${{ secrets.CNB_RELEASE_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: python scripts/publish_cnb_release.py --tag "$RELEASE_TAG" --assets release-artifacts --output update-metadata

@@ -24,6 +24,7 @@ struct UpdatePackage {
   QByteArray sha256;
 
   static QString architectureName();
+  static QUrl githubFallbackUrl(const QUrl& url);
   static std::optional<UpdateRelease> release(const QJsonObject& json, const QString& architecture);
   // Verify the exact signed bytes before interpreting any installation metadata.
   static std::optional<UpdatePackage> verify(const QByteArray& envelope, const UpdateRelease& release,

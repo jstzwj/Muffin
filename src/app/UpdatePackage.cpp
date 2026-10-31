@@ -21,8 +21,8 @@ bool validVersion(const QString& version) {
   return version.size() <= 32 && pattern.match(version).hasMatch();
 }
 
-bool releaseUrl(const QUrl& url, const QString& path) {
-  return url.scheme() == QStringLiteral("https") && url.host() == QStringLiteral("github.com") && url.port(-1) == -1 &&
+bool releaseUrl(const QUrl& url, const QString& host, const QString& path) {
+  return url.scheme() == QStringLiteral("https") && url.host() == host && url.port(-1) == -1 &&
          url.userInfo().isEmpty() && url.query().isEmpty() && url.fragment().isEmpty() && url.path() == path;
 }
 
@@ -70,6 +70,13 @@ QByteArray muffin::UpdatePackage::trustedPublicKey() {
   return QByteArray::fromHex(MUFFIN_UPDATE_PUBLIC_KEY_HEX);
 }
 
+QUrl muffin::UpdatePackage::githubFallbackUrl(const QUrl& url) {
+  const QString prefix = QStringLiteral("/jstzwj/Muffin/-/releases/download/");
+  if (!url.path().startsWith(prefix) || !releaseUrl(url, QStringLiteral("cnb.cool"), url.path()))
+    return {};
+  return QUrl(QStringLiteral("https://github.com/jstzwj/Muffin/releases/download/") + url.path().mid(prefix.size()));
+}
+
 std::optional<muffin::UpdateRelease> muffin::UpdatePackage::release(const QJsonObject& json,
                                                                     const QString& architecture) {
   const QString tag = json.value(QStringLiteral("tag_name")).toString();
@@ -81,15 +88,19 @@ std::optional<muffin::UpdateRelease> muffin::UpdatePackage::release(const QJsonO
   UpdateRelease result;
   result.version = version;
   result.page = QUrl(json.value(QStringLiteral("html_url")).toString());
-  if (!releaseUrl(result.page, QStringLiteral("/jstzwj/Muffin/releases/tag/") + tag))
+  const bool cnb = result.page.host() == QStringLiteral("cnb.cool");
+  const QString host = cnb ? QStringLiteral("cnb.cool") : QStringLiteral("github.com");
+  const QString repository =
+      cnb ? QStringLiteral("/jstzwj/Muffin/-/releases/") : QStringLiteral("/jstzwj/Muffin/releases/");
+  if (!releaseUrl(result.page, host, repository + QStringLiteral("tag/") + tag))
     return std::nullopt;
   const auto stem = QStringLiteral("Muffin-Setup-%1-windows-%2").arg(version, architecture);
-  const QString prefix = QStringLiteral("/jstzwj/Muffin/releases/download/%1/").arg(tag);
+  const QString prefix = repository + QStringLiteral("download/%1/").arg(tag);
   for (const auto& value : json.value(QStringLiteral("assets")).toArray()) {
     const auto asset = value.toObject();
     const QString name = asset.value(QStringLiteral("name")).toString();
     const QUrl url(asset.value(QStringLiteral("browser_download_url")).toString());
-    if (!releaseUrl(url, prefix + name))
+    if (!releaseUrl(url, host, prefix + name))
       continue;
     if (name == stem + QStringLiteral(".exe")) {
       if (!result.installer.isEmpty())

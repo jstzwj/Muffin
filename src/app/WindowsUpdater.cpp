@@ -265,8 +265,8 @@ void muffin::WindowsUpdater::refresh() {
   cancel_->setText(downloading ? tr("Cancel Download") : tr("Later"));
 }
 
-void muffin::WindowsUpdater::get(const QUrl& url, qint64 limit,
-                                 const std::function<void(const QByteArray&)>& completed) {
+void muffin::WindowsUpdater::get(const QUrl& url, qint64 limit, const std::function<void(const QByteArray&)>& completed,
+                                 bool allowFallback) {
   QNetworkRequest request(url);
   request.setHeader(QNetworkRequest::UserAgentHeader,
                     QStringLiteral("Muffin/%1").arg(QCoreApplication::applicationVersion()));
@@ -279,6 +279,12 @@ void muffin::WindowsUpdater::get(const QUrl& url, qint64 limit,
   const auto consume = [this, reply, buffer, limit] {
     if (reply_ != reply)
       return;
+    if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
+      // Error pages are not package bytes. The finished handler can still try
+      // the other mirror even if a proxy returns a large HTML response.
+      reply->readAll();
+      return;
+    }
     const auto bytes = reply->readAll();
     if (file_) {
       if (written_ + bytes.size() > limit || file_->write(bytes) != bytes.size()) {
@@ -297,12 +303,25 @@ void muffin::WindowsUpdater::get(const QUrl& url, qint64 limit,
     }
   };
   connect(reply, &QNetworkReply::readyRead, this, consume);
-  connect(reply, &QNetworkReply::finished, this, [this, reply, buffer, completed, consume] {
+  connect(reply, &QNetworkReply::finished, this, [this, reply, buffer, completed, consume, url, limit, allowFallback] {
     reply->deleteLater();
     if (reply_ != reply)
       return;
     if (reply->error() != QNetworkReply::NoError ||
         reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
+      const auto fallback = UpdatePackage::githubFallbackUrl(url);
+      if (allowFallback && !fallback.isEmpty()) {
+        // A different mirror starts from byte zero. Keep the original signed
+        // size/hash contract, and never concatenate bytes from two origins.
+        if (file_ && (!file_->resize(0) || !file_->seek(0))) {
+          fail(tr("The update download could not be saved or exceeded its expected size."));
+          return;
+        }
+        written_ = 0;
+        hash_.reset();
+        get(fallback, limit, completed, false);
+        return;
+      }
       fail(tr("Could not download the update: %1").arg(reply->errorString()));
       return;
     }
