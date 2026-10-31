@@ -507,7 +507,7 @@ void muffin::MainWindow::applyLockEditingSettings() {
 // Push the effective lock onto one tab: the rendered view hides its caret and
 // inline popups, the source view goes read-only, and the session rejects every
 // incremental edit (typing, paste, format, undo).
-void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
+void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) {
   if (document == nullptr) {
     return;
   }
@@ -516,6 +516,7 @@ void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
     document->renderView->setEditingLocked(locked);
   }
   document->session.setEditingReadOnly(locked);
+  updateTabLabel(document);
 }
 
 void muffin::MainWindow::updateStatus() {

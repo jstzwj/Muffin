@@ -2671,6 +2671,14 @@ QString contents(const QString& path) {
   return QString::fromUtf8(file.readAll()).replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
 }
 
+QToolButton* tabControlButton(QTabBar* bar, int index) {
+  auto* controls = bar->tabButton(index, QTabBar::RightSide);
+  require(controls && controls->objectName() == "TabControls", "tab owns its trailing status and control group");
+  auto* button = controls->findChild<QToolButton*>();
+  require(button, "tab has one close or pin button");
+  return button;
+}
+
 QAction* tabMenuAction(QMenu& menu, const QString& text) {
   for (auto* item : menu.actions())
     if (item->text() == MainWindow::tr(text.toUtf8().constData()))
@@ -2716,6 +2724,15 @@ void tabMenuLocksTheClickedDocument() {
     auto* background = f.open(f.file("background.md", "Background\n"));
     auto* active = f.open(f.file("active.md", "Active\n"));
     auto* command = f.window.findChild<QAction*>("edit.lock_editing");
+    const auto checkIndicators = [&] {
+      for (auto* document : {background, active}) {
+        auto* controls = f.tabs->tabBar()->tabButton(f.tabs->indexOf(document), QTabBar::RightSide);
+        auto* indicator = controls->findChild<QWidget*>("TabLockIndicator");
+        require(indicator && indicator->isHidden() == !document->session.editingReadOnly(),
+                "each tab's lock marker tracks its effective read-only state");
+      }
+    };
+    checkIndicators();
     withTabMenu(f.window, background, [&](QMenu& menu) {
       auto* lock = tabMenuAction(menu, "Lock Editing");
       require(lock->isEnabled() && lock->isCheckable() && !lock->isChecked() && lock->shortcut() == custom,
@@ -2726,6 +2743,7 @@ void tabMenuLocksTheClickedDocument() {
                 active->session.editingReadOnly() == !perTab && f.window.editingLocked() == !perTab &&
                 command->isChecked() == !perTab,
             "background locking preserves the active document and respects the configured scope");
+    checkIndicators();
     withTabMenu(f.window, background, [&](QMenu& menu) {
       auto* unlock = tabMenuAction(menu, "Unlock Editing");
       require(unlock->isChecked(), "tab menu reflects the clicked tab rather than the active one");
@@ -2740,15 +2758,19 @@ void tabMenuLocksTheClickedDocument() {
     command->trigger();
     require(!background->session.editingReadOnly() && !active->session.editingReadOnly(),
             "the existing edit command can unlock a context-locked document");
+    checkIndicators();
     command->trigger();
     f.tabs->setCurrentWidget(active);
     triggerTabMenu(f.window, background, "Unlock Editing");
     require(f.current() == active && !background->session.editingReadOnly() && !active->session.editingReadOnly() &&
                 !command->isChecked(),
             "context unlock targets a background tab and synchronizes the active command");
+    checkIndicators();
 
+    command->trigger();
     SettingsOverride disabled("editor/lockEditingEnabled", false);
     f.window.applyLockEditingSettings();
+    checkIndicators();
     withTabMenu(f.window, background, [&](QMenu& menu) {
       auto* lock = tabMenuAction(menu, "Lock Editing");
       require(!lock->isEnabled() && !lock->isChecked(), "tab menu respects a disabled lock preference");
@@ -2757,6 +2779,60 @@ void tabMenuLocksTheClickedDocument() {
     require(!background->session.editingReadOnly() && !active->session.editingReadOnly(),
             "disabled context command cannot lock a document");
   }
+}
+
+void tabLockIndicatorPreservesControlsAndFollowsTheme() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  SettingsOverride scope("editor/lockEditingScope", 0);
+  Fixture f;
+  auto* locked = f.open(f.file(QStringLiteral("a-very-long-file-name-for-reading-中文.md"), "Read\n"));
+  auto* active = f.open(f.file("active.md", "Active\n"));
+  auto* bar = f.tabs->tabBar();
+  auto* controls = bar->tabButton(f.tabs->indexOf(locked), QTabBar::RightSide);
+  const auto unlockedWidth = controls->sizeHint().width();
+  locked->session.setMarkdownText("Read updated\n", true);
+  triggerTabMenu(f.window, locked, "Lock Editing");
+  QApplication::processEvents();
+  auto* indicator = controls->findChild<QWidget*>("TabLockIndicator");
+  auto* close = tabControlButton(bar, f.tabs->indexOf(locked));
+  require(indicator->isVisible() && !indicator->visibleRegion().isEmpty() && close->isVisible() &&
+              controls->sizeHint().width() > unlockedWidth &&
+              indicator->geometry().right() < close->geometry().left() && close->width() == 20,
+          "the lock has its own trailing space before the unchanged close target");
+  require(f.tabs->tabText(f.tabs->indexOf(locked)) == QFileInfo(locked->session.filePath()).fileName() + " *" &&
+              bar->accessibleTabName(f.tabs->indexOf(locked)).contains("Editing Locked") &&
+              f.tabs->tabToolTip(f.tabs->indexOf(locked)).contains("Editing is locked"),
+          "file name and dirty marker stay intact with an accessible lock status");
+  indicator->ensurePolished();
+  const auto lightInk = indicator->palette().color(QPalette::WindowText);
+  action(f.window, "Night")->trigger();
+  QApplication::processEvents();
+  const auto darkInk = indicator->palette().color(QPalette::WindowText);
+  require(lightInk != darkInk && darkInk.lightness() > lightInk.lightness(),
+          "lock ink follows the light and dark chrome palettes");
+  if (const auto capture = qEnvironmentVariable("MUFFIN_LOCK_TAB_SCREENSHOT"); !capture.isEmpty()) {
+    require(f.window.grab().save(capture + ".night.png"), "capture dark lock indicator");
+    action(f.window, "GitHub")->trigger();
+    QApplication::processEvents();
+    require(f.window.grab().save(capture + ".png"), "capture light lock indicator");
+  }
+  triggerTabMenu(f.window, locked, "Pin Tab");
+  controls = bar->tabButton(f.tabs->indexOf(locked), QTabBar::RightSide);
+  require(!controls->findChild<QWidget*>("TabLockIndicator")->isHidden() &&
+              tabControlButton(bar, f.tabs->indexOf(locked))->objectName() == "PinTabButton",
+          "lock and pin indicators coexist after reordering");
+  QTest::mouseClick(tabControlButton(bar, f.tabs->indexOf(locked)), Qt::LeftButton);
+  require(!locked->pinned && locked->session.editingReadOnly() && f.current() == active,
+          "the pin button still unpins without unlocking or activating the document");
+  triggerTabMenu(f.window, locked, "Unlock Editing");
+  controls = bar->tabButton(f.tabs->indexOf(locked), QTabBar::RightSide);
+  require(controls->findChild<QWidget*>("TabLockIndicator")->isHidden() &&
+              controls->sizeHint().width() == unlockedWidth &&
+              !bar->accessibleTabName(f.tabs->indexOf(locked)).contains("Editing Locked"),
+          "unlock removes the indicator and releases its space");
+  locked->session.document().setModified(false);
+  QTest::mouseClick(tabControlButton(bar, f.tabs->indexOf(locked)), Qt::LeftButton);
+  require(f.tabs->count() == 1 && f.current() == active, "close button still closes the clicked background tab");
 }
 
 class TabCloseSideStyle final : public QProxyStyle {
@@ -2797,7 +2873,7 @@ void tabButtonsHaveSingleOwnerAcrossPlatformStyles() {
         auto* document = static_cast<DocumentTab*>(f.tabs->widget(index));
         require(bar->tabButton(index, QTabBar::LeftSide) == nullptr,
                 "tab must not retain a native left-side close button");
-        auto* button = qobject_cast<QToolButton*>(bar->tabButton(index, QTabBar::RightSide));
+        auto* button = tabControlButton(bar, index);
         require(button && button->objectName() == (document->pinned ? "PinTabButton" : "CloseTabButton"),
                 "each tab should expose exactly its custom close or pin control");
         if (bar->isVisible()) {
@@ -2813,13 +2889,13 @@ void tabButtonsHaveSingleOwnerAcrossPlatformStyles() {
     checkButtons();
     triggerTabMenu(f.window, b, "Pin Tab");
     checkButtons();
-    auto* pin = qobject_cast<QToolButton*>(bar->tabButton(f.tabs->indexOf(b), QTabBar::RightSide));
+    auto* pin = tabControlButton(bar, f.tabs->indexOf(b));
     QTest::mouseClick(pin, Qt::LeftButton);
     require(!b->pinned && f.tabs->count() == 3, "pin control should unpin without closing the document");
     checkButtons();
     f.tabs->setCurrentWidget(c);
     bar->moveTab(f.tabs->indexOf(a), 0);
-    auto* close = qobject_cast<QToolButton*>(bar->tabButton(f.tabs->indexOf(a), QTabBar::RightSide));
+    auto* close = tabControlButton(bar, f.tabs->indexOf(a));
     QTest::mouseClick(close, Qt::LeftButton);
     require(f.tabs->count() == 2 && f.tabs->indexOf(a) < 0 && f.current() == c,
             "custom close should target the reordered background tab exactly once");
@@ -2902,7 +2978,7 @@ void pinnedTabsSurviveBulkCloseAndRestore() {
   b->editorController.applyMarkdownTextWithUndo("Edited B\n", "edit");
   triggerTabMenu(f.window, pinned, "Pin Tab");
   require(pinned->pinned && f.tabs->widget(0) == pinned, "pin puts the tab at the front");
-  require(f.tabs->tabBar()->tabButton(0, QTabBar::RightSide)->objectName() == "PinTabButton",
+  require(tabControlButton(f.tabs->tabBar(), 0)->objectName() == "PinTabButton",
           "pin replaces accidental close button");
   if (const auto capture = qEnvironmentVariable("MUFFIN_TAB_MENU_SCREENSHOT"); !capture.isEmpty()) {
     LanguageManager::instance().setLanguage(QStringLiteral("zh_CN"));
@@ -3537,7 +3613,7 @@ void renameFolderAndTranslateTabs() {
     if (language.code != QStringLiteral("en")) {
       require(close != QStringLiteral("Close Tab"), "tab controls translated in every locale");
     }
-    auto* button = f.tabs->tabBar()->tabButton(0, QTabBar::RightSide);
+    auto* button = tabControlButton(f.tabs->tabBar(), 0);
     require(button->toolTip() == close && button->accessibleName() == close, "existing close button retranslates");
     auto* plus = f.window.findChild<QToolButton*>(QStringLiteral("NewTabButton"));
     require(plus->toolTip().startsWith(MainWindow::tr("New Tab")), "new-tab tooltip retranslates");
@@ -4146,6 +4222,7 @@ int main(int argc, char** argv) {
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
   const auto runLockedEditingTests = [] {
     runTest("tabMenuLocksTheClickedDocument", tabMenuLocksTheClickedDocument);
+    runTest("tabLockIndicatorPreservesControlsAndFollowsTheme", tabLockIndicatorPreservesControlsAndFollowsTheme);
     runTest("lockedEditingPreservesUndoAndRejectsChanges", lockedEditingPreservesUndoAndRejectsChanges);
     runTest("lockedEditingScopesSurviveLoading", lockedEditingScopesSurviveLoading);
     runTest("lockedEditingPreferencesSyncAcrossWindows", lockedEditingPreferencesSyncAcrossWindows);

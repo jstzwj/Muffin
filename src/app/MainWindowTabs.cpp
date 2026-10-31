@@ -16,9 +16,12 @@
 #include <QAction>
 #include <QContextMenuEvent>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
 #include <QScopedValueRollback>
 #include <QSettings>
 #include <QSignalBlocker>
@@ -32,6 +35,30 @@
 #include <cmath>
 
 namespace {
+
+class TabLockIndicator final : public QWidget {
+public:
+  explicit TabLockIndicator(QWidget* parent) : QWidget(parent) {
+    setObjectName(QStringLiteral("TabLockIndicator"));
+    setFixedSize(16, 20);
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+  }
+
+protected:
+  void paintEvent(QPaintEvent*) override {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.translate(1, 3);
+    painter.setPen(QPen(palette().color(QPalette::WindowText), 1.3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    QPainterPath shackle;
+    shackle.moveTo(4.5, 6);
+    shackle.lineTo(4.5, 4.5);
+    shackle.cubicTo(4.5, 1, 9.5, 1, 9.5, 4.5);
+    shackle.lineTo(9.5, 6);
+    painter.drawPath(shackle);
+    painter.drawRoundedRect(QRectF(3, 6, 8, 6.5), 1.4, 1.4);
+  }
+};
 
 QString pathKey(const QString& path) {
   if (path.isEmpty()) {
@@ -188,7 +215,15 @@ void muffin::MainWindow::setupTabButton(DocumentTab* document) {
   if (QWidget* old = tabs_->tabBar()->tabButton(index, QTabBar::RightSide)) {
     old->deleteLater();
   }
-  auto* button = new QToolButton(tabs_->tabBar());
+  auto* controls = new QWidget(tabs_->tabBar());
+  controls->setObjectName(QStringLiteral("TabControls"));
+  auto* layout = new QHBoxLayout(controls);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(2);
+  auto* lock = new TabLockIndicator(controls);
+  lock->setVisible(editingLocked(document));
+  layout->addWidget(lock);
+  auto* button = new QToolButton(controls);
   button->setObjectName(document->pinned ? QStringLiteral("PinTabButton") : QStringLiteral("CloseTabButton"));
   if (document->pinned) {
     button->setIcon(QIcon(QStringLiteral(":/icons/ui/pin.svg")));
@@ -200,13 +235,15 @@ void muffin::MainWindow::setupTabButton(DocumentTab* document) {
   button->setAutoRaise(true);
   button->setToolTip(document->pinned ? tr("Unpin Tab") : tr("Close Tab"));
   button->setAccessibleName(button->toolTip());
-  tabs_->tabBar()->setTabButton(index, QTabBar::RightSide, button);
+  layout->addWidget(button);
+  tabs_->tabBar()->setTabButton(index, QTabBar::RightSide, controls);
   connect(button, &QToolButton::clicked, document->windowConnections, [this, document] {
     if (document->pinned)
       setTabPinned(document, false);
     else
       closeTab(tabs_->indexOf(document));
   });
+  updateTabLabel(document);
 }
 
 void muffin::MainWindow::updateTabBarVisibility() {
@@ -231,7 +268,8 @@ void muffin::MainWindow::retranslateTabs() {
   for (DocumentTab* document : documentTabs()) {
     document->openConfirmation->retranslateUi();
     updateTabLabel(document);
-    if (QWidget* close = tabs_->tabBar()->tabButton(tabs_->indexOf(document), QTabBar::RightSide)) {
+    if (auto* controls = tabs_->tabBar()->tabButton(tabs_->indexOf(document), QTabBar::RightSide)) {
+      auto* close = controls->findChild<QToolButton*>();
       close->setToolTip(document->pinned ? tr("Unpin Tab") : tr("Close Tab"));
       close->setAccessibleName(close->toolTip());
     }
@@ -826,5 +864,23 @@ void muffin::MainWindow::updateTabLabel(DocumentTab* document) {
   const QString path = document->pendingOpenPath.isEmpty() ? document->session.filePath() : document->pendingOpenPath;
   const QString name = path.isEmpty() ? document->session.displayName() : QFileInfo(path).fileName();
   tabs_->setTabText(index, name + (document->session.document().isModified() ? QStringLiteral(" *") : QString()));
-  tabs_->setTabToolTip(index, path.isEmpty() ? name : path);
+  const bool locked = editingLocked(document);
+  tabs_->setTabToolTip(
+      index,
+      (path.isEmpty() ? name : path) +
+          (locked ? QLatin1Char('\n') + tr("Editing is locked. Unlock editing to change this document.") : QString()));
+  tabs_->tabBar()->setAccessibleTabName(index, name + (locked ? tr(" (Editing Locked)") : QString()));
+  if (auto* controls = tabs_->tabBar()->tabButton(index, QTabBar::RightSide)) {
+    auto* lock = controls->findChild<QWidget*>(QStringLiteral("TabLockIndicator"));
+    lock->setToolTip(tr("Editing is locked. Unlock editing to change this document."));
+    lock->setAccessibleName(tr(" (Editing Locked)").trimmed());
+    if (lock->isHidden() == locked) {
+      lock->setVisible(locked);
+      // Reattach the resized group so QTabBar reserves its new width. Clear
+      // first: assigning the same widget directly hides it in Qt's setter.
+      tabs_->tabBar()->setTabButton(index, QTabBar::RightSide, nullptr);
+      controls->adjustSize();
+      tabs_->tabBar()->setTabButton(index, QTabBar::RightSide, controls);
+    }
+  }
 }

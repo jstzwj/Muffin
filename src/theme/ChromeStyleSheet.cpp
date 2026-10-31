@@ -61,6 +61,8 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
              " border: 1px solid transparent; border-radius: 6px; }"
              "QTabWidget#DocumentTabs QTabBar::tab:hover { background: %3; color: %2; }"
              "QTabWidget#DocumentTabs QTabBar::tab:selected { background: %4; color: %2; border-color: %5; }"
+             "QWidget#TabControls { background: transparent; }"
+             "QWidget#TabLockIndicator { background: transparent; color: %7; }"
              "QToolButton#CloseTabButton, QToolButton#PinTabButton { background: transparent; border: 0; color: %7;"
              " min-width: 0; min-height: 0; padding: 0; border-radius: 10px;"
              " font-size: 16px; font-weight: normal; }"

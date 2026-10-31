@@ -225,7 +225,7 @@ private:
   bool editingLocked(const DocumentTab* document) const;
   void setEditingLocked(DocumentTab* document, bool locked);
   // Re-assert the effective 锁定编辑 state on one tab's views and session.
-  void applyEditingLockedTo(DocumentTab* document) const;
+  void applyEditingLockedTo(DocumentTab* document);
   void updateStatus();
   void updateCursorStatus(int line, int column);
   void updateRenderCursorStatus(const HitTestResult& hit);
