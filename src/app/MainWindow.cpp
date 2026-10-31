@@ -416,22 +416,30 @@ void muffin::MainWindow::updateTitle() {
 // 生效状态：功能在偏好里关掉时永远是「未锁定」；「独立标签页」读当前页签自己的状态，
 // 「全局窗口」读窗口状态。
 bool muffin::MainWindow::editingLocked() const {
+  return editingLocked(tab_);
+}
+
+bool muffin::MainWindow::editingLocked(const DocumentTab* document) const {
   if (!lockEditingEnabled_) {
     return false;
   }
-  return lockEditingPerTab_ ? (tab_ != nullptr && tab_->editingLocked) : editingLocked_;
+  return lockEditingPerTab_ ? (document != nullptr && document->editingLocked) : editingLocked_;
 }
 
 void muffin::MainWindow::setEditingLocked(bool locked) {
-  if (!lockEditingEnabled_) {
+  setEditingLocked(tab_, locked);
+}
+
+void muffin::MainWindow::setEditingLocked(DocumentTab* document, bool locked) {
+  if (!lockEditingEnabled_ || document == nullptr || tabs_->indexOf(document) < 0) {
     return;
   }
   if (lockEditingPerTab_) {
-    if (tab_ == nullptr || tab_->editingLocked == locked) {
+    if (document->editingLocked == locked) {
       return;
     }
-    tab_->editingLocked = locked;
-    applyEditingLockedTo(tab_);
+    document->editingLocked = locked;
+    applyEditingLockedTo(document);
   } else {
     if (editingLocked_ == locked) {
       return;
@@ -503,7 +511,7 @@ void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) const {
   if (document == nullptr) {
     return;
   }
-  const bool locked = lockEditingEnabled_ && (lockEditingPerTab_ ? document->editingLocked : editingLocked_);
+  const bool locked = editingLocked(document);
   if (document->renderView) {
     document->renderView->setEditingLocked(locked);
   }

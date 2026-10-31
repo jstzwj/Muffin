@@ -499,6 +499,13 @@ void muffin::MainWindow::buildTabContextMenu(int index, QPoint globalPos) {
   menu.addSeparator();
   add(document->pinned ? tr("Unpin Tab") : tr("Pin Tab"),
       [this, document] { setTabPinned(document, !document->pinned); });
+  auto* lock = add(editingLocked(document) ? tr("Unlock Editing") : tr("Lock Editing"),
+                   [this, document] { setEditingLocked(document, !editingLocked(document)); });
+  lock->setCheckable(true);
+  lock->setChecked(editingLocked(document));
+  lock->setEnabled(lockEditingEnabled());
+  if (const auto* command = commands_.action(QStringLiteral("edit.lock_editing")))
+    lock->setShortcut(command->shortcut());
   menu.addSeparator();
   const QString path = document->pendingOpenPath.isEmpty() ? document->session.filePath() : document->pendingOpenPath;
   add(tr("Copy Path"), [this, path] { copyPathToClipboard(path); })->setEnabled(!path.isEmpty());

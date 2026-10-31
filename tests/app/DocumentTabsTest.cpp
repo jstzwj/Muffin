@@ -2704,6 +2704,61 @@ void triggerTabMenu(MainWindow& window, DocumentTab* document, const QString& te
   });
 }
 
+void tabMenuLocksTheClickedDocument() {
+  SettingsOverride enabled("editor/lockEditingEnabled", true);
+  auto& shortcuts = ShortcutSettings::instance();
+  const auto restoreShortcut = qScopeGuard([&] { shortcuts.clearOverride("edit.lock_editing"); });
+  const QKeySequence custom("Ctrl+Alt+F9");
+  shortcuts.setOverride("edit.lock_editing", custom);
+  for (bool perTab : {true, false}) {
+    SettingsOverride scope("editor/lockEditingScope", perTab ? 0 : 1);
+    Fixture f;
+    auto* background = f.open(f.file("background.md", "Background\n"));
+    auto* active = f.open(f.file("active.md", "Active\n"));
+    auto* command = f.window.findChild<QAction*>("edit.lock_editing");
+    withTabMenu(f.window, background, [&](QMenu& menu) {
+      auto* lock = tabMenuAction(menu, "Lock Editing");
+      require(lock->isEnabled() && lock->isCheckable() && !lock->isChecked() && lock->shortcut() == custom,
+              "tab menu exposes the unlocked target and configured shortcut");
+      lock->trigger();
+    });
+    require(f.current() == active && background->session.editingReadOnly() && background->editor->isReadOnly() &&
+                active->session.editingReadOnly() == !perTab && f.window.editingLocked() == !perTab &&
+                command->isChecked() == !perTab,
+            "background locking preserves the active document and respects the configured scope");
+    withTabMenu(f.window, background, [&](QMenu& menu) {
+      auto* unlock = tabMenuAction(menu, "Unlock Editing");
+      require(unlock->isChecked(), "tab menu reflects the clicked tab rather than the active one");
+    });
+    withTabMenu(f.window, active, [&](QMenu& menu) {
+      require(tabMenuAction(menu, perTab ? "Lock Editing" : "Unlock Editing")->isChecked() == !perTab,
+              "the active tab's menu also reflects the effective scope");
+    });
+    f.tabs->setCurrentWidget(background);
+    require(command->isChecked() && f.window.editingLocked(),
+            "activating a context-locked tab synchronizes the command");
+    command->trigger();
+    require(!background->session.editingReadOnly() && !active->session.editingReadOnly(),
+            "the existing edit command can unlock a context-locked document");
+    command->trigger();
+    f.tabs->setCurrentWidget(active);
+    triggerTabMenu(f.window, background, "Unlock Editing");
+    require(f.current() == active && !background->session.editingReadOnly() && !active->session.editingReadOnly() &&
+                !command->isChecked(),
+            "context unlock targets a background tab and synchronizes the active command");
+
+    SettingsOverride disabled("editor/lockEditingEnabled", false);
+    f.window.applyLockEditingSettings();
+    withTabMenu(f.window, background, [&](QMenu& menu) {
+      auto* lock = tabMenuAction(menu, "Lock Editing");
+      require(!lock->isEnabled() && !lock->isChecked(), "tab menu respects a disabled lock preference");
+      lock->trigger();
+    });
+    require(!background->session.editingReadOnly() && !active->session.editingReadOnly(),
+            "disabled context command cannot lock a document");
+  }
+}
+
 class TabCloseSideStyle final : public QProxyStyle {
 public:
   explicit TabCloseSideStyle(QTabBar::ButtonPosition side)
@@ -4090,6 +4145,7 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
   const auto runLockedEditingTests = [] {
+    runTest("tabMenuLocksTheClickedDocument", tabMenuLocksTheClickedDocument);
     runTest("lockedEditingPreservesUndoAndRejectsChanges", lockedEditingPreservesUndoAndRejectsChanges);
     runTest("lockedEditingScopesSurviveLoading", lockedEditingScopesSurviveLoading);
     runTest("lockedEditingPreferencesSyncAcrossWindows", lockedEditingPreferencesSyncAcrossWindows);
