@@ -3,6 +3,7 @@
 #include "app/UpdatePackage.h"
 #include <QCryptographicHash>
 #include <QFile>
+#include <QList>
 #include <QNetworkAccessManager>
 #include <QObject>
 #include <QPointer>
@@ -27,12 +28,14 @@ class WindowsUpdater final : public QObject {
   friend struct WindowsUpdaterTestAccess;
 
 public:
-  enum class State { Available, Downloading, Ready, Preparing, Installing, Failed };
+  enum class State { Available, Downloading, Ready, Preparing, Installing, Exiting, Failed };
   static WindowsUpdater& instance();
   static bool installedCopy();
   static bool anotherProcessRunning();
   static MainWindow* restoreAfterUpdate();
-  bool restartPending() const { return state_ == State::Preparing || state_ == State::Installing; }
+  bool restartPending() const {
+    return state_ == State::Preparing || state_ == State::Installing || state_ == State::Exiting;
+  }
   void interruptRestart();
   void showUpdate(const UpdateRelease& release, QWidget* parent = nullptr);
   bool showExisting();
@@ -50,6 +53,8 @@ private:
   void fail(const QString& message);
   void failRestart(const QString& message);
   void restart();
+  void awaitInstaller(const QString& ready, const QList<QPointer<MainWindow>>& windows,
+                      std::shared_ptr<void> packageLock);
   void get(const QUrl& url, qint64 limit, const std::function<void(const QByteArray&)>& completed,
            bool allowFallback = true);
   QNetworkAccessManager network_;

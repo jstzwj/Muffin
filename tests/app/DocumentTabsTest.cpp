@@ -4181,6 +4181,7 @@ void sessionRestoresNestedAndLiteralCoordinates() {
 } // namespace
 
 void runWindowsUpdateTests();
+int runWindowsUpdateHandoffTest();
 
 int main(int argc, char** argv) {
   // A deterministic converter process for export plumbing tests. Actual
@@ -4250,6 +4251,9 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--search-preferences"))) {
     runTest("searchPreferences", searchPreferences);
     return 0;
+  }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update-handoff"))) {
+    return runWindowsUpdateHandoffTest();
   }
   if (QCoreApplication::arguments().contains(QStringLiteral("--windows-update"))) {
     runWindowsUpdateTests();

@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
 
+## [0.7.11] - 2026-10-31
+
+### Fixed
+
+- Allow the Windows update dialog to close after the installer handoff has been explicitly approved, so Qt can exit the old editor instead of leaving "Preparing to restart" visible until the installer times out.
+- Keep restart guards active until process exit and restore editing when the installer handoff is canceled. Add isolated Qt process regressions for approved shutdown and canceled handoffs.
+
+### Upgrade Notes
+
+- Users running v0.7.9 or v0.7.10 should save their documents, close Muffin and manually run the v0.7.11 installer once. The running older editor still contains the exit-blocking behavior; downloading a fixed installer cannot change that process's shutdown code.
+
 ## [0.7.10] - 2026-10-31
 
 ### Added

@@ -1,6 +1,7 @@
 #include "app/UpdatePackage.h"
 #include "app/UpdateChecker.h"
 #include "app/WindowsUpdater.h"
+#include "app/MainWindow.h"
 #include "../TestUtils.h"
 
 #include <QApplication>
@@ -11,10 +12,12 @@
 #include <QJsonDocument>
 #include <QLabel>
 #include <QPushButton>
+#include <QProcess>
 #include <QSettings>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QThread>
+#include <QTimer>
 
 #ifdef Q_OS_WIN
 #include <bcrypt.h>
@@ -255,6 +258,74 @@ struct UpdateCheckerTestAccess {
 };
 
 struct WindowsUpdaterTestAccess {
+  static int handoffChild() {
+    const bool cancel = QCoreApplication::arguments().contains(QStringLiteral("cancel"));
+    auto& updater = WindowsUpdater::instance();
+    MainWindow window;
+    window.show();
+    updater.showUpdate({QStringLiteral("9.8.7"), {}, {}, {}, 1024}, &window);
+    require(window.prepareUpdateClose(), "clean document window prepares to close");
+    window.setEnabled(false);
+    updater.state_ = WindowsUpdater::State::Preparing;
+    QTemporaryDir staging;
+    require(staging.isValid(), "isolated handoff marker directory exists");
+    const auto ready = staging.filePath(QStringLiteral("update.ready"));
+    updater.awaitInstaller(ready, {&window}, {});
+    bool checkedGuard = false;
+    QTimer::singleShot(0, qApp, [&] {
+      require(updater.restartPending() && !window.close() && !updater.dialog_->close(),
+              "editor and updater reject user close while awaiting installer readiness");
+      updater.dialog_->reject();
+      require(window.isVisible() && updater.dialog_->isVisible(), "Escape cannot bypass the handoff guard");
+      checkedGuard = true;
+      QFile marker(cancel ? ready + QStringLiteral(".cancel") : ready);
+      require(marker.open(QIODevice::WriteOnly) && marker.write("ready") == 5 && marker.flush(),
+              "simulated installer acknowledges readiness or cancels");
+    });
+    QTimer cancellation;
+    if (cancel) {
+      QObject::connect(&cancellation, &QTimer::timeout, qApp, [&] {
+        if (updater.state_ != WindowsUpdater::State::Ready)
+          return;
+        require(updater.state_ == WindowsUpdater::State::Ready && !updater.restartPending() && window.isVisible() &&
+                    window.isEnabled() && updater.dialog_->isVisible() && updater.primary_->isEnabled(),
+                "canceled handoff restores editing and offers restart without closing documents");
+        qApp->exit(0);
+      });
+      cancellation.start(25);
+    }
+    QTimer watchdog;
+    watchdog.setSingleShot(true);
+    QObject::connect(&watchdog, &QTimer::timeout, qApp, [] { qApp->exit(91); });
+    watchdog.start(5000);
+    const int result = qApp->exec();
+    require(result == 0 && checkedGuard, "Qt exits normally after approval instead of waiting for helper timeout");
+    QFile decision(ready + QStringLiteral(".decision"));
+    require(decision.open(QIODevice::ReadOnly) && decision.readAll() == (cancel ? "cancel" : "install"),
+            "only the committed handoff authorizes installation");
+    if (!cancel) {
+      require(updater.state_ == WindowsUpdater::State::Exiting && updater.restartPending() && !window.isVisible() &&
+                  (!updater.dialog_ || !updater.dialog_->isVisible()),
+              "approved shutdown closes every owned window while retaining the file-open guard");
+    }
+    return result;
+  }
+
+  static void handoffExit() {
+    for (const auto& scenario : {QStringLiteral("commit"), QStringLiteral("cancel")}) {
+      QProcess child;
+      child.start(QCoreApplication::applicationFilePath(), {QStringLiteral("--windows-update-handoff"), scenario});
+      require(child.waitForStarted(10000), "handoff regression process starts");
+      if (!child.waitForFinished(15000)) {
+        child.kill();
+        child.waitForFinished();
+        require(false, "handoff regression process must terminate without external intervention");
+      }
+      require(child.exitStatus() == QProcess::NormalExit && child.exitCode() == 0,
+              QStringLiteral("handoff %1: %2").arg(scenario, QString::fromLocal8Bit(child.readAllStandardError())));
+    }
+  }
+
   static void downloads() {
     const QByteArray body(128 * 1024, 'x');
     for (int scenario = 0; scenario != 4; ++scenario) {
@@ -314,6 +385,10 @@ struct WindowsUpdaterTestAccess {
 };
 } // namespace muffin
 
+int runWindowsUpdateHandoffTest() {
+  return muffin::WindowsUpdaterTestAccess::handoffChild();
+}
+
 void runWindowsUpdateTests() {
   runTest("staticCatalogsAndBackoff", muffin::UpdateCheckerTestAccess::catalogs);
   runTest("assetSelection", assetSelection);
@@ -321,4 +396,5 @@ void runWindowsUpdateTests() {
   runTest("signatureValidation", signatureValidation);
 #endif
   runTest("downloads", muffin::WindowsUpdaterTestAccess::downloads);
+  runTest("handoffExit", muffin::WindowsUpdaterTestAccess::handoffExit);
 }

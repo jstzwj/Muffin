@@ -190,7 +190,7 @@ void muffin::WindowsUpdater::showUpdate(const UpdateRelease& release, QWidget* p
     error_.clear();
   }
   // Independent of a Preferences dialog / document window lifetime.
-  dialog_ = new UpdateDialog([this] { return restartPending(); });
+  dialog_ = new UpdateDialog([this] { return restartPending() && state_ != State::Exiting; });
   if (parent)
     dialog_->setPalette(parent->palette());
   dialog_->setAttribute(Qt::WA_DeleteOnClose);
@@ -545,6 +545,11 @@ void muffin::WindowsUpdater::restart() {
   // The helper marks completion; a later startup removes only completed
   // downloads, after the bundle has released its executable.
   staging_->setAutoRemove(false);
+  awaitInstaller(ready, windows, std::move(packageLock));
+}
+
+void muffin::WindowsUpdater::awaitInstaller(const QString& ready, const QList<QPointer<MainWindow>>& windows,
+                                            std::shared_ptr<void> packageLock) {
   state_ = State::Installing;
   refresh();
   auto* timer = new QTimer(this);
@@ -574,6 +579,10 @@ void muffin::WindowsUpdater::restart() {
         return;
       }
       commit.close();
+      // QApplication::quit() sends close events to visible top-level windows.
+      // The update dialog must now allow its own close, while file-open and
+      // document guards stay active until this process has actually exited.
+      state_ = State::Exiting;
       for (const auto& window : windows)
         if (window) {
           window->finishUpdateClose(true);
