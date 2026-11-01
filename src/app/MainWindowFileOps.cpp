@@ -710,15 +710,25 @@ void muffin::MainWindow::quickOpen() {
 
 // ---- Import (Pandoc → markdown) -------------------------------------------
 
-void muffin::MainWindow::importFile() {
+void muffin::MainWindow::importFile(QString sourcePath) {
   const QString dir =
       tab_->session.filePath().isEmpty() ? QString() : QFileInfo(tab_->session.filePath()).absolutePath();
-  const QString sourcePath = QFileDialog::getOpenFileName(
-      this, tr("Import"), dir,
-      tr("Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;"
-         "LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;"
-         "Textile (*.textile);;OPML (*.opml);;All files (*)"));
+  if (sourcePath.isEmpty())
+    sourcePath = QFileDialog::getOpenFileName(
+        this, tr("Import"), dir,
+        tr("Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;"
+           "LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;"
+           "Textile (*.textile);;OPML (*.opml);;All files (*)"));
   if (sourcePath.isEmpty()) {
+    return;
+  }
+
+  const auto extension = QFileInfo(sourcePath).suffix().toLower();
+  if (extension == QStringLiteral("md") || extension == QStringLiteral("markdown") ||
+      extension == QStringLiteral("txt")) {
+    // Reuse the protected asynchronous open path, but keep an independent,
+    // unsaved copy. Importing must never overwrite or activate the original.
+    openFileImpl(sourcePath, true);
     return;
   }
 

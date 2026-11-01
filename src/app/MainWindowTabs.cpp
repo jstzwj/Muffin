@@ -281,6 +281,10 @@ bool muffin::MainWindow::hasOpenFile(const QString& path) const {
 }
 
 bool muffin::MainWindow::openFile(QString path) {
+  return openFileImpl(std::move(path), false);
+}
+
+bool muffin::MainWindow::openFileImpl(QString path, bool importCopy) {
   if (workspaceWriteInProgress_)
     return false;
   if (path.isEmpty()) {
@@ -291,7 +295,7 @@ bool muffin::MainWindow::openFile(QString path) {
   }
   const QString key = pathKey(path);
   for (DocumentTab* document : documentTabs()) {
-    if (pathKey(document->session.filePath()) == key || pathKey(document->pendingOpenPath) == key) {
+    if (!importCopy && (pathKey(document->session.filePath()) == key || pathKey(document->pendingOpenPath) == key)) {
       tabs_->setCurrentWidget(document);
       if (document->pendingOpenPath.isEmpty())
         document->viewStack->currentWidget()->setFocus();
@@ -308,6 +312,7 @@ bool muffin::MainWindow::openFile(QString path) {
                      !tab_->session.isOpenInProgress() && !tab_->editorController.canUndo() &&
                      !tab_->editorController.canRedo() && !tab_->editor->canUndo() && !tab_->editor->canRedo();
   DocumentTab* document = reuse ? tab_ : createDocumentTab();
+  document->pendingImportCopy = importCopy;
   const QString absolutePath = QFileInfo(path).absoluteFilePath();
   const auto warnings = file_open_protection::warningsForFile(absolutePath);
   if (warnings.any()) {
@@ -322,6 +327,7 @@ bool muffin::MainWindow::openFile(QString path) {
     return true;
   }
   if (!loadFileIntoTab(document, absolutePath)) {
+    document->pendingImportCopy = false;
     if (!reuse) {
       const QSignalBlocker blocker(tabs_);
       tabs_->removeTab(tabs_->indexOf(document));
@@ -339,7 +345,8 @@ bool muffin::MainWindow::loadFileIntoTab(DocumentTab* document, const QString& p
   document->editorController.clearHistoryAndSelection();
   tabs_->setCurrentWidget(document);
   updateTabLabel(document);
-  addRecentFile(document->session.filePath());
+  if (!document->pendingImportCopy)
+    addRecentFile(document->session.filePath());
   saveSessionState();
   return true;
 }
@@ -377,6 +384,7 @@ void muffin::MainWindow::cancelPendingFileOpen(DocumentTab* document) {
   document->pendingOpenPath.clear();
   document->openReturnTab.clear();
   document->pendingViewState.reset();
+  document->pendingImportCopy = false;
   document->pendingRecoveredDraftText.reset();
   document->pendingRecoveredDraftKey.clear();
   document->pendingSearchFingerprint.reset();

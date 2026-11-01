@@ -240,7 +240,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 
   const EditorContext ctx{session_,
                           &selection_,
-                          &undoStack_,
+                          &undoStack(),
                           &brushQueue_,
                           view_,
                           {{static_cast<int>(BlockType::FrontMatter), &frontMatterLiteral_},
@@ -342,7 +342,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
               emit stateChanged();
             }
           });
-  connect(&undoStack_, &UndoStack::stateChanged, this, &EditorController::stateChanged);
+  connect(&undoStack(), &UndoStack::stateChanged, this, &EditorController::stateChanged);
   connect(&brushQueue_, &BrushQueue::refreshRequested, this, [this](const BrushQueue::RefreshRequest& request) {
     if (!session_ || !view_) {
       return;
@@ -402,6 +402,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   });
   if (session_ != nullptr) {
     connect(session_, &DocumentSession::documentAboutToBeReplaced, this, &EditorController::clearHistoryAndSelection);
+    connect(session_, &DocumentSession::savedTextNormalized, this, &EditorController::remapCurrentSelection);
   }
   if (session_ != nullptr && view_ != nullptr) {
     // Local text deltas carry position + inserted text (the removed text is no longer available
@@ -434,7 +435,7 @@ void EditorController::detach() {
     session_->disconnect(this);
   }
   selection_.disconnect(this);
-  undoStack_.disconnect(this);
+  undoStack().disconnect(this);
   brushQueue_.disconnect(this);
   inputController_.setContext(EditorContext{});
   session_ = nullptr;
@@ -470,11 +471,11 @@ const SelectionController& EditorController::selection() const {
 }
 
 UndoStack& EditorController::undoStack() {
-  return undoStack_;
+  return session_ ? session_->undoStack() : undoStack_;
 }
 
 const UndoStack& EditorController::undoStack() const {
-  return undoStack_;
+  return session_ ? session_->undoStack() : undoStack_;
 }
 
 void EditorController::applyMarkdownTextWithUndo(QString text, const QString& label) {
@@ -485,13 +486,14 @@ void EditorController::applyMarkdownTextWithUndo(QString text, const QString& la
   const CursorPosition beforeCursor = selection_.hasCursor() ? selection_.cursorPosition() : CursorPosition();
   if (!session_->applyMarkdownText(std::move(text), true))
     return;
+  remapCurrentSelection();
   const QString afterText = session_->markdownText().toString();
   // applyMarkdownText re-parses but doesn't resolve a caret; reuse the pre-edit caret so undo/redo
   // restores it to a known spot. The batch op's own caret move (e.g. Find jumping to the match) is
   // driven by the caller/view after this returns.
-  undoStack_.push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, label,
-                                  DocumentSnapshot{beforeText, beforeCursor, {}},
-                                  DocumentSnapshot{afterText, beforeCursor, {}}));
+  undoStack().push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, label,
+                                   DocumentSnapshot{beforeText, beforeCursor, {}},
+                                   DocumentSnapshot{afterText, beforeCursor, {}}));
 }
 
 InputController& EditorController::inputController() {
@@ -535,22 +537,22 @@ BrushQueue& EditorController::brushQueue() {
 }
 
 bool EditorController::canUndo() const {
-  return session_ && session_->isEditingAllowed() && undoStack_.canUndo();
+  return session_ && session_->isEditingAllowed() && undoStack().canUndo();
 }
 
 bool EditorController::canRedo() const {
-  return session_ && session_->isEditingAllowed() && undoStack_.canRedo();
+  return session_ && session_->isEditingAllowed() && undoStack().canRedo();
 }
 
 void EditorController::undo() {
   if (!canUndo()) {
     return;
   }
-  const EditTransaction transaction = undoStack_.takeUndo();
+  const EditTransaction transaction = undoStack().takeUndo();
   if (!applyTransaction(transaction, true)) {
     // Nothing was applied — put the step back so the history stays aligned instead of
     // silently consuming it (the "Ctrl+Z did nothing" misalignment bug).
-    undoStack_.restoreUndo(transaction);
+    undoStack().restoreUndo(transaction);
     brushQueue_.requestFullRefresh();
     return;
   }
@@ -571,17 +573,75 @@ void EditorController::undo() {
     if (anchor.isValid() && focus.isValid())
       selection_.setSelection({anchor, focus});
   }
+  finishHistoryReplay(transaction, true);
 }
 
 void EditorController::redo() {
   if (!canRedo()) {
     return;
   }
-  const EditTransaction transaction = undoStack_.takeRedo();
+  const EditTransaction transaction = undoStack().takeRedo();
   if (!applyTransaction(transaction, false)) {
-    undoStack_.restoreRedo(transaction);
+    undoStack().restoreRedo(transaction);
     brushQueue_.requestFullRefresh();
+    return;
   }
+  finishHistoryReplay(transaction, false);
+}
+
+bool EditorController::replaceSourceRangeWithUndo(qsizetype start, qsizetype length, const QString& text,
+                                                  const QString& label) {
+  if (!session_ || !session_->isEditingAllowed() || start < 0 || length < 0 ||
+      start > session_->markdownText().size() - length)
+    return false;
+  SourceTextCommand command{{start, session_->markdownText().mid(start, length), text}};
+  const auto range = selection_.selection();
+  command.beforeAnchor = range.anchor.text.sourceOffset;
+  command.beforeCursor = range.focus.text.sourceOffset;
+  command.afterAnchor = command.afterCursor = start + text.size();
+  if (!command.delta.isValid())
+    return false;
+  if (!session_->applyTextDelta(start, length, text, true)) {
+    auto changed = session_->markdownText().toString();
+    changed.replace(start, length, text);
+    if (!session_->applyMarkdownText(std::move(changed), true))
+      return false;
+  }
+  undoStack().push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, label, command));
+  selectSourceRange(command.afterAnchor, command.afterCursor);
+  brushQueue_.requestFullRefresh();
+  return true;
+}
+
+void EditorController::remapCurrentSelection() {
+  if (!selection_.hasCursor())
+    return;
+  const auto range = selection_.selection();
+  const auto anchor = remapSnapshotCursor(range.anchor);
+  const auto focus = remapSnapshotCursor(range.focus);
+  if (anchor.isValid() && focus.isValid())
+    selection_.setSelection({anchor, focus});
+}
+
+void EditorController::finishHistoryReplay(const EditTransaction& transaction, bool undo) {
+  qsizetype anchor = -1, cursor = -1;
+  if (transaction.isSourceTextCommand()) {
+    const auto& command = transaction.sourceTextCommand();
+    anchor = undo ? command.beforeAnchor : command.afterAnchor;
+    cursor = undo ? command.beforeCursor : command.afterCursor;
+    if (anchor >= 0 && cursor >= 0)
+      selectSourceRange(anchor, cursor);
+    else
+      remapCurrentSelection();
+  } else if (selection_.hasCursor()) {
+    const auto range = selection_.selection();
+    anchor = range.anchor.text.sourceOffset;
+    cursor = range.focus.text.sourceOffset;
+  }
+  // Do this only after successful replay, never while takeUndo/takeRedo is
+  // provisionally moving a transaction between the stacks.
+  session_->document().setModified(!undoStack().isClean());
+  emit historySelectionRestored(anchor, cursor);
 }
 
 ParagraphController& EditorController::paragraphController() {
@@ -636,7 +696,7 @@ bool EditorController::selectAll() {
 }
 
 void EditorController::clearHistoryAndSelection() {
-  undoStack_.clear();
+  undoStack().clear();
   selection_.clear();
   exitAllLiteralEditModes();
 }
@@ -1189,7 +1249,7 @@ LiteralBlockController* EditorController::literalForZone(HitTestResult::Zone zon
 }
 
 bool EditorController::insertFrontMatter(FrontMatterFormat format) {
-  const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_};
+  const EditorContext ctx{session_, &selection_, &undoStack(), &brushQueue_};
   return muffin::insertFrontMatter(ctx, frontMatterLiteral_, format);
 }
 

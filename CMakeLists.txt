@@ -499,6 +499,10 @@ qt_add_resources(MUFFIN_CORE_QRC_SOURCES
 )
 
 set(MUFFIN_CORE_SOURCES
+  src/edit/EditTransaction.cpp
+  src/edit/EditTransaction.h
+  src/edit/UndoStack.cpp
+  src/edit/UndoStack.h
   src/render/TextLayout.cpp
   src/render/LayoutResources.cpp
   src/render/LayoutResources.h
@@ -1251,10 +1255,6 @@ set(MUFFIN_UI_SOURCES
   src/commands/ParagraphController.h
   src/commands/StylizeController.cpp
   src/commands/StylizeController.h
-  src/edit/EditTransaction.cpp
-  src/edit/EditTransaction.h
-  src/edit/UndoStack.cpp
-  src/edit/UndoStack.h
   src/editor/BrushQueue.cpp
   src/editor/BrushQueue.h
   src/editor/BlockEditContext.cpp

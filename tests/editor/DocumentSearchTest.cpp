@@ -4,6 +4,7 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QElapsedTimer>
 
 #include <cstdlib>
 
@@ -53,5 +54,33 @@ int main(int argc, char** argv) {
 
   SearchResults invalid = DocumentSearch::findAll(QStringLiteral("text"), QStringLiteral("("), {true, true});
   require(!invalid.valid && !invalid.error.isEmpty(), QStringLiteral("Invalid regex should return an error"));
+  const QString dense = QStringLiteral("a ").repeated(100000);
+  QElapsedTimer timer;
+  timer.start();
+  const auto bulk = DocumentSearch::replaceAll(dense, "a", "longer replacement", {}, &replaced);
+  require(bulk.totalMatches == 100000 && bulk.matches.size() == DocumentSearch::kCachedMatches &&
+              replaced == QStringLiteral("longer replacement ").repeated(100000),
+          "complete bounded bulk replacement");
+  require(timer.elapsed() < 10000, "replacement must not repeatedly move the growing document tail");
+  qInfo() << "100000 replacements:" << timer.elapsed() << "ms; cached matches:" << bulk.matches.size();
+  const auto navigation = DocumentSearch::findAll(PieceTable(dense), "a", {}, {}, 150000, true, 150000);
+  require(navigation.totalMatches == 100000 && navigation.matches.size() == DocumentSearch::kCachedMatches &&
+              navigation.selectedMatch.start == 150002 && navigation.selectedIndex == 75001,
+          "navigation past cache limit retains exact count and position");
+  const auto millions = DocumentSearch::findAll(PieceTable(QString(4 * 1024 * 1024, u'a')), "a", {});
+  require(millions.totalMatches == 4 * 1024 * 1024 && millions.matches.size() == DocumentSearch::kCachedMatches,
+          "millions of hits must not create millions of result records");
+  auto reverse = DocumentSearch::findAll(PieceTable("aa"), "(?=a)", {true, true}, {}, 1, false, 1);
+  require(reverse.selectedMatch.start == 0, "backward zero-width navigation advances");
+  const auto cancel = std::make_shared<std::atomic_bool>(true);
+  replaced = "unchanged";
+  const auto interrupted = DocumentSearch::replaceAll(dense, "a", "x", {}, &replaced, cancel);
+  require(interrupted.canceled && replaced == "unchanged", "cancellation cannot publish partial replacement");
+  timer.restart();
+  const auto pathological = DocumentSearch::findAll(QString(100000, u'a') + "!", "(a+)+$", {true, true});
+  require(!pathological.valid && !pathological.error.isEmpty() && timer.elapsed() < 10000,
+          "pathological regex must fail explicitly within its resource budget");
+  require(DocumentSearch::expandReplacement("$99999999999999999999999999999999999999", {}, true).isEmpty(),
+          "oversized capture numbers cannot overflow");
   return 0;
 }

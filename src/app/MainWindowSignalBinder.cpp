@@ -194,21 +194,22 @@ void muffin::MainWindow::connectRenderSignals(DocumentTab* tab) {
                      if (window.tab_ != tab) {
                        return;
                      }
-                     // Markdown is Muffin's native format, so a dropped .md/.txt always opens.
-                     // (files/dropMarkdown is reserved for a future "import into current doc" action.)
-                     window.openFile(path);
+                     if (QSettings().value(QStringLiteral("files/dropMarkdown"), 0).toInt() == 1)
+                       window.importFile(path);
+                     else
+                       window.openFile(path);
                    });
   QObject::connect(tab->renderView, &EditorView::importableFileDropped, tab->windowConnections,
                    [&window, tab](const QString& path) {
                      if (window.tab_ != tab) {
                        return;
                      }
-                     // files/dropImportable: 1 = open as text; 0 (default) = import. Import has no
-                     // backend yet, so it no-ops — which also means a binary/unknown drop (PDF,
-                     // DOCX, …) is ignored rather than force-opened as text garbage.
+                     // Share the File > Import converter and its error reporting.
                      const int action = QSettings().value(QStringLiteral("files/dropImportable"), 0).toInt();
                      if (action == 1) {
                        window.openFile(path);
+                     } else {
+                       window.importFile(path);
                      }
                    });
 }
@@ -291,6 +292,13 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
       scheduleEditorStateRefresh();
   });
   connect(&tab->session, &DocumentSession::parsed, tab->windowConnections, [this, tab] {
+    if (tab->pendingImportCopy && !tab->session.isAsyncParseInProgress()) {
+      tab->pendingImportCopy = false;
+      tab->session.setFilePath({});
+      tab->session.undoStack().invalidateClean();
+      tab->session.document().setModified(true);
+      saveSessionState();
+    }
     QTimer::singleShot(0, tab->windowConnections, [this, tab] { applySearchNavigation(tab); });
     QTimer::singleShot(0, tab->windowConnections, [this, tab] { restoreTabViewState(tab); });
     QTimer::singleShot(0, tab->windowConnections, [this, tab] { applyLinkNavigation(tab); });

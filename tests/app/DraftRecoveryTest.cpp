@@ -394,10 +394,43 @@ void testPruneLeavesUntitledAndStrayFiles() {
   require(QFile::exists(stray), QStringLiteral("Stray file left untouched by prune"));
 }
 
+void testLegacyContentWithoutMetadataAndAtomicMigration() {
+  QTemporaryDir dir;
+  DraftRecovery recovery(dir.path());
+  const QString key = DraftRecovery::createDraftKey();
+  const QString legacy = dir.filePath(key + ".md");
+  QFile content(legacy);
+  require(content.open(QIODevice::WriteOnly), "legacy fixture");
+  content.write("unsaved notes");
+  content.close();
+  recovery.pruneOrphaned();
+  auto pending = recovery.pendingDrafts();
+  require(pending.size() == 1 && pending.first().sourcePath.isEmpty() &&
+              recovery.loadDraft(pending.first()) == "unsaved notes",
+          "orphaned content remains recoverable");
+  // A blocked destination must not retire the old recoverable data.
+  const auto snapshot = dir.filePath(key + ".draft");
+  require(QDir().mkdir(snapshot), "block atomic destination");
+  require(!recovery.snapshot("new notes", "note.md", key) && QFile::exists(legacy), "failed migration retains content");
+  QDir().rmdir(snapshot);
+  require(recovery.snapshot("new notes", "note.md", key), "atomic migration");
+  pending = recovery.pendingDrafts();
+  require(pending.size() == 1 && pending.first().atomicSnapshot && !QFile::exists(legacy) &&
+              recovery.loadDraft(pending.first()) == "new notes",
+          "one complete replacement survives");
+  QFile broken(snapshot);
+  require(broken.open(QIODevice::ReadWrite) && broken.resize(broken.size() - 1), "truncate snapshot fixture");
+  broken.close();
+  bool ok = true;
+  recovery.loadDraft(pending.first(), &ok);
+  require(!ok, "truncated payload cannot masquerade as a complete snapshot");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
+  testLegacyContentWithoutMetadataAndAtomicMigration();
   testBackgroundSnapshotsOwnTextCoalesceAndClean();
   testCleanInvalidatesRunningAndQueuedCompletions();
   testBackgroundFailureRetriesAndBusySessionsAreSkipped();

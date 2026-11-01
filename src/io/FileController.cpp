@@ -419,11 +419,7 @@ muffin::SaveOutcome muffin::FileController::save(DocumentSession& session, QWidg
                      parent)) {
     return SaveOutcome::Failed;
   }
-  if (normalizedText != session.markdownText().toString()) {
-    session.setMarkdownText(normalizedText, false);
-  } else {
-    session.document().setModified(false);
-  }
+  session.acceptSavedText(normalizedText);
   session.recordFileBaseline(); // re-baseline after our write (2nd line of self-trigger defense)
   emit documentBecameClean(session.filePath());
   return SaveOutcome::Saved;
@@ -493,11 +489,7 @@ muffin::SaveOutcome muffin::FileController::saveAs(DocumentSession& session, QWi
   session.setFilePath(path); // also re-points the QFileSystemWatcher to the new path
   format.existingFile = true;
   session.setFileFormat(format);
-  if (normalizedText != session.markdownText().toString()) {
-    session.setMarkdownText(normalizedText, false);
-  } else {
-    session.document().setModified(false);
-  }
+  session.acceptSavedText(normalizedText);
   session.recordFileBaseline(); // baseline the new path
   return SaveOutcome::Saved;
 }

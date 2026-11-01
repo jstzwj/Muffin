@@ -1,4 +1,5 @@
 #include "editor/VirtualSourceEdit.h"
+#include "editor/EditorController.h"
 #include "editor/EditorKeyRouting.h"
 #include "editor/ShortcutSettings.h"
 
@@ -293,8 +294,18 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
     return;
   QObject::disconnect(replacementConnection_);
   QObject::disconnect(editingConnection_);
+  historyController_.reset();
   session_ = session;
   if (session_) {
+    historyController_ = std::make_unique<EditorController>();
+    historyController_->attach(session_, nullptr);
+    connect(historyController_.get(), &EditorController::historySelectionRestored, this,
+            [this](qsizetype anchor, qsizetype cursor) {
+              if (anchor >= 0 && cursor >= 0) {
+                anchor_ = boundedOffset(anchor);
+                cursor_ = boundedOffset(cursor);
+              }
+            });
     editingConnection_ =
         connect(session_, &DocumentSession::editingAvailabilityChanged, this, [this] { updateReadOnlyState(); });
     replacementConnection_ = connect(session_, &DocumentSession::documentAboutToBeReplaced, this, [this] {
@@ -340,6 +351,7 @@ void VirtualSourceEdit::notifyDocumentChanged() {
 void VirtualSourceEdit::setStandaloneText(QString text) {
   QObject::disconnect(replacementConnection_);
   QObject::disconnect(editingConnection_);
+  historyController_.reset();
   session_ = nullptr;
   standalone_ = PieceTable(std::move(text));
   cursor_ = anchor_ = 0;
@@ -470,8 +482,7 @@ void VirtualSourceEdit::toggleInlineMarkup(const QString& prefix, const QString&
     const auto contentEnd = contentStart + content.size();
     setSelection(reversed ? contentEnd : contentStart, reversed ? contentStart : contentEnd);
     // Redo must restore the selected content / skeleton's interior caret too.
-    undoStack_.back().afterAnchor = anchor_;
-    undoStack_.back().afterCursor = cursor_;
+    updateHistorySelection();
   }
 }
 
@@ -484,6 +495,8 @@ bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString&
   record.start = start;
   record.removed = source().mid(start, end - start);
   record.inserted = inserted;
+  if (record.removed == record.inserted)
+    return false;
   record.beforeAnchor = anchor_;
   record.beforeCursor = cursor_;
   record.afterAnchor = record.afterCursor = start + inserted.size();
@@ -518,8 +531,17 @@ bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString&
   anchor_ = record.afterAnchor;
   cursor_ = record.afterCursor;
   if (recordUndo) {
-    undoStack_.push_back(record);
-    redoStack_.clear();
+    if (session_) {
+      session_->undoStack().push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, {},
+                                                 SourceTextCommand{{start, record.removed, inserted},
+                                                                   record.beforeAnchor,
+                                                                   record.beforeCursor,
+                                                                   record.afterAnchor,
+                                                                   record.afterCursor}));
+    } else {
+      undoStack_.push_back(record);
+      redoStack_.clear();
+    }
   }
   invalidateLayoutCache();
   const qsizetype replacementLines = lastLine - firstLine + 1 + source().lineCount() - oldLineCount;
@@ -620,6 +642,7 @@ void VirtualSourceEdit::moveCurrentLineUp() {
   const qsizetype column = cursor_ - currentStart;
   if (applyEdit(previousStart, currentEnd, current + QLatin1Char('\n') + previous, true)) {
     setCursorPosition(previousStart + qMin(column, static_cast<qsizetype>(current.size())));
+    updateHistorySelection();
   }
 }
 
@@ -635,19 +658,22 @@ void VirtualSourceEdit::moveCurrentLineDown() {
   const qsizetype column = cursor_ - currentStart;
   if (applyEdit(currentStart, nextEnd, next + QLatin1Char('\n') + current, true)) {
     setCursorPosition(currentStart + next.size() + 1 + qMin(column, static_cast<qsizetype>(current.size())));
+    updateHistorySelection();
   }
 }
 
 bool VirtualSourceEdit::canUndo() const {
-  return !isReadOnly() && !undoStack_.isEmpty();
+  return !isReadOnly() && (historyController_ ? historyController_->canUndo() : !undoStack_.isEmpty());
 }
 bool VirtualSourceEdit::canRedo() const {
-  return !isReadOnly() && !redoStack_.isEmpty();
+  return !isReadOnly() && (historyController_ ? historyController_->canRedo() : !redoStack_.isEmpty());
 }
 
 bool VirtualSourceEdit::applyEditRecord(const EditRecord& record, bool reverse) {
   const QString& remove = reverse ? record.inserted : record.removed;
   const QString& insert = reverse ? record.removed : record.inserted;
+  if (source().mid(record.start, remove.size()) != remove)
+    return false;
   if (applyEdit(record.start, record.start + remove.size(), insert, false)) {
     anchor_ = reverse ? record.beforeAnchor : record.afterAnchor;
     cursor_ = reverse ? record.beforeCursor : record.afterCursor;
@@ -661,6 +687,10 @@ bool VirtualSourceEdit::applyEditRecord(const EditRecord& record, bool reverse) 
 void VirtualSourceEdit::undo() {
   if (!canUndo())
     return;
+  if (historyController_) {
+    replayHistory(true);
+    return;
+  }
   EditRecord record = undoStack_.takeLast();
   if (applyEditRecord(record, true)) {
     redoStack_.push_back(std::move(record));
@@ -672,6 +702,10 @@ void VirtualSourceEdit::undo() {
 void VirtualSourceEdit::redo() {
   if (!canRedo())
     return;
+  if (historyController_) {
+    replayHistory(false);
+    return;
+  }
   EditRecord record = redoStack_.takeLast();
   if (applyEditRecord(record, false)) {
     undoStack_.push_back(std::move(record));
@@ -682,6 +716,32 @@ void VirtualSourceEdit::redo() {
 
 void VirtualSourceEdit::moveDocumentStart() {
   setCursorPosition(0);
+}
+
+VirtualSourceEdit::~VirtualSourceEdit() = default;
+
+void VirtualSourceEdit::replayHistory(bool undo) {
+  const auto position = viewportPosition();
+  applyingEdit_ = true;
+  if (undo)
+    historyController_->undo();
+  else
+    historyController_->redo();
+  applyingEdit_ = false;
+  resetGeometryIndex(false);
+  restoreViewportPosition(position);
+  ensureCursorVisible();
+  emitCursorPosition();
+  emit editApplied();
+}
+
+void VirtualSourceEdit::updateHistorySelection() {
+  if (session_)
+    session_->undoStack().updateSourceSelection(anchor_, cursor_);
+  else if (!undoStack_.isEmpty()) {
+    undoStack_.back().afterAnchor = anchor_;
+    undoStack_.back().afterCursor = cursor_;
+  }
 }
 void VirtualSourceEdit::moveDocumentEnd() {
   setCursorPosition(source().size());

@@ -136,7 +136,11 @@ void muffin::FindBarWidget::activateReplace() {
   findEdit_->selectAll();
 }
 
-void muffin::FindBarWidget::setResultInfo(int current, int total) {
+void muffin::FindBarWidget::setSearchBusy() {
+  resultLabel_->setText(QString(QChar(0x2026)));
+}
+
+void muffin::FindBarWidget::setResultInfo(qsizetype current, qsizetype total) {
   resultLabel_->setToolTip(QString());
   if (current < 0) {
     resultLabel_->setText(tr("Not found"));

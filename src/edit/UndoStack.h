@@ -9,7 +9,7 @@
 
 namespace muffin {
 
-class MUFFIN_UI_EXPORT UndoStack final : public QObject {
+class MUFFIN_CORE_EXPORT UndoStack final : public QObject {
   Q_OBJECT
 
 public:
@@ -32,6 +32,10 @@ public:
   void restoreUndo(const EditTransaction& transaction);
   void restoreRedo(const EditTransaction& transaction);
   void clear();
+  void markClean();
+  void invalidateClean();
+  bool isClean() const;
+  void updateSourceSelection(qsizetype anchor, qsizetype cursor);
 
 signals:
   void stateChanged();
@@ -42,8 +46,16 @@ private:
   static constexpr int kMaxUndoDepth = 100;
   static constexpr qint64 kMergeIntervalMs = 500;
 
-  QVector<EditTransaction> undo_;
-  QVector<EditTransaction> redo_;
+  struct Entry {
+    EditTransaction transaction;
+    quint64 before = 0;
+    quint64 after = 0;
+  };
+  QVector<Entry> undo_;
+  QVector<Entry> redo_;
+  quint64 currentState_ = 1;
+  quint64 cleanState_ = 1;
+  quint64 nextState_ = 2;
   QElapsedTimer lastPushTime_;
 };
 

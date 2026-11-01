@@ -15,11 +15,11 @@ bool UndoStack::canRedo() const {
 }
 
 QString UndoStack::undoText() const {
-  return canUndo() ? undo_.last().label() : QString();
+  return canUndo() ? undo_.last().transaction.label() : QString();
 }
 
 QString UndoStack::redoText() const {
-  return canRedo() ? redo_.last().label() : QString();
+  return canRedo() ? redo_.last().transaction.label() : QString();
 }
 
 void UndoStack::push(EditTransaction transaction) {
@@ -28,8 +28,11 @@ void UndoStack::push(EditTransaction transaction) {
   }
 
   if (!tryMergeWithLast(transaction)) {
-    undo_.push_back(std::move(transaction));
+    undo_.push_back({std::move(transaction), currentState_, nextState_++});
+  } else {
+    undo_.last().after = nextState_++;
   }
+  currentState_ = undo_.last().after;
   redo_.clear();
 
   while (undo_.size() > kMaxUndoDepth) {
@@ -45,10 +48,11 @@ EditTransaction UndoStack::takeUndo() {
     return {};
   }
 
-  EditTransaction transaction = undo_.takeLast();
-  redo_.push_back(transaction);
+  Entry entry = undo_.takeLast();
+  currentState_ = entry.before;
+  redo_.push_back(entry);
   emit stateChanged();
-  return transaction;
+  return entry.transaction;
 }
 
 EditTransaction UndoStack::takeRedo() {
@@ -56,25 +60,30 @@ EditTransaction UndoStack::takeRedo() {
     return {};
   }
 
-  EditTransaction transaction = redo_.takeLast();
-  undo_.push_back(transaction);
+  Entry entry = redo_.takeLast();
+  currentState_ = entry.after;
+  undo_.push_back(entry);
   emit stateChanged();
-  return transaction;
+  return entry.transaction;
 }
 
 void UndoStack::restoreUndo(const EditTransaction& transaction) {
+  Q_UNUSED(transaction);
   if (!redo_.isEmpty()) {
-    redo_.takeLast();
+    Entry entry = redo_.takeLast();
+    currentState_ = entry.after;
+    undo_.push_back(std::move(entry));
   }
-  undo_.push_back(transaction);
   emit stateChanged();
 }
 
 void UndoStack::restoreRedo(const EditTransaction& transaction) {
+  Q_UNUSED(transaction);
   if (!undo_.isEmpty()) {
-    undo_.takeLast();
+    Entry entry = undo_.takeLast();
+    currentState_ = entry.before;
+    redo_.push_back(std::move(entry));
   }
-  redo_.push_back(transaction);
   emit stateChanged();
 }
 
@@ -85,18 +94,36 @@ void UndoStack::clear() {
 
   undo_.clear();
   redo_.clear();
+  const bool clean = isClean();
+  currentState_ = nextState_++;
+  cleanState_ = clean ? currentState_ : 0;
   emit stateChanged();
 }
 
+void UndoStack::markClean() {
+  cleanState_ = currentState_;
+}
+void UndoStack::invalidateClean() {
+  cleanState_ = 0;
+}
+bool UndoStack::isClean() const {
+  return currentState_ == cleanState_;
+}
+
+void UndoStack::updateSourceSelection(qsizetype anchor, qsizetype cursor) {
+  if (!undo_.isEmpty())
+    undo_.last().transaction.updateSourceSelection(anchor, cursor);
+}
+
 bool UndoStack::tryMergeWithLast(EditTransaction& next) {
-  if (undo_.isEmpty()) {
+  if (undo_.isEmpty() || isClean()) {
     return false;
   }
   if (lastPushTime_.elapsed() > kMergeIntervalMs) {
     return false;
   }
 
-  EditTransaction& prev = undo_.last();
+  EditTransaction& prev = undo_.last().transaction;
   if (prev.storage() != EditTransaction::Storage::TextDeltaCommand ||
       next.storage() != EditTransaction::Storage::TextDeltaCommand) {
     return false;

@@ -20,6 +20,7 @@ public:
     QString sourcePath;   // original file path; empty for untitled documents
     qint64 timestamp = 0; // msecs since epoch of the last snapshot
     qsizetype charCount = 0;
+    bool atomicSnapshot = false;
   };
 
   // Production leaves `directory` empty to use AppDataLocation/drafts; tests pass
@@ -32,7 +33,7 @@ public:
   static QString createDraftKey();
 
   // Write the latest state, including an intentionally emptied document.
-  // Return true only after both content and metadata have been committed.
+  // Metadata and content are committed atomically in one snapshot file.
   bool snapshot(const QString& markdownText, const QString& sourceFilePath, const QString& draftKey = QString());
 
   // Snapshot only a stable dirty document. During async open, its path and buffer
@@ -46,8 +47,8 @@ public:
   // Empty content is valid. The optional flag distinguishes it from a read failure.
   QString loadDraft(const PendingDraft& draft, bool* ok = nullptr) const;
   void discard(const PendingDraft& draft);
-  // Drop only half-written (.md/.meta) pairs left behind by a crash
-  // mid-snapshot. A complete draft is retained even when its source file was
+  // Drop only legacy metadata without content. Orphaned content is recoverable
+  // as an untitled document. A draft is retained even when its source file was
   // moved or deleted: that is recoverable user data, restored as untitled.
   void pruneOrphaned();
 
@@ -55,6 +56,7 @@ private:
   QString keyFor(const QString& sourceFilePath, const QString& draftKey) const;
   QString draftPath(const QString& key) const;
   QString metaPath(const QString& key) const;
+  QString snapshotPath(const QString& key) const;
 
   QString directory_;
 };

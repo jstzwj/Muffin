@@ -24,7 +24,8 @@ public:
   void setReplaceVisible(bool visible);
   void activateFind();
   void activateReplace();
-  void setResultInfo(int current, int total);
+  void setResultInfo(qsizetype current, qsizetype total);
+  void setSearchBusy();
   void setErrorText(const QString& error);
 
 signals:

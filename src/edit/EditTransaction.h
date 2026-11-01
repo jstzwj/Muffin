@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor/CursorPosition.h"
+#include "document/TextSelection.h"
 #include "document/NodeId.h"
 #include "document/MarkdownNode.h"
 
@@ -37,6 +37,16 @@ struct TextDeltaCommand {
   QVector<NodeId> affectedNodes;
 
   bool isValid() const;
+};
+
+// Source edits may address Markdown syntax with no rendered caret (including
+// an empty document). Keep their exact UTF-16 selection independent of the AST.
+struct SourceTextCommand {
+  TextDelta delta;
+  qsizetype beforeAnchor = -1;
+  qsizetype beforeCursor = -1;
+  qsizetype afterAnchor = -1;
+  qsizetype afterCursor = -1;
 };
 
 enum class NodeAttribute {
@@ -178,7 +188,8 @@ public:
     InsertNodeCommand,
     ReplaceNodeCommand,
     RemoveNodeCommand,
-    SetNodeAttrCommand
+    SetNodeAttrCommand,
+    SourceTextCommand
   };
 
   EditTransaction() = default;
@@ -188,6 +199,7 @@ public:
   EditTransaction& operator=(EditTransaction&&) noexcept = default;
   EditTransaction(Kind kind, QString label, DocumentSnapshot before, DocumentSnapshot after);
   EditTransaction(Kind kind, QString label, TextDeltaCommand command);
+  EditTransaction(Kind kind, QString label, SourceTextCommand command);
   EditTransaction(Kind kind, QString label, TableCommand command);
   EditTransaction(Kind kind, QString label, InsertNodeCommand command);
   EditTransaction(Kind kind, QString label, ReplaceNodeCommand command);
@@ -204,6 +216,9 @@ public:
   bool isReplaceNodeCommand() const;
   bool isRemoveNodeCommand() const;
   bool isSetNodeAttrCommand() const;
+  bool isSourceTextCommand() const;
+  const SourceTextCommand& sourceTextCommand() const;
+  void updateSourceSelection(qsizetype anchor, qsizetype cursor);
   const DocumentSnapshot& before() const;
   const DocumentSnapshot& after() const;
   const TextDeltaCommand& textDeltaCommand() const;
@@ -242,7 +257,7 @@ private:
   // active payload itself), so the "forgot to copy a field" drift the old hand-written copy
   // constructor invited is structurally impossible.
   std::variant<std::monostate, SnapshotCommand, TextDeltaCommand, TableCommand, InsertNodeCommand, ReplaceNodeCommand,
-               RemoveNodeCommand, SetNodeAttrCommand>
+               RemoveNodeCommand, SetNodeAttrCommand, SourceTextCommand>
       storage_;
 };
 

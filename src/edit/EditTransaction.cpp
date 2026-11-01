@@ -241,6 +241,26 @@ EditTransaction::Kind EditTransaction::kind() const {
   return kind_;
 }
 
+EditTransaction::EditTransaction(Kind kind, QString label, SourceTextCommand command)
+    : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {
+}
+
+bool EditTransaction::isSourceTextCommand() const {
+  return std::holds_alternative<SourceTextCommand>(storage_);
+}
+
+const SourceTextCommand& EditTransaction::sourceTextCommand() const {
+  return std::get<SourceTextCommand>(storage_);
+}
+
+void EditTransaction::updateSourceSelection(qsizetype anchor, qsizetype cursor) {
+  if (isSourceTextCommand()) {
+    auto& command = std::get<SourceTextCommand>(storage_);
+    command.afterAnchor = anchor;
+    command.afterCursor = cursor;
+  }
+}
+
 QString EditTransaction::label() const {
   return label_;
 }
@@ -264,6 +284,8 @@ EditTransaction::Storage EditTransaction::storage() const {
           return Storage::RemoveNodeCommand;
         else if constexpr (std::is_same_v<T, SetNodeAttrCommand>)
           return Storage::SetNodeAttrCommand;
+        else if constexpr (std::is_same_v<T, SourceTextCommand>)
+          return Storage::SourceTextCommand;
       },
       storage_);
 }
@@ -329,6 +351,8 @@ const SetNodeAttrCommand& EditTransaction::setNodeAttrCommand() const {
 }
 
 bool EditTransaction::isValid() const {
+  if (isSourceTextCommand())
+    return sourceTextCommand().delta.isValid();
   if (isSnapshot()) {
     const auto& snapshot = std::get<SnapshotCommand>(storage_);
     return snapshot.before.markdownText != snapshot.after.markdownText;

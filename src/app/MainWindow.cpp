@@ -695,6 +695,7 @@ void muffin::MainWindow::updateViewMode() {
   }
   const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
   const bool sourceMode = action && action->isChecked();
+  const bool wasSourceMode = tab_->viewStack->currentWidget() == tab_->editor;
 
   // Switch backend
   if (sourceMode) {
@@ -703,7 +704,7 @@ void muffin::MainWindow::updateViewMode() {
     tab_->backend = std::make_unique<RenderEditorBackend>(tab_->editorController, tab_->session, tab_->renderView);
   }
 
-  if (sourceMode) {
+  if (sourceMode && !wasSourceMode) {
     syncSourceEditorIfNeeded();
 
     // Render → Source: sync cursor/viewport position
@@ -721,7 +722,11 @@ void muffin::MainWindow::updateViewMode() {
       }
     }
     if (targetOffset >= 0) {
-      tab_->editor->setCursorPosition(targetOffset);
+      const auto range = tab_->editorController.selection().selection();
+      if (range.anchor.text.sourceOffset >= 0 && range.focus.text.sourceOffset >= 0)
+        tab_->editor->setSelection(range.anchor.text.sourceOffset, range.focus.text.sourceOffset);
+      else
+        tab_->editor->setCursorPosition(targetOffset);
       tab_->editor->centerCursor();
     }
   }
@@ -746,6 +751,8 @@ void muffin::MainWindow::updateViewMode() {
     // Source → Render: scroll to the block at the source cursor position
     tab_->renderView->refreshPendingResources();
     const qsizetype sourcePos = tab_->editor->cursorPosition();
+    if (wasSourceMode)
+      tab_->editorController.selectSourceRange(tab_->editor->anchorPosition(), sourcePos);
     MarkdownNode* block = tab_->session.document().topLevelBlockAtOffset(sourcePos);
     if (block) {
       tab_->renderView->scrollToNode(block->id());

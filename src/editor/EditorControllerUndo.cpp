@@ -504,6 +504,23 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     return applySnapshot(undo ? transaction.before() : transaction.after());
   }
 
+  if (transaction.isSourceTextCommand()) {
+    const auto& delta = transaction.sourceTextCommand().delta;
+    const QString& removed = undo ? delta.insertedText : delta.removedText;
+    const QString& inserted = undo ? delta.removedText : delta.insertedText;
+    if (delta.start < 0 || delta.start > session_->markdownText().size() - removed.size() ||
+        session_->markdownText().mid(delta.start, removed.size()) != removed)
+      return false;
+    if (!session_->applyTextDelta(delta.start, removed.size(), inserted, true)) {
+      auto text = session_->markdownText().toString();
+      text.replace(delta.start, removed.size(), inserted);
+      if (!session_->applyMarkdownText(std::move(text), true))
+        return false;
+    }
+    brushQueue_.requestFullRefresh();
+    return true;
+  }
+
   if (transaction.isTableCommand()) {
     const TableCommand& command = transaction.tableCommand();
     const MarkdownNode* table = undo ? command.beforeTable.get() : command.afterTable.get();
@@ -653,6 +670,10 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
   const QString replacement = undo ? delta.removedText : delta.insertedText;
   const qsizetype replaceStart = delta.start;
   const qsizetype replaceEnd = delta.start + (undo ? delta.insertedText.size() : delta.removedText.size());
+  const QString& expected = undo ? delta.insertedText : delta.removedText;
+  if (replaceStart < 0 || replaceEnd > session_->markdownText().size() ||
+      session_->markdownText().mid(replaceStart, expected.size()) != expected)
+    return false;
   QVector<LocalEditNodeHint> nodeHints;
   for (NodeId nodeId : command.affectedNodes) {
     nodeHints.push_back(LocalEditNodeHint{nodeId, replaceStart, BlockType::Unknown});
@@ -690,6 +711,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
         return false;
     }
     brushQueue_.requestFullRefresh();
+    remapCurrentSelection();
   } else {
     requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
   }

@@ -66,6 +66,7 @@ public:
   // session->applyMarkdownText for batch operations (Find/Replace, image transforms, Upload/Move
   // All Images) so they land on the undo stack — otherwise Ctrl+Z skips them entirely.
   void applyMarkdownTextWithUndo(QString text, const QString& label);
+  bool replaceSourceRangeWithUndo(qsizetype start, qsizetype length, const QString& text, const QString& label);
   // Select the whole current top-level block's source range (markers included)
   // so a subsequent delete removes the entire block via the exact-whole-block
   // path. Returns false on the trailing caret to avoid deleting the last block.
@@ -94,6 +95,7 @@ public:
   void setCursorForSourceOffset(qsizetype sourceOffset);
 
 signals:
+  void historySelectionRestored(qsizetype anchor, qsizetype cursor);
   void cursorChanged(HitTestResult hit);
   void stateChanged();
   void frontMatterCommandRejected(QString reason);
@@ -101,6 +103,8 @@ signals:
   void mathCommandRejected(QString reason);
 
 private:
+  void finishHistoryReplay(const EditTransaction& transaction, bool undo);
+  void remapCurrentSelection();
   void exitAllLiteralEditModes();
   MarkdownNode* htmlImageBlockAtCursor() const;
   bool enterLiteralEditMode(HitTestResult::Zone zone);

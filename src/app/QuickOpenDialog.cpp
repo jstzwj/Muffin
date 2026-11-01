@@ -183,11 +183,13 @@ bool muffin::QuickOpenDialog::eventFilter(QObject* watched, QEvent* event) {
   if (watched == filterEdit_ && event->type() == QEvent::KeyPress) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
     const int key = keyEvent->key();
-    if (filterTimer_->isActive()) {
+    const bool navigate = key == Qt::Key_Down || key == Qt::Key_Up || key == Qt::Key_PageDown || key == Qt::Key_PageUp;
+    const bool acceptSelection = key == Qt::Key_Return || key == Qt::Key_Enter;
+    if ((navigate || acceptSelection) && filterTimer_->isActive()) {
       filterTimer_->stop();
       applyFilter(filterEdit_->text());
     }
-    if (key == Qt::Key_Down || key == Qt::Key_Up || key == Qt::Key_PageDown || key == Qt::Key_PageUp) {
+    if (navigate) {
       if (list_->count() > 0) {
         // Hand the navigation key to the list directly so the selection moves
         // even though the filter box keeps keyboard focus.
@@ -197,7 +199,7 @@ bool muffin::QuickOpenDialog::eventFilter(QObject* watched, QEvent* event) {
       }
       return true;
     }
-    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+    if (acceptSelection) {
       if (list_->currentItem() != nullptr) {
         accept();
       }

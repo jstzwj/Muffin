@@ -41,6 +41,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFileOpenEvent>
+#include <QFutureWatcher>
 #include <QFileDialog>
 #include <QSaveFile>
 #include <QMessageBox>
@@ -2119,6 +2120,66 @@ void workspaceSidebarWidth() {
   require(sidebar->width() == width, "returning to files retains a wide search sidebar");
 }
 
+void droppedMarkdownHonorsImportPreference() {
+  SettingsOverride preference("files/dropMarkdown", 1);
+  Fixture f;
+  const auto originalPath = f.file("import-original.md", "# Original\n\nText\n");
+  auto* original = f.open(originalPath);
+  original->renderView->markdownFileDropped(originalPath);
+  auto* copy = f.current();
+  waitUntil([&] { return !copy->session.isOpenInProgress(); }, "import copy finishes loading");
+  require(copy != original && copy->session.filePath().isEmpty() && copy->session.document().isModified() &&
+              copy->session.markdownText().toString() == original->session.markdownText().toString(),
+          "Import creates an independent unsaved copy even when the original is already open");
+  QSettings().setValue("files/dropMarkdown", 0);
+  copy->renderView->markdownFileDropped(originalPath);
+  require(f.current() == original && !original->session.document().isModified(), "Open reuses the original tab");
+}
+
+void documentReplaceDiscardsStaleJobsAndPreservesUndo() {
+  Fixture f;
+  auto* document = f.open(f.file("replace-jobs.md", QStringLiteral("alpha beta\n\n").repeated(2000)));
+  action(f.window, "Replace...")->trigger();
+  auto* bar = document->findBar;
+  bar->setSearchText("alpha");
+  for (auto* input : bar->findChildren<QLineEdit*>())
+    if (input->placeholderText() == "Replace")
+      input->setText("longer replacement");
+  const auto replaceAll = [&] {
+    for (auto* button : bar->findChildren<QPushButton*>())
+      if (button->text() == "Replace All") {
+        button->click();
+        return;
+      }
+    require(false, "replace-all button exists");
+  };
+  const auto waitForJobs = [&] {
+    waitUntil(
+        [&] {
+          for (auto* watcher : document->findChildren<QFutureWatcherBase*>())
+            if (!watcher->isFinished())
+              return false;
+          return true;
+        },
+        "document search worker completes");
+    QApplication::processEvents();
+  };
+  replaceAll();
+  document->session.setMarkdownText("intervening edit\n", true);
+  waitForJobs();
+  require(document->session.markdownText().toString() == "intervening edit\n",
+          "stale replacement cannot overwrite editing");
+  document->session.setMarkdownText("alpha beta alpha\n", false);
+  replaceAll();
+  waitUntil(
+      [&] { return document->session.markdownText().toString() == "longer replacement beta longer replacement\n"; },
+      "replace all commits the current revision");
+  document->editorController.undo();
+  require(document->session.markdownText().toString() == "alpha beta alpha\n" &&
+              !document->session.document().isModified(),
+          "batch replacement is one undo step back to the saved state");
+}
+
 void documentFindRevealsMatchesInsideTallBlocks() {
   SettingsOverride typewriterSetting("appearance/typewriterMode", false);
   Fixture f;
@@ -2160,7 +2221,9 @@ void documentFindRevealsMatchesInsideTallBlocks() {
     return static_cast<QPushButton*>(nullptr);
   };
   const auto check = [&](int index) {
-    QApplication::processEvents();
+    waitUntil(
+        [&] { return document->editorController.selection().selection().anchor.text.sourceOffset == offsets[index]; },
+        "background document search finishes");
     const auto range = document->editorController.selection().selection();
     require(!document->backend->isSourceMode() && range.anchor.text.sourceOffset == offsets[index] &&
                 range.focus.text.sourceOffset == offsets[index] + needle.size(),
@@ -4320,6 +4383,8 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--editing-workflow")))
     return 0;
   runTest("workspaceSearchAndReplace", workspaceSearchAndReplace);
+  runTest("droppedMarkdownHonorsImportPreference", droppedMarkdownHonorsImportPreference);
+  runTest("documentReplaceDiscardsStaleJobsAndPreservesUndo", documentReplaceDiscardsStaleJobsAndPreservesUndo);
   runTest("workspaceSidebarWidth", workspaceSidebarWidth);
   runTest("documentFindRevealsMatchesInsideTallBlocks", documentFindRevealsMatchesInsideTallBlocks);
   runTest("workspaceRenderedNavigation", workspaceRenderedNavigation);

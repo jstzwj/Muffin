@@ -5,6 +5,7 @@
 #include "app/RenderCommandFacade.h"
 #include "document/DocumentSession.h"
 #include "editor/EditorController.h"
+#include "editor/DocumentSearch.h"
 #include "io/FileController.h"
 #include "theme/RenderTheme.h"
 
@@ -44,6 +45,7 @@ public:
   QStackedWidget* contentStack = nullptr;
   FileOpenConfirmation* openConfirmation = nullptr;
   QString pendingOpenPath;
+  bool pendingImportCopy = false;
   QPointer<DocumentTab> openReturnTab;
   std::optional<QString> pendingRecoveredDraftText;
   QString pendingRecoveredDraftKey;
@@ -70,6 +72,11 @@ public:
   qsizetype pendingSearchLength = 0;
   bool searchSourceFallback = false;
   qsizetype lastFindOffset = -1;
+  qsizetype lastFindLength = 0;
+  quint64 findRevision = 0;
+  bool findCacheValid = false;
+  SearchResults findCache;
+  DocumentSearch::Cancellation findCancellation;
   bool renderViewDirty = false;
   bool pinned = false;
   // 锁定编辑（独立标签页作用范围）：每个页签自己记住状态，切换页签互不影响。

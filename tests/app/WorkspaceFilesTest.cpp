@@ -210,6 +210,14 @@ void pickerRanking() {
   dialog.setCandidates({weak, strong});
   auto* filter = dialog.findChild<QLineEdit*>("QuickOpenFilter");
   filter->setText("alpha");
+  auto* list = dialog.findChild<QListWidget*>("QuickOpenResults");
+  int resets = 0;
+  QObject::connect(list->model(), &QAbstractItemModel::modelReset, &dialog, [&] { ++resets; });
+  for (const auto key : {Qt::Key_Home, Qt::Key_End, Qt::Key_Left}) {
+    QKeyEvent event(QEvent::KeyPress, key, Qt::NoModifier);
+    QApplication::sendEvent(filter, &event);
+  }
+  require(resets == 0, "editing keys preserve debounce rather than ranking on every keypress");
   QKeyEvent enter(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
   QApplication::sendEvent(filter, &enter);
   require(dialog.selectedPath() == strong,

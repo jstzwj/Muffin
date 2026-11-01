@@ -332,7 +332,8 @@ private:
   QStringList quickOpenCandidates() const;
   // File → Import: convert a foreign format to markdown via Pandoc and load it
   // into a new untitled document.
-  void importFile();
+  void importFile(QString sourcePath = {});
+  bool openFileImpl(QString path, bool importCopy);
   // File → Export: write the document to a file in the given format (native PDF
   // / HTML, or Pandoc-driven for the rest).
   void exportAs(ExportFormat format);

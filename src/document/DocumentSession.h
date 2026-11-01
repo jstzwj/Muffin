@@ -2,6 +2,7 @@
 
 #include "document/MarkdownDocument.h"
 #include "document/TopLevelRangeChange.h"
+#include "edit/UndoStack.h"
 #include "Export.h"
 #include "io/TextFileFormat.h"
 #include "parser/CmarkGfmParser.h"
@@ -32,6 +33,12 @@ public:
 
   MarkdownDocument& document();
   const MarkdownDocument& document() const;
+  UndoStack& undoStack() { return undoStack_; }
+  const UndoStack& undoStack() const { return undoStack_; }
+  // Called only after the atomic disk write succeeds. Normalization is a
+  // document edit, preserving history and source positions rather than loading
+  // a new document. The resulting history position becomes the save point.
+  void acceptSavedText(const QString& text);
 
   QString filePath() const;
   QString displayName() const;
@@ -123,6 +130,7 @@ signals:
   void editingAvailabilityChanged(bool editable);
   void modifiedChanged(bool modified);
   void externalFileChanged(); // the file changed on disk vs. our last known baseline
+  void savedTextNormalized();
 
 private slots:
   void onFileChanged(); // QFileSystemWatcher::fileChanged → drift check → externalFileChanged
@@ -137,6 +145,7 @@ private:
                                  bool modified, const QVector<LocalEditNodeHint>& nodeHints);
 
   MarkdownDocument document_;
+  UndoStack undoStack_;
   CmarkGfmParser parser_;
   ParseOptions parseOptions_;
   QString filePath_;

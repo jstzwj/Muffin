@@ -564,6 +564,11 @@ struct muffin::DocumentSession::AsyncParseResult {
 };
 
 muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
+  connect(this, &DocumentSession::documentAboutToBeReplaced, &undoStack_, &UndoStack::clear);
+  connect(&document_, &MarkdownDocument::modifiedChanged, this, [this](bool modified) {
+    if (!modified)
+      undoStack_.markClean();
+  });
   connect(&document_, &MarkdownDocument::modifiedChanged, this, &DocumentSession::modifiedChanged);
   connect(this, &DocumentSession::parseBusy, this, [this] { emit editingAvailabilityChanged(isEditingAllowed()); });
   newDocument();
@@ -633,6 +638,7 @@ void muffin::DocumentSession::newDocument() {
   lastNotifiedSize_ = -2;
   emit filePathChanged(filePath_);
   parseAndStore(QString(), false);
+  undoStack_.markClean();
   emit documentTextChanged(QString());
 }
 
@@ -740,8 +746,56 @@ void muffin::DocumentSession::replaceDocument(QString text) {
 }
 
 void muffin::DocumentSession::setMarkdownText(QString text, bool modified) {
+  undoStack_.clear();
   parseAndStore(std::move(text), modified);
+  if (modified)
+    undoStack_.invalidateClean();
+  else
+    undoStack_.markClean();
   emit documentTextChanged(document_.markdownText().toString());
+}
+
+void muffin::DocumentSession::acceptSavedText(const QString& text) {
+  const auto& old = markdownText();
+  qsizetype prefix = 0;
+  bool matching = true;
+  old.forEachChunk([&](QStringView chunk) {
+    if (!matching)
+      return;
+    const auto saved = QStringView(text).mid(prefix, qMin(chunk.size(), text.size() - prefix));
+    if (chunk == saved) {
+      prefix += chunk.size();
+    } else {
+      qsizetype common = 0;
+      while (common < saved.size() && common < chunk.size() && saved[common] == chunk[common])
+        ++common;
+      prefix += common;
+      matching = false;
+    }
+  });
+  qsizetype suffix = 0;
+  while (suffix < old.size() - prefix && suffix < text.size() - prefix &&
+         old.at(old.size() - 1 - suffix) == text.at(text.size() - 1 - suffix))
+    ++suffix;
+  TextDelta delta{prefix, old.mid(prefix, old.size() - prefix - suffix),
+                  text.mid(prefix, text.size() - prefix - suffix)};
+  if (delta.isValid()) {
+    ++parseGeneration_;
+    lastLocalEditChangedTopLevelStructure_ = false;
+    lastLocalTopLevelRangeChange_ = {};
+    // Saving is allowed for a dirty, subsequently locked document too. This
+    // internal normalization does not temporarily unlock user editing.
+    if (tryApplyTopLevelLocalEdit(prefix, prefix + delta.removedText.size(), delta.insertedText, true, {})) {
+      emit documentLocallyEdited(prefix, delta.removedText.size(), delta.insertedText);
+    } else {
+      parseAndStore(text, true);
+      emit documentTextChanged(text);
+    }
+    undoStack_.push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, {}, SourceTextCommand{delta}));
+    emit savedTextNormalized();
+  }
+  undoStack_.markClean();
+  document_.setModified(false);
 }
 
 void muffin::DocumentSession::updateFromEditor(QString text) {

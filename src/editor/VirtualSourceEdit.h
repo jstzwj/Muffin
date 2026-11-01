@@ -34,6 +34,7 @@ class QVariant;
 namespace muffin {
 
 class DocumentSession;
+class EditorController;
 class RenderTheme;
 
 struct SourceEditorColors {
@@ -67,6 +68,7 @@ class MUFFIN_UI_EXPORT VirtualSourceEdit final : public QAbstractScrollArea {
 
 public:
   explicit VirtualSourceEdit(QWidget* parent = nullptr);
+  ~VirtualSourceEdit() override;
 
   void bindSession(DocumentSession* session);
   void syncFromSession(bool preserveCursor = true);
@@ -195,11 +197,14 @@ private:
   void resetCursorBlink();
   void updateReadOnlyState();
   void emitCursorPosition();
+  void updateHistorySelection();
+  void replayHistory(bool undo);
   void scrollContentsBy(int dx, int dy) override;
 
   QMetaObject::Connection replacementConnection_;
   QMetaObject::Connection editingConnection_;
   DocumentSession* session_ = nullptr;
+  std::unique_ptr<EditorController> historyController_;
   PieceTable standalone_;
   SourceLineHeightIndex heights_;
   SourceEditorColors colors_;

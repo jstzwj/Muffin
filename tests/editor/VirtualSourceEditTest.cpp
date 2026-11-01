@@ -11,11 +11,103 @@
 #include "../theme/BrowserLayoutFont.h"
 #include "document/DocumentSession.h"
 #include "editor/VirtualSourceEdit.h"
+#include "editor/EditorController.h"
+#include "io/FileController.h"
+#include <QTemporaryDir>
+#include <QMessageBox>
+#include <QTimer>
 
 using namespace muffin;
 
 namespace {
 QFont fixtureSourceFont;
+
+void testSharedHistoryAcrossViewsAndSavePoints() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("ab\n"), false);
+  EditorController rendered;
+  rendered.attach(&session, nullptr);
+  VirtualSourceEdit source;
+  source.setSourceFont(fixtureSourceFont);
+  source.bindSession(&session);
+  rendered.setCursorForSourceOffset(1);
+  require(rendered.inputController().insertText("X"), "rendered insertion");
+  source.setCursorPosition(0);
+  source.insertText("NEW:");
+  require(source.text() == "NEW:aXb\n", "mixed edit fixture");
+  rendered.undo();
+  require(source.text() == "aXb\n", "render undo consumes the latest SOURCE edit");
+  source.undo();
+  require(source.text() == "ab\n" && !session.document().isModified(), "source undo reaches original save point");
+  source.redo();
+  rendered.redo();
+  require(source.text() == "NEW:aXb\n" && session.document().isModified(), "cross-view redo preserves text");
+
+  session.acceptSavedText(source.text());
+  source.setSelection(6, 4);
+  source.toggleInlineMarkup("**", "**");
+  source.undo();
+  require(source.anchorPosition() == 6 && source.cursorPosition() == 4,
+          "shared undo retains reversed raw source selection");
+  require(!session.document().isModified(), "undo returns to latest save point");
+  source.redo();
+  require(source.selectedText() == "aX" && session.document().isModified(), "source format redo selection");
+  source.undo();
+  rendered.undo();
+  require(session.document().isModified(), "undo past saved state is dirty");
+  rendered.redo();
+  require(!session.document().isModified(), "redo back to saved state is clean");
+}
+
+void testSaveNormalizationPreservesRenderedCaretAndHistory() {
+  QTemporaryDir dir;
+  require(dir.isValid(), "save fixture directory");
+  DocumentSession session;
+  session.setFilePath(dir.filePath("note.md"));
+  session.setMarkdownText("ab", false);
+  auto format = session.fileFormat();
+  format.ensureTrailingNewline = true;
+  session.setFileFormat(format);
+  EditorController rendered;
+  rendered.attach(&session, nullptr);
+  rendered.setCursorForSourceOffset(1);
+  require(rendered.inputController().insertText("X"), "edit before saving");
+  FileController files;
+  require(files.save(session, nullptr) == SaveOutcome::Saved, "save must succeed");
+  require(session.markdownText().toString() == "aXb\n" && !session.document().isModified(), "normalized save");
+  require(rendered.inputController().insertText("Y"), "caret must remain usable after save");
+  require(session.markdownText().toString() == "aXYb\n", "post-save edit at original caret");
+  rendered.undo();
+  require(session.markdownText().toString() == "aXb\n" && !session.document().isModified(), "undo to saved text");
+  rendered.undo();
+  require(session.markdownText().toString() == "aXb" && session.document().isModified(), "normalization is undoable");
+  rendered.undo();
+  require(session.markdownText().toString() == "ab", "pre-save history remains available");
+
+  session.setFilePath(dir.path()); // a directory is not a writable document
+  QTimer::singleShot(0, [] {
+    auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+    require(message, "failed save reports its error");
+    message->accept();
+  });
+  require(files.save(session, nullptr) == SaveOutcome::Failed && session.document().isModified(),
+          "failed save cannot move the clean history position");
+  rendered.redo();
+  rendered.redo();
+  require(session.markdownText().toString() == "aXb\n" && !session.document().isModified(),
+          "failed save retains redo and the last successful save point");
+
+  session.setFilePath(dir.filePath("locked.md"));
+  session.setMarkdownText("locked", true);
+  session.setEditingReadOnly(true);
+  require(files.save(session, nullptr) == SaveOutcome::Saved && session.editingReadOnly() &&
+              session.markdownText().toString() == "locked\n",
+          "saving normalizes without unlocking user edits");
+  session.setEditingReadOnly(false);
+  rendered.undo();
+  require(session.markdownText().toString() == "locked" && session.document().isModified(),
+          "locked-save normalization also participates in history");
+}
 
 void testInlineMarkupPreservesSelectionAndHistory() {
   for (bool reversed : {false, true}) {
@@ -359,6 +451,8 @@ int main(int argc, char** argv) {
   fixtureSourceFont.setPointSizeF(13);
 
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testSharedHistoryAcrossViewsAndSavePoints);
+  RUN_TEST(testSaveNormalizationPreservesRenderedCaretAndHistory);
   RUN_TEST(testReplacementRetiresSourceHistory);
   RUN_TEST(testInlineMarkupPreservesSelectionAndHistory);
   RUN_TEST(testEmptyReplacementDeletesSelection);

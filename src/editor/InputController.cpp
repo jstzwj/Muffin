@@ -2081,7 +2081,8 @@ bool InputController::selectNextOccurrence() {
 }
 
 bool InputController::selectSourceRange(qsizetype start, qsizetype end) {
-  if (!ctx_.hasSession() || !ctx_.selection || start < 0 || end < start || end > ctx_.session->markdownText().size()) {
+  if (!ctx_.hasSession() || !ctx_.selection || start < 0 || end < 0 || start > ctx_.session->markdownText().size() ||
+      end > ctx_.session->markdownText().size()) {
     return false;
   }
   CursorPosition anchor = cursorForSourceOffset(start);
@@ -2089,6 +2090,8 @@ bool InputController::selectSourceRange(qsizetype start, qsizetype end) {
   if (!anchor.isValid() || !focus.isValid()) {
     return false;
   }
+  anchor.text.sourceOffset = start;
+  focus.text.sourceOffset = end;
   SelectionRange range;
   range.anchor = anchor;
   range.focus = focus;
