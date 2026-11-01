@@ -34,6 +34,8 @@ struct SourcePositionToken {
 class SourcePositionIndex {
 public:
   SourcePositionIndex() = default;
+  SourcePositionIndex(SourcePositionIndex&&) noexcept = default;
+  SourcePositionIndex& operator=(SourcePositionIndex&&) noexcept = default;
   SourcePositionIndex(const SourcePositionIndex&) = delete;
   SourcePositionIndex& operator=(const SourcePositionIndex&) = delete;
 

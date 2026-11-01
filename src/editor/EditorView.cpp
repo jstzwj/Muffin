@@ -21,6 +21,7 @@
 #include "render/LayoutResources.h"
 #include "render/KeyframeSampler.h"
 #include "theme/MarkdownFlow.h"
+#include "diagnostics/ThemePerformance.h"
 
 #include <QAction>
 #include <QApplication>
@@ -252,7 +253,10 @@ void EditorView::refreshPendingResources() {
   }
 }
 
-void EditorView::setDocument(const MarkdownDocument& document, QString documentPath) {
+void EditorView::setDocument(const MarkdownDocument& document, QString documentPath, bool cooperative) {
+  if (document_ != &document || documentPath_ != documentPath ||
+      (layoutBuild_ && layoutBuildRevision_ != document.revision()))
+    layoutReadingPosition_.reset();
   cssPaintContext_.clear();
   cssPaintTimer_->stop();
   if (document_ != &document || documentPath_ != documentPath) {
@@ -262,11 +266,97 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
   document_ = &document;
   documentPath_ = std::move(documentPath);
   blockBuiltAt_.clear(); // fresh document: every block's build stamp is stale
+  if (cooperative) {
+    layoutBuildRevision_ = document.revision();
+    ++layoutBuildGeneration_;
+    layoutBuildTask_ = {};
+    if (layoutBuild_)
+      retireLayout(std::move(layoutBuild_));
+    layoutBuild_ = std::make_unique<DocumentLayout>();
+    layoutBuild_->setCodeFenceScroll(codeFenceScroll_);
+    layoutBuild_->setMermaidRenderCache(&mermaidCache_);
+    layoutBuild_->setEditingHtmlBlock(editingHtmlBlockId_);
+    const auto size = themeViewportSize();
+    theme_.updateForViewport(size.width(), size.height());
+    layoutBuildTheme_ = theme_.detachedPrototype();
+    layoutBuildTask_ = layoutBuild_->rebuildSteps(document, *layoutBuildTheme_, viewport()->width(), selection_,
+                                                  documentPath_, DocumentLayout::BuildPolicy::Lazy);
+    setLoading(true);
+    emit layoutBusyChanged(true);
+    const auto generation = layoutBuildGeneration_, revision = document.revision();
+    QTimer::singleShot(0, this, [this, generation, revision] { advanceLayoutBuild(generation, revision); });
+    return;
+  }
   rebuildLayout();
   updateTableToolbar();
 }
 
+void EditorView::retireLayout(std::unique_ptr<DocumentLayout> layout) {
+  if (!layout)
+    return;
+  auto* timer = new QTimer(qApp);
+  const auto retired = std::shared_ptr<DocumentLayout>(std::move(layout));
+  connect(timer, &QTimer::timeout, timer, [retired, timer] {
+    if (!retired->releaseDetails()) {
+      timer->stop();
+      timer->deleteLater();
+    }
+  });
+  timer->start(0);
+}
+
+void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
+  if (generation != layoutBuildGeneration_ || !layoutBuild_)
+    return;
+  if (!document_ || document_->revision() != revision) {
+    layoutBuildTask_ = {};
+    retireLayout(std::move(layoutBuild_));
+    setLoading(false);
+    emit layoutBusyChanged(false);
+    return;
+  }
+  bool pending;
+  {
+    // Stack-based performance scopes must end before yielding to other views.
+    ThemePerfScope performance(ThemePerfStage::Layout);
+    pending = layoutBuildTask_.resumeFor(4);
+  }
+  if (pending) {
+    QTimer::singleShot(0, this, [this, generation, revision] { advanceLayoutBuild(generation, revision); });
+    return;
+  }
+  layoutBuildTask_ = {};
+  theme_ = std::move(*layoutBuildTheme_);
+  layoutBuildTheme_.reset();
+  retireLayout(std::move(layout_));
+  layout_ = std::move(layoutBuild_);
+  setLoading(false);
+  {
+    ScopedViewportPin pin(*this);
+    if (cursorPosition_.isValid()) {
+      const auto index = layout_->topLevelIndexFor(cursorPosition_.blockId);
+      if (index >= 0)
+        layout_->ensureBuilt(index, index, theme_);
+    }
+  }
+  ensureVisibleBuilt();
+  if (cursorPosition_.isValid()) {
+    cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
+    cursorVisible_ = cursorHit_.isValid();
+  }
+  if (layoutReadingPosition_) {
+    const auto position = std::exchange(layoutReadingPosition_, {});
+    restoreViewportPosition(position->first, position->second);
+  }
+  updateCodeLanguageEditor();
+  updateTableToolbar();
+  viewport()->update();
+  emit layoutBusyChanged(false);
+  emit layoutReady();
+}
+
 void EditorView::setLoading(bool loading) {
+  loading = loading || isLayoutPending();
   if (loading_ != loading) {
     loading_ = loading;
     if (loading_) {
@@ -282,7 +372,7 @@ void EditorView::setLoading(bool loading) {
 
 bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) {
   PerfTimer perf("view.refreshBlock");
-  if (!layout_ || document_ != &document) {
+  if (!layout_ || isLayoutPending() || document_ != &document) {
     return false;
   }
 
@@ -343,7 +433,7 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
 bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const MarkdownDocument& document,
                                        bool forceRebuild, DocumentLayout::BlockUpdateReason reason) {
   PerfTimer perf("view.refreshBlocks");
-  if (!layout_ || document_ != &document) {
+  if (!layout_ || isLayoutPending() || document_ != &document) {
     return false;
   }
 
@@ -391,7 +481,7 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
 
 bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document) {
   PerfTimer perf("view.refreshTopLevelRange");
-  if (!layout_ || document_ != &document) {
+  if (!layout_ || isLayoutPending() || document_ != &document) {
     return false;
   }
 
@@ -485,6 +575,12 @@ void EditorView::setCursorPosition(CursorPosition position) {
   dragState_ = DragState::Idle;
   const SelectionRange previousSelection = selection_;
   cursorPosition_ = position;
+  if (layoutBuild_) {
+    selection_ = {position, position};
+    if (document_)
+      setDocument(*document_, documentPath_, true);
+    return;
+  }
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
   {
@@ -525,6 +621,11 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   const SelectionRange previousSelection = selection_;
   selection_ = selection;
   cursorPosition_ = selection.focus;
+  if (layoutBuild_) {
+    if (document_)
+      setDocument(*document_, documentPath_, true);
+    return;
+  }
   if (dragState_ == DragState::Dragging) {
     cursorVisible_ = false;
     cursorTimer_->stop();
@@ -684,6 +785,10 @@ bool EditorView::viewportEvent(QEvent* event) {
 void EditorView::resizeEvent(QResizeEvent* event) {
   PerfTimer perf("view.resize");
   QAbstractScrollArea::resizeEvent(event);
+  if (isLayoutPending() && document_) {
+    setDocument(*document_, documentPath_, true);
+    return;
+  }
   bool stylesChanged;
   {
     PerfTimer step("view.resize.theme");
@@ -1269,6 +1374,10 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
 }
 
 void EditorView::rebuildLayout(bool preserveViewport) {
+  if (layoutBuild_ && document_) {
+    setDocument(*document_, documentPath_, true);
+    return;
+  }
   // A full theme/document rebuild consumes the current resource versions. Any
   // notification raised during the rebuild marks the new layout dirty again.
   resourcesDirty_ = false;
@@ -1341,7 +1450,7 @@ void EditorView::updateCodeLanguageEditor() {
   if (!codeLanguageEditor_) {
     return;
   }
-  if (editingLocked_) {
+  if (editingLocked_ || layoutBuild_) {
     codeLanguageEditor_->forceHide(); // 锁定编辑: no floating code-fence language editor
     return;
   }
@@ -1353,7 +1462,7 @@ void EditorView::updateTableToolbar() {
   if (!tableToolbar_) {
     return;
   }
-  if (editingLocked_) {
+  if (editingLocked_ || layoutBuild_) {
     tableToolbar_->forceHide(); // 锁定编辑: no “调整表格大小” toolbar over a table cell
     return;
   }

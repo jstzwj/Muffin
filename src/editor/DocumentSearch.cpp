@@ -221,22 +221,38 @@ QString DocumentSearch::expandReplacement(const QString& replacement, const Sear
 }
 
 SearchResults DocumentSearch::replaceAll(const QString& text, const QString& pattern, const QString& replacement,
-                                         SearchOptions options, QString* output, Cancellation cancel) {
+                                         SearchOptions options, QString* output, Cancellation cancel,
+                                         QVector<qsizetype>* sourcePositions) {
   QString replaced;
   replaced.reserve(text.size());
   qsizetype copied = 0;
   QVector<SearchMatch> cache;
+  const auto originalPositions = sourcePositions ? *sourcePositions : QVector<qsizetype>();
+  auto mappedPositions = originalPositions;
+  bool changed = false;
   auto result = scan(PieceTable(text), pattern, options, cancel, [&](const SearchMatch& match, qsizetype) {
     replaced += QStringView(text).mid(copied, match.start - copied);
-    replaced += expandReplacement(replacement, match, options.regularExpression);
+    const auto inserted = expandReplacement(replacement, match, options.regularExpression);
+    changed = changed || QStringView(text).mid(match.start, match.length) != inserted;
+    for (qsizetype i = 0; i < originalPositions.size(); ++i) {
+      const auto offset = originalPositions[i];
+      if (offset >= match.start && offset < match.start + match.length)
+        mappedPositions[i] = replaced.size() + qMin(offset - match.start, inserted.size());
+      else if (offset >= match.start + match.length)
+        mappedPositions[i] += inserted.size() - match.length;
+    }
+    replaced += inserted;
     copied = match.start + match.length;
     if (cache.size() < kCachedMatches)
       cache.append({match.start, match.length, {}});
   });
   result.matches = std::move(cache);
+  result.changed = changed;
   if (result.valid && !result.canceled && output) {
     replaced += QStringView(text).mid(copied);
     *output = std::move(replaced);
+    if (sourcePositions)
+      *sourcePositions = std::move(mappedPositions);
   }
   return result;
 }

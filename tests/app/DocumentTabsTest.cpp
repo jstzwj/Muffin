@@ -1917,13 +1917,14 @@ void workspaceSearchAndReplace() {
   auto* replaceButton = panel->findChild<QPushButton*>("WorkspaceReplacePreview");
   require(replaceButton && replaceButton->isVisible() && replaceButton->isEnabled(),
           QStringLiteral("folder replacement has an available sidebar button: visible=%1 enabled=%2 sidebar=%3 "
-                         "panel=%4 complete=%5 matches=%6")
+                         "panel=%4 complete=%5 matches=%6 error=%7")
               .arg(replaceButton && replaceButton->isVisible())
               .arg(replaceButton && replaceButton->isEnabled())
               .arg(sidebar->isVisible())
               .arg(static_cast<int>(sidebar->panel()))
               .arg(panel->result().complete)
-              .arg(panel->result().matches));
+              .arg(panel->result().matches)
+              .arg(panel->result().error));
   bool previewCanceled = false;
   QTimer::singleShot(0, [&] {
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
@@ -2174,10 +2175,50 @@ void documentReplaceDiscardsStaleJobsAndPreservesUndo() {
   waitUntil(
       [&] { return document->session.markdownText().toString() == "longer replacement beta longer replacement\n"; },
       "replace all commits the current revision");
+  waitUntil([&] { return !document->renderView->isLayoutPending(); }, "batch layout completes");
   document->editorController.undo();
+  waitUntil([&] { return !document->session.isBatchPending() && !document->renderView->isLayoutPending(); },
+            "batch undo completes");
   require(document->session.markdownText().toString() == "alpha beta alpha\n" &&
               !document->session.document().isModified(),
           "batch replacement is one undo step back to the saved state");
+}
+
+void batchPresentationSurvivesModeSwitchAndDeferredLiteralRestore() {
+  Fixture f;
+  const QString initial = "# Note\n\n<div>\n<p>Original</p>\n</div>\n";
+  auto* document = f.open(f.file("batch-presentation.md", initial));
+  auto changed = initial;
+  changed.replace("Original", "Changed");
+  action(f.window, "Source Code Mode")->trigger();
+  const auto offset = changed.indexOf("Changed");
+  document->session.applyBatchAsync(PieceTable(changed), "batch in source", 0, 0, offset, offset);
+  waitUntil([&] { return !document->session.isBatchPending(); }, "source batch completes");
+  require(document->renderViewDirty && document->renderViewBatchDirty,
+          "hidden live view retains the cooperative rebuild requirement");
+  action(f.window, "Source Code Mode")->trigger();
+  require(document->renderView->isLayoutPending() && !document->renderViewBatchDirty,
+          "source-to-live switch consumes the same cooperative rebuild policy as tab activation");
+  waitUntil([&] { return !document->renderView->isLayoutPending(); }, "mode switch finishes prepared layout");
+  require(document->session.isEditingAllowed() &&
+              document->editorController.selection().cursorPosition().text.sourceOffset == offset,
+          "mode switch preserves source caret and restores editing availability");
+
+  auto finalText = changed;
+  finalText.replace("Changed", "Restored");
+  const auto restoredOffset = finalText.indexOf("Restored");
+  document->pendingViewState =
+      QVariantMap{{"hasCursor", true}, {"anchor", restoredOffset}, {"focus", restoredOffset}, {"htmlEditing", true}};
+  document->session.applyBatchAsync(PieceTable(finalText), "batch in live view", 0, 0, 0, 0);
+  waitUntil(
+      [&] {
+        return !document->session.isBatchPending() && !document->renderView->isLayoutPending() &&
+               !document->pendingViewState;
+      },
+      "deferred literal state waits for the prepared layout");
+  require(document->editorController.htmlLiteral().isEditing() &&
+              document->editorController.selection().cursorPosition().text.sourceOffset == restoredOffset,
+          "restoration retains the literal edit mode until hit testing becomes available");
 }
 
 void documentFindRevealsMatchesInsideTallBlocks() {
@@ -4385,6 +4426,8 @@ int main(int argc, char** argv) {
   runTest("workspaceSearchAndReplace", workspaceSearchAndReplace);
   runTest("droppedMarkdownHonorsImportPreference", droppedMarkdownHonorsImportPreference);
   runTest("documentReplaceDiscardsStaleJobsAndPreservesUndo", documentReplaceDiscardsStaleJobsAndPreservesUndo);
+  runTest("batchPresentationSurvivesModeSwitchAndDeferredLiteralRestore",
+          batchPresentationSurvivesModeSwitchAndDeferredLiteralRestore);
   runTest("workspaceSidebarWidth", workspaceSidebarWidth);
   runTest("documentFindRevealsMatchesInsideTallBlocks", documentFindRevealsMatchesInsideTallBlocks);
   runTest("workspaceRenderedNavigation", workspaceRenderedNavigation);

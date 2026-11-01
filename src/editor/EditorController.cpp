@@ -403,6 +403,19 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   if (session_ != nullptr) {
     connect(session_, &DocumentSession::documentAboutToBeReplaced, this, &EditorController::clearHistoryAndSelection);
     connect(session_, &DocumentSession::savedTextNormalized, this, &EditorController::remapCurrentSelection);
+    connect(session_, &DocumentSession::batchSelectionRestored, this, [this](qsizetype anchor, qsizetype cursor) {
+      // Rebind before publishing selection changes: a type-relative index from
+      // the retired AST may now identify a different code/HTML/math block.
+      const auto blockId = cursorForSourceOffset(cursor).blockId;
+      frontMatterLiteral_.rebindAfterSourceReplacement(blockId);
+      codeFenceController_.rebindAfterSourceReplacement(blockId);
+      htmlLiteral_.rebindAfterSourceReplacement(blockId);
+      mathLiteral_.rebindAfterSourceReplacement(blockId);
+      selectSourceRange(anchor, cursor);
+      if (view_)
+        view_->setEditingHtmlBlock(htmlLiteral_.isEditing() ? htmlLiteral_.currentBlockId() : NodeId{});
+      emit historySelectionRestored(anchor, cursor);
+    });
   }
   if (session_ != nullptr && view_ != nullptr) {
     // Local text deltas carry position + inserted text (the removed text is no longer available
@@ -537,17 +550,19 @@ BrushQueue& EditorController::brushQueue() {
 }
 
 bool EditorController::canUndo() const {
-  return session_ && session_->isEditingAllowed() && undoStack().canUndo();
+  return session_ && session_->isEditingAllowed() && !session_->isBatchPending() && undoStack().canUndo();
 }
 
 bool EditorController::canRedo() const {
-  return session_ && session_->isEditingAllowed() && undoStack().canRedo();
+  return session_ && session_->isEditingAllowed() && !session_->isBatchPending() && undoStack().canRedo();
 }
 
 void EditorController::undo() {
   if (!canUndo()) {
     return;
   }
+  if (session_->replayBatchAsync(true))
+    return;
   const EditTransaction transaction = undoStack().takeUndo();
   if (!applyTransaction(transaction, true)) {
     // Nothing was applied — put the step back so the history stays aligned instead of
@@ -580,6 +595,8 @@ void EditorController::redo() {
   if (!canRedo()) {
     return;
   }
+  if (session_->replayBatchAsync(false))
+    return;
   const EditTransaction transaction = undoStack().takeRedo();
   if (!applyTransaction(transaction, false)) {
     undoStack().restoreRedo(transaction);

@@ -30,6 +30,7 @@
 #include <QVBoxLayout>
 #include <QTimer>
 #include <QtConcurrentRun>
+#include <utility>
 
 namespace {
 QString recoveryRoot() {
@@ -179,8 +180,11 @@ void muffin::MainWindow::applySearchNavigation(DocumentTab* document) {
   }
   if (render) {
     if (document->renderViewDirty) {
-      document->renderView->setDocument(document->session.document(), document->session.filePath());
-      document->renderViewDirty = false;
+      document->ensureRenderViewCurrent();
+    }
+    if (document->renderView->isLayoutPending()) {
+      document->pendingSearchFingerprint = expected;
+      return;
     }
     document->renderView->scrollToNode(range.focus.blockId);
     const auto hit = document->renderView->hitForCursorPosition(range.focus);

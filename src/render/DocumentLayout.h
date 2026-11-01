@@ -7,6 +7,7 @@
 #include "render/BlockLayout.h"
 #include "render/BlockLayoutBuilder.h"
 #include "render/LayoutPositionIndex.h"
+#include "document/CooperativeTask.h"
 #include "theme/RenderTheme.h"
 
 #include <QHash>
@@ -98,6 +99,9 @@ public:
                SelectionRange selection, QString documentPath = {});
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth,
                SelectionRange selection, QString documentPath, BuildPolicy policy);
+  CooperativeTask rebuildSteps(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth,
+                               SelectionRange selection, QString documentPath, BuildPolicy policy);
+  bool releaseDetails(int budgetMs = 4);
   void setEditingHtmlBlock(NodeId id);
   // Per-code-fence horizontal scroll state; forwarded to the builder (writes longest-line width)
   // and to BlockLayout hit-test (reads the offset). Owned by EditorController.
@@ -186,6 +190,7 @@ private:
   void removeLayoutIndexFor(const BlockLayout& block);
   void buildNestedIndex(const MarkdownDocument& document);
   void collectNestedToTopLevel(const MarkdownNode& node, NodeId topLevelId);
+  CooperativeTask collectNestedSteps(const MarkdownNode& node, NodeId topLevelId);
   void removeNestedIndexForTopLevel(NodeId topLevelId);
   // Walk the AST in document order and resolve each heading's ::before counter()
   // content (e.g. `counter(h1) ". "` → "1. ") against a live counter state machine,

@@ -24,6 +24,7 @@ public:
   bool isEditing() const;
   bool enterEditMode();
   bool exitEditMode();
+  void rebindAfterSourceReplacement(NodeId blockId);
 
   bool insertText(QString text);
   // Shift+Tab dedent: removes one codeIndentUnit of leading space from every line the current

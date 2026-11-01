@@ -744,10 +744,7 @@ void muffin::MainWindow::updateViewMode() {
     sourceModeButton_->setChecked(sourceMode);
   }
   if (!sourceMode) {
-    if (tab_->renderViewDirty) {
-      tab_->renderView->setDocument(tab_->session.document(), tab_->session.filePath());
-      tab_->renderViewDirty = false;
-    }
+    tab_->ensureRenderViewCurrent();
     // Source → Render: scroll to the block at the source cursor position
     tab_->renderView->refreshPendingResources();
     const qsizetype sourcePos = tab_->editor->cursorPosition();
@@ -755,7 +752,12 @@ void muffin::MainWindow::updateViewMode() {
       tab_->editorController.selectSourceRange(tab_->editor->anchorPosition(), sourcePos);
     MarkdownNode* block = tab_->session.document().topLevelBlockAtOffset(sourcePos);
     if (block) {
-      tab_->renderView->scrollToNode(block->id());
+      if (tab_->renderView->isLayoutPending()) {
+        tab_->renderView->restoreViewportPosition({sourcePos, 0, 0, true, sourcePos == 0},
+                                                  tab_->editorController.cursorForSourceOffset(sourcePos));
+      } else {
+        tab_->renderView->scrollToNode(block->id());
+      }
     }
     tab_->renderView->setFocus(Qt::OtherFocusReason);
   }

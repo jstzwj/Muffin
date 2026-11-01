@@ -253,6 +253,7 @@ void muffin::SearchPanelWidget::startSearch(const OpenSearchBuffers& buffers) {
     return;
   }
   running_ = true;
+  result_.complete = false;
   preview_->setEnabled(false);
   cancelButton_->setEnabled(true);
   updateSummary();

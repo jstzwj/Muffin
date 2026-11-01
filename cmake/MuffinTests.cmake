@@ -3,6 +3,7 @@
 # CMakeLists.txt after MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS is assembled.
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
+muffin_add_test(NAME MuffinBatchEditTest SOURCE tests/editor/BatchEditTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMarkdownFlowTest SOURCE tests/render/MarkdownFlowTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinDocumentVisualAcceptanceTest SOURCE tests/render/DocumentVisualAcceptanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 target_compile_definitions(MuffinDocumentVisualAcceptanceTest PRIVATE MUFFIN_VISUAL_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/render-acceptance")

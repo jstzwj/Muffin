@@ -1,4 +1,5 @@
 #pragma once
+#include "document/CooperativeTask.h"
 
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
@@ -39,6 +40,7 @@ class RenderTheme {
 public:
   RenderTheme();
   std::shared_ptr<const MarkdownFlow> markdownFlow(const MarkdownNode& root) const;
+  CooperativeTask prepareMarkdownFlowSteps(const MarkdownNode& root) const;
   static RenderTheme defaultTheme(int zoomPercent = 100);
   static RenderTheme github(int zoomPercent = 100);
   static RenderTheme newsprint(int zoomPercent = 100);
@@ -133,6 +135,7 @@ public:
   std::optional<PseudoElementRule> pseudoForElement(const CssElement& origin, const QString& pseudo,
                                                     CssElementState state = {}) const;
   QHash<NodeId, QPair<QString, QString>> resolveDocumentCounters(const MarkdownDocument& document) const;
+  CooperativeTask resolveDocumentCounterSteps(const MarkdownDocument& document) const;
   quint64 generatedCounterFingerprint(NodeId node) const { return counterFingerprints_.value(node); }
   bool hasGeneratedCounters() const { return !counterChains_.isEmpty(); }
   DocumentCounterStats documentCounterStats() const;

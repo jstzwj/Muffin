@@ -52,6 +52,13 @@ QString PieceTable::mid(qsizetype start, qsizetype len) const {
   if (len > totalLength_ - start) {
     len = totalLength_ - start;
   }
+  // A prepared/opened document normally owns one immutable run. QString::mid
+  // shares a complete buffer, avoiding another document-sized allocation when
+  // parser, search and batch history request the same snapshot.
+  if (pieces_.size() == 1) {
+    const auto& piece = pieces_.front();
+    return buffer(piece.fromChanges).mid(piece.start + start, len);
+  }
   QString out;
   out.reserve(len);
   auto [idx, off] = locate(start);

@@ -286,6 +286,16 @@ const CssElement* NodeCssElementBuilder::build(const MarkdownNode& node) {
   return ensure(node);
 }
 
+CooperativeTask NodeCssElementBuilder::prepareFlowSteps(const MarkdownNode& root) const {
+  if (flow_)
+    co_return;
+  auto flow = std::make_shared<MarkdownFlow>();
+  auto task = flow->rebuildSteps(root);
+  while (task.resumeFor(0))
+    co_yield nullptr;
+  flow_ = std::move(flow);
+}
+
 std::shared_ptr<const MarkdownFlow> NodeCssElementBuilder::flowFor(const MarkdownNode& node) const {
   if (!flow_) {
     const auto* root = &node;

@@ -94,6 +94,18 @@ bool LiteralBlockController::exitEditMode() {
   return true;
 }
 
+void LiteralBlockController::rebindAfterSourceReplacement(NodeId blockId) {
+  if (!isEditing())
+    return;
+  editingId_ = {};
+  editingIndex_ = -1;
+  if (MarkdownNode* node = blockById(blockId)) {
+    editingId_ = node->id();
+    // The prepared generation already provides an authoritative ID. Rebuilding
+    // a type-relative fallback here would scan the whole document on the GUI thread.
+  }
+}
+
 bool LiteralBlockController::insertText(QString text) {
   if (text.isEmpty()) {
     return false;

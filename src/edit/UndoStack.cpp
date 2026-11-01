@@ -35,12 +35,21 @@ void UndoStack::push(EditTransaction transaction) {
   currentState_ = undo_.last().after;
   redo_.clear();
 
-  while (undo_.size() > kMaxUndoDepth) {
+  while (undo_.size() > kMaxUndoDepth || (undo_.size() > 1 && retainedTextBytes() > kTextBudget)) {
     undo_.removeFirst();
   }
 
   lastPushTime_.restart();
   emit stateChanged();
+}
+
+qint64 UndoStack::retainedTextBytes() const {
+  qint64 bytes = 0;
+  for (const auto& entry : undo_)
+    bytes += entry.transaction.retainedTextBytes();
+  for (const auto& entry : redo_)
+    bytes += entry.transaction.retainedTextBytes();
+  return bytes;
 }
 
 EditTransaction UndoStack::takeUndo() {

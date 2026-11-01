@@ -32,6 +32,7 @@ class DocumentTab final : public QWidget {
 public:
   explicit DocumentTab(QWidget* parent = nullptr);
   ~DocumentTab() override;
+  void ensureRenderViewCurrent();
 
   // Replaced when the page moves between windows; deleting this context also
   // cancels queued callbacks that still refer to the previous window.
@@ -78,6 +79,7 @@ public:
   SearchResults findCache;
   DocumentSearch::Cancellation findCancellation;
   bool renderViewDirty = false;
+  bool renderViewBatchDirty = false;
   bool pinned = false;
   // 锁定编辑（独立标签页作用范围）：每个页签自己记住状态，切换页签互不影响。
   bool editingLocked = false;

@@ -1,6 +1,10 @@
 #include "document/DocumentSession.h"
 
 #include <QElapsedTimer>
+#include <QCoreApplication>
+#include <QThread>
+#include <QTimer>
+#include <QSignalBlocker>
 #include <QFileInfo>
 #include <QLoggingCategory>
 #include <QtConcurrent>
@@ -557,11 +561,267 @@ muffin::MarkdownNode* nodeByIdOrTypeIndex(muffin::MarkdownDocument& document, mu
 
 } // namespace
 
+struct muffin::DocumentSession::LocalParseInput {
+  TopLevelSlice slice;
+  TextDelta delta;
+  QString markdown;
+  ParseOptions options;
+  ParseResult parsed;
+};
+
 struct muffin::DocumentSession::AsyncParseResult {
   ParseResult parsed;
-  PieceTable text;
+  std::unique_ptr<MarkdownDocument::PreparedState> state;
   QVector<qsizetype> pendingMarkers;
+  QString publishedText;
+  std::optional<TextDelta> candidate;
+  std::shared_ptr<LocalParseInput> local;
+  bool unchanged = false;
+
+  static std::shared_ptr<AsyncParseResult> create() {
+    return std::shared_ptr<AsyncParseResult>(new AsyncParseResult, [](AsyncParseResult* result) {
+      if (QCoreApplication::instance() && QThread::currentThread() == QCoreApplication::instance()->thread())
+        (void)QtConcurrent::run([result] { delete result; });
+      else
+        delete result;
+    });
+  }
 };
+
+std::shared_ptr<muffin::DocumentSession::AsyncParseResult>
+muffin::DocumentSession::prepareParse(PieceTable text, ParseOptions options, QVector<qsizetype> markers, bool metrics,
+                                      BatchCancellation cancel) {
+  const auto canceled = [&] { return cancel && cancel->load(); };
+  if (canceled())
+    return {};
+  auto result = AsyncParseResult::create();
+  auto source = std::make_shared<const QString>(text.toString());
+  result->publishedText = *source;
+  CmarkGfmParser parser;
+  result->parsed = parser.parseDocumentShared(source, options, metrics);
+  if (canceled())
+    return {};
+  if (!result->parsed.root)
+    result->parsed.root = std::make_unique<MarkdownNode>(BlockType::Document);
+  if (!markers.isEmpty())
+    demotePendingMarkersAtOffsets(*source, *result->parsed.root, markers);
+  for (const auto& child : result->parsed.root->children()) {
+    if (canceled())
+      return {};
+    child->bindSharedInlineText(source);
+    child->relativizeDescendants();
+  }
+  result->pendingMarkers = collectPendingMarkerOffsets(QStringView(*source), *result->parsed.root);
+  result->state = MarkdownDocument::prepareState(std::move(text), std::move(result->parsed.root));
+  return canceled() ? nullptr : result;
+}
+
+void muffin::DocumentSession::cancelBatch() {
+  if (auto cancel = std::exchange(batchCancellation_, {})) {
+    cancel->store(true);
+    emit batchEditFinished(false);
+  }
+}
+
+void muffin::DocumentSession::applyBatchAsync(PieceTable target, QString label, qsizetype beforeAnchor,
+                                              qsizetype beforeCursor, qsizetype afterAnchor, qsizetype afterCursor,
+                                              ViewportPosition beforeViewport, ViewportPosition afterViewport) {
+  if (!isEditingAllowed())
+    return;
+  auto command = std::make_shared<BatchTextCommand>();
+  command->before = markdownText();
+  command->after = std::move(target);
+  command->beforeMarkers = pendingMarkerOffsets_;
+  command->beforeAnchor = beforeAnchor;
+  command->beforeCursor = beforeCursor;
+  command->afterAnchor = afterAnchor;
+  command->afterCursor = afterCursor;
+  command->beforeViewport = beforeViewport;
+  command->afterViewport = afterViewport;
+  prepareBatch(std::move(command), std::move(label), 0);
+}
+
+bool muffin::DocumentSession::replayBatchAsync(bool undo) {
+  const auto* transaction = undo ? undoStack_.peekUndo() : undoStack_.peekRedo();
+  if (!isEditingAllowed() || !transaction || !transaction->isBatchTextCommand())
+    return false;
+  prepareBatch(std::make_shared<BatchTextCommand>(*transaction->batchTextCommand()), transaction->label(),
+               undo ? -1 : 1);
+  return true;
+}
+
+std::shared_ptr<muffin::DocumentSession::LocalParseInput>
+muffin::DocumentSession::batchLocalInput(const TextDelta& delta) const {
+  // This bounded optimization shares the ordinary local edit parser and splice.
+  // Reference definitions, HTML boundaries and large structural windows require
+  // document-wide context, so they always use the complete worker parse.
+  const auto end = delta.start + delta.removedText.size();
+  const auto slice = chooseTopLevelSlice(document_, delta.start, end, false, delta.insertedText.isEmpty());
+  if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceStart > delta.start || slice.sourceEnd < end ||
+      slice.sourceEnd > markdownText().size() || slice.count > 16 ||
+      qMax(slice.sourceEnd, slice.parseEnd) - slice.sourceStart > 64 * 1024)
+    return {};
+  for (qsizetype i = slice.first; i < slice.first + slice.count; ++i) {
+    const auto type = document_.root().children()[size_t(i)]->type();
+    if (type != BlockType::Paragraph && type != BlockType::Heading)
+      return {};
+  }
+  auto input = std::make_shared<LocalParseInput>();
+  input->slice = slice;
+  input->delta = delta;
+  input->markdown = markdownText().mid(slice.sourceStart, delta.start - slice.sourceStart) + delta.insertedText +
+                    markdownText().mid(end, qMax(slice.sourceEnd, slice.parseEnd) - end);
+  if (input->markdown.contains(u'[') || input->markdown.contains(u']') || input->markdown.contains(u'<') ||
+      input->markdown.contains(u'>'))
+    return {};
+  input->options = parseOptions_;
+  input->options.enableFrontMatter = slice.sourceStart == 0;
+  return input;
+}
+
+void muffin::DocumentSession::prepareBatch(std::shared_ptr<BatchTextCommand> command, QString label, int direction,
+                                           std::shared_ptr<LocalParseInput> local, bool allowLocal) {
+  cancelBatch();
+  const auto cancel = batchCancellation_ = std::make_shared<std::atomic_bool>(false);
+  const auto revision = document_.revision(), generation = parseGeneration_, history = undoStack_.stateId();
+  const auto options = parseOptions_;
+  const bool metrics = fullParsePerformanceMetricsEnabled_;
+  auto* watcher = new QFutureWatcher<std::shared_ptr<AsyncParseResult>>(this);
+  connect(this, &QObject::destroyed, watcher, [cancel] { cancel->store(true); });
+  connect(watcher, &QFutureWatcher<std::shared_ptr<AsyncParseResult>>::finished, this,
+          [this, watcher, cancel, revision, generation, history, command, label = std::move(label), direction] {
+            std::shared_ptr<AsyncParseResult> prepared;
+            try {
+              prepared = watcher->future().takeResult();
+            } catch (...) {
+              watcher->deleteLater();
+              qCWarning(sessionLog) << "Batch document preparation failed";
+              if (batchCancellation_ == cancel)
+                cancelBatch();
+              return;
+            }
+            watcher->deleteLater();
+            if (cancel->load() || !prepared || !isEditingAllowed() || document_.revision() != revision ||
+                parseGeneration_ != generation || undoStack_.stateId() != history) {
+              if (batchCancellation_ == cancel)
+                cancelBatch();
+              // Failed/stale ASTs are pure data too; do not destroy a large tree in this slot.
+              (void)QtConcurrent::run([prepared = std::move(prepared)] {});
+              return;
+            }
+            batchCancellation_.reset();
+            if (prepared->unchanged) {
+              emit batchEditFinished(false);
+              return;
+            }
+            if (prepared->candidate) {
+              prepareBatch(command, label, direction, batchLocalInput(*prepared->candidate), false);
+              return;
+            }
+            const bool wasModified = document_.isModified();
+            std::unique_ptr<MarkdownDocument::PreparedState> retired;
+            bool localCommitted = false;
+            if (prepared->local) {
+              const QSignalBlocker sessionSignals(this), documentSignals(&document_);
+              const auto& delta = prepared->local->delta;
+              localCommitted = tryApplyTopLevelLocalEdit(delta.start, delta.start + delta.removedText.size(),
+                                                         delta.insertedText, wasModified, {}, prepared->local);
+            }
+            if (prepared->local && !localCommitted) {
+              prepareBatch(command, label, direction, {}, false);
+              return;
+            }
+            {
+              const QSignalBlocker sessionSignals(this), documentSignals(&document_), historySignals(&undoStack_);
+              if (!localCommitted) {
+                retired = document_.installState(std::move(prepared->state), false);
+                pendingMarkerOffsets_ = std::move(prepared->pendingMarkers);
+                lastParseWasLocalEdit_ = false;
+                lastLocalEditChangedTopLevelStructure_ = false;
+                lastLocalTopLevelRangeChange_ = {};
+                lastParseElapsedMs_ = prepared->parsed.elapsedMs;
+                lastFullParsePerformanceMetrics_ = std::move(prepared->parsed.performanceMetrics);
+              }
+              if (direction >= 0)
+                command->afterMarkers = pendingMarkerOffsets_;
+              if (direction < 0)
+                undoStack_.takeUndo();
+              else if (direction > 0)
+                undoStack_.takeRedo();
+              else
+                undoStack_.push(EditTransaction(label, command));
+              document_.setModified(!undoStack_.isClean());
+            }
+            ++parseGeneration_;
+            const auto committedGeneration = parseGeneration_, committedRevision = document_.revision();
+            const auto current = [&] {
+              return parseGeneration_ == committedGeneration && document_.revision() == committedRevision;
+            };
+            lastChangeWasBatch_ = true;
+            document_.publishPreparedState();
+            if (current())
+              emit undoStack_.stateChanged();
+            if (current() && wasModified != document_.isModified())
+              emit document_.modifiedChanged(document_.isModified());
+            const auto anchor = direction < 0 ? command->beforeAnchor : command->afterAnchor;
+            const auto cursor = direction < 0 ? command->beforeCursor : command->afterCursor;
+            if (current())
+              emit parsed(lastParseElapsedMs_);
+            if (current())
+              emit batchSelectionRestored(anchor, cursor);
+            if (current())
+              emit documentTextChanged(std::move(prepared->publishedText));
+            if (current())
+              emit batchViewportRestored(direction < 0 ? command->beforeViewport : command->afterViewport);
+            lastChangeWasBatch_ = false;
+            emit batchEditFinished(true);
+            (void)QtConcurrent::run([retired = std::move(retired)] {});
+          });
+  watcher->setFuture(QtConcurrent::run([command, direction, options, metrics, cancel, local, allowLocal] {
+    const auto& target = direction < 0 ? command->before : command->after;
+    if (local) {
+      auto result = AsyncParseResult::create();
+      result->local = local;
+      CmarkGfmParser parser;
+      local->parsed = parser.parseDocument(QStringView(local->markdown), local->options);
+      result->publishedText = target.toString();
+      return result;
+    }
+    if (allowLocal) {
+      const auto before = (direction < 0 ? command->after : command->before).toString();
+      const auto after = target.toString();
+      qsizetype prefix = 0, oldEnd = before.size(), newEnd = after.size();
+      while (prefix < oldEnd && prefix < newEnd && before[prefix] == after[prefix]) {
+        if ((prefix & 0xffff) == 0 && cancel->load())
+          return std::shared_ptr<AsyncParseResult>{};
+        ++prefix;
+      }
+      if (prefix == oldEnd && prefix == newEnd) {
+        auto result = AsyncParseResult::create();
+        result->unchanged = true;
+        return result;
+      }
+      while (oldEnd > prefix && newEnd > prefix && before[oldEnd - 1] == after[newEnd - 1]) {
+        if ((oldEnd & 0xffff) == 0 && cancel->load())
+          return std::shared_ptr<AsyncParseResult>{};
+        --oldEnd;
+        --newEnd;
+      }
+      if (oldEnd - prefix < 32 * 1024 && newEnd - prefix < 32 * 1024) {
+        TextDelta delta{prefix, before.mid(prefix, oldEnd - prefix), after.mid(prefix, newEnd - prefix)};
+        if (!delta.removedText.contains(u'\n') && !delta.insertedText.contains(u'\n') &&
+            !delta.removedText.contains(u'\r') && !delta.insertedText.contains(u'\r')) {
+          auto result = AsyncParseResult::create();
+          result->candidate = std::move(delta);
+          return result;
+        }
+      }
+    }
+    return prepareParse(direction < 0 ? command->before : command->after, options,
+                        direction < 0 ? command->beforeMarkers : command->afterMarkers, metrics, cancel);
+  }));
+  emit batchEditStarted();
+}
 
 muffin::DocumentSession::DocumentSession(QObject* parent) : QObject(parent) {
   connect(this, &DocumentSession::documentAboutToBeReplaced, &undoStack_, &UndoStack::clear);
@@ -805,6 +1065,7 @@ void muffin::DocumentSession::updateFromEditor(QString text) {
 void muffin::DocumentSession::setEditingReadOnly(bool readOnly) {
   if (editingReadOnly_ == readOnly)
     return;
+  cancelBatch();
   editingReadOnly_ = readOnly;
   emit editingAvailabilityChanged(isEditingAllowed());
 }
@@ -842,6 +1103,8 @@ bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype re
                           insertedText.size(), document_.pieceText().size());
     return false;
   }
+  cancelBatch();
+  lastChangeWasBatch_ = false;
   ++parseGeneration_; // record this edit as a state change (no in-flight worker remains to supersede)
   lastLocalEditChangedTopLevelStructure_ = false;
   lastLocalTopLevelRangeChange_ = {};
@@ -937,6 +1200,8 @@ bool muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeTyp
 
 void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets,
                                             bool async) {
+  cancelBatch();
+  lastChangeWasBatch_ = false;
   ++parseGeneration_; // any new parse supersedes an in-flight async worker
   if (async) {
     // The unpublished AST, text index and shared source slices have no QObject
@@ -957,32 +1222,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     watcher->setFuture(QtConcurrent::run([text = std::move(text), options, collectPerformanceMetrics,
                                           demoteOffsets]() mutable -> std::shared_ptr<AsyncParseResult> {
       muffin::diag::OpenPerfScope workerScope("open.worker");
-      CmarkGfmParser parser;
-      auto result = std::make_shared<AsyncParseResult>();
-      const auto sharedText = std::make_shared<const QString>(text);
-      result->parsed = parser.parseDocumentShared(sharedText, options, collectPerformanceMetrics);
-      if (!result->parsed.root)
-        result->parsed.root = std::make_unique<MarkdownNode>(BlockType::Document);
-      if (!demoteOffsets.isEmpty())
-        demotePendingMarkersAtOffsets(text, *result->parsed.root, demoteOffsets);
-      {
-        muffin::diag::OpenPerfAccumulator bind("open.bind_shared_text"), relative("open.relative_coordinates");
-        for (const auto& child : result->parsed.root->children()) {
-          if (!child)
-            continue;
-          bind.measure([&] { child->bindSharedInlineText(sharedText); });
-          relative.measure([&] { child->relativizeDescendants(); });
-        }
-      }
-      {
-        muffin::diag::OpenPerfScope scope("open.pending_markers");
-        result->pendingMarkers = collectPendingMarkerOffsets(QStringView(text), *result->parsed.root);
-      }
-      {
-        muffin::diag::OpenPerfScope scope("open.text_index");
-        result->text = PieceTable(std::move(text));
-      }
-      return result;
+      return prepareParse(PieceTable(std::move(text)), options, demoteOffsets, collectPerformanceMetrics);
     }));
     return;
   }
@@ -1051,7 +1291,8 @@ void muffin::DocumentSession::finishAsyncParse(QFutureWatcher<std::shared_ptr<As
   lastLocalTopLevelRangeChange_ = {};
   {
     PerfTimer buildPerf("session.buildDocument");
-    document_.setPreparedMarkdownText(std::move(prepared->text), std::move(result.root));
+    auto retired = document_.installState(std::move(prepared->state));
+    (void)QtConcurrent::run([retired = std::move(retired)] {});
   }
   if (generation != parseGeneration_)
     return; // A documentReset observer started a newer operation.
@@ -1098,13 +1339,15 @@ void muffin::DocumentSession::setParseOptions(ParseOptions options) {
 
 bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(qsizetype sourceStart, qsizetype sourceEnd,
                                                         const QString& replacementText, bool modified,
-                                                        const QVector<LocalEditNodeHint>& nodeHints) {
+                                                        const QVector<LocalEditNodeHint>& nodeHints,
+                                                        std::shared_ptr<LocalParseInput> prepared) {
   PerfTimer perf("session.localParse");
   const PieceTable& oldText = document_.pieceText(); // Phase 2a: read the piece-table, not the QString cache
   const QString removedText = oldText.mid(sourceStart, sourceEnd - sourceStart);
-  TopLevelSlice slice =
-      chooseTopLevelSlice(document_, sourceStart, sourceEnd, isBlankLineStructuralEdit(removedText, replacementText),
-                          replacementText.isEmpty());
+  TopLevelSlice slice = prepared ? prepared->slice
+                                 : chooseTopLevelSlice(document_, sourceStart, sourceEnd,
+                                                       isBlankLineStructuralEdit(removedText, replacementText),
+                                                       replacementText.isEmpty());
   qCDebug(sessionPerf).nospace() << "slice.chosen first=" << slice.first << " count=" << slice.count << " src=["
                                  << slice.sourceStart << "," << slice.sourceEnd << "]";
   if (slice.first < 0 || slice.sourceStart < 0 || slice.sourceStart > sourceStart || slice.sourceEnd < sourceEnd ||
@@ -1127,15 +1370,20 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(qsizetype sourceStart, q
   ParseResult parsedSlice;
   {
     PerfTimer sliceParsePerf("session.local.sliceParse");
-    sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
-    sliceMarkdown += replacementText;
-    sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
-    if (slice.parseEnd > slice.sourceEnd) {
-      sliceMarkdown += oldText.mid(slice.sourceEnd, slice.parseEnd - slice.sourceEnd);
+    if (prepared) {
+      sliceMarkdown = std::move(prepared->markdown);
+      parsedSlice = std::move(prepared->parsed);
+    } else {
+      sliceMarkdown = oldText.mid(slice.sourceStart, sourceStart - slice.sourceStart);
+      sliceMarkdown += replacementText;
+      sliceMarkdown += oldText.mid(sourceEnd, slice.sourceEnd - sourceEnd);
+      if (slice.parseEnd > slice.sourceEnd) {
+        sliceMarkdown += oldText.mid(slice.sourceEnd, slice.parseEnd - slice.sourceEnd);
+      }
+      ParseOptions sliceOptions = parseOptions_;
+      sliceOptions.enableFrontMatter = slice.sourceStart == 0;
+      parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
     }
-    ParseOptions sliceOptions = parseOptions_;
-    sliceOptions.enableFrontMatter = slice.sourceStart == 0;
-    parsedSlice = parser_.parseDocument(QStringView(sliceMarkdown), sliceOptions);
   }
   if (!parsedSlice.root) {
     warnLocalEditSliceRejected("local slice parse produced no root node", sourceStart, sourceEnd,

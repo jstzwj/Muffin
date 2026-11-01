@@ -294,9 +294,11 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
     return;
   QObject::disconnect(replacementConnection_);
   QObject::disconnect(editingConnection_);
+  QObject::disconnect(textConnection_);
   historyController_.reset();
   session_ = session;
   if (session_) {
+    textConnection_ = connect(session_, &DocumentSession::documentTextChanged, this, [this] { syncFromSession(); });
     historyController_ = std::make_unique<EditorController>();
     historyController_->attach(session_, nullptr);
     connect(historyController_.get(), &EditorController::historySelectionRestored, this,
@@ -351,6 +353,7 @@ void VirtualSourceEdit::notifyDocumentChanged() {
 void VirtualSourceEdit::setStandaloneText(QString text) {
   QObject::disconnect(replacementConnection_);
   QObject::disconnect(editingConnection_);
+  QObject::disconnect(textConnection_);
   historyController_.reset();
   session_ = nullptr;
   standalone_ = PieceTable(std::move(text));
@@ -728,6 +731,8 @@ void VirtualSourceEdit::replayHistory(bool undo) {
   else
     historyController_->redo();
   applyingEdit_ = false;
+  if (session_ && session_->isBatchPending())
+    return;
   resetGeometryIndex(false);
   restoreViewportPosition(position);
   ensureCursorVisible();

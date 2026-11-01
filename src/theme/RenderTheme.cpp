@@ -777,6 +777,12 @@ const CssElement* RenderTheme::cssElementForNode(const MarkdownNode& node) const
   return styleTree_->build(node);
 }
 
+CooperativeTask RenderTheme::prepareMarkdownFlowSteps(const MarkdownNode& root) const {
+  if (!styleTree_)
+    styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
+  return styleTree_->prepareFlowSteps(root);
+}
+
 std::shared_ptr<const MarkdownFlow> RenderTheme::markdownFlow(const MarkdownNode& root) const {
   if (!styleTree_)
     styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
@@ -932,10 +938,16 @@ void RenderTheme::releaseInlineStyles(const QSet<NodeId>& topLevelIds) const {
 }
 
 QHash<NodeId, QPair<QString, QString>> RenderTheme::resolveDocumentCounters(const MarkdownDocument& document) const {
-  diag::ScopedPerfProbe perf("theme.documentCounters", themeDetailPerf());
   ThemePerfScope performance(ThemePerfStage::Counters);
+  auto task = resolveDocumentCounterSteps(document);
+  task.resumeFor(-1);
+  return counterText_;
+}
+
+CooperativeTask RenderTheme::resolveDocumentCounterSteps(const MarkdownDocument& document) const {
+  diag::ScopedPerfProbe perf("theme.documentCounters", themeDetailPerf());
   if (counterDocument_ == &document && counterRevision_ == document.revision())
-    return counterText_;
+    co_return;
   const auto& nodes = document.root().children();
   const bool local =
       counterCache_ && counterDocument_ == &document && counterChange_.isValid() &&
@@ -951,13 +963,22 @@ QHash<NodeId, QPair<QString, QString>> RenderTheme::resolveDocumentCounters(cons
       semanticDocument_ == &document && semanticRevision_ == document.revision() ? semanticSeed_ : nullptr;
   semanticSeed_.reset();
   semanticDocument_ = nullptr;
-  counterDocument_ = &document;
-  counterRevision_ = document.revision();
+  // A suspended or abandoned build is never a completed cache entry. Publish
+  // its identity only after all programs and generated text have been resolved.
+  counterDocument_ = nullptr;
+  counterRevision_ = 0;
+  const auto complete = [&] {
+    counterDocument_ = &document;
+    counterRevision_ = document.revision();
+    counterChange_ = {};
+  };
   counterChains_.clear();
   counterFingerprints_.clear();
   counterText_.clear();
-  if (!styleEngine_ || !sourceSheet_)
-    return counterText_;
+  if (!styleEngine_ || !sourceSheet_) {
+    complete();
+    co_return;
+  }
   const auto& features = styleEngine_->selectorFeatures();
   const auto& subjects = features.counterSubjects;
   const bool reuseSemantics = !local && seed && seed->blocks.size() == qsizetype(nodes.size()) &&
@@ -989,11 +1010,13 @@ QHash<NodeId, QPair<QString, QString>> RenderTheme::resolveDocumentCounters(cons
       }
     } else {
       cache.blocks.reserve(nodes.size());
-      for (qsizetype i = 0; i < qsizetype(nodes.size()); ++i)
+      for (qsizetype i = 0; i < qsizetype(nodes.size()); ++i) {
         cache.blocks.append({nodes[size_t(i)]->id(), {}, retainedSemanticFor(i)});
+        co_yield nullptr;
+      }
     }
-    counterChange_ = {};
-    return counterText_;
+    complete();
+    co_return;
   }
   if (!styleTree_)
     styleTree_ = std::make_shared<NodeCssElementBuilder>(hasNthOfType_);
@@ -1149,6 +1172,7 @@ QHash<NodeId, QPair<QString, QString>> RenderTheme::resolveDocumentCounters(cons
           excludedShapes.insert(semantic.constData());
       }
       cache.blocks.append({node.id(), std::move(program), semantic});
+      co_yield nullptr;
     }
   }
   if (refreshContext) {
@@ -1169,13 +1193,15 @@ QHash<NodeId, QPair<QString, QString>> RenderTheme::resolveDocumentCounters(cons
   }
   {
     diag::ScopedPerfProbe evaluatePerf("counter.evaluate", themeDetailPerf());
-    cache.evaluate();
+    auto evaluation = cache.evaluateSteps();
+    while (evaluation.resumeFor(0))
+      co_yield nullptr;
   }
   counterChains_ = cache.chains;
   counterFingerprints_ = cache.fingerprints;
   counterText_ = cache.text;
-  counterChange_ = {};
-  return counterText_;
+  complete();
+  co_return;
 }
 
 void RenderTheme::invalidateInlineViewportStyles() const {

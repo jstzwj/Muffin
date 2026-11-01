@@ -34,6 +34,20 @@ private:
   QElapsedTimer timer_;
 };
 
+void resolveOutline(QVector<muffin::OutlineEntry>& entries, const muffin::NodeIndex& index) {
+  QVector<int> levelStack;
+  for (qsizetype i = 0; i < entries.size(); ++i) {
+    auto& entry = entries[i];
+    const int level = qBound(1, entry.level, 6);
+    while (levelStack.size() >= level)
+      levelStack.removeLast();
+    entry.parentIndex = levelStack.isEmpty() ? -1 : levelStack.last();
+    if (const auto* heading = index.find(entry.nodeId))
+      entry.sourceRange = heading->sourceRange();
+    levelStack.push_back(static_cast<int>(i));
+  }
+}
+
 } // namespace
 
 namespace muffin {
@@ -62,6 +76,46 @@ const NodeIndex& MarkdownDocument::index() const {
 
 const LineStartOffsetCache& MarkdownDocument::lineOffsets() const {
   return lineOffsets_;
+}
+
+std::unique_ptr<MarkdownDocument::PreparedState> MarkdownDocument::prepareState(PieceTable text,
+                                                                                std::unique_ptr<MarkdownNode> root) {
+  auto state = std::make_unique<PreparedState>();
+  state->text = std::move(text);
+  state->root = root ? std::move(root) : std::make_unique<MarkdownNode>(BlockType::Document);
+  state->root->sourcePositionIndex_ = &state->positions;
+  QVector<quint8> kinds;
+  for (const auto& child : state->root->children())
+    kinds.append(child->siblingKind());
+  const auto tokens = state->positions.reset(kinds);
+  for (qsizetype i = 0; i < kinds.size(); ++i) {
+    auto& child = state->root->children()[size_t(i)];
+    child->sourcePositionToken_ = tokens[i];
+    state->outline += buildOutlineFragment(*child);
+  }
+  state->index.rebuild(*state->root);
+  resolveOutline(state->outline, state->index);
+  return state;
+}
+
+std::unique_ptr<MarkdownDocument::PreparedState> MarkdownDocument::installState(std::unique_ptr<PreparedState> state,
+                                                                                bool publish) {
+  using std::swap;
+  swap(text_, state->text);
+  swap(root_, state->root);
+  swap(index_, state->index);
+  swap(sourcePositions_, state->positions);
+  swap(outlineEntries_, state->outline);
+  root_->sourcePositionIndex_ = &sourcePositions_;
+  if (state->root)
+    state->root->sourcePositionIndex_ = &state->positions;
+  lineOffsets_.bind(text_);
+  ++outlineRevision_;
+  ++revision_;
+  resolvedOutlineRevision_ = revision_;
+  if (publish)
+    emit documentReset();
+  return state;
 }
 
 void MarkdownDocument::setMarkdownText(QString text, std::unique_ptr<MarkdownNode> root) {
@@ -146,21 +200,14 @@ void MarkdownDocument::shiftTopLevelSuffix(qsizetype first, qsizetype byteDelta,
 }
 
 QVector<OutlineEntry> MarkdownDocument::outline() const {
-  QVector<OutlineEntry> result = outlineEntries_;
-  QVector<int> levelStack;
-  for (qsizetype i = 0; i < result.size(); ++i) {
-    OutlineEntry& entry = result[i];
-    const int level = qBound(1, entry.level, 6);
-    while (levelStack.size() >= level) {
-      levelStack.removeLast();
-    }
-    entry.parentIndex = levelStack.isEmpty() ? -1 : levelStack.last();
-    if (const MarkdownNode* heading = node(entry.nodeId)) {
-      entry.sourceRange = heading->sourceRange();
-    }
-    levelStack.push_back(static_cast<int>(i));
+  // Prepared generations resolve this on the worker. Readers share the final
+  // vector; local edits invalidate by document revision, including range-only
+  // changes that intentionally leave outlineRevision_ unchanged.
+  if (resolvedOutlineRevision_ != revision_) {
+    resolveOutline(outlineEntries_, index_);
+    resolvedOutlineRevision_ = revision_;
   }
-  return result;
+  return outlineEntries_;
 }
 
 void MarkdownDocument::bindSourcePositionSlots() {

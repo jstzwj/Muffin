@@ -24,6 +24,8 @@ struct LayoutPositionToken {
 class LayoutPositionIndex {
 public:
   LayoutPositionIndex() = default;
+  LayoutPositionIndex(LayoutPositionIndex&&) noexcept = default;
+  LayoutPositionIndex& operator=(LayoutPositionIndex&&) noexcept = default;
   LayoutPositionIndex(const LayoutPositionIndex&) = delete;
   LayoutPositionIndex& operator=(const LayoutPositionIndex&) = delete;
 

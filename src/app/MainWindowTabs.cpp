@@ -33,6 +33,7 @@
 #include <QVariantMap>
 
 #include <cmath>
+#include <utility>
 
 namespace {
 
@@ -444,8 +445,7 @@ void muffin::MainWindow::activateTab(int index) {
   }
   sourceModeButton_->setChecked(tab_->backend->isSourceMode());
   if (tab_->renderViewDirty && !tab_->backend->isSourceMode() && !tab_->session.isOpenInProgress()) {
-    tab_->renderView->setDocument(tab_->session.document(), tab_->session.filePath());
-    tab_->renderViewDirty = false;
+    tab_->ensureRenderViewCurrent();
   }
   tab_->renderView->refreshPendingResources();
   updateTitle();
@@ -804,10 +804,11 @@ void muffin::MainWindow::restoreTabViewState(DocumentTab* document) {
     document->editor->setSelection(anchor, focus);
     document->editor->restoreViewportPosition(viewport);
   } else {
-    if (document->renderViewDirty) {
-      document->renderView->setDocument(document->session.document(), document->session.filePath());
-      document->renderViewDirty = false;
-    }
+    document->ensureRenderViewCurrent();
+    // Literal editing modes need a real hit, so retain the whole restoration
+    // request until the prepared layout can resolve the target accurately.
+    if (document->renderView->isLayoutPending())
+      return;
     if (state.value(QStringLiteral("hasCursor")).toBool()) {
       SelectionRange range{document->editorController.cursorForSourceOffset(anchor),
                            document->editorController.cursorForSourceOffset(focus)};

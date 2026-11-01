@@ -203,6 +203,7 @@ private:
 
   QMetaObject::Connection replacementConnection_;
   QMetaObject::Connection editingConnection_;
+  QMetaObject::Connection textConnection_;
   DocumentSession* session_ = nullptr;
   std::unique_ptr<EditorController> historyController_;
   PieceTable standalone_;

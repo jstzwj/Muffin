@@ -39,6 +39,11 @@ DocumentCounterStats DocumentCounterCache::stats() const {
   return result;
 }
 void DocumentCounterCache::evaluate() {
+  auto task = evaluateSteps();
+  task.resumeFor(-1);
+}
+
+CooperativeTask DocumentCounterCache::evaluateSteps() {
   struct Instance {
     int depth, value;
   };
@@ -137,10 +142,10 @@ void DocumentCounterCache::evaluate() {
     }
   };
   QHash<NodeId, Memo> next;
-  std::function<void(const CounterProgram&, State&, int)> visit;
-  const auto block = [&](const Block& entry, State& state, int depth) {
+  std::function<CooperativeTask(const CounterProgram&, State&, int)> visit;
+  const auto block = [&](const Block& entry, State& state, int depth) -> CooperativeTask {
     if (!entry.program)
-      return;
+      co_return;
     const auto input = snapshot(state);
     const auto old = memo_.constFind(entry.id);
     if (old != memo_.cend() && old->program == entry.program && old->input == input) {
@@ -149,18 +154,20 @@ void DocumentCounterCache::evaluate() {
       fingerprints.insert(old->fingerprints);
       text.insert(old->text);
       next.insert(entry.id, old.value());
-      return;
+      co_return;
     }
     Memo memo;
     memo.program = entry.program;
     memo.input = input;
     current = &memo;
-    visit(*entry.program, state, depth);
+    auto task = visit(*entry.program, state, depth);
+    while (task.resumeFor(0))
+      co_yield nullptr;
     current = nullptr;
     memo.output = snapshot(state);
     next.insert(entry.id, std::move(memo));
   };
-  visit = [&](const CounterProgram& program, State& state, int depth) {
+  visit = [&](const CounterProgram& program, State& state, int depth) -> CooperativeTask {
     if (!program.key.endsWith("/before") && !program.key.endsWith("/after"))
       countThemePerformanceWork(ThemePerfStage::Counters);
     apply(program, state, depth);
@@ -170,26 +177,41 @@ void DocumentCounterCache::evaluate() {
       for (auto it = state.cbegin(); it != state.cend(); ++it)
         children[it.key()] = it.value();
     };
-    if (program.before)
-      visit(*program.before, children, depth + 1);
+    if (program.before) {
+      auto task = visit(*program.before, children, depth + 1);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    }
     if (program.documentRoot) {
       for (const auto& entry : blocks) {
         inherit();
-        block(entry, children, depth + 1);
+        auto task = block(entry, children, depth + 1);
+        while (task.resumeFor(0))
+          co_yield nullptr;
+        co_yield nullptr;
       }
     } else {
       for (const auto& child : program.children) {
         inherit();
-        visit(*child, children, depth + 1);
+        auto task = visit(*child, children, depth + 1);
+        while (task.resumeFor(0))
+          co_yield nullptr;
+        co_yield nullptr;
       }
     }
     inherit();
-    if (program.after)
-      visit(*program.after, children, depth + 1);
+    if (program.after) {
+      auto task = visit(*program.after, children, depth + 1);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    }
   };
   State state;
-  if (host)
-    visit(*host, state, 0);
+  if (host) {
+    auto task = visit(*host, state, 0);
+    while (task.resumeFor(0))
+      co_yield nullptr;
+  }
   memo_ = std::move(next);
 }
 } // namespace muffin

@@ -13,6 +13,7 @@
 #include <QElapsedTimer>
 #include "render/TextLayout.h"
 #include <QLoggingCategory>
+#include <QtConcurrentRun>
 
 #include <algorithm>
 #include <cmath>
@@ -293,6 +294,13 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth,
                              SelectionRange selection, QString documentPath, BuildPolicy policy) {
   ThemePerfScope performance(ThemePerfStage::Layout);
+  auto task = rebuildSteps(document, theme, viewportWidth, selection, std::move(documentPath), policy);
+  task.resumeFor(-1);
+}
+
+CooperativeTask DocumentLayout::rebuildSteps(const MarkdownDocument& document, const RenderTheme& theme,
+                                             qreal viewportWidth, SelectionRange selection, QString documentPath,
+                                             BuildPolicy policy) {
   QElapsedTimer totalTimer;
   const bool collectPerf = layoutPerf().isDebugEnabled();
   if (collectPerf) {
@@ -324,7 +332,11 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
     theme.invalidateDocumentStyles();
   }
   styleDocumentRevision_ = document.revision();
+  auto flowTask = theme.prepareMarkdownFlowSteps(document.root());
+  while (flowTask.resumeFor(0))
+    co_yield nullptr;
   flow_ = theme.markdownFlow(document.root());
+  co_yield nullptr;
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
@@ -362,14 +374,27 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   pageWidth_ = metrics.contentWidth;
 
   configureBuilder(selection, reuseFormatting);
+  co_yield nullptr;
   // Full rebuild ⇒ recompute every heading's counter text from a clean document-order
   // walk. The build loop below then reads headingCounterText_ by NodeId.
   {
     diag::ScopedPerfProbe perf("layout.counters", layoutDetailPerf());
+    auto counters = theme.resolveDocumentCounterSteps(document);
+    for (;;) {
+      bool pending;
+      {
+        ThemePerfScope performance(ThemePerfStage::Counters);
+        pending = counters.resumeFor(0);
+      }
+      if (!pending)
+        break;
+      co_yield nullptr;
+    }
     recomputeHeadingCounters(document, theme);
   }
 
   const auto children = flow_->children(document.root());
+  co_yield nullptr;
   slots_.reserve(children.size());
   size_t slotCursor = 0;
   const auto storeSlot = [&](BlockSlot slot) {
@@ -397,8 +422,10 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
     const qreal zoom = theme.zoomPercent() / 100.0;
     container.layout.scaleLengths(zoom);
     std::vector<CssFormattingItem> items;
-    for (const auto& child : children)
+    for (const auto& child : children) {
       items.push_back(builder_.formattingItem(*child, theme, pageWidth_));
+      co_yield nullptr;
+    }
     const auto usedRoot = theme.elementBoxStyle(QStringLiteral("#write"), nullptr, pageOuterWidth_);
     const auto rootInset = LayoutBox::insets(usedRoot);
     container.box = usedRoot;
@@ -431,6 +458,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
       indexLayoutBlock(*block);
       slot.detail = std::move(block);
       storeSlot(std::move(slot));
+      co_yield nullptr;
     }
   } else if (policy == BuildPolicy::Lazy) {
     diag::ScopedPerfProbe perf("layout.skeleton", layoutDetailPerf());
@@ -453,6 +481,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
       cursorY += est.height;
       previous = child;
       storeSlot(std::move(slot));
+      co_yield nullptr;
     }
     if (collectPerf) {
       estimateMs = nsToMs(estTimer.nsecsElapsed());
@@ -485,6 +514,7 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
       indexLayoutBlock(*block);
       slot.detail = std::move(block);
       storeSlot(std::move(slot));
+      co_yield nullptr;
     }
   }
 
@@ -498,15 +528,30 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
   {
     diag::ScopedPerfProbe perf("layout.positions", layoutDetailPerf());
     if (!reuseIndex) {
-      const QVector<LayoutPositionToken*> positionTokens = positionIndex_.reset(static_cast<qsizetype>(slots_.size()));
-      for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i)
-        slots_.at(static_cast<size_t>(i)).positionToken = positionTokens.at(i);
+      positionIndex_.reset(0);
+      for (auto& slot : slots_) {
+        auto token = positionIndex_.makeToken();
+        slot.positionToken = token.get();
+        positionIndex_.replace(positionIndex_.size(), 0, std::move(token));
+        co_yield nullptr;
+      }
     }
   }
   {
     diag::ScopedPerfProbe perf("layout.documentIndex", layoutDetailPerf());
-    if (!reuseIndex)
-      buildNestedIndex(document);
+    if (!reuseIndex) {
+      topLevelIndex_.clear();
+      nestedToTopLevel_.clear();
+      nestedIdsByTopLevel_.clear();
+      for (qsizetype i = 0; i < qsizetype(children.size()); ++i) {
+        const auto* child = children[size_t(i)];
+        topLevelIndex_.insert(child->id(), slots_[size_t(i)].positionToken);
+        auto nested = collectNestedSteps(*child, child->id());
+        while (nested.resumeFor(0))
+          co_yield nullptr;
+        co_yield nullptr;
+      }
+    }
     indexDocumentRoot_ = document.root().id();
     indexDocumentRevision_ = document.revision();
   }
@@ -545,6 +590,25 @@ void DocumentLayout::rebuild(const MarkdownDocument& document, const RenderTheme
 
 void DocumentLayout::setEditingHtmlBlock(NodeId id) {
   editingHtmlBlockId_ = id;
+}
+
+bool DocumentLayout::releaseDetails(int budgetMs) {
+  QElapsedTimer timer;
+  timer.start();
+  while (!slots_.empty()) {
+    slots_.pop_back();
+    if (timer.elapsed() >= budgetMs)
+      return true;
+  }
+  // All Qt layout/paint owners have now been released on their owning thread.
+  // The remaining document-sized indices contain only values and non-owning
+  // node/token pointers. Reclaim them off-thread too; a final synchronous hash
+  // or token-tree destructor would defeat the bounded detail release above.
+  (void)QtConcurrent::run([positions = std::move(positionIndex_), top = std::move(topLevelIndex_),
+                           nested = std::move(nestedToTopLevel_), nestedIds = std::move(nestedIdsByTopLevel_),
+                           counters = std::move(headingCounterText_), toc = std::move(tocEntries_),
+                           index = std::move(layoutIndex_), flow = std::move(flow_), blocks = std::move(slots_)] {});
+  return false;
 }
 
 void DocumentLayout::setCodeFenceScroll(CodeFenceScrollController* controller) {
@@ -1523,6 +1587,11 @@ void DocumentLayout::buildNestedIndex(const MarkdownDocument& document) {
 }
 
 void DocumentLayout::collectNestedToTopLevel(const MarkdownNode& node, NodeId topLevelId) {
+  auto task = collectNestedSteps(node, topLevelId);
+  task.resumeFor(-1);
+}
+
+CooperativeTask DocumentLayout::collectNestedSteps(const MarkdownNode& node, NodeId topLevelId) {
   nestedToTopLevel_.insert(node.id(), topLevelId);
   // Flat paragraphs/headings dominate large documents. Do not allocate one QVector/QHash entry
   // per leaf top-level block; the top id is removed directly and only real descendants need a list.
@@ -1530,13 +1599,23 @@ void DocumentLayout::collectNestedToTopLevel(const MarkdownNode& node, NodeId to
     nestedIdsByTopLevel_[topLevelId].push_back(node.id());
   }
   if (flow_ && !flow_->empty()) {
-    for (const auto* child : flow_->children(node))
-      collectNestedToTopLevel(*child, topLevelId);
-    if (const auto* container = flow_->container(node))
-      collectNestedToTopLevel(*container->closing, topLevelId);
+    for (const auto* child : flow_->children(node)) {
+      auto task = collectNestedSteps(*child, topLevelId);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    }
+    if (const auto* container = flow_->container(node)) {
+      auto task = collectNestedSteps(*container->closing, topLevelId);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    }
   } else
-    for (const auto& child : node.children())
-      collectNestedToTopLevel(*child, topLevelId);
+    for (const auto& child : node.children()) {
+      auto task = collectNestedSteps(*child, topLevelId);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    }
+  co_yield nullptr;
 }
 
 void DocumentLayout::removeNestedIndexForTopLevel(NodeId topLevelId) {

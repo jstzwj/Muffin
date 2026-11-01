@@ -27,6 +27,7 @@ void muffin::FindBarWidget::setupUi() {
   connect(findEdit_, &QLineEdit::textChanged, this, [this](const QString& text) {
     Q_UNUSED(text)
     setResultInfo(0, 0);
+    emit searchParametersChanged();
   });
   // QLineEdit propagates Return/Enter to its parent. Handle it once in
   // keyPressEvent, including Shift for backward search.
@@ -41,8 +42,14 @@ void muffin::FindBarWidget::setupUi() {
 
   regexCheck_ = new QCheckBox(this);
   caseCheck_ = new QCheckBox(this);
-  connect(regexCheck_, &QCheckBox::toggled, this, [this] { setResultInfo(0, 0); });
-  connect(caseCheck_, &QCheckBox::toggled, this, [this] { setResultInfo(0, 0); });
+  connect(regexCheck_, &QCheckBox::toggled, this, [this] {
+    setResultInfo(0, 0);
+    emit searchParametersChanged();
+  });
+  connect(caseCheck_, &QCheckBox::toggled, this, [this] {
+    setResultInfo(0, 0);
+    emit searchParametersChanged();
+  });
 
   resultLabel_ = new QLabel(this);
   resultLabel_->setMinimumWidth(60);
@@ -68,6 +75,7 @@ void muffin::FindBarWidget::setupUi() {
   replaceLayout->setSpacing(4);
 
   replaceEdit_ = new QLineEdit(replaceRow_);
+  connect(replaceEdit_, &QLineEdit::textChanged, this, &FindBarWidget::searchParametersChanged);
   replaceEdit_->setMinimumWidth(180);
 
   replaceButton_ = new QPushButton(replaceRow_);

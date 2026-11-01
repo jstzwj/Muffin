@@ -3,6 +3,8 @@
 #include "document/TextSelection.h"
 #include "document/NodeId.h"
 #include "document/MarkdownNode.h"
+#include "document/PieceTable.h"
+#include "document/ViewportPosition.h"
 
 #include <QString>
 #include <QVector>
@@ -47,6 +49,17 @@ struct SourceTextCommand {
   qsizetype beforeCursor = -1;
   qsizetype afterAnchor = -1;
   qsizetype afterCursor = -1;
+};
+
+// A batch owns text generations, never ASTs or GUI resources. QString backing
+// stores in PieceTable are shared; copying a transaction copies only this owner.
+struct BatchTextCommand {
+  PieceTable before;
+  PieceTable after;
+  QVector<qsizetype> beforeMarkers, afterMarkers;
+  qsizetype beforeAnchor = 0, beforeCursor = 0;
+  qsizetype afterAnchor = 0, afterCursor = 0;
+  ViewportPosition beforeViewport, afterViewport;
 };
 
 enum class NodeAttribute {
@@ -189,7 +202,8 @@ public:
     ReplaceNodeCommand,
     RemoveNodeCommand,
     SetNodeAttrCommand,
-    SourceTextCommand
+    SourceTextCommand,
+    BatchTextCommand
   };
 
   EditTransaction() = default;
@@ -200,6 +214,7 @@ public:
   EditTransaction(Kind kind, QString label, DocumentSnapshot before, DocumentSnapshot after);
   EditTransaction(Kind kind, QString label, TextDeltaCommand command);
   EditTransaction(Kind kind, QString label, SourceTextCommand command);
+  EditTransaction(QString label, std::shared_ptr<const BatchTextCommand> command);
   EditTransaction(Kind kind, QString label, TableCommand command);
   EditTransaction(Kind kind, QString label, InsertNodeCommand command);
   EditTransaction(Kind kind, QString label, ReplaceNodeCommand command);
@@ -217,6 +232,9 @@ public:
   bool isRemoveNodeCommand() const;
   bool isSetNodeAttrCommand() const;
   bool isSourceTextCommand() const;
+  bool isBatchTextCommand() const;
+  const std::shared_ptr<const BatchTextCommand>& batchTextCommand() const;
+  qint64 retainedTextBytes() const;
   const SourceTextCommand& sourceTextCommand() const;
   void updateSourceSelection(qsizetype anchor, qsizetype cursor);
   const DocumentSnapshot& before() const;
@@ -257,7 +275,7 @@ private:
   // active payload itself), so the "forgot to copy a field" drift the old hand-written copy
   // constructor invited is structurally impossible.
   std::variant<std::monostate, SnapshotCommand, TextDeltaCommand, TableCommand, InsertNodeCommand, ReplaceNodeCommand,
-               RemoveNodeCommand, SetNodeAttrCommand, SourceTextCommand>
+               RemoveNodeCommand, SetNodeAttrCommand, SourceTextCommand, std::shared_ptr<const BatchTextCommand>>
       storage_;
 };
 

@@ -41,7 +41,8 @@ class MUFFIN_UI_EXPORT EditorView final : public QAbstractScrollArea {
 public:
   explicit EditorView(QWidget* parent = nullptr);
 
-  void setDocument(const MarkdownDocument& document, QString documentPath = {});
+  void setDocument(const MarkdownDocument& document, QString documentPath = {}, bool cooperative = false);
+  bool isLayoutPending() const { return bool(layoutBuild_); }
   // True while an async open parse is in flight: paintEvent shows a centered loading hint instead of
   // the (stale/empty) page.
   void setLoading(bool loading);
@@ -122,6 +123,8 @@ public:
   QRectF effectiveCursorRect() const;
 
 signals:
+  void layoutBusyChanged(bool busy);
+  void layoutReady();
   void linkActivated(QString href);
   void historyNavigationRequested(bool forward);
   void blockClicked(HitTestResult result);
@@ -165,6 +168,14 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  void advanceLayoutBuild(quint64 generation, quint64 revision);
+  void retireLayout(std::unique_ptr<DocumentLayout> layout);
+  std::unique_ptr<DocumentLayout> layoutBuild_;
+  std::optional<RenderTheme> layoutBuildTheme_;
+  CooperativeTask layoutBuildTask_;
+  quint64 layoutBuildGeneration_ = 0;
+  quint64 layoutBuildRevision_ = 0;
+  std::optional<QPair<ViewportPosition, CursorPosition>> layoutReadingPosition_;
   void syncViewportBackground();
   void retranslateAccessibility();
   struct HeadingBadge {

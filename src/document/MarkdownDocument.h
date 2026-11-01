@@ -15,6 +15,20 @@ class MUFFIN_CORE_EXPORT MarkdownDocument : public QObject {
   Q_OBJECT
 
 public:
+  // Plain data with stable node/token addresses, prepared off the GUI thread.
+  // No QObject, font, image or layout resource is transferred between threads.
+  struct PreparedState {
+    PieceTable text;
+    std::unique_ptr<MarkdownNode> root;
+    NodeIndex index;
+    SourcePositionIndex positions;
+    QVector<OutlineEntry> outline;
+  };
+  static std::unique_ptr<PreparedState> prepareState(PieceTable text, std::unique_ptr<MarkdownNode> root);
+  // Returns the retired generation. Its pure data may be reclaimed on a worker
+  // after synchronous document observers have detached from it.
+  std::unique_ptr<PreparedState> installState(std::unique_ptr<PreparedState> state, bool publish = true);
+  void publishPreparedState() { emit documentReset(); }
   explicit MarkdownDocument(QObject* parent = nullptr);
 
   MarkdownNode& root();
@@ -63,7 +77,8 @@ private:
   std::unique_ptr<MarkdownNode> root_;
   NodeIndex index_;
   SourcePositionIndex sourcePositions_;
-  QVector<OutlineEntry> outlineEntries_;
+  mutable QVector<OutlineEntry> outlineEntries_;
+  mutable quint64 resolvedOutlineRevision_ = quint64(-1);
   quint64 outlineRevision_ = 0;
   quint64 revision_ = 0;
   bool modified_ = false;

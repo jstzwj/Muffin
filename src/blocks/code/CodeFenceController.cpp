@@ -58,6 +58,10 @@ bool CodeFenceController::exitEditMode() {
   return literal_.exitEditMode();
 }
 
+void CodeFenceController::rebindAfterSourceReplacement(NodeId blockId) {
+  literal_.rebindAfterSourceReplacement(blockId);
+}
+
 bool CodeFenceController::insertText(QString text) {
   return literal_.insertText(std::move(text));
 }

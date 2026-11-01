@@ -35,6 +35,10 @@ public:
   void markClean();
   void invalidateClean();
   bool isClean() const;
+  quint64 stateId() const { return currentState_; }
+  const EditTransaction* peekUndo() const { return canUndo() ? &undo_.last().transaction : nullptr; }
+  const EditTransaction* peekRedo() const { return canRedo() ? &redo_.last().transaction : nullptr; }
+  qint64 retainedTextBytes() const;
   void updateSourceSelection(qsizetype anchor, qsizetype cursor);
 
 signals:
@@ -44,6 +48,7 @@ private:
   bool tryMergeWithLast(EditTransaction& next);
 
   static constexpr int kMaxUndoDepth = 100;
+  static constexpr qint64 kTextBudget = 256LL * 1024 * 1024;
   static constexpr qint64 kMergeIntervalMs = 500;
 
   struct Entry {

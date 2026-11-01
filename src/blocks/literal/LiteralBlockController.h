@@ -44,6 +44,9 @@ public:
   bool isEditing() const;
   bool enterEditMode();
   bool exitEditMode();
+  // A new source generation invalidates the old ID/type index. Preserve an active
+  // mode only on the mapped caret's block; never flush old transient text into it.
+  void rebindAfterSourceReplacement(NodeId blockId);
 
   bool insertText(QString text);
   bool deleteBackward();

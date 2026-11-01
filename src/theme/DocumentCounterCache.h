@@ -1,4 +1,5 @@
 #pragma once
+#include "document/CooperativeTask.h"
 
 #include <QHash>
 #include <array>
@@ -49,6 +50,7 @@ public:
   qsizetype uniqueSemanticCount() const { return semanticReferences_.size(); }
   DocumentCounterStats stats() const;
   void evaluate();
+  CooperativeTask evaluateSteps();
   QHash<QString, QHash<QString, QVector<int>>> chains;
   QHash<NodeId, quint64> fingerprints;
   QHash<NodeId, QPair<QString, QString>> text;

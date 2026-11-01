@@ -58,6 +58,7 @@ public:
   bool rebindBlocks(const QHash<NodeId, const MarkdownNode*>& replacements);
   bool hasInlineViewportUnits() const { return inlineViewportUnits_; }
   std::shared_ptr<const MarkdownFlow> flowFor(const MarkdownNode& node) const;
+  CooperativeTask prepareFlowSteps(const MarkdownNode& root) const;
 
   const CssElement* previousSibling(const CssElement& element) const override;
   const CssElement* nextSibling(const CssElement& element) const override;

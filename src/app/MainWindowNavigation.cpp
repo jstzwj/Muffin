@@ -75,9 +75,10 @@ void muffin::MainWindow::applyLinkNavigation(DocumentTab* document) {
     return;
   const auto request = *pendingNavigation_;
   if (document->renderViewDirty && !document->backend->isSourceMode()) {
-    document->renderView->setDocument(document->session.document(), document->session.filePath());
-    document->renderViewDirty = false;
+    document->ensureRenderViewCurrent();
   }
+  if (!document->backend->isSourceMode() && document->renderView->isLayoutPending())
+    return;
   if (request.restore) {
     const bool source = request.restore->view.value(QStringLiteral("sourceMode")).toBool();
     if (source != document->backend->isSourceMode()) {

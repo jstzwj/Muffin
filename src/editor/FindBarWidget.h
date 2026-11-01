@@ -29,6 +29,7 @@ public:
   void setErrorText(const QString& error);
 
 signals:
+  void searchParametersChanged();
   void findRequested(QString text, bool forward, bool regularExpression, bool caseSensitive);
   void findNextRequested();
   void findPreviousRequested();

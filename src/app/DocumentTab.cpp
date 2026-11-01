@@ -9,6 +9,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <utility>
 
 muffin::DocumentTab::DocumentTab(QWidget* parent)
     : QWidget(parent), renderCommands(editorController, [this] { return backend && backend->isSourceMode(); }) {
@@ -56,4 +57,10 @@ muffin::DocumentTab::~DocumentTab() {
   delete findBar;
   delete viewStack;
   delete contentStack;
+}
+
+void muffin::DocumentTab::ensureRenderViewCurrent() {
+  if (!std::exchange(renderViewDirty, false))
+    return;
+  renderView->setDocument(session.document(), session.filePath(), std::exchange(renderViewBatchDirty, false));
 }

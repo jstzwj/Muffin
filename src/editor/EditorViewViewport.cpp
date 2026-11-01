@@ -35,7 +35,7 @@ struct PerfTimer : diag::ScopedPerfProbe {
 // ─── coordinate / hit-test queries ───────────────────────────────────────────
 
 QRectF EditorView::nodeRect(NodeId id) const {
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return {};
   }
   const BlockLayout* block = layout_->block(id, theme_);
@@ -43,7 +43,7 @@ QRectF EditorView::nodeRect(NodeId id) const {
 }
 
 void EditorView::scrollToNode(NodeId id) {
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return;
   }
   // One-shot promote the target block so its top Y is accurate, then scroll to it. Blocks above
@@ -62,6 +62,8 @@ void EditorView::scrollToNode(NodeId id) {
 }
 
 ViewportPosition EditorView::viewportPosition() const {
+  if (isLayoutPending())
+    return layoutReadingPosition_ ? layoutReadingPosition_->first : ViewportPosition{};
   ViewportPosition position;
   position.atStart = qFuzzyIsNull(scrollY());
   const auto anchor = captureViewportAnchor();
@@ -84,6 +86,10 @@ ViewportPosition EditorView::viewportPosition() const {
 }
 
 void EditorView::restoreViewportPosition(const ViewportPosition& position, CursorPosition textPosition) {
+  if (isLayoutPending()) {
+    layoutReadingPosition_ = qMakePair(position, textPosition);
+    return;
+  }
   if (!layout_ || !document_ || position.sourceOffset < 0)
     return;
   stopScrollAnimation();
@@ -282,21 +288,21 @@ void EditorView::scrollToCursorCenteredAnimated() {
 }
 
 const BlockLayout* EditorView::blockAtViewportPos(QPointF viewportPos) const {
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return nullptr;
   }
   return layout_->blockAt(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
 }
 
 const BlockLayout* EditorView::blockLayoutForNode(NodeId id) const {
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return nullptr;
   }
   return layout_->block(id, theme_);
 }
 
 HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return {};
   }
   return editor_geometry::hitForCursorPosition(*layout_, theme_, position);
@@ -304,7 +310,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
 
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   PerfTimer perf("view.hitTest");
-  if (!layout_) {
+  if (!layout_ || isLayoutPending()) {
     return {};
   }
   const QPointF documentPos(viewportPos.x(), viewportPos.y() + scrollY());
@@ -353,7 +359,7 @@ void EditorView::scrollContentsBy(int dx, int dy) {
 }
 
 void EditorView::ensureVisibleBuilt() {
-  if (!layout_ || !document_ || inScrollBuild_ || viewport()->height() <= 0) {
+  if (isLayoutPending() || !layout_ || !document_ || inScrollBuild_ || viewport()->height() <= 0) {
     return;
   }
   const QRectF vis = documentViewportRect();

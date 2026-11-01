@@ -245,6 +245,30 @@ EditTransaction::EditTransaction(Kind kind, QString label, SourceTextCommand com
     : kind_(kind), label_(std::move(label)), storage_(std::move(command)) {
 }
 
+EditTransaction::EditTransaction(QString label, std::shared_ptr<const BatchTextCommand> command)
+    : label_(std::move(label)), storage_(std::move(command)) {
+}
+
+bool EditTransaction::isBatchTextCommand() const {
+  return std::holds_alternative<std::shared_ptr<const BatchTextCommand>>(storage_);
+}
+const std::shared_ptr<const BatchTextCommand>& EditTransaction::batchTextCommand() const {
+  return std::get<std::shared_ptr<const BatchTextCommand>>(storage_);
+}
+qint64 EditTransaction::retainedTextBytes() const {
+  if (isBatchTextCommand() && batchTextCommand())
+    return batchTextCommand()->before.backingStoreBytes() + batchTextCommand()->after.backingStoreBytes();
+  if (isSnapshot())
+    return qint64(before().markdownText.size() + after().markdownText.size()) * sizeof(QChar);
+  if (isSourceTextCommand())
+    return qint64(sourceTextCommand().delta.removedText.size() + sourceTextCommand().delta.insertedText.size()) *
+           sizeof(QChar);
+  if (isTextDeltaCommand())
+    return qint64(textDeltaCommand().delta.removedText.size() + textDeltaCommand().delta.insertedText.size()) *
+           sizeof(QChar);
+  return 0;
+}
+
 bool EditTransaction::isSourceTextCommand() const {
   return std::holds_alternative<SourceTextCommand>(storage_);
 }
@@ -286,6 +310,8 @@ EditTransaction::Storage EditTransaction::storage() const {
           return Storage::SetNodeAttrCommand;
         else if constexpr (std::is_same_v<T, SourceTextCommand>)
           return Storage::SourceTextCommand;
+        else if constexpr (std::is_same_v<T, std::shared_ptr<const BatchTextCommand>>)
+          return Storage::BatchTextCommand;
       },
       storage_);
 }
@@ -351,6 +377,8 @@ const SetNodeAttrCommand& EditTransaction::setNodeAttrCommand() const {
 }
 
 bool EditTransaction::isValid() const {
+  if (isBatchTextCommand())
+    return bool(batchTextCommand());
   if (isSourceTextCommand())
     return sourceTextCommand().delta.isValid();
   if (isSnapshot()) {

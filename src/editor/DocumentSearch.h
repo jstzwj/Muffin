@@ -27,6 +27,7 @@ struct SearchResults {
   QVector<SearchMatch> matches;
   qsizetype totalMatches = 0;
   bool canceled = false;
+  bool changed = false;
   qsizetype selectedIndex = -1;
   SearchMatch selectedMatch{-1, 0, {}};
 };
@@ -45,7 +46,8 @@ public:
   static void selectMatch(SearchResults& results, qsizetype offset, bool forward, qsizetype excludeStart = -1);
   static QString expandReplacement(const QString& replacement, const SearchMatch& match, bool regularExpression);
   static SearchResults replaceAll(const QString& text, const QString& pattern, const QString& replacement,
-                                  SearchOptions options, QString* output, Cancellation cancel = {});
+                                  SearchOptions options, QString* output, Cancellation cancel = {},
+                                  QVector<qsizetype>* sourcePositions = nullptr);
 
 private:
   DocumentSearch() = delete;

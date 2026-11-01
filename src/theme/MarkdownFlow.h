@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/MarkdownNode.h"
+#include "document/CooperativeTask.h"
 #include "theme/CssComputedStyleEngine.h"
 
 #include <QHash>
@@ -19,6 +20,8 @@ public:
     std::vector<const MarkdownNode*> children;
   };
   explicit MarkdownFlow(const MarkdownNode& root);
+  MarkdownFlow() = default;
+  CooperativeTask rebuildSteps(const MarkdownNode& root);
   bool empty() const { return containers_.isEmpty(); }
   const Container* container(const MarkdownNode& node) const;
   const MarkdownNode* parent(const MarkdownNode& node) const;
@@ -30,7 +33,7 @@ public:
   bool closingBoundary(const MarkdownNode& node) const { return closing_.contains(node.id()); }
 
 private:
-  void scan(const MarkdownNode& parent);
+  CooperativeTask scanSteps(const MarkdownNode& parent);
   QHash<NodeId, Container> containers_;
   struct Relationship {
     const MarkdownNode *parent = nullptr, *previous = nullptr, *next = nullptr;

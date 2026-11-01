@@ -937,6 +937,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/MarkdownDocument.h
   src/document/SourcePositionIndex.cpp
   src/document/SourcePositionIndex.h
+  src/document/CooperativeTask.h
+  src/document/ViewportPosition.h
   src/document/OutlineBuilder.cpp
   src/document/OutlineBuilder.h
   src/parser/MarkdownParser.h

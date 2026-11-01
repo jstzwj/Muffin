@@ -16,6 +16,8 @@
 
 #include <memory>
 #include <utility>
+#include <atomic>
+#include <functional>
 
 namespace muffin {
 
@@ -39,6 +41,16 @@ public:
   // document edit, preserving history and source positions rather than loading
   // a new document. The resulting history position becomes the save point.
   void acceptSavedText(const QString& text);
+  using BatchCancellation = std::shared_ptr<std::atomic_bool>;
+  // The live document remains editable during preparation. Any intervening edit,
+  // reload, option change or lock invalidates the pending generation.
+  void applyBatchAsync(PieceTable target, QString label, qsizetype beforeAnchor, qsizetype beforeCursor,
+                       qsizetype afterAnchor, qsizetype afterCursor, ViewportPosition beforeViewport = {},
+                       ViewportPosition afterViewport = {});
+  bool replayBatchAsync(bool undo);
+  void cancelBatch();
+  bool isBatchPending() const { return bool(batchCancellation_); }
+  bool lastChangeWasBatch() const { return lastChangeWasBatch_; }
 
   QString filePath() const;
   QString displayName() const;
@@ -111,7 +123,11 @@ public:
   // Set by MainWindow's edit.lock_editing command.
   void setEditingReadOnly(bool readOnly);
   bool editingReadOnly() const { return editingReadOnly_; }
-  bool isEditingAllowed() const { return !editingReadOnly_ && !isOpenInProgress(); }
+  bool isEditingAllowed() const { return !editingReadOnly_ && !isOpenInProgress() && !presentationBusy_; }
+  void setPresentationBusy(bool busy) {
+    if (std::exchange(presentationBusy_, busy) != busy)
+      emit editingAvailabilityChanged(isEditingAllowed());
+  }
   bool applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText, bool modified,
                       QVector<LocalEditNodeHint> nodeHints = {});
   bool applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified);
@@ -131,18 +147,33 @@ signals:
   void modifiedChanged(bool modified);
   void externalFileChanged(); // the file changed on disk vs. our last known baseline
   void savedTextNormalized();
+  void batchEditFinished(bool committed);
+  void batchEditStarted();
+  void batchSelectionRestored(qsizetype anchor, qsizetype cursor);
+  void batchViewportRestored(ViewportPosition position);
 
 private slots:
   void onFileChanged(); // QFileSystemWatcher::fileChanged → drift check → externalFileChanged
 
 private:
+  struct LocalParseInput;
+  std::shared_ptr<LocalParseInput> batchLocalInput(const TextDelta& delta) const;
+  void prepareBatch(std::shared_ptr<BatchTextCommand> command, QString label, int historyDirection,
+                    std::shared_ptr<LocalParseInput> local = {}, bool allowLocal = true);
+  BatchCancellation batchCancellation_;
+  bool lastChangeWasBatch_ = false;
+  bool presentationBusy_ = false;
   void refreshFileWatch();
   void parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {}, bool async = false);
   // GUI-thread completion of an async parseAndStore (async=true). Discards the result if superseded.
   struct AsyncParseResult;
+  static std::shared_ptr<AsyncParseResult> prepareParse(PieceTable text, ParseOptions options,
+                                                        QVector<qsizetype> markers, bool metrics,
+                                                        BatchCancellation cancel = {});
   void finishAsyncParse(QFutureWatcher<std::shared_ptr<AsyncParseResult>>* watcher, quint64 generation);
   bool tryApplyTopLevelLocalEdit(qsizetype sourceStart, qsizetype sourceEnd, const QString& replacementText,
-                                 bool modified, const QVector<LocalEditNodeHint>& nodeHints);
+                                 bool modified, const QVector<LocalEditNodeHint>& nodeHints,
+                                 std::shared_ptr<LocalParseInput> prepared = {});
 
   MarkdownDocument document_;
   UndoStack undoStack_;

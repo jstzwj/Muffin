@@ -41,12 +41,15 @@ void showMatch(DocumentTab* tab, const SearchResults& results) {
 struct SearchJobResult {
   SearchResults search;
   QString replacement;
+  PieceTable preparedText;
+  QVector<qsizetype> mappedPositions;
 };
 
 // No worker touches a session, widget or mutable text buffer. Lifetime,
 // cancellation and revision checks protect tab moves, closure and edits while
 // a result is being computed. Replacement is committed only on the GUI thread.
 template <typename Work, typename Finish> void runSearch(DocumentTab* tab, Work work, Finish finish) {
+  tab->session.cancelBatch();
   if (tab->findCancellation)
     tab->findCancellation->store(true);
   const auto cancel = tab->findCancellation = std::make_shared<std::atomic_bool>(false);
@@ -101,6 +104,7 @@ void muffin::MainWindow::showReplaceBar() {
 void muffin::MainWindow::hideFindBar() {
   if (tab_->findCancellation)
     tab_->findCancellation->store(true);
+  tab_->session.cancelBatch();
   if (tab_->findBar)
     tab_->findBar->setVisible(false);
 }
@@ -209,12 +213,21 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
   if (!tab_->session.isEditingAllowed() || findText.isEmpty())
     return;
   auto* tab = tab_;
+  const auto range = tab->editorController.selection().selection();
+  const auto anchor = tab->backend->isSourceMode() ? tab->editor->anchorPosition() : range.anchor.text.sourceOffset;
+  const auto cursor = tab->backend->isSourceMode() ? tab->editor->cursorPosition() : range.focus.text.sourceOffset;
+  const auto viewport =
+      tab->backend->isSourceMode() ? tab->editor->viewportPosition() : tab->renderView->viewportPosition();
   runSearch(
       tab,
       [=](const PieceTable& snapshot, const DocumentSearch::Cancellation& cancel) {
         SearchJobResult result;
-        result.search = DocumentSearch::replaceAll(snapshot.toString(), findText, replaceText,
-                                                   {regularExpression, caseSensitive}, &result.replacement, cancel);
+        result.mappedPositions = {anchor, cursor, viewport.sourceOffset};
+        result.search =
+            DocumentSearch::replaceAll(snapshot.toString(), findText, replaceText, {regularExpression, caseSensitive},
+                                       &result.replacement, cancel, &result.mappedPositions);
+        if (result.search.valid && !result.search.canceled && result.search.changed)
+          result.preparedText = PieceTable(std::move(result.replacement));
         return result;
       },
       [=, this](SearchJobResult result) {
@@ -226,13 +239,24 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
           tab->findBar->setErrorText(tr("Invalid regular expression: %1").arg(result.search.error));
           return;
         }
-        if (result.search.totalMatches > 0) {
-          if (tab->backend->isSourceMode())
-            tab->editor->replaceAllWithUndo(result.replacement);
-          else
-            tab->editorController.applyMarkdownTextWithUndo(std::move(result.replacement), tr("Replace All"));
+        if (result.search.changed) {
+          auto afterViewport = viewport;
+          afterViewport.sourceOffset = result.mappedPositions[2];
+          const auto query = tab->findCancellation;
+          const auto count = result.search.totalMatches;
+          connect(
+              &tab->session, &DocumentSession::batchEditFinished, tab->windowConnections,
+              [tab, query, count](bool committed) {
+                if (tab->findCancellation == query)
+                  tab->findBar->setResultInfo(committed ? count - 1 : 0, committed ? count : 0);
+              },
+              Qt::SingleShotConnection);
+          tab->findBar->setSearchBusy();
+          tab->session.applyBatchAsync(std::move(result.preparedText), tr("Replace All"), anchor, cursor,
+                                       result.mappedPositions[0], result.mappedPositions[1], viewport, afterViewport);
+        } else {
+          tab->findBar->setResultInfo(result.search.totalMatches - 1, result.search.totalMatches);
         }
         tab->lastFindOffset = -1;
-        tab->findBar->setResultInfo(result.search.totalMatches - 1, result.search.totalMatches);
       });
 }

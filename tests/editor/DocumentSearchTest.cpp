@@ -51,6 +51,15 @@ int main(int argc, char** argv) {
                                                        QStringLiteral("x"), {true, true}, &replaced);
   require(zeroWidth.matches.size() == 2 && replaced == QStringLiteral("xaxa"),
           QStringLiteral("Zero-width regex replacement failed"));
+  QVector<qsizetype> positions{0, 1, 3, 4, 7, -1};
+  const auto mapped = DocumentSearch::replaceAll("foo foo", "foo", "xy", {}, &replaced, {}, &positions);
+  require(mapped.changed && replaced == "xy xy" && positions == QVector<qsizetype>({0, 1, 2, 3, 5, -1}),
+          "replacement maps source anchors inside and after multiple matches");
+  positions = {0, 1, 2};
+  DocumentSearch::replaceAll("aa", "(?=a)", "x", {true, true}, &replaced, {}, &positions);
+  require(positions == QVector<qsizetype>({1, 3, 4}), "zero-width insertions map source anchors forward");
+  require(!DocumentSearch::replaceAll("same", "same", "$0", {true, true}, &replaced).changed,
+          "identity replacement cannot create a document edit");
 
   SearchResults invalid = DocumentSearch::findAll(QStringLiteral("text"), QStringLiteral("("), {true, true});
   require(!invalid.valid && !invalid.error.isEmpty(), QStringLiteral("Invalid regex should return an error"));

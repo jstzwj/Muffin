@@ -58,13 +58,24 @@ std::optional<Boundary> boundary(const MarkdownNode& node) {
 } // namespace
 
 MarkdownFlow::MarkdownFlow(const MarkdownNode& root) {
-  scan(root);
+  auto task = rebuildSteps(root);
+  task.resumeFor(-1);
 }
 
-void MarkdownFlow::scan(const MarkdownNode& owner) {
+CooperativeTask MarkdownFlow::rebuildSteps(const MarkdownNode& root) {
+  containers_.clear();
+  relationships_.clear();
+  children_.clear();
+  closing_.clear();
+  auto task = scanSteps(root);
+  while (task.resumeFor(0))
+    co_yield nullptr;
+}
+
+CooperativeTask MarkdownFlow::scanSteps(const MarkdownNode& owner) {
   const auto& source = owner.children();
   if (source.empty())
-    return;
+    co_return;
   struct Open {
     size_t index;
     Boundary token;
@@ -84,13 +95,16 @@ void MarkdownFlow::scan(const MarkdownNode& owner) {
         pairs.clear();
       }
     }
-    scan(*source[i]);
+    auto task = scanSteps(*source[i]);
+    while (task.resumeFor(0))
+      co_yield nullptr;
+    co_yield nullptr;
   }
   if (pairs.isEmpty())
-    return;
-  std::function<std::vector<const MarkdownNode*>(size_t, size_t, const MarkdownNode*)> group;
-  group = [&](size_t first, size_t last, const MarkdownNode* parent) {
-    std::vector<const MarkdownNode*> result;
+    co_return;
+  std::function<CooperativeTask(size_t, size_t, const MarkdownNode*, std::vector<const MarkdownNode*>&)> group;
+  group = [&](size_t first, size_t last, const MarkdownNode* parent,
+              std::vector<const MarkdownNode*>& result) -> CooperativeTask {
     for (size_t i = first; i < last; ++i) {
       const auto* node = source[i].get();
       result.push_back(node);
@@ -99,12 +113,15 @@ void MarkdownFlow::scan(const MarkdownNode& owner) {
         Container value;
         value.attributes = pair->second;
         value.closing = source[pair->first].get();
-        value.children = group(i + 1, pair->first, node);
+        auto task = group(i + 1, pair->first, node, value.children);
+        while (task.resumeFor(0))
+          co_yield nullptr;
         closing_.insert(value.closing->id(), node);
         relationships_[value.closing->id()].parent = node;
         containers_.insert(node->id(), std::move(value));
         i = pair->first;
       }
+      co_yield nullptr;
     }
     QHash<QString, int> types;
     for (size_t i = 0; i < result.size(); ++i) {
@@ -117,10 +134,14 @@ void MarkdownFlow::scan(const MarkdownNode& owner) {
                        : result[i]->type() == BlockType::Table ? QStringLiteral("figure")
                                                                : cssTagForNode(*result[i]);
       relation.typeIndex = types[tag]++;
+      co_yield nullptr;
     }
-    return result;
   };
-  children_.insert(owner.id(), group(0, source.size(), &owner));
+  std::vector<const MarkdownNode*> result;
+  auto task = group(0, source.size(), &owner, result);
+  while (task.resumeFor(0))
+    co_yield nullptr;
+  children_.insert(owner.id(), std::move(result));
 }
 
 const MarkdownFlow::Container* MarkdownFlow::container(const MarkdownNode& node) const {

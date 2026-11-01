@@ -215,6 +215,27 @@ void muffin::MainWindow::connectRenderSignals(DocumentTab* tab) {
 }
 
 void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
+  connect(tab->findBar, &FindBarWidget::searchParametersChanged, tab->windowConnections, [tab] {
+    if (tab->findCancellation)
+      tab->findCancellation->store(true);
+    tab->session.cancelBatch();
+  });
+  connect(tab->windowConnections, &QObject::destroyed, &tab->session, &DocumentSession::cancelBatch);
+  connect(tab->renderView, &EditorView::layoutBusyChanged, &tab->session, &DocumentSession::setPresentationBusy,
+          Qt::UniqueConnection);
+  connect(tab->renderView, &EditorView::layoutReady, tab->windowConnections, [this, tab] {
+    restoreTabViewState(tab);
+    applySearchNavigation(tab);
+    applyLinkNavigation(tab);
+  });
+  connect(&tab->session, &DocumentSession::batchViewportRestored, tab->windowConnections,
+          [tab](ViewportPosition position) {
+            if (tab->backend->isSourceMode())
+              tab->editor->restoreViewportPosition(position);
+            else
+              tab->renderView->restoreViewportPosition(
+                  position, tab->editorController.cursorForSourceOffset(position.sourceOffset));
+          });
   connect(tab->openConfirmation, &FileOpenConfirmation::confirmed, tab->windowConnections,
           [this, tab] { confirmPendingFileOpen(tab); });
   connect(tab->openConfirmation, &FileOpenConfirmation::canceled, tab->windowConnections,
@@ -227,8 +248,6 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
                          tr("This file is already open in another tab. Switch to that tab to edit or save it."));
     return false;
   });
-  connect(&tab->session, &DocumentSession::documentTextChanged, tab->windowConnections,
-          [tab](const QString&) { tab->editor->syncFromSession(); });
   connect(&tab->session, &DocumentSession::documentLocallyEdited, tab->windowConnections,
           [tab](qsizetype, qsizetype, const QString&) {
             tab->editor->notifyDocumentChanged();
@@ -254,8 +273,8 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
           tab->renderViewDirty = true;
           return;
         }
-        tab->renderView->setDocument(tab->session.document(), tab->session.filePath());
-        tab->renderViewDirty = false;
+        tab->renderViewDirty = true;
+        tab->ensureRenderViewCurrent();
       },
       Qt::QueuedConnection);
   connect(&tab->session, &DocumentSession::modifiedChanged, tab->windowConnections, [this, tab](bool modified) {
@@ -291,6 +310,14 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
     if (tab == tab_)
       scheduleEditorStateRefresh();
   });
+  connect(&tab->session, &DocumentSession::batchEditFinished, tab->windowConnections, [this, tab] {
+    if (tab == tab_)
+      scheduleEditorStateRefresh();
+  });
+  connect(&tab->session, &DocumentSession::batchEditStarted, tab->windowConnections, [this, tab] {
+    if (tab == tab_)
+      scheduleEditorStateRefresh();
+  });
   connect(&tab->session, &DocumentSession::parsed, tab->windowConnections, [this, tab] {
     if (tab->pendingImportCopy && !tab->session.isAsyncParseInProgress()) {
       tab->pendingImportCopy = false;
@@ -306,13 +333,11 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
     tab->outlineDirty = tab->outlineDirty || outlineChanged;
     tab->wordCountDirty = true;
     // A background parse updates only its own views; the sidebar and status describe the active tab.
-    if (!tab->session.lastParseWasLocalEdit()) {
-      if (tab_ != tab || tab->backend->isSourceMode()) {
-        tab->renderViewDirty = true;
-      } else {
-        tab->renderView->setDocument(tab->session.document(), tab->session.filePath());
-        tab->renderViewDirty = false;
-      }
+    if (!tab->session.lastParseWasLocalEdit() || tab->session.lastChangeWasBatch()) {
+      tab->renderViewDirty = true;
+      tab->renderViewBatchDirty = tab->renderViewBatchDirty || tab->session.lastChangeWasBatch();
+      if (tab_ == tab && !tab->backend->isSourceMode())
+        tab->ensureRenderViewCurrent();
     }
     if (tab_ != tab) {
       return;
