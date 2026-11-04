@@ -2531,12 +2531,24 @@ void workspaceRenderedNavigation() {
   const auto path = f.file("rendered.md", text);
   f.window.openFolderAtPath(f.directory.path());
   auto* panel = f.window.findChild<SidebarWidget*>()->searchPanel();
+  const auto waitForNavigation = [&](const QString& target, bool source) {
+    // Parsing publishes the AST before the queued search navigation runs. Live
+    // navigation can also wait for a cooperative layout, even if the requested
+    // view mode is already selected. Wait for the request to be consumed and
+    // the view to be ready before asserting its exact selection and geometry.
+    waitUntil(
+        [&] {
+          const auto* document = f.current();
+          return document->session.filePath() == target && !document->session.isOpenInProgress() &&
+                 !document->pendingSearchFingerprint && document->backend->isSourceMode() == source &&
+                 (source || !document->renderView->isLayoutPending());
+        },
+        "search navigation finishes parsing, positioning and layout in the intended mode");
+  };
   const auto jump = [&](qsizetype start, bool source) {
     require(start >= 0, "fixture match exists");
     panel->resultActivated(path, WorkspaceSearch::fingerprint(text), start, 6);
-    waitUntil(
-        [&] { return !f.current()->session.isOpenInProgress() && f.current()->backend->isSourceMode() == source; },
-        "search navigation completes in the intended mode");
+    waitForNavigation(path, source);
     auto* document = f.current();
     if (source) {
       require(document->editor->selectionStart() == start && document->editor->selectedText() == "needle",
@@ -2559,6 +2571,12 @@ void workspaceRenderedNavigation() {
       start = text.indexOf("| needle") + 2;
     jump(start, false);
   }
+  // Exercise a pending layout deterministically, instead of depending on how
+  // quickly the asynchronous parser and event loop happen to finish in CI.
+  auto* document = f.current();
+  document->renderView->setDocument(document->session.document(), path, true);
+  require(document->renderView->isLayoutPending(), "search fixture starts with a pending cooperative layout");
+  jump(text.indexOf("list needle") + 5, false);
   jump(text.indexOf("test/needle") + 5, true);
   jump(text.indexOf("list needle") + 5, false);
   jump(text.indexOf("![needle") + 2, true);
@@ -2588,13 +2606,10 @@ void workspaceRenderedNavigation() {
   const auto offset = distant.indexOf("needle");
   jump(text.indexOf("test/needle") + 5, true);
   panel->resultActivated(deepPath, WorkspaceSearch::fingerprint(distant), offset, 6);
-  waitUntil(
-      [&] {
-        return !f.current()->session.isOpenInProgress() &&
-               f.current()->editorController.selection().selection().anchor.text.sourceOffset == offset;
-      },
-      "async navigation selects a distant live match");
-  require(!f.current()->backend->isSourceMode(), "new files default to live editing");
+  waitForNavigation(deepPath, false);
+  const auto range = f.current()->editorController.selection().selection();
+  require(range.anchor.text.sourceOffset == offset && range.focus.text.sourceOffset == offset + 6,
+          "async navigation selects the exact distant live match");
 }
 
 void fileOpenProtectionSettingsAndBoundaries() {
