@@ -1507,6 +1507,9 @@ target_link_libraries(MuffinUi
     PNG::PNG
 )
 
+include(cmake/MuffinIcuData.cmake)
+muffin_externalize_icu_data(MuffinUi)
+
 target_include_directories(MuffinUi
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -1652,6 +1655,13 @@ if(APPLE)
     MACOSX_PACKAGE_LOCATION "Resources"
   )
   target_sources(Muffin PRIVATE "${MUFFIN_APP_ICON_ICNS}")
+  foreach(config RELEASE DEBUG RELWITHDEBINFO MINSIZEREL)
+    if(DEFINED MUFFIN_ICU_DATA_${config})
+      set_source_files_properties("${MUFFIN_ICU_DATA_${config}}" PROPERTIES
+        GENERATED TRUE MACOSX_PACKAGE_LOCATION "Resources/icu")
+      target_sources(Muffin PRIVATE "$<$<CONFIG:${config}>:${MUFFIN_ICU_DATA_${config}}>")
+    endif()
+  endforeach()
 endif()
 
 set(MUFFIN_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Muffin distribution output directory")
@@ -1684,6 +1694,7 @@ add_custom_target(dist
       "-DQT_PLUGIN_DIRS=${MUFFIN_QT_PLUGIN_DIRS_ARG}"
       "-DMMDC_FILE=$<TARGET_FILE:muffin-mmdc>"
       "-DMMDC_RUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:muffin-mmdc>,|>"
+      "-DICU_DATA_DIR=$<TARGET_FILE_DIR:MuffinUi>/resources/icu"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinDeploy.cmake"
   DEPENDS Muffin muffin-mmdc
   COMMENT "Create Muffin distribution directory"

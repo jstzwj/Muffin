@@ -1,6 +1,7 @@
 #include "unicode/WordBoundary.h"
 
 #include "../TestUtils.h"
+#include <QCoreApplication>
 
 namespace {
 
@@ -24,7 +25,8 @@ void wordSegmentationHasRuntimeData() {
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+  QCoreApplication app(argc, argv);
   runTest("wordSegmentationHasRuntimeData", wordSegmentationHasRuntimeData);
   return 0;
 }

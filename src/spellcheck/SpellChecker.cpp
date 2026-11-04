@@ -1,4 +1,5 @@
 #include "spellcheck/SpellChecker.h"
+#include "unicode/IcuRuntime.h"
 
 #include <nuspell/dictionary.hxx>
 
@@ -98,6 +99,11 @@ void SpellChecker::ensureLoaded() {
 }
 
 void SpellChecker::loadDictionary(const QString& localeCode) {
+  if (!initializeIcuData()) {
+    dictionary_.reset();
+    loadedLocale_.clear();
+    return;
+  }
   QString target = localeCode.isEmpty() ? QString::fromLatin1(kDefaultLocale) : localeCode;
   auto next = std::make_unique<nuspell::Dictionary>();
   if (!loadDictFromResources(*next, target)) {

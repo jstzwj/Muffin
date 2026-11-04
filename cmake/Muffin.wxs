@@ -61,6 +61,9 @@
         <Directory Id="ImageformatsDir" Name="imageformats" />
         <Directory Id="TlsDir" Name="tls" />
         <Directory Id="NetworkinformationDir" Name="networkinformation" />
+        <Directory Id="MuffinResourcesDir" Name="resources">
+          <Directory Id="MuffinIcuDir" Name="icu" />
+        </Directory>
       </Directory>
     </StandardDirectory>
 
@@ -76,6 +79,7 @@
       <ComponentGroupRef Id="MuffinImageformatsPlugins" />
       <ComponentGroupRef Id="MuffinTlsPlugins" />
       <ComponentGroupRef Id="MuffinNetworkinformationPlugins" />
+      <ComponentGroupRef Id="MuffinIcuDataFiles" />
       <ComponentRef Id="ApplicationShortcut" />
       <ComponentRef Id="IntegrationChoices" />
 
@@ -167,6 +171,15 @@
       </Component>
       <Component Id="QtConf" Guid="c7d8e9f0-a1b2-4c3d-e4f5-a6b7c8d9e0f1">
         <File Id="QtConfFile" Source="$(var.DistDir)/qt.conf" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- ICU runtime data -->
+  <Fragment>
+    <ComponentGroup Id="MuffinIcuDataFiles" Directory="MuffinIcuDir">
+      <Component Id="MuffinIcuData" Guid="*">
+        <File Id="MuffinIcuDataFile" Source="$(var.DistDir)/resources/icu/$(var.IcuDataName)" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

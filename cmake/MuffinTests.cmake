@@ -463,6 +463,7 @@ muffin_add_test(NAME MuffinBackspaceEmptyParagraphTest SOURCE tests/editor/Backs
 muffin_add_test(NAME MuffinInputDeleteRangeTest        SOURCE tests/editor/InputDeleteRangeTest.cpp        LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinWordBoundaryTest            SOURCE tests/editor/WordBoundaryTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinIcuWordBoundaryTest         SOURCE tests/editor/IcuWordBoundaryTest.cpp         LINK MuffinUi)
+muffin_add_test(NAME MuffinIcuRuntimeTest SOURCE tests/editor/IcuRuntimeTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinInputWordNavTest            SOURCE tests/editor/InputWordNavTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/InputPageNavTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
@@ -633,8 +634,8 @@ if(WIN32)
   endif()
 endif()
 if(APPLE)
-  # Keep Apple's ICU on its own system data. Muffin's ICU embeds its data
-  # (conanfile.py), so segmentation must also work without ICU_DATA. Exercise
+  # Keep Apple's ICU on its own system data. Muffin explicitly registers its
+  # private .dat mapping, so segmentation must work without ICU_DATA. Exercise
   # that contract directly as well as through the file tree and editor UI.
   foreach(_file_tree_test MuffinIcuWordBoundaryTest MuffinDocumentTabsTest MuffinLazySessionViewTest MuffinSidebarInteractionTest)
     set_property(TEST ${_file_tree_test} APPEND PROPERTY ENVIRONMENT_MODIFICATION

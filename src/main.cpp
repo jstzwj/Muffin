@@ -9,6 +9,7 @@
 #include "io/ApplicationPaths.h"
 #include "editor/EditorAccessibility.h"
 #include "theme/FontRendering.h"
+#include "unicode/IcuRuntime.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -92,6 +93,16 @@ int main(int argc, char* argv[]) {
     QMessageBox::critical(nullptr, QStringLiteral("Muffin"),
                           QCoreApplication::translate("main", "Cannot write to the portable data folder.") +
                               QLatin1Char('\n') + storageError);
+    return 1;
+  }
+  if (!muffin::initializeIcuData(&storageError)) {
+    QTranslator translator;
+    if (translator.load(QLocale::system(), QStringLiteral("muffin"), QStringLiteral("_"), QStringLiteral(":/i18n")))
+      app.installTranslator(&translator);
+    QMessageBox::critical(
+        nullptr, QStringLiteral("Muffin"),
+        QCoreApplication::translate("main", "Cannot load the bundled ICU data. Please reinstall Muffin.") +
+            QLatin1Char('\n') + storageError);
     return 1;
   }
   installPerfFileLogger();

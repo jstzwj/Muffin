@@ -1,6 +1,7 @@
 #include "io/FileController.h"
 
 #include "document/DocumentSession.h"
+#include "unicode/IcuRuntime.h"
 #include "diagnostics/OpenPerformance.h"
 
 #include <QFile>
@@ -21,6 +22,8 @@
 namespace {
 
 bool decodeWithIcu(const QByteArray& raw, const QString& encodingName, QString* out) {
+  if (!muffin::initializeIcuData())
+    return false;
   UErrorCode status = U_ZERO_ERROR;
   UConverter* converter = ucnv_open(encodingName.toUtf8().constData(), &status);
   if (U_FAILURE(status)) {
@@ -50,6 +53,8 @@ bool decodeWithIcu(const QByteArray& raw, const QString& encodingName, QString* 
 }
 
 bool encodeWithIcu(const QString& text, const QString& encodingName, QByteArray* out) {
+  if (!muffin::initializeIcuData())
+    return false;
   UErrorCode status = U_ZERO_ERROR;
   UConverter* converter = ucnv_open(encodingName.toUtf8().constData(), &status);
   if (U_FAILURE(status)) {
@@ -232,6 +237,8 @@ bool encodeLegacyText(const QString& text, const QString& encodingName, QByteArr
 
 bool decodeText(const QByteArray& raw, const QString& requestedEncoding, QString* text,
                 muffin::TextFileFormat* format) {
+  if (!muffin::initializeIcuData())
+    return false;
   QByteArray payload = raw;
   QString encoding = requestedEncoding;
   bool bom = false;

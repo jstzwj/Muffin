@@ -1,4 +1,5 @@
 #include "unicode/WordBoundary.h"
+#include "unicode/IcuRuntime.h"
 
 #include <unicode/brkiter.h>
 #include <unicode/utypes.h>
@@ -12,6 +13,8 @@ WordSegment findWordSegment(const QString& text, qsizetype offset) {
   if (text.isEmpty()) {
     return {};
   }
+  if (!initializeIcuData())
+    return {};
 
   offset = qBound<qsizetype>(0, offset, text.size());
 

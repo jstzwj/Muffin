@@ -18,10 +18,14 @@ with tempfile.TemporaryDirectory(prefix="Muffin-portable-package-") as directory
     source = build / "dist"
     source.mkdir()
     (source / "Muffin.exe").write_bytes(b"fixture app")
+    icu = source / "resources" / "icu"
+    icu.mkdir(parents=True)
+    (icu / "icudt74l.dat").write_bytes(b"fixture ICU data")
     output = build / "portable"
     run(build, source, output)
     assert (output / "Muffin.portable").is_file()
     assert (output / "Muffin.exe").read_bytes() == b"fixture app"
+    assert (output / "resources" / "icu" / "icudt74l.dat").read_bytes() == b"fixture ICU data"
     assert not (source / "Muffin.portable").exists()
     run(build, output, output, False)
     assert (output / "Muffin.exe").read_bytes() == b"fixture app"

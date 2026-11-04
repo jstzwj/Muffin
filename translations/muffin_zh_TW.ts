@@ -985,22 +985,27 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">一款以 C++ 和 Qt 6 Widgets 建置的快速原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="89"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>Cannot write to the portable data folder.</source>
         <translation>無法寫入可攜版資料資料夾。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Cannot load the bundled ICU data. Please reinstall Muffin.</source>
+        <translation>無法載入隨附的 ICU 資料。請重新安裝 Muffin。</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="140"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>一款使用 C++ 和 Qt 6 建置的快速、輕量級原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="132"/>
+        <location filename="../src/main.cpp" line="147"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>在側邊欄檔案瀏覽器中開啟 &lt;folder&gt;。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="142"/>
+        <location filename="../src/main.cpp" line="157"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>要開啟的 Markdown 或文字檔案（或資料夾）。</translation>
     </message>
@@ -1091,88 +1096,88 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::FileController</name>
     <message>
-        <location filename="../src/io/FileController.cpp" line="360"/>
+        <location filename="../src/io/FileController.cpp" line="367"/>
         <source>Open</source>
         <translation>開啟</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="361"/>
+        <location filename="../src/io/FileController.cpp" line="368"/>
         <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
         <translation>Markdown 和文字檔 (*.md *.markdown *.mdown *.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Save As</source>
         <translation>另存新檔</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="596"/>
+        <location filename="../src/io/FileController.cpp" line="603"/>
         <source>The document cannot be encoded as %1.</source>
         <translation>無法將文件編碼為 %1。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 檔案 (*.md);;文字檔 (*.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 檔案 (*.md *.markdown);;文字檔 (*.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
         <source>The current document has unsaved changes.</source>
         <translation>目前文件有尚未儲存的變更。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="522"/>
+        <location filename="../src/io/FileController.cpp" line="529"/>
         <source>File Missing</source>
         <translation>檔案不存在</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="523"/>
+        <location filename="../src/io/FileController.cpp" line="530"/>
         <source>The file &quot;%1&quot; no longer exists on disk. Use Save As to write it to a new location.</source>
         <translation>檔案「%1」已不在磁碟上。請使用「另存新檔」將其儲存到新位置。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="531"/>
+        <location filename="../src/io/FileController.cpp" line="538"/>
         <source>File Changed on Disk</source>
         <translation>磁碟上的檔案已變更</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="532"/>
+        <location filename="../src/io/FileController.cpp" line="539"/>
         <source>The file &quot;%1&quot; has been changed outside Muffin. Overwrite it?</source>
         <translation>檔案「%1」已在 Muffin 之外被修改。要覆寫嗎？</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="541"/>
-        <location filename="../src/io/FileController.cpp" line="629"/>
+        <location filename="../src/io/FileController.cpp" line="548"/>
+        <location filename="../src/io/FileController.cpp" line="636"/>
         <source>Open Failed</source>
         <translation>開啟失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
         <source>Could not detect a lossless text encoding for this file.</source>
         <translation>無法偵測出可無損讀取此檔案的文字編碼。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="567"/>
-        <location filename="../src/io/FileController.cpp" line="604"/>
-        <location filename="../src/io/FileController.cpp" line="609"/>
+        <location filename="../src/io/FileController.cpp" line="574"/>
+        <location filename="../src/io/FileController.cpp" line="611"/>
+        <location filename="../src/io/FileController.cpp" line="616"/>
         <source>Save Failed</source>
         <translation>儲存失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
-        <location filename="../src/io/FileController.cpp" line="595"/>
-        <location filename="../src/io/FileController.cpp" line="635"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
+        <location filename="../src/io/FileController.cpp" line="602"/>
+        <location filename="../src/io/FileController.cpp" line="642"/>
         <source>Encoding Error</source>
         <translation>編碼錯誤</translation>
     </message>
@@ -1181,27 +1186,27 @@ Make it your default editor now?</source>
         <translation type="vanished">不支援的編碼：%1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="636"/>
+        <location filename="../src/io/FileController.cpp" line="643"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation>使用編碼 %1 解碼檔案失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation>文件有未儲存的變更。是否在以新編碼重新開啟前儲存？</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Move To</source>
         <translation>移動到</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Move Failed</source>
         <translation>移動失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Could not move file to:
 %1</source>
         <translation>無法將檔案移動到：
@@ -1468,7 +1473,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>File</source>
         <translation>檔案(&amp;F)</translation>
     </message>
@@ -3714,7 +3719,7 @@ Would you like to open the download page?</source>
         <translation>開啟</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="136"/>
+        <location filename="../src/main.cpp" line="151"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="300"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <source>Open in New Window</source>
@@ -3849,22 +3854,22 @@ Would you like to open the download page?</source>
         <translation>將分頁複製到新視窗</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="167"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="166"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>此檔案已變更。請重新搜尋以更新相符結果。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="205"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="204"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>無法在即時預覽中精確選取此相符項目，已切換至原始碼模式顯示。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="230"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Preview Folder Replacement</source>
         <translation>預覽資料夾取代</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3877,25 +3882,25 @@ Replace with: %3</source>
         <translation type="vanished">包含路徑：%1 · 排除路徑：%2 · 區分大小寫：%3 · 正規表示式：%4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>Yes</source>
         <translation>是</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>No</source>
         <translation>否</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>Matches</source>
         <translation>相符項目</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="217"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="216"/>
         <source>Rename / Move</source>
         <translation>重新命名 / 移動</translation>
     </message>
@@ -3933,7 +3938,7 @@ Search folder: %3</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="97"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="263"/>
         <source>Skipped</source>
         <translation>已略過</translation>
     </message>
@@ -3960,62 +3965,62 @@ Hidden folders, build folders, symbolic links, unreadable files and files over 8
         <translation>更新連結</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="166"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="170"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="165"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="169"/>
         <source>A note changed after the preview. Please try again.</source>
         <translation>預覽後有筆記發生變更，請重試。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="175"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="174"/>
         <source>A file changed on disk after the preview. Please try again.</source>
         <translation>預覽後磁碟上的檔案發生變更，請重試。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="187"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="186"/>
         <source>
 Some originals could not be restored. Backups: %1</source>
         <translation>
 部分原始檔案無法還原。備份位置：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="192"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="191"/>
         <source>Link updates could not be completed. The path was not changed.</source>
         <translation>無法完成連結更新，路徑未變更。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="207"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="206"/>
         <source>Could not rename or move: %1</source>
         <translation>無法重新命名或移動：%1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="245"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="244"/>
         <source>Update Note Links</source>
         <translation>更新筆記連結</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="275"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>連結已更新。原始檔案已備份至 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="266"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>含有未儲存的變更、檔案已變更、無法讀取、檔案過大、混用換行字元，或無法無損寫入。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="269"/>
         <source>Replacement preview</source>
         <translation>取代預覽</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="276"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … 預覽已截斷；將處理完整檔案。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="278"/>
         <source>Before:
 %1
 
@@ -4028,29 +4033,29 @@ After:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="284"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="283"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>將略過含有未儲存變更的檔案。原始檔案會備份以供復原。預覽後發生變更的檔案不會被覆寫。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="298"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="297"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>取代 %2 個檔案中的 %1 處相符項目</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>Folder Replacement</source>
         <translation>資料夾取代</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="331"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>已變更 %1 個檔案；已略過 %2 個。
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="334"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -4058,19 +4063,19 @@ Recovery folder: %1</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="656"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="364"/>
         <source>Undo Folder Replacement</source>
         <translation>復原資料夾取代</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
         <source>No folder replacement is available to restore.</source>
         <translation>沒有可復原的資料夾取代記錄。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="347"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4081,29 +4086,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 將略過取代後又經過編輯或含有未儲存變更的檔案。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="349"/>
         <source>Restore Originals</source>
         <translation>還原原始檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="351"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
         <source>Open Recovery Folder</source>
         <translation>開啟復原資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="366"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>已還原 %1 個檔案；已略過 %2 個。
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Updating files…</source>
         <translation>正在更新檔案…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Stop after current file</source>
         <translation>處理完目前檔案後停止</translation>
     </message>
@@ -5181,7 +5186,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsImagePage</name>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="184"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="185"/>
         <source>When Inserting Images</source>
         <translation>插入圖片時</translation>
     </message>
@@ -5190,7 +5195,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">瞭解更多...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="189"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
         <source>No special operation</source>
         <translation>無特殊操作</translation>
     </message>
@@ -5199,143 +5204,143 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">複製到自訂資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
         <source>Copy image to current folder (./)</source>
         <translation>複製圖片到目前資料夾 (./)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
         <source>Copy image to ./assets folder</source>
         <translation>複製圖片到 ./assets 資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
         <source>Copy image to ./%1 folder</source>
         <translation>複製圖片到 ./%1 資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
         <source>Upload image</source>
         <translation>上傳圖片</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="195"/>
         <source>Copy to specified path</source>
         <translation>複製到指定路徑</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="199"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
         <source>Destination folder for copied images</source>
         <translation>複製圖片的目標資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
         <source>Browse...</source>
         <translation>瀏覽...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
         <source>Apply the above rules to local images</source>
         <translation>將上述規則套用至本機圖片</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
         <source>Apply the above rules to network images</source>
         <translation>將上述規則套用至網路圖片</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="204"/>
         <source>Allow automatic image upload based on YAML settings</source>
         <translation>允許根據 YAML 設定自動上傳圖片</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="206"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
         <source>Image Syntax Preferences</source>
         <translation>圖片語法偏好</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
         <source>Prefer relative paths</source>
         <translation>偏好使用相對路徑</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
         <source>Add / to relative paths</source>
         <translation>在相對路徑前加上 /</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="210"/>
         <source>Auto-escape image URLs on insertion</source>
         <translation>插入時自動跳脫圖片 URL</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="212"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
         <source>Upload Service Settings</source>
         <translation>上傳服務設定</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="214"/>
         <source>Upload Service</source>
         <translation>上傳服務</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="218"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
         <source>None</source>
         <translation>無</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="220"/>
         <source>Custom Command</source>
         <translation>自訂命令</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="224"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
         <source>e.g. picgo upload or uPic -m upload</source>
         <translation>例如 picgo upload 或 uPic -m upload</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="226"/>
         <source>Test</source>
         <translation>測試</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="292"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="293"/>
         <source>Select Image Folder</source>
         <translation>選擇圖片資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Test Upload</source>
         <translation>測試上傳</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
         <source>Enter an upload command first.</source>
         <translation>請先輸入上傳命令。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
         <source>Could not create a test image.</source>
         <translation>無法建立測試圖片。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
         <source>Upload canceled.</source>
         <translation>上傳已取消。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
         <source>Upload succeeded. Returned URL:
 %1</source>
         <translation>上傳成功。傳回的 URL：
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Upload failed:
 %1</source>
         <translation>上傳失敗：
@@ -5942,13 +5947,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">排除路徑（詞語或路徑片段）</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="240"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Match case</source>
         <translation>區分大小寫</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="414"/>
         <source>Regular expression</source>
         <translation>正規表示式</translation>
@@ -6327,14 +6332,14 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="182"/>
+        <location filename="../src/main.cpp" line="197"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>更新 Muffin</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="183"/>
+        <location filename="../src/main.cpp" line="198"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>更新已取消或無法安裝（代碼 %1）。工作階段已還原。您可以從「說明 &gt; 檢查更新」重試。</translation>
     </message>

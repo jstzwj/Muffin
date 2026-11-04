@@ -981,22 +981,27 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">C++ 및 Qt 6 Widgets로 만든 빠른 네이티브 Markdown 편집기입니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="89"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>Cannot write to the portable data folder.</source>
         <translation>포터블 버전의 데이터 폴더에 쓸 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Cannot load the bundled ICU data. Please reinstall Muffin.</source>
+        <translation>함께 제공된 ICU 데이터를 불러올 수 없습니다. Muffin을 다시 설치해 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="140"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>빠르고 가벼운 네이티브 Markdown 편집기로, C++ 및 Qt 6로 만들어졌습니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="132"/>
+        <location filename="../src/main.cpp" line="147"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>사이드바 파일 브라우저에서 &lt;folder&gt;를 엽니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="142"/>
+        <location filename="../src/main.cpp" line="157"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>열 Markdown 파일, 텍스트 파일 또는 폴더.</translation>
     </message>
@@ -1087,88 +1092,88 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::FileController</name>
     <message>
-        <location filename="../src/io/FileController.cpp" line="360"/>
+        <location filename="../src/io/FileController.cpp" line="367"/>
         <source>Open</source>
         <translation>열기</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="361"/>
+        <location filename="../src/io/FileController.cpp" line="368"/>
         <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
         <translation>Markdown 및 텍스트 파일 (*.md *.markdown *.mdown *.txt);;모든 파일 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Save As</source>
         <translation>다른 이름으로 저장</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="596"/>
+        <location filename="../src/io/FileController.cpp" line="603"/>
         <source>The document cannot be encoded as %1.</source>
         <translation>문서를 %1(으)로 인코딩할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 파일 (*.md);;텍스트 파일 (*.txt);;모든 파일 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 파일 (*.md *.markdown);;텍스트 파일 (*.txt);;모든 파일 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
         <source>The current document has unsaved changes.</source>
         <translation>현재 문서에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="522"/>
+        <location filename="../src/io/FileController.cpp" line="529"/>
         <source>File Missing</source>
         <translation>파일 없음</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="523"/>
+        <location filename="../src/io/FileController.cpp" line="530"/>
         <source>The file &quot;%1&quot; no longer exists on disk. Use Save As to write it to a new location.</source>
         <translation>파일 &quot;%1&quot;이(가) 디스크에 더 이상 존재하지 않습니다. 다른 이름으로 저장하여 새 위치에 저장하세요.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="531"/>
+        <location filename="../src/io/FileController.cpp" line="538"/>
         <source>File Changed on Disk</source>
         <translation>디스크의 파일이 변경됨</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="532"/>
+        <location filename="../src/io/FileController.cpp" line="539"/>
         <source>The file &quot;%1&quot; has been changed outside Muffin. Overwrite it?</source>
         <translation>파일 &quot;%1&quot;이(가) Muffin 외부에서 변경되었습니다. 덮어쓰시겠습니까?</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="541"/>
-        <location filename="../src/io/FileController.cpp" line="629"/>
+        <location filename="../src/io/FileController.cpp" line="548"/>
+        <location filename="../src/io/FileController.cpp" line="636"/>
         <source>Open Failed</source>
         <translation>열기 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
         <source>Could not detect a lossless text encoding for this file.</source>
         <translation>이 파일을 손실 없이 읽을 수 있는 텍스트 인코딩을 감지하지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="567"/>
-        <location filename="../src/io/FileController.cpp" line="604"/>
-        <location filename="../src/io/FileController.cpp" line="609"/>
+        <location filename="../src/io/FileController.cpp" line="574"/>
+        <location filename="../src/io/FileController.cpp" line="611"/>
+        <location filename="../src/io/FileController.cpp" line="616"/>
         <source>Save Failed</source>
         <translation>저장 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
-        <location filename="../src/io/FileController.cpp" line="595"/>
-        <location filename="../src/io/FileController.cpp" line="635"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
+        <location filename="../src/io/FileController.cpp" line="602"/>
+        <location filename="../src/io/FileController.cpp" line="642"/>
         <source>Encoding Error</source>
         <translation>인코딩 오류</translation>
     </message>
@@ -1177,27 +1182,27 @@ Make it your default editor now?</source>
         <translation type="vanished">지원하지 않는 인코딩: %1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="636"/>
+        <location filename="../src/io/FileController.cpp" line="643"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation>인코딩 %1(으)로 파일을 디코딩하지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation>저장하지 않은 변경 사항이 있습니다. 새 인코딩으로 다시 열기 전에 저장하시겠습니까?</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Move To</source>
         <translation>이동 위치</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Move Failed</source>
         <translation>이동 실패</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Could not move file to:
 %1</source>
         <translation>파일을 이동할 수 없습니다:
@@ -1464,7 +1469,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>File</source>
         <translation>파일</translation>
     </message>
@@ -3710,7 +3715,7 @@ Would you like to open the download page?</source>
         <translation>열기</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="136"/>
+        <location filename="../src/main.cpp" line="151"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="300"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <source>Open in New Window</source>
@@ -3845,22 +3850,22 @@ Would you like to open the download page?</source>
         <translation>탭을 새 창으로 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="167"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="166"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>이 파일이 변경되었습니다. 다시 검색하여 일치 항목을 갱신하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="205"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="204"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>이 일치 항목은 실시간 미리 보기에서 정확히 선택할 수 없어 소스 모드로 표시합니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="230"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Preview Folder Replacement</source>
         <translation>폴더 바꾸기 미리 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3873,25 +3878,25 @@ Replace with: %3</source>
         <translation type="vanished">포함할 경로: %1 · 제외할 경로: %2 · 대소문자 구분: %3 · 정규식: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>Yes</source>
         <translation>예</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>No</source>
         <translation>아니요</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>Matches</source>
         <translation>일치 항목</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="217"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="216"/>
         <source>Rename / Move</source>
         <translation>이름 바꾸기 / 이동</translation>
     </message>
@@ -3929,7 +3934,7 @@ Search folder: %3</source>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="97"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="263"/>
         <source>Skipped</source>
         <translation>건너뜀</translation>
     </message>
@@ -3956,62 +3961,62 @@ Hidden folders, build folders, symbolic links, unreadable files and files over 8
         <translation>링크 업데이트</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="166"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="170"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="165"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="169"/>
         <source>A note changed after the preview. Please try again.</source>
         <translation>미리 보기 이후 노트가 변경되었습니다. 다시 시도하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="175"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="174"/>
         <source>A file changed on disk after the preview. Please try again.</source>
         <translation>미리 보기 이후 디스크의 파일이 변경되었습니다. 다시 시도하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="187"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="186"/>
         <source>
 Some originals could not be restored. Backups: %1</source>
         <translation>
 일부 원본을 복원할 수 없습니다. 백업 위치: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="192"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="191"/>
         <source>Link updates could not be completed. The path was not changed.</source>
         <translation>링크 업데이트를 완료할 수 없습니다. 경로는 변경되지 않았습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="207"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="206"/>
         <source>Could not rename or move: %1</source>
         <translation>이름을 바꾸거나 이동할 수 없습니다: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="245"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="244"/>
         <source>Update Note Links</source>
         <translation>노트 링크 업데이트</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="275"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>링크가 업데이트되었습니다. 원본은 %1에 백업되었습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="266"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>저장하지 않은 변경 사항이 있거나, 변경되었거나, 읽을 수 없거나, 너무 크거나, 줄바꿈 형식이 혼합되어 있거나, 손실 없이 쓸 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="269"/>
         <source>Replacement preview</source>
         <translation>바꾸기 미리 보기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="276"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … 미리 보기가 잘렸습니다. 파일 전체가 처리됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="278"/>
         <source>Before:
 %1
 
@@ -4024,29 +4029,29 @@ After:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="284"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="283"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>저장하지 않은 변경 사항이 있는 파일은 건너뜁니다. 원본은 복구할 수 있도록 백업됩니다. 이 미리 보기 이후 변경된 파일은 덮어쓰지 않습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="298"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="297"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>파일 %2개의 일치 항목 %1개 바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>Folder Replacement</source>
         <translation>폴더 바꾸기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="331"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>파일 %1개 변경됨; %2개 건너뜀.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="334"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -4054,19 +4059,19 @@ Recovery folder: %1</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="656"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="364"/>
         <source>Undo Folder Replacement</source>
         <translation>폴더 바꾸기 실행 취소</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
         <source>No folder replacement is available to restore.</source>
         <translation>복원할 수 있는 폴더 바꾸기 작업이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="347"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4077,29 +4082,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 이후에 편집되었거나 저장하지 않은 변경 사항이 있는 파일은 건너뜁니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="349"/>
         <source>Restore Originals</source>
         <translation>원본 복원</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="351"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
         <source>Open Recovery Folder</source>
         <translation>복구 폴더 열기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="366"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>파일 %1개 복원됨; %2개 건너뜀.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Updating files…</source>
         <translation>파일 업데이트 중…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Stop after current file</source>
         <translation>현재 파일 처리 후 중지</translation>
     </message>
@@ -5177,7 +5182,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsImagePage</name>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="184"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="185"/>
         <source>When Inserting Images</source>
         <translation>이미지 삽입 시</translation>
     </message>
@@ -5186,7 +5191,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">자세히 알아보기...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="189"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
         <source>No special operation</source>
         <translation>특별한 작업 없음</translation>
     </message>
@@ -5195,143 +5200,143 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">사용자 지정 폴더에 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
         <source>Copy image to current folder (./)</source>
         <translation>현재 폴더(./)로 이미지 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
         <source>Copy image to ./assets folder</source>
         <translation>./assets 폴더로 이미지 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
         <source>Copy image to ./%1 folder</source>
         <translation>./%1 폴더로 이미지 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
         <source>Upload image</source>
         <translation>이미지 업로드</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="195"/>
         <source>Copy to specified path</source>
         <translation>지정한 경로로 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="199"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
         <source>Destination folder for copied images</source>
         <translation>이미지를 복사할 대상 폴더</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
         <source>Browse...</source>
         <translation>찾아보기...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
         <source>Apply the above rules to local images</source>
         <translation>위 규칙을 로컬 이미지에 적용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
         <source>Apply the above rules to network images</source>
         <translation>위 규칙을 네트워크 이미지에 적용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="204"/>
         <source>Allow automatic image upload based on YAML settings</source>
         <translation>YAML 설정에 따라 자동 이미지 업로드 허용</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="206"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
         <source>Image Syntax Preferences</source>
         <translation>이미지 구문 기본 설정</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
         <source>Prefer relative paths</source>
         <translation>상대 경로 우선</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
         <source>Add / to relative paths</source>
         <translation>상대 경로에 / 추가</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="210"/>
         <source>Auto-escape image URLs on insertion</source>
         <translation>삽입 시 이미지 URL 자동 이스케이프</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="212"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
         <source>Upload Service Settings</source>
         <translation>업로드 서비스 설정</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="214"/>
         <source>Upload Service</source>
         <translation>업로드 서비스</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="218"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
         <source>None</source>
         <translation>없음</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="220"/>
         <source>Custom Command</source>
         <translation>사용자 지정 명령</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="224"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
         <source>e.g. picgo upload or uPic -m upload</source>
         <translation>예: picgo upload 또는 uPic -m upload</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="226"/>
         <source>Test</source>
         <translation>테스트</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="292"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="293"/>
         <source>Select Image Folder</source>
         <translation>이미지 폴더 선택</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Test Upload</source>
         <translation>업로드 테스트</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
         <source>Enter an upload command first.</source>
         <translation>먼저 업로드 명령을 입력하세요.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
         <source>Could not create a test image.</source>
         <translation>테스트 이미지를 만들 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
         <source>Upload canceled.</source>
         <translation>업로드가 취소되었습니다.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
         <source>Upload succeeded. Returned URL:
 %1</source>
         <translation>업로드 성공. 반환된 URL:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Upload failed:
 %1</source>
         <translation>업로드 실패:
@@ -5938,13 +5943,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">제외할 경로(단어 또는 경로 일부)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="240"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Match case</source>
         <translation>대소문자 구분</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="414"/>
         <source>Regular expression</source>
         <translation>정규식</translation>
@@ -6323,14 +6328,14 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="182"/>
+        <location filename="../src/main.cpp" line="197"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>Muffin 업데이트</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="183"/>
+        <location filename="../src/main.cpp" line="198"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>업데이트가 취소되었거나 설치할 수 없습니다(코드 %1). 세션이 복원되었습니다. 도움말 &gt; 업데이트 확인에서 다시 시도할 수 있습니다.</translation>
     </message>

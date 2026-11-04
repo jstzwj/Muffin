@@ -977,22 +977,27 @@ Un editor Markdown nativo, rápido y ligero, construido con C++ y Qt 6 Widgets.<
         <translation type="vanished">Un editor Markdown nativo rápido creado con C++ y Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="89"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>Cannot write to the portable data folder.</source>
         <translation>No se puede escribir en la carpeta de datos de la versión portátil.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Cannot load the bundled ICU data. Please reinstall Muffin.</source>
+        <translation>No se pueden cargar los datos ICU incluidos. Vuelve a instalar Muffin.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="140"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Un editor Markdown rápido, ligero y nativo, creado con C++ y Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="132"/>
+        <location filename="../src/main.cpp" line="147"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>Abrir &lt;folder&gt; en el explorador de archivos de la barra lateral.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="142"/>
+        <location filename="../src/main.cpp" line="157"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Archivo Markdown, archivo de texto o carpeta que se abrirá.</translation>
     </message>
@@ -1083,88 +1088,88 @@ Make it your default editor now?</source>
 <context>
     <name>muffin::FileController</name>
     <message>
-        <location filename="../src/io/FileController.cpp" line="360"/>
+        <location filename="../src/io/FileController.cpp" line="367"/>
         <source>Open</source>
         <translation>Abrir</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="361"/>
+        <location filename="../src/io/FileController.cpp" line="368"/>
         <source>Markdown and text files (*.md *.markdown *.mdown *.txt);;All files (*.*)</source>
         <translation>Archivos Markdown y de texto (*.md *.markdown *.mdown *.txt);;Todos los archivos (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Save As</source>
         <translation>Guardar como</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="596"/>
+        <location filename="../src/io/FileController.cpp" line="603"/>
         <source>The document cannot be encoded as %1.</source>
         <translation>El documento no se puede codificar como %1.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
         <translation>Archivos Markdown (*.md);;Archivos de texto (*.txt);;Todos los archivos (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
         <source>Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)</source>
         <translation>Archivos Markdown (*.md *.markdown);;Archivos de texto (*.txt);;Todos los archivos (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="503"/>
+        <location filename="../src/io/FileController.cpp" line="510"/>
         <source>The current document has unsaved changes.</source>
         <translation>El documento actual tiene cambios sin guardar.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="522"/>
+        <location filename="../src/io/FileController.cpp" line="529"/>
         <source>File Missing</source>
         <translation>Archivo no encontrado</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="523"/>
+        <location filename="../src/io/FileController.cpp" line="530"/>
         <source>The file &quot;%1&quot; no longer exists on disk. Use Save As to write it to a new location.</source>
         <translation>El archivo «%1» ya no existe en el disco. Use Guardar como para guardarlo en otra ubicación.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="531"/>
+        <location filename="../src/io/FileController.cpp" line="538"/>
         <source>File Changed on Disk</source>
         <translation>Archivo modificado en el disco</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="532"/>
+        <location filename="../src/io/FileController.cpp" line="539"/>
         <source>The file &quot;%1&quot; has been changed outside Muffin. Overwrite it?</source>
         <translation>El archivo «%1» se ha modificado fuera de Muffin. ¿Desea sobrescribirlo?</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="541"/>
-        <location filename="../src/io/FileController.cpp" line="629"/>
+        <location filename="../src/io/FileController.cpp" line="548"/>
+        <location filename="../src/io/FileController.cpp" line="636"/>
         <source>Open Failed</source>
         <translation>Error al abrir</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
         <source>Could not detect a lossless text encoding for this file.</source>
         <translation>No se pudo detectar una codificación de texto sin pérdida para este archivo.</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="567"/>
-        <location filename="../src/io/FileController.cpp" line="604"/>
-        <location filename="../src/io/FileController.cpp" line="609"/>
+        <location filename="../src/io/FileController.cpp" line="574"/>
+        <location filename="../src/io/FileController.cpp" line="611"/>
+        <location filename="../src/io/FileController.cpp" line="616"/>
         <source>Save Failed</source>
         <translation>Error al guardar</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="556"/>
-        <location filename="../src/io/FileController.cpp" line="595"/>
-        <location filename="../src/io/FileController.cpp" line="635"/>
+        <location filename="../src/io/FileController.cpp" line="563"/>
+        <location filename="../src/io/FileController.cpp" line="602"/>
+        <location filename="../src/io/FileController.cpp" line="642"/>
         <source>Encoding Error</source>
         <translation>Error de codificación</translation>
     </message>
@@ -1173,27 +1178,27 @@ Make it your default editor now?</source>
         <translation type="vanished">Codificación no compatible: %1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="636"/>
+        <location filename="../src/io/FileController.cpp" line="643"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation>Error al decodificar el archivo con la codificación: %1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="651"/>
+        <location filename="../src/io/FileController.cpp" line="658"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation>El documento tiene cambios sin guardar. ¿Guardar antes de reabrir con una nueva codificación?</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="688"/>
+        <location filename="../src/io/FileController.cpp" line="695"/>
         <source>Move To</source>
         <translation>Mover a</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Move Failed</source>
         <translation>Error al mover</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="697"/>
+        <location filename="../src/io/FileController.cpp" line="704"/>
         <source>Could not move file to:
 %1</source>
         <translation>No se pudo mover el archivo a:
@@ -1460,7 +1465,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>File</source>
         <translation>Archivo</translation>
     </message>
@@ -3708,7 +3713,7 @@ Would you like to open the download page?</source>
         <translation>Abrir</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="136"/>
+        <location filename="../src/main.cpp" line="151"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="300"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <source>Open in New Window</source>
@@ -3843,22 +3848,22 @@ Would you like to open the download page?</source>
         <translation>Copiar pestaña a una ventana nueva</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="167"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="166"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>Este archivo ha cambiado. Vuelva a buscar para actualizar sus coincidencias.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="205"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="204"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>Esta coincidencia no se puede seleccionar con precisión en la vista previa en vivo. Se muestra en el modo de código fuente.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="230"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
         <source>Preview Folder Replacement</source>
         <translation>Vista previa del reemplazo en la carpeta</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3871,25 +3876,25 @@ Reemplazar por: %3</translation>
         <translation type="vanished">Incluir rutas: %1 · Excluir rutas: %2 · Distinguir mayúsculas y minúsculas: %3 · Expresión regular: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>Yes</source>
         <translation>Sí</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <source>No</source>
         <translation>No</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
         <source>Matches</source>
         <translation>Coincidencias</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="217"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="216"/>
         <source>Rename / Move</source>
         <translation>Renombrar / Mover</translation>
     </message>
@@ -3927,7 +3932,7 @@ Carpeta de búsqueda: %3</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="97"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="263"/>
         <source>Skipped</source>
         <translation>Omitidos</translation>
     </message>
@@ -3954,62 +3959,62 @@ Se excluyen las carpetas ocultas, las carpetas de compilación, los enlaces simb
         <translation>Actualizar enlaces</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="166"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="170"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="165"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="169"/>
         <source>A note changed after the preview. Please try again.</source>
         <translation>Una nota cambió después de la vista previa. Vuelva a intentarlo.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="175"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="174"/>
         <source>A file changed on disk after the preview. Please try again.</source>
         <translation>Un archivo en disco cambió después de la vista previa. Vuelva a intentarlo.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="187"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="186"/>
         <source>
 Some originals could not be restored. Backups: %1</source>
         <translation>
 No se pudieron restaurar algunos originales. Copias de seguridad: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="192"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="191"/>
         <source>Link updates could not be completed. The path was not changed.</source>
         <translation>No se pudo completar la actualización de enlaces. La ruta no se ha cambiado.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="207"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="206"/>
         <source>Could not rename or move: %1</source>
         <translation>No se pudo renombrar o mover: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="245"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="244"/>
         <source>Update Note Links</source>
         <translation>Actualizar enlaces de notas</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="275"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>Enlaces actualizados. Copias de seguridad de los originales guardadas en %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="266"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>Sin guardar, modificados, ilegibles, demasiado grandes, con finales de línea mixtos o que no se pueden escribir sin pérdida.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="269"/>
         <source>Replacement preview</source>
         <translation>Vista previa del reemplazo</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="276"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … Vista previa truncada; se procesará el archivo completo.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="278"/>
         <source>Before:
 %1
 
@@ -4022,29 +4027,29 @@ Después:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="284"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="283"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>Se omiten los archivos con cambios sin guardar. Se crean copias de seguridad de los originales para poder recuperarlos. No se sobrescribirán los archivos modificados desde esta vista previa.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="298"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="297"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>Reemplazar %1 coincidencias en %2 archivos</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
         <source>Folder Replacement</source>
         <translation>Reemplazo en la carpeta</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="331"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>%1 archivos modificados; %2 omitidos.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="334"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -4052,19 +4057,19 @@ Carpeta de recuperación: %1</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="656"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="364"/>
         <source>Undo Folder Replacement</source>
         <translation>Deshacer el reemplazo en la carpeta</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
         <source>No folder replacement is available to restore.</source>
         <translation>No hay ningún reemplazo en una carpeta que se pueda deshacer.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="347"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4075,29 +4080,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 Se omitirán los archivos editados posteriormente o que contengan cambios sin guardar.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="349"/>
         <source>Restore Originals</source>
         <translation>Restaurar originales</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="351"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
         <source>Open Recovery Folder</source>
         <translation>Abrir la carpeta de recuperación</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="366"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>%1 archivos restaurados; %2 omitidos.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Updating files…</source>
         <translation>Actualizando archivos…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
         <source>Stop after current file</source>
         <translation>Detener después del archivo actual</translation>
     </message>
@@ -5175,7 +5180,7 @@ Se omitirán los archivos editados posteriormente o que contengan cambios sin gu
 <context>
     <name>muffin::PrefsImagePage</name>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="184"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="185"/>
         <source>When Inserting Images</source>
         <translation>Al insertar imágenes</translation>
     </message>
@@ -5184,7 +5189,7 @@ Se omitirán los archivos editados posteriormente o que contengan cambios sin gu
         <translation type="vanished">Más información...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="189"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
         <source>No special operation</source>
         <translation>Ninguna operación especial</translation>
     </message>
@@ -5193,143 +5198,143 @@ Se omitirán los archivos editados posteriormente o que contengan cambios sin gu
         <translation type="vanished">Copiar a carpeta personalizada</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="190"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
         <source>Copy image to current folder (./)</source>
         <translation>Copiar imagen a la carpeta actual (./)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="191"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
         <source>Copy image to ./assets folder</source>
         <translation>Copiar imagen a la carpeta ./assets</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="192"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
         <source>Copy image to ./%1 folder</source>
         <translation>Copiar imagen a la carpeta ./%1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="193"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
         <source>Upload image</source>
         <translation>Subir imagen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="194"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="195"/>
         <source>Copy to specified path</source>
         <translation>Copiar a la ruta especificada</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="199"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
         <source>Destination folder for copied images</source>
         <translation>Carpeta de destino de las imágenes copiadas</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="200"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
         <source>Browse...</source>
         <translation>Examinar...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="201"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
         <source>Apply the above rules to local images</source>
         <translation>Aplicar las reglas anteriores a imágenes locales</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="202"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
         <source>Apply the above rules to network images</source>
         <translation>Aplicar las reglas anteriores a imágenes de red</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="203"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="204"/>
         <source>Allow automatic image upload based on YAML settings</source>
         <translation>Permitir subida automática de imágenes según ajustes YAML</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="206"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
         <source>Image Syntax Preferences</source>
         <translation>Preferencias de sintaxis de imagen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="207"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
         <source>Prefer relative paths</source>
         <translation>Preferir rutas relativas</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="208"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
         <source>Add / to relative paths</source>
         <translation>Agregar ./ a las rutas relativas</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="209"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="210"/>
         <source>Auto-escape image URLs on insertion</source>
         <translation>Escapar automáticamente URL de imágenes al insertar</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="212"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
         <source>Upload Service Settings</source>
         <translation>Ajustes del servicio de subida</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="213"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="214"/>
         <source>Upload Service</source>
         <translation>Servicio de subida</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="218"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
         <source>None</source>
         <translation>Ninguno</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="219"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="220"/>
         <source>Custom Command</source>
         <translation>Comando personalizado</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="224"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
         <source>e.g. picgo upload or uPic -m upload</source>
         <translation>p. ej. picgo upload o uPic -m upload</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="225"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="226"/>
         <source>Test</source>
         <translation>Probar</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="292"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="293"/>
         <source>Select Image Folder</source>
         <translation>Seleccionar carpeta de imágenes</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Test Upload</source>
         <translation>Probar subida</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="301"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="302"/>
         <source>Enter an upload command first.</source>
         <translation>Introduzca primero un comando de subida.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="309"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="310"/>
         <source>Could not create a test image.</source>
         <translation>No se pudo crear una imagen de prueba.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="315"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="316"/>
         <source>Upload canceled.</source>
         <translation>Subida cancelada.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="317"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="318"/>
         <source>Upload succeeded. Returned URL:
 %1</source>
         <translation>Subida correcta. URL devuelta:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsImagePage.cpp" line="319"/>
+        <location filename="../src/app/PrefsImagePage.cpp" line="320"/>
         <source>Upload failed:
 %1</source>
         <translation>Error de subida:
@@ -5936,13 +5941,13 @@ Se omitirán los archivos editados posteriormente o que contengan cambios sin gu
         <translation type="vanished">Excluir rutas (palabras o segmentos de ruta)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="240"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Match case</source>
         <translation>Distinguir mayúsculas y minúsculas</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="414"/>
         <source>Regular expression</source>
         <translation>Expresión regular</translation>
@@ -6321,14 +6326,14 @@ Se omitirán los archivos editados posteriormente o que contengan cambios sin gu
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="182"/>
+        <location filename="../src/main.cpp" line="197"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>Actualizar Muffin</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="183"/>
+        <location filename="../src/main.cpp" line="198"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>La actualización se canceló o no se pudo instalar (código %1). Se ha restaurado la sesión. Puede volver a intentarlo desde Ayuda &gt; Buscar actualizaciones.</translation>
     </message>

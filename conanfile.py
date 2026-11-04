@@ -13,13 +13,14 @@ class MuffinDependencies(ConanFile):
         "qt/*:qtdeclarative": False,
         "qt/*:with_odbc": False,
         "qt/*:with_pq": False,
+        "icu/*:shared": False,
     }
 
     def configure(self):
-        if self.settings.os == "Macos":
-            # A process-wide ICU_DATA also redirects Apple's system ICU to
-            # our incompatible data. Embed Muffin's ICU data instead, so
-            # word segmentation works alongside native locale formatters.
+        if self.settings.os != "Windows":
+            # CMake deploys ICU's matching official .dat and empty data stub.
+            # Keep Conan from exporting ICU_DATA process-wide, which would
+            # also redirect Apple's incompatible system ICU.
             self.options["icu/*"].data_packaging = "static"
 
     def requirements(self):

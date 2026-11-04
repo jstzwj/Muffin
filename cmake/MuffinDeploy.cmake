@@ -56,6 +56,13 @@ if(APPLE)
 
 else()
   # --- Windows (and Linux): flat directory layout ---
+  file(GLOB icu_data_files "${ICU_DATA_DIR}/icudt*.dat")
+  list(LENGTH icu_data_files icu_data_count)
+  if(NOT icu_data_count EQUAL 1)
+    message(FATAL_ERROR "Expected one bundled ICU .dat file in ${ICU_DATA_DIR}")
+  endif()
+  file(MAKE_DIRECTORY "${DIST_DIR}/resources/icu")
+  file(COPY ${icu_data_files} DESTINATION "${DIST_DIR}/resources/icu")
   file(COPY "${APP_FILE}" DESTINATION "${DIST_DIR}")
   get_filename_component(APP_FILE_NAME "${APP_FILE}" NAME)
 

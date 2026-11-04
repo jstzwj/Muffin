@@ -44,12 +44,21 @@ message(STATUS "  Arch:     ${MSI_ARCH}")
 message(STATUS "  Version:  ${_msi_version}")
 message(STATUS "  Output:   ${MSI_OUTPUT}")
 
+file(GLOB icu_data_files "${DIST_DIR}/resources/icu/icudt*.dat")
+list(LENGTH icu_data_files icu_data_count)
+if(NOT icu_data_count EQUAL 1)
+  message(FATAL_ERROR "Expected one bundled ICU .dat file in ${DIST_DIR}/resources/icu")
+endif()
+list(GET icu_data_files 0 icu_data_file)
+get_filename_component(icu_data_name "${icu_data_file}" NAME)
+
 execute_process(
   COMMAND "${WIX_COMMAND}" build
     -arch ${MSI_ARCH}
     -ext WixToolset.UI.wixext
     -d MuffinVersion=${_msi_version}
     -d DistDir=${DIST_DIR}
+    -d IcuDataName=${icu_data_name}
     -out "${MSI_OUTPUT}"
     "${SOURCE_DIR}/cmake/Muffin.wxs"
   RESULT_VARIABLE wix_result
