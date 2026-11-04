@@ -154,9 +154,26 @@ void testWorkingDirectoryAndProgressLabelAreIndependent() {
 #endif
 }
 
+void testImportOutputIsCompleteAndExportDiagnosticsAreBounded() {
+  const auto executable = QCoreApplication::applicationFilePath();
+  const auto imported = muffin::ProcessRunner::run(nullptr, executable, {"--fake-large-output"});
+  require(imported.ran && imported.exitCode == 0 && imported.out.size() == 2 * 1024 * 1024,
+          "Imports retain complete converter output, including documents larger than the diagnostic limit");
+  const auto diagnostic =
+      muffin::ProcessRunner::run(nullptr, executable, {"--fake-large-output"}, {.outputLimit = 4096});
+  require(diagnostic.ran && diagnostic.exitCode == 0 && diagnostic.out.size() == 4096 && diagnostic.err.size() == 4096,
+          "Export diagnostics are bounded while both channels continue draining");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
+  if (argc == 2 && QByteArray(argv[1]) == "--fake-large-output") {
+    const QByteArray data(2 * 1024 * 1024, 'x');
+    std::fwrite(data.constData(), 1, data.size(), stdout);
+    std::fwrite(data.constData(), 1, data.size(), stderr);
+    return 0;
+  }
   if (argc == 2 && QByteArray(argv[1]) == "--fake-pandoc") {
     const QByteArray cwd = QDir::currentPath().toUtf8();
     std::fwrite(cwd.constData(), 1, cwd.size(), stdout);
@@ -170,6 +187,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setApplicationName(QStringLiteral("MuffinTests"));
   testDirectoryIdentityRejectsWrongTargets();
   testWorkingDirectoryAndProgressLabelAreIndependent();
+  testImportOutputIsCompleteAndExportDiagnosticsAreBounded();
   testEmptySettingFallsBackToSystemSearchOrBarePandoc();
   testNonExistentConfiguredPathFallsBack();
   testRealExecutablePathIsHonored();

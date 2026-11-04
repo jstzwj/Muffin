@@ -3,7 +3,8 @@
 // Export targets surfaced by the File → Export menu. PDF and the two HTML
 // variants are produced natively (the app's own DocumentLayout renderer for
 // PDF; SelectionSerializer / cmark-gfm for HTML); the rest are delegated to an
-// external Pandoc process (see PandocRunner). Image uses the native renderer.
+// external Pandoc process (see PandocRunner). Image uses the native renderer;
+// Command delegates to a user-configured executable.
 
 namespace muffin {
 
@@ -21,6 +22,7 @@ enum class ExportFormat {
   Rst,
   Textile,
   Opml,
+  Command,
 };
 
 } // namespace muffin

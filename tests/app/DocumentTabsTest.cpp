@@ -38,6 +38,7 @@
 #include <QElapsedTimer>
 #include <QDir>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileOpenEvent>
@@ -511,6 +512,264 @@ void externalFileQuestionsRetireWithTheirTab() {
   auto* active = closing.open(closing.file("closing.md", "Before closing\n"));
   externalWrite(active, "External revision before window destruction\n");
   waitUntil([&] { return reloadQuestions(closing.window).size() == 1; }, "window has an active question at teardown");
+}
+
+// Interact with the real modal prompt while its nested event loop is running.
+class AnswerPrompts {
+public:
+  QTimer timer;
+  int count = 0;
+  explicit AnswerPrompts(QMessageBox::StandardButton answer) {
+    timer.setInterval(5);
+    QObject::connect(&timer, &QTimer::timeout, &timer, [this, answer] {
+      if (auto* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+        ++count;
+        require(box->button(answer) != nullptr,
+                QStringLiteral("Unexpected dialog: %1 — %2").arg(box->windowTitle(), box->text()));
+        box->button(answer)->click();
+      }
+      require(count < 10, "unexpected repeated prompts");
+    });
+    timer.start();
+  }
+};
+
+void reopenClosedDocuments() {
+  SettingsOverride lockEnabled("editor/lockEditingEnabled", true), lockScope("editor/lockEditingScope", 0);
+  Fixture f;
+  auto* reopen = action(f.window, "Reopen Closed File");
+  require(!reopen->isEnabled() && reopen->shortcut() == QKeySequence("Ctrl+Shift+T"),
+          "closed-file command starts disabled with the expected shortcut");
+  f.close(f.current());
+  require(!reopen->isEnabled(), "closing an unnamed placeholder does not create history");
+  const auto first = f.file("first.md", "First paragraph\n\nSecond paragraph\n");
+  auto* original = f.open(first);
+  original->session.document().setModified(true);
+  {
+    AnswerPrompts cancel(QMessageBox::Cancel);
+    f.close(original);
+    require(cancel.count == 1 && f.current() == original && !reopen->isEnabled(),
+            "cancelled closes do not enter closed-file history");
+  }
+  original->session.document().setModified(false);
+  action(f.window, "Source Code Mode")->trigger();
+  original->editor->setSelection(20, 4);
+  original->editingLocked = true;
+  original->pinned = true;
+  const auto second = f.file("second.md", "Second file\n");
+  auto* other = f.open(second);
+  f.close(original);
+  f.close(other);
+  require(reopen->isEnabled(), "accepted file closes enable reopening");
+  reopen->trigger();
+  require(f.current()->session.filePath() == second, "closed files reopen in reverse closing order");
+  f.file("first.md", "First paragraph\n\nSecond paragraph\nChanged on disk\n");
+  reopen->trigger();
+  auto* restored = f.current();
+  waitUntil([&] { return !restored->pendingViewState; }, "closed-file view restoration finishes");
+  require(restored->session.filePath() == first && restored->backend->isSourceMode() &&
+              restored->editor->anchorPosition() == 20 && restored->editor->cursorPosition() == 4 &&
+              restored->editingLocked && restored->pinned &&
+              restored->session.markdownText().toString().contains("Changed on disk") && !reopen->isEnabled(),
+          "reopening restores mode, directed selection and tab state while reading current disk bytes");
+  f.close(restored);
+  restored = f.open(first);
+  restored->session.applyTextDelta(0, 0, "Unsaved ", true);
+  restored->editor->setSelection(1, 3);
+  const auto before = restored->session.markdownText().toString();
+  reopen->trigger();
+  require(f.current() == restored && restored->session.markdownText().toString() == before &&
+              restored->editor->anchorPosition() == 1 && restored->editor->cursorPosition() == 3,
+          "a manually reopened file is activated without disturbing newer edits or its selection");
+  auto& shortcuts = ShortcutSettings::instance();
+  shortcuts.setOverride("file.reopen_closed", QKeySequence("Ctrl+Alt+T"));
+  require(reopen->shortcut() == QKeySequence("Ctrl+Alt+T"), "reopening uses the shared configurable shortcut registry");
+  shortcuts.clearOverride("file.reopen_closed");
+}
+
+void reopeningWaitsForFileConfirmation() {
+  SettingsOverride extensionProtection("files/extensionProtection", false);
+  Fixture f;
+  const auto path = f.file("note.binary", "0123456789\n");
+  auto* document = f.open(path);
+  action(f.window, "Source Code Mode")->trigger();
+  document->editor->setSelection(8, 2);
+  f.close(document);
+  QSettings().setValue("files/extensionProtection", true);
+  action(f.window, "Reopen Closed File")->trigger();
+  document = f.current();
+  QApplication::processEvents();
+  require(document->pendingOpenPath == path && document->pendingViewState && document->session.markdownText().isEmpty(),
+          "reopen retains view restoration while the normal file guard awaits confirmation");
+  document->openConfirmation->findChild<QPushButton*>("confirmFileOpen")->click();
+  waitUntil([&] { return !document->pendingViewState; }, "confirmed reopen restores its view");
+  require(document->editor->anchorPosition() == 8 && document->editor->cursorPosition() == 2,
+          "confirmation does not consume selection against an empty model");
+}
+
+void exportPresetsAndRepeat() {
+  SettingsOverride presetsSetting("export/presets", QVariantList{});
+  SettingsOverride defaultHead("export/html/head", "<meta name=\"default\">");
+  SettingsOverride lastCategory("preferences/lastCategory", "export");
+  Fixture f;
+  auto* document = f.open(f.file(QStringLiteral("笔记 with spaces.md"), "# Original\n"));
+  PreferencesDialog host;
+  auto& preferences = *host.findChild<PrefsExportPage*>();
+  host.show();
+  QApplication::processEvents();
+  auto* formats = preferences.findChild<QListWidget*>("ExportFormats");
+  formats->setCurrentRow(2);
+  const auto addPreset = [&](const QString& name, bool custom, bool duplicate) {
+    QTimer timer;
+    timer.setInterval(5);
+    bool handled = false;
+    QObject::connect(&timer, &QTimer::timeout, &preferences, [&] {
+      auto* dialog = QApplication::activeModalWidget();
+      if (handled || !dialog || dialog->objectName() != "ExportPresetDialog")
+        return;
+      handled = true;
+      dialog->findChild<QLineEdit*>("ExportPresetName")->setText(name);
+      auto* kind = dialog->findChild<QComboBox*>("ExportPresetFormat");
+      if (custom)
+        kind->setCurrentIndex(kind->findData(int(ExportFormat::Command)));
+      dialog->findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Save)->click();
+    });
+    timer.start();
+    preferences.findChild<QPushButton*>(duplicate ? "ExportPresetDuplicate" : "ExportPresetAdd")->click();
+    require(handled, "preset creation dialog is completed");
+  };
+  addPreset("Web article", false, false);
+  require(formats->count() == 15 && formats->currentRow() == 14, "named preset is added and selected");
+  preferences.findChild<QPlainTextEdit*>("ExportHtmlHead")->setPlainText("<meta name=\"snapshot\">");
+  require(QSettings().value("export/html/head") == "<meta name=\"default\">",
+          "editing a named preset preserves format defaults");
+  addPreset("Web copy", false, true);
+  require(exportPresets().size() == 2 && exportPresets()[1].options.value("head") == "<meta name=\"snapshot\">",
+          "duplicating a preset copies independent settings");
+  preferences.findChild<QPushButton*>("ExportPresetUp")->click();
+  require(exportPresets()[0].name == "Web copy", "reordering presets persists");
+  preferences.findChild<QPushButton*>("ExportPresetRemove")->click();
+  require(exportPresets().size() == 1, "removing a preset keeps the remaining preset");
+  const auto customIdBefore = exportPresets()[0].id;
+  addPreset("Local converter", true, false);
+  preferences.findChild<QLineEdit*>("ExportCommandProgram")->setText(QCoreApplication::applicationFilePath());
+  preferences.findChild<QLineEdit*>("ExportCommandArguments")
+      ->setText("--fake-custom-export \"${inputPath}\" \"${outputPath}\"");
+  preferences.findChild<QLineEdit*>("ExportCommandExtension")->setText("txt");
+  require(exportPresets()[0].id == customIdBefore && exportPresets()[1].format == ExportFormat::Command,
+          "custom command is a separate named format");
+  const auto captures = qEnvironmentVariable("MUFFIN_PRESET_SCREENSHOT_DIR");
+  if (!captures.isEmpty()) {
+    QDir().mkpath(captures);
+    for (const auto& language : {QStringLiteral("en"), QStringLiteral("zh_CN")}) {
+      LanguageManager::instance().setLanguage(language);
+      for (const auto& theme : {QStringLiteral("github"), QStringLiteral("night")}) {
+        host.setThemeDefinition(ThemeDefinition::builtIn(theme).value());
+        for (int row : {14, 15}) {
+          formats->setCurrentRow(row);
+          QApplication::processEvents();
+          require(host.grab().save(QDir(captures).filePath(language + theme + QString::number(row) + ".png")),
+                  "capture themed preset settings");
+        }
+      }
+    }
+    LanguageManager::instance().setLanguage("en");
+  }
+  for (const auto* name : {"ExportPresetAdd", "ExportPresetDuplicate", "ExportPresetRename", "ExportPresetRemove"}) {
+    auto* button = preferences.findChild<QPushButton*>(name);
+    require(button->width() >= button->minimumSizeHint().width() &&
+                button->parentWidget()->rect().contains(button->geometry()),
+            "preset management buttons fit the themed navigation panel");
+  }
+  host.hide();
+  auto* menu = action(f.window, "Export Presets")->menu();
+  QMetaObject::invokeMethod(menu, "aboutToShow");
+  const auto selectExport = [&](QAction* command, const QString& path) {
+    QTimer timer;
+    timer.setInterval(5);
+    bool handled = false;
+    QObject::connect(&timer, &QTimer::timeout, &f.window, [&] {
+      if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()); dialog && !handled) {
+        handled = true;
+        acceptSaveFile(*dialog, path);
+      } else if (auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+        require(false, "Unexpected preset export failure: " + message->text());
+    });
+    timer.start();
+    command->trigger();
+    require(handled && QFileInfo::exists(path), "preset export writes its selected destination");
+  };
+  const auto read = [](const QString& path) {
+    QFile file(path);
+    require(file.open(QIODevice::ReadOnly), "read preset export");
+    return file.readAll();
+  };
+  const auto html = f.directory.filePath("article.html");
+  selectExport(action(f.window, "Web article"), html);
+  require(read(html).contains("snapshot") && document->lastExport && document->lastExport->target == html,
+          "named preset appears in the export menu and successful export records settings");
+  document->session.applyTextDelta(0, 0, "Current unsaved content\n\n", true);
+  auto changed = exportPresets();
+  changed[0].options.insert("head", "<meta name=\"changed\">");
+  saveExportPresets(changed);
+  action(f.window, "Export and Overwrite Previous")->trigger();
+  require(read(html).contains("Current unsaved content") && read(html).contains("snapshot") &&
+              !read(html).contains("name=\"changed\""),
+          "overwrite exports current buffer content with the last successful settings snapshot");
+  const auto copy = f.directory.filePath("copy.html");
+  selectExport(action(f.window, "Export with Previous Settings..."), copy);
+  require(read(copy) == read(html) && document->lastExport->target == copy,
+          "repeat with a new destination keeps captured settings and updates successful history");
+  const auto custom = f.directory.filePath(QStringLiteral("转换 output.txt"));
+  selectExport(action(f.window, "Local converter"), custom);
+  require(read(custom) == document->session.markdownText().toString().toUtf8(),
+          "custom command receives an unsaved Markdown snapshot and literal paths containing spaces and Unicode");
+  changed = exportPresets();
+  changed[1].options.insert("arguments", "--fake-custom-export \"${inputPath}\" \"${outputPath}\" --fail");
+  saveExportPresets(changed);
+  QMetaObject::invokeMethod(menu, "aboutToShow");
+  QTimer failure;
+  failure.setInterval(5);
+  bool chosen = false, warned = false;
+  QObject::connect(&failure, &QTimer::timeout, &f.window, [&] {
+    if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()); dialog && !chosen) {
+      chosen = true;
+      acceptSaveFile(*dialog, custom);
+    } else if (auto* message = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      warned = true;
+      message->accept();
+    }
+  });
+  failure.start();
+  action(f.window, "Local converter")->trigger();
+  failure.stop();
+  require(warned && read(custom) == document->session.markdownText().toString().toUtf8() &&
+              !document->lastExport->preset.options.value("arguments").toString().contains("--fail"),
+          "failed custom export preserves the old output and successful export record");
+  changed[1].options.insert("arguments", "--fake-custom-export \"${inputPath}\" \"${outputPath}\" --wait");
+  saveExportPresets(changed);
+  QMetaObject::invokeMethod(menu, "aboutToShow");
+  QTimer cancel;
+  cancel.setInterval(5);
+  bool selected = false, canceled = false;
+  QObject::connect(&cancel, &QTimer::timeout, &f.window, [&] {
+    if (auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget()); dialog && !selected) {
+      selected = true;
+      acceptSaveFile(*dialog, custom);
+    } else if (auto* progress = f.window.findChild<QProgressDialog*>(); progress && progress->isVisible()) {
+      canceled = true;
+      progress->findChild<QPushButton*>()->click();
+    }
+  });
+  cancel.start();
+  action(f.window, "Local converter")->trigger();
+  cancel.stop();
+  require(canceled && read(custom) == document->session.markdownText().toString().toUtf8() &&
+              !document->lastExport->preset.options.value("arguments").toString().contains("--wait"),
+          "canceling a running converter preserves the destination and successful history");
+  auto* another = f.open(f.file("other.md", "Other\n"));
+  require(!another->lastExport && !action(f.window, "Export and Overwrite Previous")->isEnabled(),
+          "repeat history belongs to each document tab");
 }
 
 void exportPreferencesAndOutputs() {
@@ -2953,26 +3212,6 @@ void sessionRestoreKeepsUnconfirmedFilesSeparate() {
   require(!pending->session.isOpenInProgress() && pending->pendingOpenPath.isEmpty(), "restored guard cancels safely");
 }
 
-// Interact with the real modal prompt while its nested event loop is running.
-class AnswerPrompts {
-public:
-  QTimer timer;
-  int count = 0;
-  explicit AnswerPrompts(QMessageBox::StandardButton answer) {
-    timer.setInterval(5);
-    QObject::connect(&timer, &QTimer::timeout, &timer, [this, answer] {
-      if (auto* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
-        ++count;
-        require(box->button(answer) != nullptr,
-                QStringLiteral("Unexpected dialog: %1 — %2").arg(box->windowTitle(), box->text()));
-        box->button(answer)->click();
-      }
-      require(count < 10, "unexpected repeated prompts");
-    });
-    timer.start();
-  }
-};
-
 QString contents(const QString& path) {
   QFile file(path);
   require(file.open(QIODevice::ReadOnly), "read saved document");
@@ -4499,6 +4738,18 @@ int main(int argc, char** argv) {
   QStringList converterArgs;
   for (int i = 1; i < argc; ++i)
     converterArgs << QString::fromLocal8Bit(argv[i]);
+  if (converterArgs.contains("--fake-custom-export")) {
+    QCoreApplication converter(argc, argv);
+    const auto args = converter.arguments();
+    const auto index = args.indexOf("--fake-custom-export");
+    QFile input(args.value(index + 1)), output(args.value(index + 2));
+    if (!input.open(QIODevice::ReadOnly) || !output.open(QIODevice::WriteOnly))
+      return 2;
+    output.write(args.contains("--fail") ? QByteArray("partial output") : input.readAll());
+    if (args.contains("--wait"))
+      QThread::msleep(10000);
+    return args.contains("--fail") ? 1 : 0;
+  }
   if (converterArgs.contains("-o") && converterArgs.contains("-t")) {
     QFile output(converterArgs.value(converterArgs.indexOf("-o") + 1));
     if (!output.open(QIODevice::WriteOnly))
@@ -4529,6 +4780,12 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  if (QCoreApplication::arguments().contains(QStringLiteral("--closed-and-presets"))) {
+    runTest("reopenClosedDocuments", reopenClosedDocuments);
+    runTest("reopeningWaitsForFileConfirmation", reopeningWaitsForFileConfirmation);
+    runTest("exportPresetsAndRepeat", exportPresetsAndRepeat);
+    return 0;
+  }
   const auto runLockedEditingTests = [] {
     runTest("tabMenuLocksTheClickedDocument", tabMenuLocksTheClickedDocument);
     runTest("tabLockIndicatorPreservesControlsAndFollowsTheme", tabLockIndicatorPreservesControlsAndFollowsTheme);
@@ -4614,6 +4871,9 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--sidebar-file-open")))
     return 0;
   runTest("exportPreferencesAndOutputs", exportPreferencesAndOutputs);
+  runTest("reopenClosedDocuments", reopenClosedDocuments);
+  runTest("reopeningWaitsForFileConfirmation", reopeningWaitsForFileConfirmation);
+  runTest("exportPresetsAndRepeat", exportPresetsAndRepeat);
   runTest("exportNumberControls", exportNumberControls);
   runTest("searchPreferences", searchPreferences);
   runTest("exportPathRowsFitControls", exportPathRowsFitControls);

@@ -1,4 +1,5 @@
 #include "export/ExportOptions.h"
+#include "export/ExportPreset.h"
 #include "export/NativeExporter.h"
 #include "document/DocumentSession.h"
 #include "../TestUtils.h"
@@ -150,6 +151,60 @@ void formatOptionsAndQuotedArguments() {
   require(pandocExportArguments(ExportFormat::Docx, "gfm", "out.docx", options, &args),
           "custom TOC arguments are allowed");
 }
+
+void namedPresetsAreIndependentAndPersistent() {
+  const auto builtin = builtInExportPreset(ExportFormat::Docx);
+  ExportPreset first{"first", QStringLiteral("工作报告"), ExportFormat::Docx, builtin.options};
+  first.options.insert("author", "Alice");
+  first.options.insert("tocDepth", 5);
+  auto second = first;
+  second.id = "second";
+  second.name = "Short report";
+  second.options.insert("author", "Bob");
+  saveExportPresets({second, first});
+  QSettings().sync();
+  const auto loaded = exportPresets();
+  require(loaded.size() == 2 && loaded[0].id == "second" && loaded[1].name == first.name,
+          "named presets retain names, identity and user ordering");
+  const auto options = pandocExportOptions(loaded[1].options);
+  require(options.author == "Alice" && options.tocDepth == 5 && loaded[0].options.value("author") == "Bob" &&
+              builtInExportPreset(ExportFormat::Docx).options == builtin.options,
+          "format options read a preset snapshot without changing defaults or another preset");
+  auto pdf = builtInExportPreset(ExportFormat::Pdf).options;
+  pdf.insert("paper", "Custom");
+  pdf.insert("width", 170.5);
+  pdf.insert("height", 240.0);
+  pdf.insert("header", "${title}");
+  const auto layout = pdfExportOptions(pdf);
+  require(qAbs(layout.pageLayout.pageSize().size(QPageSize::Millimeter).width() - 170.5) < 0.5 &&
+              layout.header == "${title}",
+          "native options also read independent preset snapshots");
+  QSettings().remove("export/presets");
+}
+
+void commandVariablesStayLiteralArguments() {
+  ExportPreset command{"command",
+                       "Converter",
+                       ExportFormat::Command,
+                       {{"program", "/tools/converter"},
+                        {"extension", "custom"},
+                        {"arguments", "--input \"${inputPath}\" --out=${outputPath} --name \"${fileName}\""}}};
+  const QVariantMap variables{{"inputPath", QStringLiteral("/笔记/a b\"c.md")},
+                              {"outputPath", "/output/with spaces.custom"},
+                              {"fileName", "${outputPath}; $(do not execute)"}};
+  QString program;
+  QStringList args;
+  require(exportCommandArguments(command, variables, &program, &args) && program == "/tools/converter" &&
+              args == QStringList{"--input", variables.value("inputPath").toString(),
+                                  "--out=/output/with spaces.custom", "--name", variables.value("fileName").toString()},
+          "variables are substituted after tokenization, without shell evaluation or recursive expansion");
+  command.options.insert("arguments", "${unknown} ${outputPath}");
+  require(!exportCommandArguments(command, variables, &program, &args), "unknown variables are rejected");
+  command.options.insert("arguments", "${inputPath}");
+  require(!exportCommandArguments(command, variables, &program, &args), "command must declare an output file");
+  command.options.insert("extension", "../md");
+  require(exportPresetExtension(command).isEmpty(), "extension cannot escape the staging directory");
+}
 }
 
 int main(int argc, char** argv) {
@@ -165,4 +220,6 @@ int main(int argc, char** argv) {
   runTest("imageDimensionsAndContent", imageDimensionsAndContent);
   runTest("pdfHeadersFootersAndPageNumbers", pdfHeadersFootersAndPageNumbers);
   runTest("formatOptionsAndQuotedArguments", formatOptionsAndQuotedArguments);
+  runTest("namedPresetsAreIndependentAndPersistent", namedPresetsAreIndependentAndPersistent);
+  runTest("commandVariablesStayLiteralArguments", commandVariablesStayLiteralArguments);
 }

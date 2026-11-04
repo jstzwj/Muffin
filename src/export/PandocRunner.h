@@ -1,4 +1,5 @@
 #pragma once
+#include "export/ProcessRunner.h"
 
 #include <QByteArray>
 #include <QString>
@@ -11,26 +12,14 @@ namespace muffin {
 // Outcome of a Pandoc invocation. `ran` distinguishes "the process executed and
 // returned" from "we never managed to start it" (e.g. Pandoc not installed) —
 // callers report those two cases differently to the user.
-struct PandocResult {
-  bool ran = false;
-  bool canceled = false;
-  int exitCode = -1;
-  QByteArray out; // stdout
-  QByteArray err; // stderr
-};
+using PandocResult = ProcessResult;
 
 // Named fields keep the input payload, resource directory and UI label distinct.
-struct PandocRunOptions {
-  QByteArray stdinData;
-  QString workDir;
-  QString progressLabel;
-};
+using PandocRunOptions = ProcessRunOptions;
 
 // Thin wrapper around a QProcess that drives the external Pandoc executable.
-// The codebase has no other external-process usage, so this is the canonical
-// helper for it: it resolves the executable, runs synchronously while keeping a
-// modal progress dialog responsive (and cancellable), and returns the captured
-// output. It is tr()-free on purpose — callers own all user-facing messages so
+// Resolves and probes Pandoc; execution is shared with custom export commands
+// through ProcessRunner. It is tr()-free — callers own all user-facing messages so
 // this translation unit stays out of MUFFIN_TRANSLATABLE_SOURCES and may use a
 // `namespace muffin { }` wrapper freely (see CLAUDE.md).
 class PandocRunner {
@@ -63,6 +52,7 @@ public:
   // timeouts. Synchronous, so call only at user-action time, not from an
   // enabled predicate. Returns false when Pandoc is absent or misconfigured.
   static bool isAvailable();
+  static bool isAvailable(const QString& executable);
 
   // Runs Pandoc with `args` (no leading program name). When `stdinData` is
   // non-null it is written to the process stdin and the write channel is closed

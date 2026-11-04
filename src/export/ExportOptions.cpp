@@ -1,4 +1,5 @@
 #include "export/ExportOptions.h"
+#include "export/ExportPreset.h"
 
 #include <QPageSize>
 #include <QProcess>
@@ -49,14 +50,18 @@ QString exportSettingsPrefix(ExportFormat format) {
   case ExportFormat::Opml:
     name = "opml";
     break;
+  case ExportFormat::Command:
+    name = "command";
+    break;
   }
   return QStringLiteral("export/") + QLatin1String(name) + QLatin1Char('/');
 }
 
 PdfExportOptions pdfExportOptions() {
-  QSettings settings;
-  const QString prefix = exportSettingsPrefix(ExportFormat::Pdf);
-  const auto paper = settings.value(prefix + "paper", "A4").toString();
+  return pdfExportOptions(builtInExportPreset(ExportFormat::Pdf).options);
+}
+PdfExportOptions pdfExportOptions(const QVariantMap& settings) {
+  const auto paper = settings.value("paper", "A4").toString();
   QPageSize size(QPageSize::A4);
   if (paper == "Letter")
     size = QPageSize(QPageSize::Letter);
@@ -65,46 +70,46 @@ PdfExportOptions pdfExportOptions() {
   else if (paper == "A5")
     size = QPageSize(QPageSize::A5);
   else if (paper == "Custom")
-    size = QPageSize(QSizeF(qBound(50.0, settings.value(prefix + "width", 210.0).toDouble(), 1000.0),
-                            qBound(50.0, settings.value(prefix + "height", 297.0).toDouble(), 1000.0)),
+    size = QPageSize(QSizeF(qBound(50.0, settings.value("width", 210.0).toDouble(), 1000.0),
+                            qBound(50.0, settings.value("height", 297.0).toDouble(), 1000.0)),
                      QPageSize::Millimeter);
-  const qreal margin = qBound(0.0, settings.value(prefix + "margin", 15.0).toDouble(), 20.0);
+  const qreal margin = qBound(0.0, settings.value("margin", 15.0).toDouble(), 20.0);
   PdfExportOptions options;
-  options.pageLayout = QPageLayout(
-      size, settings.value(prefix + "landscape", false).toBool() ? QPageLayout::Landscape : QPageLayout::Portrait,
-      QMarginsF(margin, margin, margin, margin), QPageLayout::Millimeter);
-  options.breakOnHeading = settings.value(prefix + "breakOnHeading", false).toBool();
-  options.theme = settings.value(prefix + "theme", "current").toString();
-  options.fontSize = qBound(10, settings.value(prefix + "fontSize", 16).toInt(), 40);
-  options.header = settings.value(prefix + "header").toString();
-  options.footer = settings.value(prefix + "footer").toString();
-  options.author = settings.value(prefix + "author").toString();
-  options.pageNumbers = settings.value(prefix + "pageNumbers", false).toBool();
+  options.pageLayout =
+      QPageLayout(size, settings.value("landscape", false).toBool() ? QPageLayout::Landscape : QPageLayout::Portrait,
+                  QMarginsF(margin, margin, margin, margin), QPageLayout::Millimeter);
+  options.breakOnHeading = settings.value("breakOnHeading", false).toBool();
+  options.theme = settings.value("theme", "current").toString();
+  options.fontSize = qBound(10, settings.value("fontSize", 16).toInt(), 40);
+  options.header = settings.value("header").toString();
+  options.footer = settings.value("footer").toString();
+  options.author = settings.value("author").toString();
+  options.pageNumbers = settings.value("pageNumbers", false).toBool();
   return options;
 }
 
 ImageExportOptions imageExportOptions() {
-  QSettings settings;
-  const auto prefix = exportSettingsPrefix(ExportFormat::Image);
-  return {qBound(320, settings.value(prefix + "width", 960).toInt(), 2400),
-          qBound(1, settings.value(prefix + "scale", 1).toInt(), 3),
-          qBound(10, settings.value(prefix + "fontSize", 16).toInt(), 40),
-          settings.value(prefix + "theme", "current").toString()};
+  return imageExportOptions(builtInExportPreset(ExportFormat::Image).options);
+}
+ImageExportOptions imageExportOptions(const QVariantMap& settings) {
+  return {qBound(320, settings.value("width", 960).toInt(), 2400), qBound(1, settings.value("scale", 1).toInt(), 3),
+          qBound(10, settings.value("fontSize", 16).toInt(), 40), settings.value("theme", "current").toString()};
 }
 
 PandocExportOptions pandocExportOptions(ExportFormat format) {
-  QSettings settings;
-  const auto p = exportSettingsPrefix(format);
+  return pandocExportOptions(builtInExportPreset(format).options);
+}
+PandocExportOptions pandocExportOptions(const QVariantMap& settings) {
   PandocExportOptions options;
-  options.referenceDocument = settings.value(p + "referenceDocument").toString();
-  options.css = settings.value(p + "css").toString();
-  options.title = settings.value(p + "title").toString();
-  options.author = settings.value(p + "author").toString();
-  options.extraArguments = settings.value(p + "arguments").toString();
-  options.wrap = settings.value(p + "wrap", "none").toString();
-  options.toc = settings.value(p + "toc", false).toBool();
-  options.tocDepth = qBound(1, settings.value(p + "tocDepth", 3).toInt(), 6);
-  options.numberSections = settings.value(p + "numberSections", false).toBool();
+  options.referenceDocument = settings.value("referenceDocument").toString();
+  options.css = settings.value("css").toString();
+  options.title = settings.value("title").toString();
+  options.author = settings.value("author").toString();
+  options.extraArguments = settings.value("arguments").toString();
+  options.wrap = settings.value("wrap", "none").toString();
+  options.toc = settings.value("toc", false).toBool();
+  options.tocDepth = qBound(1, settings.value("tocDepth", 3).toInt(), 6);
+  options.numberSections = settings.value("numberSections", false).toBool();
   return options;
 }
 

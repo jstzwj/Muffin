@@ -132,6 +132,7 @@ private:
   DocumentTab* createDocumentTab();
   void activateTab(int index);
   bool closeTab(int index);
+  void reopenClosedFile();
   void buildTabContextMenu(int index, QPoint globalPos);
   void closeTabs(const QList<DocumentTab*>& documents);
   void setTabPinned(DocumentTab* document, bool pinned);
@@ -337,6 +338,10 @@ private:
   // File → Export: write the document to a file in the given format (native PDF
   // / HTML, or Pandoc-driven for the rest).
   void exportAs(ExportFormat format);
+  void exportPreset(const QString& id);
+  void repeatExport(bool overwrite);
+  void runExport(ExportRecord record, bool chooseTarget);
+  void rebuildExportPresetsMenu();
   // Paints the laid-out document onto a printer (shared by Print and PDF
   // export). Extracted from printDocument so PDF export can reuse it.
   // Returns false when painting could not start (null printer or inactive
@@ -425,6 +430,12 @@ private:
   bool externalFileChangePromptActive_ = false;
   bool suppressSaveOnTabSwitch_ = false;
   bool normalizingPinnedTabs_ = false;
+  struct ClosedFile {
+    QString path;
+    QVariantMap view;
+    bool editingLocked = false;
+  };
+  QList<ClosedFile> closedFiles_;
   CommandRegistry commands_;
   ThemeManager themeManager_;
   BundledEmojiProvider emojiProvider_;
@@ -446,6 +457,8 @@ private:
   bool restoringViewState_ = false;
   QMenu* recentFilesMenu_ = nullptr;
   QMenu* reopenEncodingMenu_ = nullptr;
+  QMenu* exportPresetsMenu_ = nullptr;
+  bool exporting_ = false;
   QMenu* themesMenu_ = nullptr;
   // Exclusive radio groups (image resize, image insert action), keyed by the
   // declaration's actionGroup id. Rebuilt on every menu rebuild.

@@ -8,6 +8,7 @@
 #include "editor/DocumentSearch.h"
 #include "io/FileController.h"
 #include "theme/RenderTheme.h"
+#include "export/ExportPreset.h"
 
 #include <QWidget>
 #include <QPointer>
@@ -25,6 +26,13 @@ class EditorView;
 class FindBarWidget;
 class FileOpenConfirmation;
 class SourceEditorWidget;
+
+struct ExportRecord {
+  ExportPreset preset;
+  QString target;
+  RenderTheme theme;
+  QString themeCss;
+};
 
 // A tab owns the entire editing lifetime, including undo stacks and both viewports.
 // Switching documents never rebinds a view or replaces another document's buffer.
@@ -81,6 +89,8 @@ public:
   bool renderViewDirty = false;
   bool renderViewBatchDirty = false;
   bool pinned = false;
+  // Only successful exports are repeatable; records follow their document tab.
+  std::optional<ExportRecord> lastExport;
   // 锁定编辑（独立标签页作用范围）：每个页签自己记住状态，切换页签互不影响。
   bool editingLocked = false;
   // Preserve the serialized state until both parsing and first activation have

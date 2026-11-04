@@ -344,6 +344,7 @@ bool muffin::MainWindow::loadFileIntoTab(DocumentTab* document, const QString& p
   if (!document->fileController.open(document->session, this, path))
     return false;
   document->editorController.clearHistoryAndSelection();
+  document->lastExport.reset();
   tabs_->setCurrentWidget(document);
   updateTabLabel(document);
   if (!document->pendingImportCopy)
@@ -374,6 +375,7 @@ void muffin::MainWindow::confirmPendingFileOpen(DocumentTab* document) {
   updateTitle();
   saveSessionState();
   document->viewStack->currentWidget()->setFocus();
+  QTimer::singleShot(0, document->windowConnections, [this, document] { restoreTabViewState(document); });
 }
 
 void muffin::MainWindow::cancelPendingFileOpen(DocumentTab* document) {
@@ -482,6 +484,13 @@ bool muffin::MainWindow::closeTab(int index) {
     tabs_->setCurrentWidget(original);
     return false;
   }
+  // Remember only accepted closes of real files. Discarded edits stay
+  // discarded; reopening reads the current disk file through the usual guard.
+  if (!document->session.filePath().isEmpty() && document->pendingOpenPath.isEmpty()) {
+    closedFiles_.append({document->session.filePath(), tabViewState(document), document->editingLocked});
+    if (closedFiles_.size() > 32)
+      closedFiles_.removeFirst();
+  }
   const bool closingOriginal = document == original;
   if (tabs_->count() == 1) {
     createDocumentTab();
@@ -492,10 +501,40 @@ bool muffin::MainWindow::closeTab(int index) {
     tabs_->setCurrentWidget(original);
   }
   delete document;
+  updateAllActions();
   sessionUpdatesPaused_ = updatesWerePaused;
   refreshSidebarDocumentInfo();
   saveSessionState();
   return true;
+}
+
+void muffin::MainWindow::reopenClosedFile() {
+  if (workspaceWriteInProgress_ || closedFiles_.isEmpty())
+    return;
+  const auto closed = closedFiles_.takeLast();
+  const bool alreadyOpen = isPathOpen(closed.path);
+  if (openFile(closed.path)) {
+    auto* document = tab_;
+    // An already-open file retains its current view and edits.
+    if (!alreadyOpen) {
+      document->pendingViewState = closed.view;
+      document->editingLocked = closed.editingLocked;
+      setTabPinned(document, closed.view.value(QStringLiteral("pinned")).toBool());
+      const bool source = closed.view.value(QStringLiteral("sourceMode")).toBool();
+      if (source)
+        document->backend = std::make_unique<SourceEditorBackend>(document->editor);
+      else
+        document->backend =
+            std::make_unique<RenderEditorBackend>(document->editorController, document->session, document->renderView);
+      document->viewStack->setCurrentWidget(source ? static_cast<QWidget*>(document->editor)
+                                                   : static_cast<QWidget*>(document->renderView));
+      applyEditingLockedTo(document);
+      restoreTabViewState(document);
+      updateTabLabel(document);
+      activateTab(tabs_->currentIndex());
+    }
+  }
+  updateAllActions();
 }
 
 void muffin::MainWindow::buildTabContextMenu(int index, QPoint globalPos) {
@@ -784,7 +823,7 @@ QVariantMap muffin::MainWindow::tabViewState(DocumentTab* document) const {
 
 void muffin::MainWindow::restoreTabViewState(DocumentTab* document) {
   if (!document->pendingViewState || document != tab_ || sessionUpdatesPaused_ ||
-      document->session.isOpenInProgress() || !document->isVisible())
+      !document->pendingOpenPath.isEmpty() || document->session.isOpenInProgress() || !document->isVisible())
     return;
   const QScopedValueRollback<bool> guard(restoringViewState_, true);
   const auto state = *document->pendingViewState;

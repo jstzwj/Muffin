@@ -22,6 +22,13 @@
 #include <QSpinBox>
 #include <QStandardPaths>
 #include <QVBoxLayout>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QGridLayout>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QUuid>
+#include <algorithm>
 
 namespace {
 const QVector<muffin::ExportFormat> formats{
@@ -33,6 +40,7 @@ const QVector<muffin::ExportFormat> formats{
 }
 
 muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(parent) {
+  presets_ = exportPresets();
   auto* root = new QHBoxLayout(this);
   root->setContentsMargins(0, 0, 0, 0);
   root->setSpacing(0);
@@ -48,6 +56,21 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   formatList_->setObjectName("ExportFormats");
   formatList_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   navigation->addWidget(formatList_, 1);
+  auto* buttons = new QGridLayout;
+  const auto button = [&](int row, int column, const char* name, auto callback) {
+    auto* item = new QPushButton(left);
+    item->setObjectName(name);
+    buttons->addWidget(item, row, column);
+    connect(item, &QPushButton::clicked, this, callback);
+    return item;
+  };
+  add_ = button(0, 0, "ExportPresetAdd", [this] { addPreset(false); });
+  duplicate_ = button(0, 1, "ExportPresetDuplicate", [this] { addPreset(true); });
+  rename_ = button(1, 0, "ExportPresetRename", [this] { renamePreset(); });
+  remove_ = button(1, 1, "ExportPresetRemove", [this] { removePreset(); });
+  up_ = button(2, 0, "ExportPresetUp", [this] { movePreset(-1); });
+  down_ = button(2, 1, "ExportPresetDown", [this] { movePreset(1); });
+  navigation->addLayout(buttons);
   root->addWidget(left);
   content_ = new QScrollArea(this);
   content_->setObjectName("ExportOptions");
@@ -59,6 +82,7 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   connect(formatList_, &QListWidget::currentRowChanged, this, [this](int row) {
     QSettings().setValue("export/lastPage", row);
     rebuildPage();
+    updatePresetButtons();
   });
 }
 
@@ -67,14 +91,29 @@ void muffin::PrefsExportPage::retranslateUi() {
   const int row =
       formatList_->currentRow() < 0 ? QSettings().value("export/lastPage", 0).toInt() : formatList_->currentRow();
   sectionLabel_->setText(tr("Formats"));
+  add_->setText(tr("New..."));
+  duplicate_->setText(tr("Duplicate"));
+  rename_->setText(tr("Rename..."));
+  remove_->setText(tr("Remove"));
+  up_->setText(tr("Up"));
+  down_->setText(tr("Down"));
+  int buttonWidth = 0;
+  for (auto* button : {add_, duplicate_, rename_, remove_, up_, down_}) {
+    button->ensurePolished();
+    buttonWidth = qMax(buttonWidth, button->sizeHint().width());
+  }
+  formatList_->parentWidget()->setFixedWidth(qMax(172, 2 * buttonWidth + 32));
   formatList_->setAccessibleName(tr("Formats"));
   formatList_->clear();
   formatList_->addItems({tr("General"), "PDF", "HTML", tr("HTML (without Styles)"), tr("Image"), "Word (.docx)",
                          "OpenOffice", "RTF", "Epub", "LaTeX", "Media Wiki", "reStructuredText", "Textile", "OPML"});
+  for (const auto& preset : presets_)
+    formatList_->addItem(preset.name);
   for (int i = 0; i < formatList_->count(); ++i)
     formatList_->item(i)->setToolTip(formatList_->item(i)->text());
   formatList_->setCurrentRow(qBound(0, row, formatList_->count() - 1));
   rebuildPage();
+  updatePresetButtons();
 }
 
 void muffin::PrefsExportPage::rebuildPage() {
@@ -109,16 +148,16 @@ void muffin::PrefsExportPage::rebuildPage() {
   const auto check = [&](const QString& label, const QString& key, bool fallback = false, const QString& name = {}) {
     auto* box = new QCheckBox(label, card);
     box->setObjectName(name);
-    box->setChecked(QSettings().value(key, fallback).toBool());
-    wireBoolSetting(box, key);
+    box->setChecked(setting(key, fallback).toBool());
+    connect(box, &QCheckBox::toggled, this, [this, key](bool value) { saveSetting(key, value); });
     form->addRow(box);
     return box;
   };
   const auto edit = [&](const QString& label, const QString& key, const QString& name = {}) {
     auto* field = new QLineEdit(card);
     field->setObjectName(name);
-    field->setText(QSettings().value(key).toString());
-    wireLineEditSetting(field, key);
+    field->setText(setting(key).toString());
+    connect(field, &QLineEdit::textChanged, this, [this, key](const QString& value) { saveSetting(key, value); });
     form->addRow(label, field);
     return field;
   };
@@ -133,8 +172,8 @@ void muffin::PrefsExportPage::rebuildPage() {
     layout->setSizeConstraint(QLayout::SetMinimumSize);
     auto* field = new QLineEdit(row);
     field->setObjectName(name);
-    field->setText(QSettings().value(key).toString());
-    wireLineEditSetting(field, key);
+    field->setText(setting(key).toString());
+    connect(field, &QLineEdit::textChanged, this, [this, key](const QString& value) { saveSetting(key, value); });
     layout->addWidget(field, 1);
     auto* browse = new QPushButton(tr("Browse..."), row);
     layout->addWidget(browse);
@@ -153,11 +192,11 @@ void muffin::PrefsExportPage::rebuildPage() {
     field->setObjectName(name);
     for (int i = 0; i < labels.size(); ++i)
       field->addItem(labels[i], values[i]);
-    const int index = field->findData(QSettings().value(key, fallback).toString());
+    const int index = field->findData(setting(key, fallback).toString());
     field->setCurrentIndex(qMax(0, index));
     polishComboBox(field);
     connect(field, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            [field, key] { QSettings().setValue(key, field->currentData()); });
+            [this, field, key] { saveSetting(key, field->currentData()); });
     form->addRow(label, field);
     return field;
   };
@@ -166,9 +205,9 @@ void muffin::PrefsExportPage::rebuildPage() {
     auto* field = new PreferencesSpinBox<QSpinBox>(card);
     field->setObjectName(name);
     field->setRange(minimum, maximum);
-    field->setValue(QSettings().value(key, fallback).toInt());
+    field->setValue(setting(key, fallback).toInt());
     connect(field, QOverload<int>::of(&QSpinBox::valueChanged), this,
-            [key](int value) { QSettings().setValue(key, value); });
+            [this, key](int value) { saveSetting(key, value); });
     form->addRow(label, field);
     return field;
   };
@@ -178,10 +217,10 @@ void muffin::PrefsExportPage::rebuildPage() {
     field->setObjectName(name);
     field->setDecimals(1);
     field->setRange(minimum, maximum);
-    field->setValue(QSettings().value(key, fallback).toDouble());
+    field->setValue(setting(key, fallback).toDouble());
     field->setSuffix(" mm");
     connect(field, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
-            [key](double value) { QSettings().setValue(key, value); });
+            [this, key](double value) { saveSetting(key, value); });
     form->addRow(label, field);
     return field;
   };
@@ -190,9 +229,8 @@ void muffin::PrefsExportPage::rebuildPage() {
     field->setObjectName(name);
     field->setMinimumHeight(70);
     field->setMaximumHeight(100);
-    field->setPlainText(QSettings().value(key).toString());
-    connect(field, &QPlainTextEdit::textChanged, this,
-            [field, key] { QSettings().setValue(key, field->toPlainText()); });
+    field->setPlainText(setting(key).toString());
+    connect(field, &QPlainTextEdit::textChanged, this, [this, field, key] { saveSetting(key, field->toPlainText()); });
     form->addRow(label, field);
   };
   const int selected = formatList_->currentRow();
@@ -202,17 +240,16 @@ void muffin::PrefsExportPage::rebuildPage() {
     folder->setObjectName("ExportDefaultFolder");
     folder->addItem(tr("Same folder as current file"), 0);
     folder->addItem(tr("Custom..."), 2);
-    folder->setCurrentIndex(QSettings().value("export/defaultFolder", 0).toInt() == 2 ? 1 : 0);
+    folder->setCurrentIndex(setting("export/defaultFolder", 0).toInt() == 2 ? 1 : 0);
     polishComboBox(folder);
     form->addRow(tr("Default Export Folder"), folder);
     const QString documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    const auto custom =
-        QSettings().value("export/customFolder", QSettings().value("export/lastCustomFolder", documents)).toString();
+    const auto custom = setting("export/customFolder", setting("export/lastCustomFolder", documents)).toString();
     auto* customRow = file(tr("Custom Folder"), "export/customFolder", {}, true, "ExportCustomFolder");
     customRow->findChild<QLineEdit*>()->setText(custom);
     customRow->setEnabled(folder->currentData().toInt() == 2);
-    connect(folder, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [folder, customRow] {
-      QSettings().setValue("export/defaultFolder", folder->currentData());
+    connect(folder, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, folder, customRow] {
+      saveSetting("export/defaultFolder", folder->currentData());
       customRow->setEnabled(folder->currentData().toInt() == 2);
     });
     note(tr("Untitled documents use the Documents folder."));
@@ -233,27 +270,38 @@ void muffin::PrefsExportPage::rebuildPage() {
     refreshPandocStatus();
     return;
   }
-  const auto format = formats[selected - 1];
-  const auto p = exportSettingsPrefix(format);
+  const bool preset = selected > formats.size();
+  const auto format = preset ? presets_[selected - formats.size() - 1].format : formats[selected - 1];
+  const auto p = preset ? QString() : exportSettingsPrefix(format);
   note(tr("Used when exporting as %1. Changes are saved immediately.").arg(formatList_->currentItem()->text()));
   const auto theme = [&] {
     combo(tr("Theme"), p + "theme", {tr("Current theme"), tr("Default light theme")}, {"current", "github"}, "current",
           "ExportTheme");
   };
-  if (format == ExportFormat::Pdf) {
+  if (format == ExportFormat::Command) {
+    file(tr("Executable"), "program", tr("All Files (*)"), false, "ExportCommandProgram");
+    edit(tr("Arguments"), "arguments", "ExportCommandArguments");
+    edit(tr("Output Extension"), "extension", "ExportCommandExtension");
+    note(tr("Arguments must contain ${outputPath}. ${inputPath} is a temporary Markdown copy including unsaved edits. "
+            "Also available: ${currentPath}, ${currentFolder}, ${fileName}."));
+    note(tr(
+        "Quote arguments containing spaces. Variables are expanded after splitting arguments; no command shell is used."));
+    note(tr(
+        "The command must create one file at ${outputPath}. Failed or canceled exports keep the existing destination."));
+  } else if (format == ExportFormat::Pdf) {
     auto* paper = combo(tr("Page Size"), p + "paper", {"A4", "A5", "Letter", "Legal", tr("Custom...")},
                         {"A4", "A5", "Letter", "Legal", "Custom"}, "A4", "ExportPdfPaper");
     auto* width = decimal(tr("Width"), p + "width", 210, 50, 1000, "ExportPdfWidth");
     auto* height = decimal(tr("Height"), p + "height", 297, 50, 1000, "ExportPdfHeight");
-    const auto custom = [paper, width, height, p] {
+    const auto custom = [this, paper, width, height, p] {
       const auto id = paper->currentData().toString();
       const bool editable = id == "Custom";
       width->setEnabled(editable);
       height->setEnabled(editable);
       const QSignalBlocker widthBlock(width), heightBlock(height);
       if (editable) {
-        width->setValue(QSettings().value(p + "width", 210).toDouble());
-        height->setValue(QSettings().value(p + "height", 297).toDouble());
+        width->setValue(setting(p + "width", 210).toDouble());
+        height->setValue(setting(p + "height", 297).toDouble());
       } else {
         const auto size = QPageSize(id == "A5"       ? QPageSize::A5
                                     : id == "Letter" ? QPageSize::Letter
@@ -323,9 +371,128 @@ void muffin::PrefsExportPage::rebuildPage() {
   auto* after = makeSectionLabel(card);
   after->setText(tr("After Export"));
   form->addRow(after);
-  check(tr("Open the exported file directory"), p + "openDirectory",
-        QSettings().value("export/openAfterExport", false).toBool(), "ExportOpenDirectory");
+  check(tr("Open the exported file directory"), p + "openDirectory", setting("export/openAfterExport", false).toBool(),
+        "ExportOpenDirectory");
   check(tr("Open the exported file"), p + "openFile", false, "ExportOpenFile");
+}
+
+QVariant muffin::PrefsExportPage::setting(const QString& key, const QVariant& fallback) const {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  return index >= 0 && index < presets_.size() ? presets_[index].options.value(key, fallback)
+                                               : QSettings().value(key, fallback);
+}
+
+void muffin::PrefsExportPage::saveSetting(const QString& key, const QVariant& value) {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  if (index >= 0 && index < presets_.size()) {
+    presets_[index].options.insert(key, value);
+    saveExportPresets(presets_);
+  } else
+    QSettings().setValue(key, value);
+}
+
+void muffin::PrefsExportPage::updatePresetButtons() {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  add_->setEnabled(presets_.size() < 64);
+  duplicate_->setEnabled(formatList_->currentRow() > 0 && presets_.size() < 64);
+  rename_->setEnabled(index >= 0);
+  remove_->setEnabled(index >= 0);
+  up_->setEnabled(index > 0);
+  down_->setEnabled(index >= 0 && index + 1 < presets_.size());
+}
+
+void muffin::PrefsExportPage::addPreset(bool duplicate) {
+  if (presets_.size() >= 64)
+    return;
+  const int selected = formatList_->currentRow();
+  ExportPreset preset = selected > formats.size() ? presets_[selected - formats.size() - 1]
+                        : selected > 0            ? builtInExportPreset(formats[selected - 1])
+                                                  : builtInExportPreset(ExportFormat::Pdf);
+  QDialog dialog(this);
+  dialog.setObjectName("ExportPresetDialog");
+  dialog.setWindowTitle(tr("New Export Preset"));
+  auto* layout = new QFormLayout(&dialog);
+  auto* name = new QLineEdit(&dialog);
+  name->setObjectName("ExportPresetName");
+  if (duplicate)
+    name->setText(tr("%1 (copy)").arg(formatList_->currentItem()->text()));
+  layout->addRow(tr("Name"), name);
+  auto* format = new QComboBox(&dialog);
+  format->setObjectName("ExportPresetFormat");
+  for (int i = 0; i < formats.size(); ++i)
+    format->addItem(formatList_->item(i + 1)->text(), int(formats[i]));
+  format->addItem(tr("Custom Command"), int(ExportFormat::Command));
+  format->setCurrentIndex(format->findData(int(preset.format)));
+  polishComboBox(format);
+  layout->addRow(tr("Format"), format);
+  auto* message = makeMutedLabel(&dialog);
+  message->setWordWrap(true);
+  layout->addRow(message);
+  auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+  layout->addRow(buttons);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, [&] {
+    const auto text = name->text().trimmed();
+    if (text.isEmpty() || std::any_of(presets_.cbegin(), presets_.cend(),
+                                      [&](const auto& p) { return p.name.compare(text, Qt::CaseInsensitive) == 0; })) {
+      message->setText(tr("Enter a non-empty, unique preset name."));
+      return;
+    }
+    preset.name = text;
+    const auto targetFormat = ExportFormat(format->currentData().toInt());
+    if (targetFormat != preset.format)
+      preset = builtInExportPreset(targetFormat);
+    preset.name = text;
+    preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    dialog.accept();
+  });
+  if (dialog.exec() != QDialog::Accepted)
+    return;
+  presets_.append(std::move(preset));
+  saveExportPresets(presets_);
+  retranslateUi();
+  formatList_->setCurrentRow(formats.size() + presets_.size());
+}
+
+void muffin::PrefsExportPage::renamePreset() {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  if (index < 0 || index >= presets_.size())
+    return;
+  bool accepted = false;
+  const auto name = QInputDialog::getText(this, tr("Rename Export Preset"), tr("Name"), QLineEdit::Normal,
+                                          presets_[index].name, &accepted)
+                        .trimmed();
+  if (!accepted || name == presets_[index].name)
+    return;
+  if (name.isEmpty() || std::any_of(presets_.cbegin(), presets_.cend(), [&](const auto& p) {
+        return p.id != presets_[index].id && p.name.compare(name, Qt::CaseInsensitive) == 0;
+      })) {
+    QMessageBox::warning(this, tr("Rename Export Preset"), tr("Enter a non-empty, unique preset name."));
+    return;
+  }
+  presets_[index].name = name;
+  saveExportPresets(presets_);
+  retranslateUi();
+}
+
+void muffin::PrefsExportPage::removePreset() {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  if (index < 0 || index >= presets_.size())
+    return;
+  presets_.removeAt(index);
+  saveExportPresets(presets_);
+  retranslateUi();
+}
+
+void muffin::PrefsExportPage::movePreset(int direction) {
+  const int index = formatList_->currentRow() - formats.size() - 1;
+  const int target = index + direction;
+  if (index < 0 || index >= presets_.size() || target < 0 || target >= presets_.size())
+    return;
+  presets_.swapItemsAt(index, target);
+  saveExportPresets(presets_);
+  retranslateUi();
+  formatList_->setCurrentRow(formats.size() + target + 1);
 }
 
 void muffin::PrefsExportPage::refreshPandocStatus() {

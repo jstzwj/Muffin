@@ -102,6 +102,7 @@ enum class DynamicMenu {
   None,
   RecentFiles,
   ReopenEncoding,
+  ExportPresets,
   DeleteRange,
   Themes, // top-level Theme menu: enumerated from ThemeManager::themes()
 };

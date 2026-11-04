@@ -5,7 +5,6 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QProcessEnvironment>
-#include <QProgressDialog>
 #include <QSettings>
 
 namespace muffin {
@@ -118,8 +117,12 @@ QString PandocRunner::resolveOnPath() {
 }
 
 bool PandocRunner::isAvailable() {
+  return isAvailable(resolvedExecutable());
+}
+
+bool PandocRunner::isAvailable(const QString& executable) {
   QProcess probe;
-  probe.setProgram(resolvedExecutable());
+  probe.setProgram(executable);
   probe.setArguments({QStringLiteral("--version")});
   probe.start();
   if (!probe.waitForStarted(3000)) {
@@ -135,64 +138,7 @@ bool PandocRunner::isAvailable() {
 }
 
 PandocResult PandocRunner::run(QWidget* parent, const QStringList& args, const PandocRunOptions& options) {
-  PandocResult result;
-
-  QProcess process;
-  process.setProgram(resolvedExecutable());
-  process.setArguments(args);
-  if (!options.workDir.isEmpty()) {
-    process.setWorkingDirectory(options.workDir);
-  }
-
-  // Indeterminate modal progress: gives visible feedback for large documents
-  // and a way out (Cancel → kill) if Pandoc hangs. processEvents in the wait
-  // loop keeps the dialog repainting. Pandoc emits no conversion progress, so
-  // the bar stays indeterminate — `options.progressLabel` is the textual feedback.
-  QProgressDialog progress(parent);
-  progress.setWindowModality(Qt::WindowModal);
-  progress.setRange(0, 0);
-  progress.setMinimumDuration(0);
-  progress.setValue(0);
-  if (!options.progressLabel.isEmpty()) {
-    progress.setLabelText(options.progressLabel);
-  }
-  progress.show();
-
-  bool canceled = false;
-  QObject::connect(&progress, &QProgressDialog::canceled, &progress, [&canceled, &process]() {
-    canceled = true;
-    process.kill();
-  });
-
-  process.start();
-  if (!process.waitForStarted(5000)) {
-    result.err = process.errorString().toUtf8();
-    return result;
-  }
-  if (!options.stdinData.isNull()) {
-    process.write(options.stdinData);
-    process.closeWriteChannel();
-  }
-
-  while (process.state() != QProcess::NotRunning) {
-    if (process.waitForFinished(100)) {
-      break;
-    }
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-    if (canceled) {
-      process.waitForFinished(2000);
-      break;
-    }
-  }
-
-  result.canceled = canceled;
-  if (!canceled && process.state() == QProcess::NotRunning) {
-    result.ran = true;
-    result.exitCode = process.exitCode();
-    result.out = process.readAllStandardOutput();
-    result.err = process.readAllStandardError();
-  }
-  return result;
+  return ProcessRunner::run(parent, resolvedExecutable(), args, options);
 }
 
 } // namespace muffin

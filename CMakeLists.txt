@@ -184,6 +184,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/PrefsImagePage.cpp
   src/app/PrefsMarkdownPage.cpp
   src/app/PrefsExportPage.cpp
+  src/app/MainWindowExport.cpp
   src/app/PrefsShortcutsPage.cpp
   src/app/PrefsSearchPage.cpp
   src/app/PrefsAppearancePage.cpp
@@ -1140,6 +1141,7 @@ add_executable(Muffin
   src/app/PrefsMarkdownPage.h
   src/app/PrefsExportPage.cpp
   src/app/PrefsExportPage.h
+  src/app/MainWindowExport.cpp
   src/app/PrefsShortcutsPage.cpp
   src/app/PrefsShortcutsPage.h
   src/app/PrefsSearchPage.cpp
@@ -1193,11 +1195,15 @@ set(MUFFIN_UI_SOURCES
   src/export/HtmlExporter.cpp
   src/export/HtmlExporter.h
   src/export/ExportOptions.cpp
+  src/export/ExportPreset.cpp
+  src/export/ExportPreset.h
   src/export/ExportOptions.h
   src/export/NativeExporter.cpp
   src/export/NativeExporter.h
   src/export/PandocRunner.cpp
   src/export/PandocRunner.h
+  src/export/ProcessRunner.cpp
+  src/export/ProcessRunner.h
   src/blocks/code/CodeFenceController.cpp
   src/blocks/code/CodeFenceController.h
   src/blocks/code/CodeFenceScrollController.cpp

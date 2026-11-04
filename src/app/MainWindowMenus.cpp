@@ -83,6 +83,9 @@ void muffin::MainWindow::buildMenuItems(QMenu* parent, const std::vector<MenuIte
       } else if (item.dynamicId == DynamicMenu::ReopenEncoding) {
         reopenEncodingMenu_ = sub;
         sub->setEnabled(false);
+      } else if (item.dynamicId == DynamicMenu::ExportPresets) {
+        exportPresetsMenu_ = sub;
+        connect(sub, &QMenu::aboutToShow, this, &MainWindow::rebuildExportPresetsMenu);
       }
       break;
     }
