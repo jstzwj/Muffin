@@ -232,6 +232,7 @@ void muffin::PrefsExportPage::rebuildPage() {
     field->setPlainText(setting(key).toString());
     connect(field, &QPlainTextEdit::textChanged, this, [this, field, key] { saveSetting(key, field->toPlainText()); });
     form->addRow(label, field);
+    qobject_cast<QLabel*>(form->labelForField(field))->setTextFormat(Qt::PlainText);
   };
   const int selected = formatList_->currentRow();
   if (selected == 0) {

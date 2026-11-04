@@ -34,6 +34,7 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPointer>
 #include <QRegularExpression>
 #include <QScrollBar>
@@ -217,7 +218,15 @@ SourceEditorColors SourceEditorColors::fromTheme(const RenderTheme& theme) {
   SourceEditorColors colors;
   colors.background = theme.backgroundColor();
   colors.text = theme.textColor();
-  colors.selection = theme.selectionColor();
+  // Source syntax has many foreground colours, including the selection's own
+  // accent. Use a quiet theme tint and a paired ink colour for every selected
+  // glyph, independent of its syntax. Flatten alpha once so the current-line
+  // background cannot change the selection's contrast.
+  const QColor accent = theme.selectionColor().isValid() ? theme.selectionColor() : theme.linkColor();
+  colors.selection =
+      mixColor(colors.background, QColor::fromRgb(accent.rgb()), qMin<qreal>(accent.alphaF(), dark ? 0.30 : 0.24));
+  colors.selection.setAlpha(255);
+  colors.selectionText = ensureContrast(colors.text, colors.selection, 4.5, colorLuminance(colors.selection) < 0.179);
   colors.inlineCodeText = theme.textColor();
   colors.inlineCodeBackground = theme.codeBackgroundColor();
   colors.spell = theme.spellCheckColor();
@@ -1022,14 +1031,34 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
         const qsizetype absoluteStart = lineLayout->sourceStart + chunkStart;
         const qsizetype selectedStart = qMax(selStart, absoluteStart);
         const qsizetype selectedEnd = qMin(selEnd, absoluteStart + chunkLength);
+        QRectF selectedRect;
         if (selectedEnd > selectedStart) {
           const qreal sx = chunkX + (selectedStart - absoluteStart) * advance;
-          painter.fillRect(QRectF(sx, rowY, (selectedEnd - selectedStart) * advance, rowHeight), colors_.selection);
+          selectedRect = QRectF(sx, rowY, (selectedEnd - selectedStart) * advance, rowHeight);
+          painter.fillRect(selectedRect, colors_.selection);
         }
-        drawDocumentText(painter,
-                         QPointF(chunkX, rowY + TextFontMetrics(sourceFont_).ascent() +
-                                             (rowHeight - TextFontMetrics(sourceFont_).height()) / 2.0),
-                         chunk);
+        const QPointF baseline(chunkX, rowY + TextFontMetrics(sourceFont_).ascent() +
+                                           (rowHeight - TextFontMetrics(sourceFont_).height()) / 2.0);
+        if (selectedRect.isEmpty()) {
+          drawDocumentText(painter, baseline, chunk);
+        } else {
+          // Reuse the same shaped chunk. Splitting at selection boundaries can
+          // change ligatures, advances and the correspondence with hit testing.
+          // Draw each glyph once so antialiased edges do not retain the old ink.
+          QPainterPath unselected;
+          unselected.setFillRule(Qt::OddEvenFill);
+          unselected.addRect(viewport()->rect());
+          unselected.addRect(selectedRect);
+          painter.save();
+          painter.setClipPath(unselected, Qt::IntersectClip);
+          drawDocumentText(painter, baseline, chunk);
+          painter.restore();
+          painter.save();
+          painter.setClipRect(selectedRect, Qt::IntersectClip);
+          painter.setPen(colors_.selectionText);
+          drawDocumentText(painter, baseline, chunk);
+          painter.restore();
+        }
       }
     } else {
       QVector<QTextLayout::FormatRange> selections;
@@ -1038,6 +1067,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
       if (localEnd > localStart) {
         QTextCharFormat selected;
         selected.setBackground(colors_.selection);
+        selected.setForeground(colors_.selectionText);
         selections.push_back({static_cast<int>(localStart), static_cast<int>(localEnd - localStart), selected});
       }
       painter.setPen(colors_.text);

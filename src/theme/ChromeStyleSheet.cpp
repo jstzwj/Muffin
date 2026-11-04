@@ -172,9 +172,9 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              "QLabel { color:%2; background:transparent; }"
              "QLabel:disabled { color:%9; }"
              "QWidget#preferencesPage { background:transparent; }"
-             "QPlainTextEdit#SearchIgnorePatterns { background:%3; color:%2; border:1px solid %4;"
+             "QPlainTextEdit { background:%3; color:%2; border:1px solid %4;"
              " border-radius:6px; padding:6px; selection-background-color:%8; selection-color:%10; }"
-             "QPlainTextEdit#SearchIgnorePatterns:focus { border-color:%7; }"
+             "QPlainTextEdit:focus { border-color:%7; }"
              "QWidget#preferencesSidebar { background:%3; border:1px solid %4; border-radius:8px; }"
 
              // Settings groups and rows

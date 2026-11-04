@@ -21,10 +21,12 @@
 #include "editor/VirtualSourceEdit.h"
 #include "editor/EditorController.h"
 #include "io/FileController.h"
+#include "theme/RenderTheme.h"
 #include <QTemporaryDir>
 #include <QMessageBox>
 #include <QTimer>
 #include <QtTest/QTest>
+#include <QtMath>
 
 using namespace muffin;
 
@@ -527,6 +529,54 @@ QImage captureEdit(VirtualSourceEdit& edit) {
   return edit.grab().toImage();
 }
 
+void testSelectedSourceInkOverridesSyntaxWithoutMovingText() {
+  for (bool longLine : {false, true}) {
+    for (bool wrap : {false, true}) {
+      VirtualSourceEdit edit;
+      edit.setSourceFont(fixtureSourceFont);
+      edit.setWordWrapEnabled(wrap);
+      edit.setReadOnly(true);
+      auto colors = SourceEditorColors::fromTheme(RenderTheme::github());
+      colors.selection = QColor("#d6e8f8");
+      colors.selectionText = QColor("#7023a1");
+      edit.setColors(colors);
+      edit.setStandaloneText(longLine ? QString(18000, QLatin1Char('M'))
+                                      : QStringLiteral("https://www.qt.io/path/to/document"));
+      edit.resize(700, 250);
+      edit.show();
+      QApplication::processEvents();
+      edit.setCursorPosition(2);
+      const auto start = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+      edit.setCursorPosition(10);
+      const auto end = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+      const auto before = edit.viewport()->grab().toImage();
+      edit.setSelection(2, 10);
+      const auto after = edit.viewport()->grab().toImage();
+      const qreal scale = after.devicePixelRatio();
+      const QRect selected(qCeil(start.left() * scale), qCeil(start.top() * scale),
+                           qFloor((end.left() - start.left()) * scale), qFloor(start.height() * scale));
+      int selectedInk = 0;
+      for (int y = selected.top(); y <= selected.bottom(); ++y)
+        for (int x = selected.left(); x <= selected.right(); ++x) {
+          const auto pixel = after.pixelColor(x, y);
+          if (qAbs(pixel.red() - colors.selectionText.red()) < 8 &&
+              qAbs(pixel.green() - colors.selectionText.green()) < 8 &&
+              qAbs(pixel.blue() - colors.selectionText.blue()) < 8)
+            ++selectedInk;
+        }
+      require(selectedInk > 20, "selected URL and long-line glyphs use readable selection ink");
+      // The selection changes paint only: the rest of the shaped line, including
+      // unselected URL syntax, must retain its original pixels and hit positions.
+      const int right = qCeil((end.right() + 3) * scale);
+      require(before.copy(right, selected.top(), 100, selected.height()) ==
+                  after.copy(right, selected.top(), 100, selected.height()),
+              "partial selection preserves unselected text colour and geometry");
+      require(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect() == end,
+              "painting a selection preserves caret geometry");
+    }
+  }
+}
+
 // The composition must render with an underline, NOT overlap the following text, and NOT be
 // blink-gated (the old code drew the preedit only while the caret blink was "on").
 void testSourcePreeditRendersWithoutOverlap() {
@@ -704,6 +754,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInlineMarkupPreservesSelectionAndHistory);
   RUN_TEST(testEmptyReplacementDeletesSelection);
   RUN_TEST(testHeadingsKeepSourceRowGeometry);
+  RUN_TEST(testSelectedSourceInkOverridesSyntaxWithoutMovingText);
   RUN_TEST(testSourcePreeditRendersWithoutOverlap);
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
   RUN_TEST(testWrappedSourceEditingPreservesViewport);

@@ -57,6 +57,22 @@ void testNightMenusUsePrimaryChromeText() {
           QStringLiteral("popup-menu items should explicitly use chromeText"));
 }
 
+void testSourceSelectionIsReadableAcrossThemes() {
+  for (auto definition : ThemeDefinition::builtIns()) {
+    for (const QColor accent : {definition.colors.selection, QColor(32, 43, 51, 160), QColor("#ffff00"),
+                                QColor("#000000"), QColor("#ffffff")}) {
+      definition.colors.selection = accent;
+      const auto colors = SourceEditorColors::fromTheme(RenderTheme::fromDefinition(definition));
+      require(colors.selection.alpha() == 255,
+              definition.id + QStringLiteral(": selection fill must not depend on the current-line background"));
+      require(contrastRatio(colors.selectionText, colors.selection) >= 4.5,
+              definition.id + QStringLiteral(": selected source text needs at least 4.5:1 contrast"));
+      require(contrastRatio(colors.selection, colors.background) < 2.5,
+              definition.id + QStringLiteral(": selection should be a subtle theme tint"));
+    }
+  }
+}
+
 void testGitHubMenusUsePrimaryInk() {
   const ThemeDefinition definition = ThemeDefinition::builtIn(QStringLiteral("github")).value();
   require(definition.colors.chromeText.name(QColor::HexRgb) == QStringLiteral("#333333"),
@@ -70,6 +86,7 @@ void testGitHubMenusUsePrimaryInk() {
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   runTest("testBuiltInSourceGuttersStayIntegratedAndReadable", testBuiltInSourceGuttersStayIntegratedAndReadable);
+  runTest("testSourceSelectionIsReadableAcrossThemes", testSourceSelectionIsReadableAcrossThemes);
   runTest("testNightMenusUsePrimaryChromeText", testNightMenusUsePrimaryChromeText);
   runTest("testGitHubMenusUsePrimaryInk", testGitHubMenusUsePrimaryInk);
   return 0;

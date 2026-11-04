@@ -48,6 +48,7 @@ struct SourceEditorColors {
   QColor currentLine;
   QColor lineNumber;
   QColor selection;
+  QColor selectionText;
   QColor heading;
   QColor listMarker;
   QColor linkLabel;
