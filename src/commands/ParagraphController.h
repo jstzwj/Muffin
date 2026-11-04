@@ -28,6 +28,8 @@ public:
   // Broader than isOnEditableBlock() because a paragraph may be inserted adjacent to a
   // literal block without editing its content.
   bool canInsertAdjacentParagraph() const;
+  bool canAlignParagraph() const;
+  bool setParagraphAlignment(Qt::Alignment alignment);
 
   // Heading commands
   bool setHeadingLevel(int level); // 0 = paragraph, 1-6 = heading

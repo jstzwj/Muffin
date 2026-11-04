@@ -35,6 +35,8 @@ public:
   bool hasCurrentTableCell() const;
   bool isOnEditableParagraphBlock() const;
   bool canInsertParagraphAround() const;
+  bool canAlignParagraph() const;
+  bool setParagraphAlignment(Qt::Alignment alignment);
   bool isInlineFormatEnabled() const;
   bool isSingleInlineSelection() const;
   bool isOnListItem() const;

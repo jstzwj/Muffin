@@ -47,6 +47,35 @@ QVector<PairedChar> activePairedChars() {
 
 } // namespace
 
+bool InputController::canSkipClosingSymbol() const {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || !ctx_.selection->selection().isCollapsed() || hasActiveLiteralEditor())
+    return false;
+  BlockEditContext context;
+  if (!contextResolver().current(context) || !context.node ||
+      (context.node->type() != BlockType::Paragraph && context.node->type() != BlockType::Heading))
+    return false;
+  const auto offset = context.cursorSourceOffset;
+  const auto& source = ctx_.session->markdownText();
+  if (offset <= context.contentRange.byteStart || offset >= context.contentRange.byteEnd)
+    return false;
+  // Only complete an adjacent pair, never an arbitrary closing punctuation mark.
+  for (const auto& pair : activePairedChars()) {
+    if (source.at(offset - 1) == pair.opener && source.at(offset) == pair.closer)
+      return true;
+  }
+  return false;
+}
+
+bool InputController::skipClosingSymbol() {
+  if (!canSkipClosingSymbol())
+    return false;
+  BlockEditContext context;
+  if (!contextResolver().current(context))
+    return false;
+  setCursorOrExtend(cursorForSourceOffset(context.cursorSourceOffset + 1), false);
+  return true;
+}
+
 bool InputController::tryAutoPairOrWrap(QChar ch) {
   const QVector<PairedChar> pairs = activePairedChars();
 

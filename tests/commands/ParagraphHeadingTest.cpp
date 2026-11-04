@@ -7,6 +7,7 @@
 #include "editor/SelectionController.h"
 
 #include "ParagraphTestUtils.h"
+#include "theme/MarkdownFlow.h"
 
 #include <QApplication>
 
@@ -159,6 +160,57 @@ void testHeadingMultiBlockDocument() {
   require(blockAt(session, 1)->type() == BlockType::Heading, "second block should be heading");
 }
 
+void testParagraphAlignmentPreservesContentAndUndo() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+  const QString original = QStringLiteral("Before\n\n## 中文 **bold** [link](note.md)\n\nAfter\n");
+  session.setMarkdownText(original, false);
+  const auto offset = original.indexOf(QStringLiteral("中文")) + 1;
+  setSourceCursor(selection, blockAt(session, 1), 1, offset);
+  require(paragraph.canAlignParagraph(), "heading can be aligned");
+  for (auto alignment : {Qt::AlignHCenter, Qt::AlignRight, Qt::AlignJustify, Qt::AlignLeft}) {
+    require(paragraph.setParagraphAlignment(alignment), "alignment command succeeds");
+    const auto text = session.markdownText().toString();
+    require(text.count(QStringLiteral("<div")) == 1 && text.count(QStringLiteral("</div>")) == 1,
+            "changing alignment reuses the dedicated wrapper");
+    require(text.contains(QStringLiteral("## 中文 **bold** [link](note.md)")) &&
+                text.startsWith(QStringLiteral("Before\n\n")) && text.endsWith(QStringLiteral("\n\nAfter\n")),
+            "alignment preserves Markdown content and adjacent blocks");
+    require(text.at(selection.cursorPosition().text.sourceOffset) == original.at(offset),
+            "alignment retains caret source mapping");
+    const MarkdownFlow flow(session.document().root());
+    const auto* node = session.document().node(selection.cursorPosition().blockId);
+    require(node && node->type() == BlockType::Heading && flow.parent(*node) && flow.container(*flow.parent(*node)),
+            "alignment uses the shared HTML/Markdown rendering topology");
+  }
+  const auto state = undoStack.stateId();
+  require(paragraph.setParagraphAlignment(Qt::AlignLeft) && undoStack.stateId() == state,
+          "repeating alignment does not add undo entries");
+  for (int i = 0; i < 4; ++i) {
+    const auto undo = undoStack.takeUndo().textDeltaCommand();
+    session.applyTextDelta(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText, true);
+    selection.setCursorPosition(undo.beforeCursor);
+  }
+  require(session.markdownText().toString() == original, "alignment sequence undoes to exact source");
+  for (int i = 0; i < 4; ++i) {
+    const auto redo = undoStack.takeRedo().textDeltaCommand();
+    session.applyTextDelta(redo.delta.start, redo.delta.removedText.size(), redo.delta.insertedText, true);
+    selection.setCursorPosition(redo.afterCursor);
+  }
+  require(session.markdownText().toString().contains(QStringLiteral("text-align: left")) &&
+              session.markdownText().toString().count(QStringLiteral("<div")) == 1,
+          "alignment sequence redoes without duplicating wrappers");
+
+  session.setMarkdownText(QStringLiteral("> quote\n\n- item\n"), false);
+  setCursor(selection, firstChildOfType(blockAt(session, 0), BlockType::Paragraph), 0);
+  require(!paragraph.canAlignParagraph() && !paragraph.setParagraphAlignment(Qt::AlignRight),
+          "nested Markdown prefixes are never damaged by HTML alignment");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -171,6 +223,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testHeadingEmptyContent);
   RUN_TEST(testHeadingPreservesCursorInContent);
   RUN_TEST(testHeadingMultiBlockDocument);
+  RUN_TEST(testParagraphAlignmentPreservesContentAndUndo);
 #undef RUN_TEST
   return 0;
 }

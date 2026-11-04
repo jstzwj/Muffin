@@ -52,6 +52,8 @@ struct CommandDeclaration {
   bool requiresEditableDocument = false;
   QString text; // label, authored as muffin::MainWindow::tr(...)
   QKeySequence shortcut;
+  // Compatibility keys belong to the same command and are removed with its override.
+  QList<QKeySequence> alternateShortcuts;
   bool checkable = false;
   bool checkedInitial = false;
   bool enabledInitial = true;
@@ -73,6 +75,13 @@ struct CommandDeclaration {
   std::function<bool(const MainWindow&)> checked;
   // Explain an unavailable action before it is invoked (menu tooltip/status).
   std::function<QString(const MainWindow&)> disabledReason;
+
+  QList<QKeySequence> defaultShortcuts() const {
+    auto result = alternateShortcuts;
+    if (!shortcut.isEmpty())
+      result.prepend(shortcut);
+    return result;
+  }
 };
 
 // All commands, in a stable order. Cached after first build (predicates are

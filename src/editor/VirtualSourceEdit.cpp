@@ -1299,6 +1299,17 @@ void VirtualSourceEdit::keyPressEvent(QKeyEvent* event) {
     redo();
   } else if (shortcuts.matches(*event, QStringLiteral("edit.select_all"), QKeySequence::SelectAll)) {
     selectAll();
+  } else if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_start"), QKeySequence::MoveToStartOfDocument)) {
+    moveCursorTo(0, false);
+  } else if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_end"), QKeySequence::MoveToEndOfDocument)) {
+    moveCursorTo(source().size(), false);
+  } else if (event->matches(QKeySequence::SelectStartOfDocument)) {
+    moveCursorTo(0, true);
+  } else if (event->matches(QKeySequence::SelectEndOfDocument)) {
+    moveCursorTo(source().size(), true);
+  } else if (event->matches(QKeySequence::MoveToStartOfDocument) || event->matches(QKeySequence::MoveToEndOfDocument)) {
+    event->accept();
+    return;
   } else {
     if (isReadOnly() && !editor_keys::isCursorNavigationKey(event->key())) {
       event->accept();

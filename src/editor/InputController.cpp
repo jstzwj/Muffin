@@ -746,9 +746,28 @@ QString InputController::activeLiteralTabText() const {
 bool InputController::handleKeyPress(QKeyEvent* event) {
   PerfTimer perf("input.keypress");
   if (event &&
+      ShortcutSettings::instance().matches(*event, QStringLiteral("edit.skip_closing_symbol"),
+                                           QKeySequence(Qt::Key_Tab)) &&
+      skipClosingSymbol())
+    return true;
+  if (event &&
       ShortcutSettings::instance().matches(*event, QStringLiteral("edit.select_all"), QKeySequence::SelectAll)) {
     emit selectAllRequested();
     return true;
+  }
+  if (event && ctx_.hasSession() && ctx_.hasCursor()) {
+    const auto& shortcuts = ShortcutSettings::instance();
+    if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_start"), QKeySequence::MoveToStartOfDocument))
+      return moveJump(JumpTarget::DocumentStart, false);
+    if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_end"), QKeySequence::MoveToEndOfDocument))
+      return moveJump(JumpTarget::DocumentEnd, false);
+    if (event->matches(QKeySequence::SelectStartOfDocument))
+      return moveJump(JumpTarget::DocumentStart, true);
+    if (event->matches(QKeySequence::SelectEndOfDocument))
+      return moveJump(JumpTarget::DocumentEnd, true);
+    // Rebinding a navigation command must disable the canvas's old fallback too.
+    if (event->matches(QKeySequence::MoveToStartOfDocument) || event->matches(QKeySequence::MoveToEndOfDocument))
+      return true;
   }
 
   // Ctrl-combos the editor owns (word/paragraph/page navigation, word delete) are dispatched

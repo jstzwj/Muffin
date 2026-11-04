@@ -23,6 +23,13 @@ QKeySequence ShortcutSettings::sequence(const QString& id, const QKeySequence& f
   return overrides_.value(id, fallback);
 }
 
+QList<QKeySequence> ShortcutSettings::sequences(const QString& id, const QList<QKeySequence>& fallback) const {
+  const auto found = overrides_.constFind(id);
+  if (found == overrides_.cend())
+    return fallback;
+  return found->isEmpty() ? QList<QKeySequence>{} : QList<QKeySequence>{*found};
+}
+
 bool ShortcutSettings::matches(const QKeyEvent& event, const QString& id, QKeySequence::StandardKey fallback) const {
   const auto found = overrides_.constFind(id);
   return found == overrides_.cend() ? event.matches(fallback)
@@ -31,6 +38,11 @@ bool ShortcutSettings::matches(const QKeyEvent& event, const QString& id, QKeySe
 
 bool ShortcutSettings::hasOverride(const QString& id) const {
   return overrides_.contains(id);
+}
+
+bool ShortcutSettings::matches(const QKeyEvent& event, const QString& id, const QKeySequence& fallback) const {
+  const auto key = sequence(id, fallback);
+  return !key.isEmpty() && key == QKeySequence(event.keyCombination());
 }
 
 void ShortcutSettings::setOverride(const QString& id, const QKeySequence& sequence) {

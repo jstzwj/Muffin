@@ -1550,6 +1550,195 @@ void configurableShortcuts() {
     QTest::keyClick(input, Qt::Key_F10, Qt::ControlModifier | Qt::AltModifier);
     require(selectedText() == document->session.markdownText().toString(), "custom select-all covers the document");
     shortcuts.clearOverride("edit.select_all");
+
+    const auto cursorOffset = [&] {
+      if (source)
+        return document->editor->cursorPosition();
+      auto& selection = document->editorController.selection();
+      return BlockEditContextResolver(&document->session, &selection)
+          .sourceAnchoredCursor(selection.cursorPosition())
+          .text.sourceOffset;
+    };
+    shortcuts.setOverride("edit.jump_doc_start", QKeySequence("Ctrl+Alt+F6"));
+    if (source)
+      document->editor->setCursorPosition(2);
+    else
+      document->editorController.selection().setCursorPosition(document->editorController.cursorForSourceOffset(2));
+    const auto oldKey = QKeySequence(QKeySequence::MoveToStartOfDocument)[0];
+    QTest::keyClick(input, oldKey.key(), oldKey.keyboardModifiers());
+    require(cursorOffset() == 2, "old document navigation key is inactive after rebinding");
+    QTest::keyClick(input, Qt::Key_F6, Qt::ControlModifier | Qt::AltModifier);
+    require(cursorOffset() == 0,
+            QStringLiteral("custom document navigation in %1: offset=%2, enabled=%3, focus=%4")
+                .arg(source ? "source" : "render")
+                .arg(cursorOffset())
+                .arg(action(f.window, "Jump to Start of Document")->isEnabled())
+                .arg(QApplication::focusWidget() ? QApplication::focusWidget()->metaObject()->className() : "none"));
+    shortcuts.clearOverride("edit.jump_doc_start");
+  }
+}
+
+void shortcutCompatibilityAndTableRows() {
+  Fixture f;
+  auto& shortcuts = ShortcutSettings::instance();
+  auto* document = f.open(f.file("table-keys.md", QStringLiteral("| H |\n|---|\n| one |\n| two |\n\nTail ()\n")));
+  auto* input = document->renderView;
+  const auto command = [&](const char* id) {
+    auto* result = f.window.findChild<QAction*>(QString::fromLatin1(id));
+    require(result, id);
+    return result;
+  };
+  const auto text = [&] { return document->session.markdownText().toString(); };
+  const auto caret = [&](const QString& word) {
+    document->editorController.selection().setCursorPosition(
+        document->editorController.cursorForSourceOffset(text().indexOf(word)));
+    input->setFocus();
+    QApplication::processEvents();
+  };
+  require(command("format.inline_math")->shortcut() != command("paragraph.math_block")->shortcut(),
+          "inline and block formulas have different defaults");
+  require(command("paragraph.hr")->shortcut() == QKeySequence("Ctrl+Alt+Shift+-"), "horizontal rule has a shortcut");
+  caret("two");
+  QTest::keyClick(input, Qt::Key_Up, Qt::AltModifier);
+  require(text().indexOf("two") < text().indexOf("one"), "Alt-Up in a table moves the row, not the table block");
+  QTest::keyClick(input, Qt::Key_Down, Qt::AltModifier);
+  require(text().indexOf("one") < text().indexOf("two"), "Alt-Down restores row order");
+  caret("one");
+  const auto original = text();
+  QTest::keyClick(input, Qt::Key_Down, Qt::AltModifier | Qt::ShiftModifier);
+  require(text() != original, "compatibility key inserts a table row");
+  command("edit.undo")->trigger();
+  require(text() == original, "insert-row shortcut is undoable");
+
+  PrefsShortcutsPage page;
+  auto* filter = page.findChild<QLineEdit*>("ShortcutFilter");
+  auto* sequence = page.findChild<QKeySequenceEdit*>("ShortcutSequence");
+  auto* apply = page.findChild<QPushButton*>("ShortcutApply");
+  filter->setText("table.insert_row_after");
+  sequence->setKeySequence(QKeySequence("Ctrl+Alt+F7"));
+  apply->click();
+  require(command("table.insert_row_after")->shortcuts() == QList<QKeySequence>{QKeySequence("Ctrl+Alt+F7")},
+          "rebinding removes all default aliases");
+  caret("one");
+  QTest::keyClick(input, Qt::Key_Down, Qt::AltModifier | Qt::ShiftModifier);
+  require(text() == original, "old compatibility key is inactive after rebinding");
+  QTest::keyClick(input, Qt::Key_F7, Qt::ControlModifier | Qt::AltModifier);
+  require(text() != original, "custom row shortcut executes");
+  command("edit.undo")->trigger();
+  shortcuts.clearOverride("table.insert_row_after");
+  require(command("table.insert_row_after")->shortcuts().size() == 2, "restoring defaults restores all aliases");
+
+  filter->setText("format.bold");
+  sequence->setKeySequence(QKeySequence("Alt+Shift+Down"));
+  require(apply->text() == "Reassign", "preference conflict detection includes alternate keys");
+  apply->click();
+  require(command("table.insert_row_after")->shortcuts().isEmpty(), "reassignment clears all keys of previous owner");
+  filter->setText("table.insert_row_after");
+  sequence->setKeySequence(QKeySequence("Ctrl+Enter"));
+  require(apply->text() == "Reassign", "restoring defaults checks conflicts against all restored aliases");
+  apply->click();
+  require(command("format.bold")->shortcuts().isEmpty() && command("table.insert_row_after")->shortcuts().size() == 2,
+          "restoring defaults reassigns compatibility keys consistently");
+  shortcuts.clearOverride("format.bold");
+  shortcuts.clearOverride("table.insert_row_after");
+
+  caret("two");
+  QTest::keyClick(input, Qt::Key_Up, Qt::AltModifier | Qt::ShiftModifier);
+  require(!text().contains("two") && text().contains("one"), "compatibility key deletes exactly the current row");
+  command("edit.undo")->trigger();
+  require(text() == original, "row deletion is undoable");
+  QTest::keyClick(input, Qt::Key_P, Qt::ControlModifier | Qt::ShiftModifier);
+  require(!document->session.isEditingAllowed(), "preview key uses the existing read-only lock");
+  QTest::keyClick(input, Qt::Key_F12);
+  require(document->session.isEditingAllowed(), "F12 still leaves read-only mode");
+
+  const auto pairCaret = [&] {
+    document->editorController.selection().setCursorPosition(
+        document->editorController.cursorForSourceOffset(text().indexOf("()") + 1));
+    input->setFocus();
+    QApplication::processEvents();
+  };
+  pairCaret();
+  QTest::keyClick(input, Qt::Key_Tab);
+  require(text() == original &&
+              document->editorController.selection().cursorPosition().text.sourceOffset == text().indexOf("()") + 2,
+          "Tab completes an empty pair without inserting text");
+  filter->setText("edit.skip_closing_symbol");
+  sequence->setKeySequence(QKeySequence("Ctrl+Alt+F8"));
+  apply->click();
+  pairCaret();
+  QTest::keyClick(input, Qt::Key_Tab);
+  require(text() != original, "rebound completion no longer steals plain Tab");
+  command("edit.undo")->trigger();
+  pairCaret();
+  QTest::keyClick(input, Qt::Key_F8, Qt::ControlModifier | Qt::AltModifier);
+  require(text() == original &&
+              document->editorController.selection().cursorPosition().text.sourceOffset == text().indexOf("()") + 2,
+          "custom completion key skips the closing symbol");
+  shortcuts.clearOverride("edit.skip_closing_symbol");
+  caret("Tail");
+  QTest::keyClick(input, Qt::Key_C, Qt::ControlModifier | Qt::AltModifier | Qt::ShiftModifier);
+  require(text().contains("text-align: center"), "paragraph alignment is accessible by keyboard");
+  command("edit.undo")->trigger();
+  require(text() == original, "keyboard alignment undoes exactly");
+
+  command("file.open_recent")->trigger();
+  require(qobject_cast<QMenu*>(QApplication::activePopupWidget()), "recent-files command opens the existing menu");
+  QApplication::activePopupWidget()->close();
+}
+
+void altShortcutsKeepEditorFocus() {
+  for (bool source : {false, true}) {
+    Fixture f;
+    auto* document = f.open(f.file("alt-keys.md", QStringLiteral("first\n\nsecond\n\nthird\n")));
+    if (source)
+      action(f.window, "Source Code Mode")->trigger();
+    QWidget* input = source ? static_cast<QWidget*>(document->editor->findChild<VirtualSourceEdit*>())
+                            : static_cast<QWidget*>(document->renderView);
+    if (source)
+      document->editor->setCursorPosition(7);
+    else
+      document->editorController.selection().setCursorPosition(document->editorController.cursorForSourceOffset(7));
+    input->setFocus();
+    QApplication::processEvents();
+    int moves = 0;
+    for (const auto* id : {"edit.move_line_up", "edit.move_line_down"}) {
+      auto* command = f.window.findChild<QAction*>(QString::fromLatin1(id));
+      require(command && command->isEnabled(), "Alt arrow command is available");
+      QObject::connect(command, &QAction::triggered, &f.window, [&] { ++moves; });
+    }
+    const auto pressAltArrow = [&](Qt::Key key) {
+      // Route the full modifier gesture through the window, including shortcut
+      // dispatch and the menu bar's Alt handling, rather than just the editor.
+      QTest::keyClick(f.window.windowHandle(), key, Qt::AltModifier);
+      QApplication::processEvents();
+      require(!QApplication::activePopupWidget() && !f.window.menuBar()->hasFocus(),
+              QStringLiteral("Alt arrow must not activate menu: source=%1 key=%2").arg(source).arg(key));
+      require(input->hasFocus() || input->isAncestorOf(QApplication::focusWidget()),
+              "Alt shortcut leaves keyboard focus in editor");
+    };
+    for (int i = 0; i < 2; ++i) {
+      for (auto key : {Qt::Key_Up, Qt::Key_Down}) {
+        pressAltArrow(key);
+        require(moves == i * 2 + (key == Qt::Key_Up ? 1 : 2), "Alt arrow executes exactly one move command");
+      }
+    }
+    const auto before = document->session.markdownText().toString();
+    f.window.setEditingLocked(true);
+    for (auto key : {Qt::Key_Up, Qt::Key_Down})
+      pressAltArrow(key);
+    require(moves == 4 && document->session.markdownText().toString() == before,
+            "disabled Alt commands neither modify a locked document nor activate menus");
+    f.window.setEditingLocked(false);
+    auto& shortcuts = ShortcutSettings::instance();
+    shortcuts.setOverride("edit.move_line_up", QKeySequence("Ctrl+Alt+F6"));
+    shortcuts.setOverride("edit.move_line_down", QKeySequence("Ctrl+Alt+F7"));
+    for (auto key : {Qt::Key_Up, Qt::Key_Down})
+      pressAltArrow(key);
+    require(moves == 4 && document->session.markdownText().toString() == before,
+            "unbound Alt arrows neither move text nor activate menus");
+    shortcuts.clearOverride("edit.move_line_up");
+    shortcuts.clearOverride("edit.move_line_down");
   }
 }
 
@@ -4342,6 +4531,12 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--shortcut-preferences"))) {
     runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
     runTest("configurableShortcuts", configurableShortcuts);
+    runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);
+    runTest("altShortcutsKeepEditorFocus", altShortcutsKeepEditorFocus);
+    return 0;
+  }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--alt-menu"))) {
+    runTest("altShortcutsKeepEditorFocus", altShortcutsKeepEditorFocus);
     return 0;
   }
   if (QCoreApplication::arguments().contains(QStringLiteral("--export-path-layout"))) {
@@ -4418,6 +4613,8 @@ int main(int argc, char** argv) {
   runTest("continuousEditingWorkflow", continuousEditingWorkflow);
   runLockedEditingTests();
   runTest("configurableShortcuts", configurableShortcuts);
+  runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);
+  runTest("altShortcutsKeepEditorFocus", altShortcutsKeepEditorFocus);
   runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
   runTest("imeSelectionReplacementWorkflow", imeSelectionReplacementWorkflow);
   runTest("restrictedFormattingActions", restrictedFormattingActions);

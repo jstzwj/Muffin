@@ -198,6 +198,15 @@ bool RenderCommandFacade::toggleCodeBlock() {
   return runCommand("toggleCodeBlock", [&] { return editorController_.paragraphController().toggleCodeBlock(); });
 }
 
+bool RenderCommandFacade::canAlignParagraph() const {
+  return canRun() && editorController_.paragraphController().canAlignParagraph();
+}
+
+bool RenderCommandFacade::setParagraphAlignment(Qt::Alignment alignment) {
+  return runCommand("setParagraphAlignment",
+                    [&] { return editorController_.paragraphController().setParagraphAlignment(alignment); });
+}
+
 bool RenderCommandFacade::insertParagraphBefore() {
   return runCommand("insertParagraphBefore",
                     [&] { return editorController_.paragraphController().insertParagraphBefore(); });

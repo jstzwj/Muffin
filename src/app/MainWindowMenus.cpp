@@ -20,9 +20,7 @@ QAction* muffin::MainWindow::registerAction(QMenu* menu, const QString& id) {
 
   QAction* action = menu->addAction(decl->text);
   action->setObjectName(id);
-  if (!decl->shortcut.isEmpty()) {
-    action->setShortcut(decl->shortcut);
-  }
+  action->setShortcuts(decl->defaultShortcuts());
   action->setEnabled(decl->enabledInitial);
   if (decl->checkable) {
     action->setCheckable(true);
@@ -77,6 +75,11 @@ void muffin::MainWindow::buildMenuItems(QMenu* parent, const std::vector<MenuIte
       QMenu* sub = parent->addMenu(item.title);
       if (item.dynamicId == DynamicMenu::RecentFiles) {
         recentFilesMenu_ = sub;
+        // The submenu itself is the command; avoid an extra duplicate menu entry.
+        const auto* declaration = commandDeclaration(QStringLiteral("file.open_recent"));
+        sub->menuAction()->setObjectName(declaration->id);
+        sub->menuAction()->setShortcuts(declaration->defaultShortcuts());
+        commands_.registerAction(declaration->id, sub->menuAction());
       } else if (item.dynamicId == DynamicMenu::ReopenEncoding) {
         reopenEncodingMenu_ = sub;
         sub->setEnabled(false);

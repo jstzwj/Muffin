@@ -2,7 +2,6 @@
 
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
-#include "editor/BlockEditContext.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
@@ -96,6 +95,71 @@ bool ParagraphController::isOnEditableBlock() const {
 bool ParagraphController::canInsertAdjacentParagraph() const {
   BlockContext context;
   return resolveInsertionContext(context);
+}
+
+bool ParagraphController::canAlignParagraph() const {
+  if (!isOnEditableBlock())
+    return false;
+  const auto* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  // A block inside a Markdown list/quote needs that container's source prefixes.
+  // Do not insert raw HTML across those prefixes and silently change its structure.
+  return node && node->parent() && node->parent()->type() == BlockType::Document;
+}
+
+bool ParagraphController::setParagraphAlignment(Qt::Alignment alignment) {
+  if (!canAlignParagraph())
+    return false;
+  QString value;
+  if (alignment == Qt::AlignLeft)
+    value = QStringLiteral("left");
+  else if (alignment == Qt::AlignHCenter)
+    value = QStringLiteral("center");
+  else if (alignment == Qt::AlignRight)
+    value = QStringLiteral("right");
+  else if (alignment == Qt::AlignJustify)
+    value = QStringLiteral("justify");
+  else
+    return false;
+
+  BlockContext context;
+  if (!resolveBlockContext(context))
+    return false;
+  const auto& source = ctx_.session->markdownText();
+  const QString opening = QStringLiteral("<div style=\"text-align: %1;\">").arg(value);
+  const auto& siblings = context.node->parent()->children();
+  const auto found =
+      std::find_if(siblings.begin(), siblings.end(), [&](const auto& node) { return node.get() == context.node; });
+  // Reuse a dedicated wrapper created by this command, without modifying a
+  // shared README container or accumulating wrappers on repeated alignment.
+  if (found != siblings.begin() && found + 1 != siblings.end()) {
+    const auto& before = **(found - 1);
+    const auto& after = **(found + 1);
+    const QString tag = before.literal().trimmed();
+    const QStringList values{QStringLiteral("left"), QStringLiteral("center"), QStringLiteral("right"),
+                             QStringLiteral("justify")};
+    bool dedicated = false;
+    for (const auto& candidate : values)
+      dedicated |= tag == QStringLiteral("<div style=\"text-align: %1;\">").arg(candidate);
+    if (before.type() == BlockType::HtmlBlock && after.type() == BlockType::HtmlBlock && dedicated &&
+        after.literal().trimmed() == QStringLiteral("</div>")) {
+      if (tag == opening)
+        return true;
+      const auto span = blockLineSpan(before, source);
+      const QString old = source.mid(span.byteStart, span.byteEnd - span.byteStart);
+      QString replacement = opening;
+      if (old.endsWith(QLatin1Char('\n')))
+        replacement += QLatin1Char('\n');
+      return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Align Paragraph"),
+                             span.byteStart, old.size(), replacement,
+                             context.cursorSourceOffset + replacement.size() - old.size(), {}, true);
+    }
+  }
+  const QString prefix = opening + QStringLiteral("\n\n");
+  const QString replacement =
+      prefix + source.mid(context.blockStart, context.blockEnd - context.blockStart) + QStringLiteral("\n\n</div>");
+  return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Align Paragraph"),
+                         context.blockStart, context.blockEnd - context.blockStart, replacement,
+                         context.cursorSourceOffset + prefix.size(), {}, true);
 }
 
 // ---------------------------------------------------------------------------

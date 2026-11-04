@@ -16,7 +16,9 @@ class MUFFIN_UI_EXPORT ShortcutSettings final : public QObject {
 public:
   static ShortcutSettings& instance();
   QKeySequence sequence(const QString& id, const QKeySequence& fallback) const;
+  QList<QKeySequence> sequences(const QString& id, const QList<QKeySequence>& fallback) const;
   bool matches(const QKeyEvent& event, const QString& id, QKeySequence::StandardKey fallback) const;
+  bool matches(const QKeyEvent& event, const QString& id, const QKeySequence& fallback) const;
   bool hasOverride(const QString& id) const;
   void setOverride(const QString& id, const QKeySequence& sequence);
   void clearOverride(const QString& id);

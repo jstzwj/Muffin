@@ -14,9 +14,9 @@ CommandRegistry::CommandRegistry(QObject* parent) : QObject(parent) {
 
 void CommandRegistry::applyShortcut(const QString& id, QAction* action) {
   const auto fallback = defaultShortcuts_.value(id);
-  const auto shortcut = ShortcutSettings::instance().sequence(id, fallback);
-  action->setShortcut(shortcut);
-  action->setShortcutContext(shortcut == fallback ? defaultContexts_.value(id) : Qt::WindowShortcut);
+  const auto shortcuts = ShortcutSettings::instance().sequences(id, fallback);
+  action->setShortcuts(shortcuts);
+  action->setShortcutContext(shortcuts == fallback ? defaultContexts_.value(id) : Qt::WindowShortcut);
 }
 
 QAction* CommandRegistry::action(const QString& id) const {
@@ -29,7 +29,7 @@ QAction* CommandRegistry::registerAction(QString id, QAction* action) {
   }
   const QString actionId = std::move(id);
   actions_.insert(actionId, action);
-  defaultShortcuts_.insert(actionId, action->shortcut());
+  defaultShortcuts_.insert(actionId, action->shortcuts());
   defaultContexts_.insert(actionId, action->shortcutContext());
   applyShortcut(actionId, action);
   attachHandler(actionId, action);

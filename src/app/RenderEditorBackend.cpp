@@ -140,11 +140,17 @@ void RenderEditorBackend::selectNextOccurrence() {
 }
 
 void RenderEditorBackend::moveLineUp() {
-  controller_.moveBlockUp();
+  if (controller_.tableController().currentCell().isValid())
+    controller_.tableController().moveCurrentRowUp();
+  else
+    controller_.moveBlockUp();
 }
 
 void RenderEditorBackend::moveLineDown() {
-  controller_.moveBlockDown();
+  if (controller_.tableController().currentCell().isValid())
+    controller_.tableController().moveCurrentRowDown();
+  else
+    controller_.moveBlockDown();
 }
 
 bool RenderEditorBackend::canUndo() const {

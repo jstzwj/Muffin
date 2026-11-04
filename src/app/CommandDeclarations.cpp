@@ -31,6 +31,8 @@
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QMenu>
+#include <QMenuBar>
 #include <QSettings>
 #include <QSysInfo>
 #include <QUrl>
@@ -38,6 +40,15 @@
 using namespace muffin;
 
 namespace {
+QKeySequence platformShortcut(const char* desktop, const char* mac) {
+#ifdef Q_OS_DARWIN
+  Q_UNUSED(desktop);
+  return QKeySequence(QString::fromLatin1(mac));
+#else
+  Q_UNUSED(mac);
+  return QKeySequence(QString::fromLatin1(desktop));
+#endif
+}
 // Thin wrappers over MainWindow's composite state queries so predicate lambdas
 // read as the old per-domain update*Actions did (e.g. `selectionPresent(w)`).
 bool cursorPresent(const MainWindow& w) {
@@ -128,6 +139,17 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                return !w.sidebar_->folderRoot().isEmpty() || !w.recentFiles().isEmpty() ||
                       !w.tab_->session.filePath().isEmpty();
              }},
+        {.id = QStringLiteral("file.open_recent"),
+         .category = CommandCategory::File,
+         .text = muffin::MainWindow::tr("Open Recent"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+O")),
+         .handler =
+             [](MainWindow& window) {
+               window.rebuildRecentFilesMenu();
+               if (window.recentFilesMenu_)
+                 window.recentFilesMenu_->popup(window.menuBar()->mapToGlobal(QPoint(0, window.menuBar()->height())));
+             },
+         .enabled = [](const MainWindow& w) { return !w.recentFiles().isEmpty() || !w.recentFolders().isEmpty(); }},
         {.id = QStringLiteral("file.save"),
          .category = CommandCategory::File,
          .text = muffin::MainWindow::tr("Save"),
@@ -440,7 +462,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
         {.id = QStringLiteral("edit.jump_doc_start"),
          .category = CommandCategory::Edit,
          .text = muffin::MainWindow::tr("Jump to Start of Document"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Home")),
+         .shortcut = QKeySequence::MoveToStartOfDocument,
          .shortcutWidgetContext = true,
          .handler = [](MainWindow& window) { window.tab_->backend->moveDocumentStart(); },
          .enabled = [](const MainWindow& w) { return cursorPresent(w); }},
@@ -453,7 +475,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
         {.id = QStringLiteral("edit.jump_doc_end"),
          .category = CommandCategory::Edit,
          .text = muffin::MainWindow::tr("Jump to End of Document"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+End")),
+         .shortcut = QKeySequence::MoveToEndOfDocument,
          .shortcutWidgetContext = true,
          .handler = [](MainWindow& window) { window.tab_->backend->moveDocumentEnd(); },
          .enabled = [](const MainWindow& w) { return cursorPresent(w); }},
@@ -487,6 +509,18 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->backend->moveLineDown(); },
          .enabled = [](const MainWindow& w) { return cursorPresent(w); }},
+        {.id = QStringLiteral("edit.skip_closing_symbol"),
+         .category = CommandCategory::Edit,
+         .requiresEditableDocument = true,
+         .text = muffin::MainWindow::tr("Skip Closing Symbol"),
+         .shortcut = QKeySequence(Qt::Key_Tab),
+         .shortcutWidgetContext = true,
+         .handler = [](MainWindow& w) { w.tab_->editorController.inputController().skipClosingSymbol(); },
+         .enabled =
+             [](const MainWindow& w) {
+               return !w.tab_->backend->isSourceMode() &&
+                      w.tab_->editorController.inputController().canSkipClosingSymbol();
+             }},
         {.id = QStringLiteral("edit.delete"),
          .category = CommandCategory::Edit,
          .requiresEditableDocument = true,
@@ -574,7 +608,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
         {.id = QStringLiteral("edit.replace"),
          .category = CommandCategory::Edit,
          .text = muffin::MainWindow::tr("Replace..."),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+H")),
+         .shortcut = platformShortcut("Ctrl+H", "Ctrl+Alt+F"),
          .handler = [](MainWindow& window) { window.showReplaceBar(); }},
         {.id = QStringLiteral("edit.find_in_folder"),
          .category = CommandCategory::Edit,
@@ -593,6 +627,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Edit,
          .text = muffin::MainWindow::tr("Lock Editing"),
          .shortcut = QKeySequence(QStringLiteral("F12")),
+         .alternateShortcuts = {QKeySequence(QStringLiteral("Ctrl+Shift+P"))},
          .checkable = true,
          .handler = [](MainWindow& window) { window.toggleEditingLocked(); },
          .enabled = [](const MainWindow& window) { return window.lockEditingEnabled(); },
@@ -717,7 +752,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Paragraph,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Formula Block"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+M")),
+         .shortcut = platformShortcut("Ctrl+Shift+M", "Ctrl+Alt+B"),
          .checkable = true,
          .handler = [](MainWindow& window) { window.tab_->renderCommands.toggleFormulaBlock(); },
          .enabled = [](const MainWindow& w) { return !w.tab_->backend->isSourceMode(); },
@@ -729,7 +764,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Paragraph,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Code Block"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+K")),
+         .shortcut = platformShortcut("Ctrl+Shift+K", "Ctrl+Alt+C"),
          .checkable = true,
          .handler = [](MainWindow& window) { window.tab_->renderCommands.toggleCodeBlock(); },
          .enabled = [](const MainWindow& w) { return !w.tab_->backend->isSourceMode(); },
@@ -769,6 +804,54 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->renderCommands.convertToTaskList(); },
          .enabled = [](const MainWindow& w) { return editableParagraph(w); }},
+        {.id = QStringLiteral("paragraph.align_left"),
+         .category = CommandCategory::Paragraph,
+         .requiresEditableDocument = true,
+         .text = muffin::MainWindow::tr("Align Paragraph Left"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+L")),
+         .handler = [](MainWindow& w) { w.tab_->renderCommands.setParagraphAlignment(Qt::AlignLeft); },
+         .enabled = [](const MainWindow& w) { return w.tab_->renderCommands.canAlignParagraph(); },
+         .disabledReason =
+             [](const MainWindow&) {
+               return muffin::MainWindow::tr(
+                   "Place the caret in a top-level paragraph or heading in live editing mode.");
+             }},
+        {.id = QStringLiteral("paragraph.align_center"),
+         .category = CommandCategory::Paragraph,
+         .requiresEditableDocument = true,
+         .text = muffin::MainWindow::tr("Center Paragraph"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+C")),
+         .handler = [](MainWindow& w) { w.tab_->renderCommands.setParagraphAlignment(Qt::AlignHCenter); },
+         .enabled = [](const MainWindow& w) { return w.tab_->renderCommands.canAlignParagraph(); },
+         .disabledReason =
+             [](const MainWindow&) {
+               return muffin::MainWindow::tr(
+                   "Place the caret in a top-level paragraph or heading in live editing mode.");
+             }},
+        {.id = QStringLiteral("paragraph.align_right"),
+         .category = CommandCategory::Paragraph,
+         .requiresEditableDocument = true,
+         .text = muffin::MainWindow::tr("Align Paragraph Right"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+R")),
+         .handler = [](MainWindow& w) { w.tab_->renderCommands.setParagraphAlignment(Qt::AlignRight); },
+         .enabled = [](const MainWindow& w) { return w.tab_->renderCommands.canAlignParagraph(); },
+         .disabledReason =
+             [](const MainWindow&) {
+               return muffin::MainWindow::tr(
+                   "Place the caret in a top-level paragraph or heading in live editing mode.");
+             }},
+        {.id = QStringLiteral("paragraph.align_justify"),
+         .category = CommandCategory::Paragraph,
+         .requiresEditableDocument = true,
+         .text = muffin::MainWindow::tr("Justify Paragraph"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+J")),
+         .handler = [](MainWindow& w) { w.tab_->renderCommands.setParagraphAlignment(Qt::AlignJustify); },
+         .enabled = [](const MainWindow& w) { return w.tab_->renderCommands.canAlignParagraph(); },
+         .disabledReason =
+             [](const MainWindow&) {
+               return muffin::MainWindow::tr(
+                   "Place the caret in a top-level paragraph or heading in live editing mode.");
+             }},
         {.id = QStringLiteral("paragraph.insert_before"),
          .category = CommandCategory::Paragraph,
          .requiresEditableDocument = true,
@@ -809,6 +892,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Paragraph,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Horizontal Rule"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+-")),
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->renderCommands.insertHorizontalRule(); },
          .enabled = [](const MainWindow& w) { return !w.tab_->backend->isSourceMode(); }},
@@ -926,6 +1010,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Insert Row Below"),
          .shortcut = QKeySequence(QStringLiteral("Ctrl+Enter")),
+         .alternateShortcuts = {QKeySequence(QStringLiteral("Alt+Shift+Down"))},
          .handler = [](MainWindow& window) { window.tab_->renderCommands.insertRowAfter(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
         {.id = QStringLiteral("table.insert_column_before"),
@@ -971,6 +1056,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Delete Row"),
          .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+Backspace")),
+         .alternateShortcuts = {QKeySequence(QStringLiteral("Alt+Shift+Up"))},
          .handler = [](MainWindow& window) { window.tab_->renderCommands.deleteCurrentRow(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
         {.id = QStringLiteral("table.delete_column"),
@@ -1248,7 +1334,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Format,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Inline Formula"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Shift+M")),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+M")),
          .checkable = true,
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->backend->toggleInlineMath(); },
@@ -1261,7 +1347,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Format,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Strikethrough"),
-         .shortcut = QKeySequence(QStringLiteral("Alt+Shift+5")),
+         .shortcut = platformShortcut("Alt+Shift+5", "Ctrl+Shift+5"),
          .checkable = true,
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->backend->toggleStrikethrough(); },
@@ -1909,7 +1995,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
         {.id = QStringLiteral("view.fullscreen"),
          .category = CommandCategory::View,
          .text = muffin::MainWindow::tr("Toggle Full Screen"),
-         .shortcut = QKeySequence(QStringLiteral("F11")),
+         .shortcut = platformShortcut("F11", "Meta+Ctrl+F"),
          .handler = [](MainWindow& window) { window.isFullScreen() ? window.showNormal() : window.showFullScreen(); }},
         {.id = QStringLiteral("view.always_on_top"),
          .category = CommandCategory::View,
@@ -2096,13 +2182,10 @@ const std::vector<muffin::MenuSpec>& muffin::mainMenuSpec() {
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("file.preferences")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("file.close")},
-#ifdef Q_OS_DARWIN
-                 // Quit belongs in the application menu on macOS (moved there by QuitRole). On
-                 // Windows/Linux use the window close button or Alt+F4 to close the window;
-                 // Ctrl+W closes only the current tab.
+                 // Register on every platform so its shortcut preference always has an action.
+                 // QuitRole moves it to the application menu on macOS.
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("app.quit")},
-#endif
              }},
             // Edit
             {muffin::MainWindow::tr("Edit"),
@@ -2140,6 +2223,7 @@ const std::vector<muffin::MenuSpec>& muffin::mainMenuSpec() {
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.move_line_up")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.move_line_down")},
+                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.skip_closing_symbol")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("edit.delete")},
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Submenu,
@@ -2304,6 +2388,16 @@ const std::vector<muffin::MenuSpec>& muffin::mainMenuSpec() {
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.hr")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.toc")},
+                 {.kind = MenuItem::Kind::Separator},
+                 {.kind = MenuItem::Kind::Submenu,
+                  .title = muffin::MainWindow::tr("Paragraph Alignment"),
+                  .children =
+                      {
+                          {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.align_left")},
+                          {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.align_center")},
+                          {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.align_right")},
+                          {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.align_justify")},
+                      }},
                  {.kind = MenuItem::Kind::Separator},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_before")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("paragraph.insert_after")},

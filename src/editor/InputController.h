@@ -53,6 +53,8 @@ public:
   bool outdentListItem();
   bool deleteSelection();
   bool hasEditableSelection() const;
+  bool canSkipClosingSymbol() const;
+  bool skipClosingSymbol();
   bool handleInputMethod(QInputMethodEvent* event);
 
   // Select the next occurrence of the current selection (Ctrl+J). When the

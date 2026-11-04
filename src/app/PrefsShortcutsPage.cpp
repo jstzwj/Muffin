@@ -136,9 +136,14 @@ void muffin::PrefsShortcutsPage::rebuild() {
       continue;
     QString label = command.text;
     label.remove('&');
-    const auto shortcut = ShortcutSettings::instance().sequence(command.id, command.shortcut);
-    const auto shown = shortcut.toString(QKeySequence::NativeText);
-    const auto defaultShortcut = command.shortcut.toString(QKeySequence::NativeText);
+    const auto displayKeys = [](const QList<QKeySequence>& keys) {
+      QStringList labels;
+      for (const auto& key : keys)
+        labels.append(key.toString(QKeySequence::NativeText));
+      return labels.join(QStringLiteral(" / "));
+    };
+    const auto shown = displayKeys(ShortcutSettings::instance().sequences(command.id, command.defaultShortcuts()));
+    const auto defaultShortcut = displayKeys(command.defaultShortcuts());
     if (!query.isEmpty() && !label.contains(query, Qt::CaseInsensitive) &&
         !command.id.contains(query, Qt::CaseInsensitive) && !shown.contains(query, Qt::CaseInsensitive) &&
         !defaultShortcut.contains(query, Qt::CaseInsensitive))
@@ -177,11 +182,20 @@ QStringList muffin::PrefsShortcutsPage::conflicts() const {
   if (!selected || sequence.isEmpty())
     return result;
   const auto id = selected->data(0, Qt::UserRole).toString();
+  const auto* declaration = commandDeclaration(id);
+  const auto candidates = declaration && sequence == declaration->shortcut ? declaration->defaultShortcuts()
+                                                                           : QList<QKeySequence>{sequence};
   for (const auto& command : commandDeclarations()) {
-    const auto other = ShortcutSettings::instance().sequence(command.id, command.shortcut);
-    if (command.handler && command.id != id && !other.isEmpty() &&
-        (other.matches(sequence) != QKeySequence::NoMatch || sequence.matches(other) != QKeySequence::NoMatch))
-      result.append(command.id);
+    if (!command.handler || command.id == id)
+      continue;
+    for (const auto& other : ShortcutSettings::instance().sequences(command.id, command.defaultShortcuts())) {
+      for (const auto& candidate : candidates) {
+        if (other.matches(candidate) != QKeySequence::NoMatch || candidate.matches(other) != QKeySequence::NoMatch) {
+          if (!result.contains(command.id))
+            result.append(command.id);
+        }
+      }
+    }
   }
   return result;
 }
