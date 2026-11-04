@@ -20,16 +20,21 @@
 #include <QContextMenuEvent>
 #include <QCoreApplication>
 #include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDragLeaveEvent>
+#include <QDrag>
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QFocusEvent>
 #include "render/TextLayout.h"
 #include <QInputMethodEvent>
+#include <QInputMethod>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPointer>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QTextCharFormat>
@@ -251,6 +256,27 @@ VirtualSourceEdit::VirtualSourceEdit(QWidget* parent)
   lineNumberFont_.setPointSizeF(10.0);
   cursorTimer_ = new QTimer(this);
   cursorTimer_->setInterval(QApplication::cursorFlashTime() / 2);
+  dragScrollTimer_ = new QTimer(this);
+  dragScrollTimer_->setInterval(40);
+  connect(dragScrollTimer_, &QTimer::timeout, this, [this] {
+    if (isReadOnly() || dropPosition_ < 0) {
+      clearDropPosition();
+      return;
+    }
+    const auto step = [](int position, int minimum, int maximum) {
+      constexpr int margin = 20;
+      if (position < minimum + margin)
+        return -qBound(1, minimum + margin - position, 48);
+      if (position > maximum - margin)
+        return qBound(1, position - maximum + margin, 48);
+      return 0;
+    };
+    verticalScrollBar()->setValue(verticalScrollBar()->value() + step(dropPoint_.y(), 0, viewport()->height()));
+    if (!wordWrap_)
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() +
+                                      step(dropPoint_.x(), kGutterWidth + kTextInset, viewport()->width()));
+    updateDropPosition(dropPoint_);
+  });
   connect(cursorTimer_, &QTimer::timeout, this, [this] {
     cursorVisible_ = !cursorVisible_;
     viewport()->update(cursorRectForOffset(cursor_).adjusted(-2, -2, 2, 2));
@@ -297,6 +323,8 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
   QObject::disconnect(textConnection_);
   historyController_.reset();
   session_ = session;
+  ++textGeneration_;
+  clearDropPosition();
   if (session_) {
     textConnection_ = connect(session_, &DocumentSession::documentTextChanged, this, [this] { syncFromSession(); });
     historyController_ = std::make_unique<EditorController>();
@@ -311,6 +339,8 @@ void VirtualSourceEdit::bindSession(DocumentSession* session) {
     editingConnection_ =
         connect(session_, &DocumentSession::editingAvailabilityChanged, this, [this] { updateReadOnlyState(); });
     replacementConnection_ = connect(session_, &DocumentSession::documentAboutToBeReplaced, this, [this] {
+      ++textGeneration_;
+      clearDropPosition();
       undoStack_.clear();
       redoStack_.clear();
       cursor_ = anchor_ = 0;
@@ -331,6 +361,8 @@ void VirtualSourceEdit::syncFromSession(bool preserveCursor) {
   // the caret, undo record and incremental line-height update.
   if (applyingEdit_)
     return;
+  ++textGeneration_;
+  clearDropPosition();
   if (!preserveCursor)
     cursor_ = anchor_ = 0;
   cursor_ = boundedOffset(cursor_);
@@ -343,6 +375,8 @@ void VirtualSourceEdit::notifyDocumentChanged() {
   // Our own delta is reconciled by applyEdit after the session has emitted its signals.
   if (applyingEdit_)
     return;
+  ++textGeneration_;
+  clearDropPosition();
   undoStack_.clear();
   redoStack_.clear();
   cursor_ = boundedOffset(cursor_);
@@ -351,6 +385,8 @@ void VirtualSourceEdit::notifyDocumentChanged() {
 }
 
 void VirtualSourceEdit::setStandaloneText(QString text) {
+  ++textGeneration_;
+  clearDropPosition();
   QObject::disconnect(replacementConnection_);
   QObject::disconnect(editingConnection_);
   QObject::disconnect(textConnection_);
@@ -530,6 +566,8 @@ bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString&
     standaloneSource().replace(start, end, inserted);
   }
   applyingEdit_ = false;
+  ++textGeneration_;
+  clearDropPosition();
 
   anchor_ = record.afterAnchor;
   cursor_ = record.afterCursor;
@@ -673,6 +711,18 @@ bool VirtualSourceEdit::canRedo() const {
 }
 
 bool VirtualSourceEdit::applyEditRecord(const EditRecord& record, bool reverse) {
+  if (record.batch) {
+    standalone_ = reverse ? record.batch->before : record.batch->after;
+    anchor_ = reverse ? record.beforeAnchor : record.afterAnchor;
+    cursor_ = reverse ? record.beforeCursor : record.afterCursor;
+    ++textGeneration_;
+    clearDropPosition();
+    resetGeometryIndex(true);
+    ensureCursorVisible();
+    emitCursorPosition();
+    emit editApplied();
+    return true;
+  }
   const QString& remove = reverse ? record.inserted : record.removed;
   const QString& insert = reverse ? record.removed : record.inserted;
   if (source().mid(record.start, remove.size()) != remove)
@@ -919,6 +969,8 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
     painter.setFont(sourceFont_);
     painter.setPen(colors_.lineNumber);
     drawDocumentText(painter, QPointF(kGutterWidth + kTextInset, baseLineHeight()), placeholder_);
+    if (dropPosition_ >= 0)
+      painter.fillRect(cursorRectForOffset(dropPosition_), colors_.text);
     return;
   }
 
@@ -1049,10 +1101,12 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
       restLayout.endLayout();
       restLayout.draw(&painter, QPointF(cursorRect.left() + preeditAdvance, cursorRect.top()));
     }
-  } else if (!isReadOnly() && hasFocus() && cursorVisible_) {
+  } else if (dropPosition_ < 0 && !isReadOnly() && hasFocus() && cursorVisible_) {
     const QRect cursorRect = cursorRectForOffset(cursor_);
     painter.fillRect(QRect(cursorRect.left(), cursorRect.top(), 2, cursorRect.height()), colors_.text);
   }
+  if (dropPosition_ >= 0)
+    painter.fillRect(cursorRectForOffset(dropPosition_), colors_.text);
 }
 
 QPoint VirtualSourceEdit::contentPoint(const QPoint& viewportPoint) const {
@@ -1212,6 +1266,7 @@ bool VirtualSourceEdit::isReadOnly() const {
 
 void VirtualSourceEdit::updateReadOnlyState() {
   if (isReadOnly()) {
+    clearDropPosition();
     preedit_.clear();
     preeditFormats_.clear();
     preeditCursor_ = -1;
@@ -1395,13 +1450,25 @@ void VirtualSourceEdit::mousePressEvent(QMouseEvent* event) {
   if (event->button() != Qt::LeftButton)
     return;
   setFocus(Qt::MouseFocusReason);
-  moveCursorTo(offsetForPoint(event->position().toPoint()), event->modifiers().testFlag(Qt::ShiftModifier));
-  draggingSelection_ = true;
+  QApplication::inputMethod()->commit();
+  selectionPressPoint_ = event->position().toPoint();
+  const bool extend = event->modifiers().testFlag(Qt::ShiftModifier);
+  selectionDragPending_ = !extend && pointInSelection(selectionPressPoint_);
+  draggingSelection_ = !selectionDragPending_;
+  if (!selectionDragPending_)
+    moveCursorTo(offsetForPoint(selectionPressPoint_), extend);
   event->accept();
 }
 
 void VirtualSourceEdit::mouseMoveEvent(QMouseEvent* event) {
-  viewport()->setCursor(event->position().x() < kGutterWidth ? Qt::ArrowCursor : Qt::IBeamCursor);
+  const auto point = event->position().toPoint();
+  viewport()->setCursor(point.x() < kGutterWidth || pointInSelection(point) ? Qt::ArrowCursor : Qt::IBeamCursor);
+  if (selectionDragPending_ && event->buttons().testFlag(Qt::LeftButton)) {
+    if ((point - selectionPressPoint_).manhattanLength() >= QApplication::startDragDistance())
+      startSelectionDrag();
+    event->accept();
+    return;
+  }
   if (!draggingSelection_)
     return;
   moveCursorTo(offsetForPoint(event->position().toPoint()), true);
@@ -1409,11 +1476,16 @@ void VirtualSourceEdit::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void VirtualSourceEdit::mouseReleaseEvent(QMouseEvent* event) {
-  if (event->button() == Qt::LeftButton)
+  if (event->button() == Qt::LeftButton) {
+    if (selectionDragPending_)
+      moveCursorTo(offsetForPoint(event->position().toPoint()), false);
+    selectionDragPending_ = false;
     draggingSelection_ = false;
+  }
 }
 
 void VirtualSourceEdit::mouseDoubleClickEvent(QMouseEvent* event) {
+  selectionDragPending_ = false;
   moveCursorTo(offsetForPoint(event->position().toPoint()), false);
   selectWord();
 }
@@ -1557,25 +1629,189 @@ void VirtualSourceEdit::contextMenuEvent(QContextMenuEvent* event) {
   menu.exec(event->globalPos());
 }
 
+bool VirtualSourceEdit::pointInSelection(const QPoint& point) const {
+  if (!hasSelection() || point.x() < kGutterWidth || !viewport()->rect().contains(point))
+    return false;
+  const auto offset = offsetForPoint(point);
+  const auto caret = cursorRectForOffset(offset);
+  const auto endCaret = cursorRectForOffset(lineEnd(lineForOffset(offset)));
+  return offset >= selectionStart() && offset < selectionEnd() && point.y() >= caret.top() &&
+         point.y() <= caret.bottom() && (caret.top() != endCaret.top() || point.x() <= endCaret.left());
+}
+
+bool VirtualSourceEdit::selectionDragIsCurrent() const {
+  return selectionDragActive_ && textGeneration_ == selectionDragGeneration_ &&
+         (!session_ || session_->document().revision() == selectionDragRevision_) && anchor_ == selectionDragAnchor_ &&
+         cursor_ == selectionDragCursor_;
+}
+
+void VirtualSourceEdit::startSelectionDrag() {
+  selectionDragPending_ = false;
+  draggingSelection_ = false;
+  if (!hasSelection())
+    return;
+  auto* drag = new QDrag(this);
+  auto* mime = new QMimeData;
+  mime->setText(selectedText());
+  drag->setMimeData(mime);
+  selectionDragActive_ = true;
+  selectionDragGeneration_ = textGeneration_;
+  selectionDragRevision_ = session_ ? session_->document().revision() : 0;
+  selectionDragAnchor_ = anchor_;
+  selectionDragCursor_ = cursor_;
+  selectionDropHandled_ = false;
+  const auto actions = isReadOnly() ? Qt::DropActions(Qt::CopyAction) : Qt::CopyAction | Qt::MoveAction;
+  const QPointer<VirtualSourceEdit> self(this);
+  const auto result = drag->exec(actions, isReadOnly() ? Qt::CopyAction : Qt::MoveAction);
+  if (!self)
+    return;
+  // An internal move is committed atomically by dropSelection. Only an accepted
+  // move into another editor/application deletes here, and never from a stale
+  // buffer after an external reload, intervening edit or selection change.
+  if (result == Qt::MoveAction && !selectionDropHandled_ && selectionDragIsCurrent() && !isReadOnly())
+    applyEdit(selectionStart(), selectionEnd(), {}, true);
+  selectionDragActive_ = false;
+  clearDropPosition();
+}
+
+bool VirtualSourceEdit::canDrop(const QMimeData* mime, const QObject* dragSource) const {
+  if (isReadOnly())
+    return false;
+  // Native backends may wrap MIME data in a platform proxy. The drag source,
+  // rather than MIME object identity, identifies a move within this editor.
+  if (dragSource == this)
+    return selectionDragIsCurrent();
+  if (mime->hasFormat(kMuffinFileTreeDragMime)) {
+    if (mime->urls().isEmpty())
+      return false;
+    const auto url = mime->urls().constFirst();
+    return url.isLocalFile() && !QFileInfo(url.toLocalFile()).isDir();
+  }
+  return mime->hasText() && !mime->text().isEmpty();
+}
+
+void VirtualSourceEdit::updateDropPosition(const QPoint& point) {
+  dropPoint_ = point;
+  dropPosition_ =
+      offsetForPoint(QPoint(qMax(kGutterWidth, point.x()), qBound(0, point.y(), qMax(0, viewport()->height() - 1))));
+  const bool nearEdge =
+      point.y() < 20 || point.y() > viewport()->height() - 20 ||
+      (!wordWrap_ && (point.x() < kGutterWidth + kTextInset + 20 || point.x() > viewport()->width() - 20));
+  if (nearEdge) {
+    if (!dragScrollTimer_->isActive())
+      dragScrollTimer_->start();
+  } else
+    dragScrollTimer_->stop();
+  viewport()->update();
+}
+
+void VirtualSourceEdit::clearDropPosition() {
+  dragScrollTimer_->stop();
+  if (std::exchange(dropPosition_, -1) >= 0)
+    viewport()->update();
+}
+
+bool VirtualSourceEdit::dropSelection(qsizetype position, bool copy) {
+  const auto start = selectionStart(), end = selectionEnd();
+  // Dropping onto the selected range (including its boundaries) is a no-op.
+  if (position >= start && position <= end)
+    return true;
+  const QString selected = selectedText();
+  if (copy) {
+    if (!applyEdit(position, position, selected, true))
+      return false;
+    setSelection(position, position + selected.size());
+    updateHistorySelection();
+    return true;
+  }
+  const auto targetStart = position > end ? position - selected.size() : position;
+  auto batch = std::make_shared<BatchTextCommand>();
+  batch->before = source();
+  batch->after = source();
+  batch->after.replace(start, end, {});
+  batch->after.replace(targetStart, targetStart, selected);
+  batch->beforeAnchor = anchor_;
+  batch->beforeCursor = cursor_;
+  batch->afterAnchor = targetStart;
+  batch->afterCursor = targetStart + selected.size();
+  batch->beforeViewport = viewportPosition();
+  batch->afterViewport = batch->beforeViewport;
+  batch->afterViewport.sourceOffset = targetStart;
+  batch->afterViewport.screenOffset = cursorRectForOffset(position).top();
+  batch->afterViewport.atStart = false;
+  if (session_) {
+    // Work on shared piece-table snapshots: moving a short selection across a
+    // huge document must not copy the intervening source into an undo delta.
+    // Parsing and atomic publication use the existing cancellable batch path.
+    session_->applyBatchAsync(std::move(batch->after), {}, batch->beforeAnchor, batch->beforeCursor, batch->afterAnchor,
+                              batch->afterCursor, batch->beforeViewport, batch->afterViewport);
+    return true;
+  }
+  EditRecord record;
+  record.beforeAnchor = anchor_;
+  record.beforeCursor = cursor_;
+  record.afterAnchor = batch->afterAnchor;
+  record.afterCursor = batch->afterCursor;
+  record.batch = std::move(batch);
+  applyEditRecord(record, false);
+  undoStack_.push_back(std::move(record));
+  redoStack_.clear();
+  return true;
+}
+
 void VirtualSourceEdit::dragEnterEvent(QDragEnterEvent* event) {
-  if (event->mimeData()->hasText() || event->mimeData()->hasUrls())
+  if (canDrop(event->mimeData(), event->source())) {
+    updateDropPosition(event->position().toPoint());
     event->acceptProposedAction();
+  } else {
+    event->ignore();
+  }
+}
+
+void VirtualSourceEdit::dragMoveEvent(QDragMoveEvent* event) {
+  if (canDrop(event->mimeData(), event->source())) {
+    updateDropPosition(event->position().toPoint());
+    event->acceptProposedAction();
+  } else {
+    clearDropPosition();
+    event->ignore();
+  }
+}
+
+void VirtualSourceEdit::dragLeaveEvent(QDragLeaveEvent* event) {
+  clearDropPosition();
+  event->accept();
 }
 
 void VirtualSourceEdit::dropEvent(QDropEvent* event) {
-  moveCursorTo(offsetForPoint(event->position().toPoint()), false);
-  const QMimeData* mime = event->mimeData();
-  if (mime->hasFormat(kMuffinFileTreeDragMime) && mime->hasUrls()) {
-    const QUrl url = mime->urls().constFirst();
-    if (url.isLocalFile() && !QFileInfo(url.toLocalFile()).isDir()) {
-      insertText(FilePathOps::markdownLinkForFile(url.toLocalFile(), documentPath_));
-      event->acceptProposedAction();
-      return;
+  clearDropPosition();
+  const auto* mime = event->mimeData();
+  if (!canDrop(mime, event->source())) {
+    event->ignore();
+    return;
+  }
+  const auto position = offsetForPoint(event->position().toPoint());
+  bool applied;
+  if (event->source() == this) {
+    applied = dropSelection(position, event->proposedAction() != Qt::MoveAction);
+    selectionDropHandled_ = applied;
+  } else {
+    QString text = mime->hasFormat(kMuffinFileTreeDragMime)
+                       ? FilePathOps::markdownLinkForFile(mime->urls().constFirst().toLocalFile(), documentPath_)
+                       : mime->text();
+    text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+    text.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+    applied = applyEdit(position, position, text, true);
+    if (applied) {
+      setSelection(position, position + text.size());
+      updateHistorySelection();
     }
   }
-  if (mime->hasText()) {
-    insertText(mime->text());
+  if (applied) {
+    setFocus(Qt::OtherFocusReason);
     event->acceptProposedAction();
+  } else {
+    event->ignore();
   }
 }
 

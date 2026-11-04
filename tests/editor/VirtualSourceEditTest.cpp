@@ -2,6 +2,14 @@
 #include <QFocusEvent>
 #include <QFontDatabase>
 #include <QImage>
+#include <QDrag>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDragLeaveEvent>
+#include <QDropEvent>
+#include <QElapsedTimer>
+#include <QMimeData>
+#include <QMouseEvent>
 #include <QInputMethodEvent>
 #include <QJsonDocument>
 #include <QPainter>
@@ -16,11 +24,241 @@
 #include <QTemporaryDir>
 #include <QMessageBox>
 #include <QTimer>
+#include <QtTest/QTest>
 
 using namespace muffin;
 
 namespace {
 QFont fixtureSourceFont;
+
+void finishSourceBatch(DocumentSession& session) {
+  QElapsedTimer timeout;
+  timeout.start();
+  while (session.isBatchPending() && timeout.elapsed() < 15000)
+    QTest::qWait(5);
+  require(!session.isBatchPending(), "source drag/history batch completes");
+}
+
+QPoint sourcePoint(VirtualSourceEdit& edit, qsizetype offset) {
+  const auto anchor = edit.anchorPosition(), cursor = edit.cursorPosition();
+  edit.setCursorPosition(offset);
+  const auto point = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect().center();
+  edit.setSelection(anchor, cursor);
+  return point;
+}
+
+// Drive the real selection gesture into QDrag's nested loop. Delivering the
+// destination events there makes event->source() and the MIME ownership real,
+// while avoiding platform-specific global mouse automation in headless CI.
+void dragSourceSelection(VirtualSourceEdit& edit, const QPoint& press, const QPoint& destination, Qt::DropAction action,
+                         const std::function<void()>& duringDrag = {}) {
+  bool entered = false;
+  QTimer::singleShot(0, &edit, [&] {
+    const auto drags = edit.findChildren<QDrag*>();
+    auto* drag = drags.isEmpty() ? nullptr : drags.constLast();
+    require(drag, "pressing inside the selection starts a real text drag");
+    entered = true;
+    if (duringDrag)
+      duringDrag();
+    else {
+      QDragEnterEvent enter(destination, action, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+      QApplication::sendEvent(edit.viewport(), &enter);
+      require(enter.isAccepted(), "source drag enters editable viewport");
+      QDragMoveEvent move(destination, action, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+      QApplication::sendEvent(edit.viewport(), &move);
+      require(move.isAccepted(), "source drag moves through editable viewport");
+      QDropEvent drop(destination, action, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+      QApplication::sendEvent(edit.viewport(), &drop);
+      require(drop.isAccepted(), "source selection drop accepted");
+    }
+    QDrag::cancel();
+  });
+  QTest::mousePress(edit.viewport(), Qt::LeftButton, Qt::NoModifier, press);
+  const auto moved = press + QPoint(QApplication::startDragDistance() + 2, 0);
+  QMouseEvent move(QEvent::MouseMove, moved, edit.viewport()->mapToGlobal(moved), Qt::NoButton, Qt::LeftButton,
+                   Qt::NoModifier);
+  QApplication::sendEvent(edit.viewport(), &move);
+  require(entered, "selection gesture enters the drag loop");
+  QTest::mouseRelease(edit.viewport(), Qt::LeftButton, Qt::NoModifier, destination);
+}
+
+void testSelectionDragMovesCopiesAndUndoesAtomically() {
+  const auto original = QString::fromUtf8("Start 中文😀\n**middle**\nEnd\n");
+  const auto selected = QString::fromUtf8("中文😀\n**middle**");
+  const auto start = original.indexOf(selected), end = start + selected.size();
+  for (bool bound : {false, true})
+    for (bool reversed : {false, true})
+      for (bool forward : {false, true})
+        for (bool copy : {false, true}) {
+          DocumentSession session;
+          VirtualSourceEdit edit;
+          edit.setSourceFont(fixtureSourceFont);
+          edit.resize(800, 300);
+          if (bound) {
+            session.setMarkdownText(original, false);
+            edit.bindSession(&session);
+          } else
+            edit.setStandaloneText(original);
+          edit.show();
+          QApplication::processEvents();
+          const qsizetype destination = forward ? original.size() - 1 : 0;
+          edit.setSelection(reversed ? end : start, reversed ? start : end);
+          const auto press = sourcePoint(edit, start + 1), target = sourcePoint(edit, destination);
+          dragSourceSelection(edit, press, target, copy ? Qt::CopyAction : Qt::MoveAction);
+          finishSourceBatch(session);
+          QString expected = original;
+          const auto targetStart = !copy && destination > end ? destination - selected.size() : destination;
+          if (!copy)
+            expected.remove(start, selected.size());
+          expected.insert(targetStart, selected);
+          require(edit.text() == expected && edit.selectedText() == selected && edit.selectionStart() == targetStart,
+                  "drag preserves exact Unicode/newlines and selects the moved or copied source");
+          edit.undo();
+          finishSourceBatch(session);
+          require(edit.text() == original && edit.anchorPosition() == (reversed ? end : start) &&
+                      edit.cursorPosition() == (reversed ? start : end) && !edit.canUndo(),
+                  "one undo restores original text, selection direction and history position");
+          if (bound)
+            require(!session.document().isModified(), "undo drag returns to saved state");
+          edit.redo();
+          finishSourceBatch(session);
+          require(edit.text() == expected && edit.selectedText() == selected, "one redo restores the complete drag");
+        }
+}
+
+void testSelectionDragWrappedTextAndMimeProxy() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  const auto original = QStringLiteral("abcdefghijklmnopqrstuvwxyz ").repeated(8) + QStringLiteral("\nend\n");
+  edit.setStandaloneText(original);
+  edit.resize(340, 500);
+  edit.show();
+  QApplication::processEvents();
+  edit.setSelection(2, 160);
+  const auto selected = edit.selectedText();
+  const auto press = sourcePoint(edit, 20), target = sourcePoint(edit, original.size() - 1);
+  dragSourceSelection(edit, press, target, Qt::MoveAction, [&] {
+    // Windows may expose a different QMimeData object from the one on QDrag.
+    QMimeData proxy;
+    proxy.setText(selected);
+    QDragEnterEvent enter(target, Qt::MoveAction, &proxy, Qt::LeftButton, Qt::NoModifier);
+    require(enter.source() == &edit, "native drag identifies its source independently of MIME data identity");
+    QApplication::sendEvent(edit.viewport(), &enter);
+    require(enter.isAccepted(), "wrapped selection enters with platform MIME proxy");
+    QDropEvent drop(target, Qt::MoveAction, &proxy, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(edit.viewport(), &drop);
+    require(drop.isAccepted(), "wrapped source move accepts platform MIME proxy");
+  });
+  auto expected = original;
+  expected.remove(2, selected.size());
+  expected.insert(expected.size() - 1, selected);
+  require(edit.text() == expected && edit.selectedText() == selected,
+          "wrapped selection moves rather than being copied when native MIME data is wrapped");
+  edit.undo();
+  require(edit.text() == original && edit.anchorPosition() == 2 && edit.cursorPosition() == 160 && !edit.canUndo(),
+          "wrapped move remains a single undo operation");
+}
+
+void testSelectionDragNoOpsCancellationAndReadOnly() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.setStandaloneText("one two three");
+  edit.resize(800, 300);
+  edit.show();
+  QApplication::processEvents();
+  const auto select = [&] { edit.setSelection(4, 7); };
+  for (const auto destination : {4, 5, 7}) {
+    select();
+    dragSourceSelection(edit, sourcePoint(edit, 5), sourcePoint(edit, destination), Qt::MoveAction);
+    require(edit.text() == "one two three" && edit.selectedText() == "two" && !edit.canUndo(),
+            "dropping inside or on selection boundaries is a no-op");
+  }
+  select();
+  const auto press = sourcePoint(edit, 5);
+  QTest::mousePress(edit.viewport(), Qt::LeftButton, Qt::NoModifier, press);
+  require(edit.selectedText() == "two", "press inside selection preserves it until drag threshold");
+  QTest::mouseRelease(edit.viewport(), Qt::LeftButton, Qt::NoModifier, press);
+  require(!edit.hasSelection() && edit.cursorPosition() == 5, "a click without dragging still positions the caret");
+  select();
+  dragSourceSelection(edit, sourcePoint(edit, 5), {}, Qt::MoveAction, [] {});
+  require(edit.selectedText() == "two" && !edit.canUndo(), "cancelled drag preserves text and selection");
+  select();
+  edit.setReadOnly(true);
+  dragSourceSelection(edit, sourcePoint(edit, 5), {}, Qt::CopyAction, [&] {
+    auto* drag = edit.findChildren<QDrag*>().constLast();
+    require(drag->supportedActions() == Qt::CopyAction, "read-only source can only drag a copy out");
+    QDragEnterEvent enter(QPoint(100, 10), Qt::CopyAction, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(edit.viewport(), &enter);
+    require(!enter.isAccepted(), "read-only viewport rejects a selection drop");
+  });
+  require(edit.text() == "one two three" && edit.selectedText() == "two", "read-only drag cannot delete its source");
+}
+
+void testSelectionDragRejectsStaleSource() {
+  DocumentSession session;
+  session.setMarkdownText("one two three", false);
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.bindSession(&session);
+  edit.resize(800, 300);
+  edit.show();
+  QApplication::processEvents();
+  edit.setSelection(4, 7);
+  dragSourceSelection(edit, sourcePoint(edit, 5), {}, Qt::MoveAction, [&] {
+    auto* drag = edit.findChildren<QDrag*>().constLast();
+    session.replaceDocument("Externally replaced source");
+    QDragEnterEvent enter(QPoint(100, 10), Qt::MoveAction, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(edit.viewport(), &enter);
+    require(!enter.isAccepted(), "reload invalidates the in-flight drag's source range");
+    QDropEvent drop(QPoint(100, 10), Qt::MoveAction, drag->mimeData(), Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(edit.viewport(), &drop);
+    require(!drop.isAccepted(), "stale drop is rejected without inserting an old selection");
+  });
+  require(edit.text() == "Externally replaced source" && !edit.canUndo(), "stale drag leaves replacement intact");
+}
+
+void testExternalSourceDropAndEdgeScroll() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.setStandaloneText("first\nsecond\nthird\n");
+  edit.resize(500, 240);
+  edit.show();
+  QApplication::processEvents();
+  edit.setSelection(6, 12);
+  const auto target = sourcePoint(edit, 0);
+  QMimeData mime;
+  mime.setText(QString::fromUtf8("外部😀\r\n"));
+  QDragEnterEvent enter(target, Qt::CopyAction, &mime, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(edit.viewport(), &enter);
+  require(enter.isAccepted(), "external plain text can enter source mode");
+  QDropEvent drop(target, Qt::CopyAction, &mime, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(edit.viewport(), &drop);
+  require(drop.isAccepted() && edit.text() == QString::fromUtf8("外部😀\nfirst\nsecond\nthird\n"),
+          "external drop inserts at the pointer and normalizes line endings without replacing selection");
+  edit.undo();
+  require(edit.text() == "first\nsecond\nthird\n" && edit.selectedText() == "second",
+          "external drop undo restores previous selection");
+  edit.setReadOnly(true);
+  QDragEnterEvent locked(target, Qt::CopyAction, &mime, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(edit.viewport(), &locked);
+  require(!locked.isAccepted(), "locked source rejects external drops");
+  edit.setReadOnly(false);
+  edit.setStandaloneText(QStringLiteral("long source line ").repeated(80) + QStringLiteral("\nrow\n").repeated(300));
+  edit.setWordWrapEnabled(false);
+  edit.setSelection(0, 4);
+  const QPoint edge(edit.viewport()->width() - 2, edit.viewport()->height() - 2);
+  QDragEnterEvent edgeEnter(edge, Qt::CopyAction, &mime, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(edit.viewport(), &edgeEnter);
+  QTest::qWait(180);
+  require(edit.verticalScrollBar()->value() > 0 && edit.horizontalScrollBar()->value() > 0,
+          "holding drag at an edge scrolls vertically and horizontally without moving original selection");
+  require(edit.selectionStart() == 0 && edit.selectedText() == "long", "drag hover preserves source selection");
+  QDragLeaveEvent leave;
+  QApplication::sendEvent(edit.viewport(), &leave);
+  const auto scroll = edit.verticalScrollBar()->value();
+  QTest::qWait(100);
+  require(edit.verticalScrollBar()->value() == scroll, "leaving the editor stops drag scrolling");
+}
 
 void testSharedHistoryAcrossViewsAndSavePoints() {
   DocumentSession session;
@@ -441,6 +679,15 @@ int main(int argc, char** argv) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
+  if (QCoreApplication::arguments().contains(QStringLiteral("--selection-drag"))) {
+    fixtureSourceFont = QFont(QStringLiteral("monospace"), 13);
+    runTest("testSelectionDragMovesCopiesAndUndoesAtomically", testSelectionDragMovesCopiesAndUndoesAtomically);
+    runTest("testSelectionDragWrappedTextAndMimeProxy", testSelectionDragWrappedTextAndMimeProxy);
+    runTest("testSelectionDragNoOpsCancellationAndReadOnly", testSelectionDragNoOpsCancellationAndReadOnly);
+    runTest("testSelectionDragRejectsStaleSource", testSelectionDragRejectsStaleSource);
+    runTest("testExternalSourceDropAndEdgeScroll", testExternalSourceDropAndEdgeScroll);
+    return 0;
+  }
   QFile reference(QStringLiteral(MUFFIN_SOURCE_DIR "/tests/fixtures/theme/real-theme-browser.json"));
   require(reference.open(QIODevice::ReadOnly), "source editor font reference");
   const auto latin =

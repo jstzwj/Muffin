@@ -21,7 +21,10 @@
 
 class QContextMenuEvent;
 class QDragEnterEvent;
+class QDragMoveEvent;
+class QDragLeaveEvent;
 class QDropEvent;
+class QMimeData;
 class QFocusEvent;
 class QInputMethodEvent;
 class QKeyEvent;
@@ -36,6 +39,7 @@ namespace muffin {
 class DocumentSession;
 class EditorController;
 class RenderTheme;
+struct BatchTextCommand;
 
 struct SourceEditorColors {
   QColor background;
@@ -152,6 +156,8 @@ protected:
   void inputMethodEvent(QInputMethodEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void dragLeaveEvent(QDragLeaveEvent* event) override;
   void dropEvent(QDropEvent* event) override;
 
 private:
@@ -164,6 +170,7 @@ private:
     qsizetype beforeCursor = 0;
     qsizetype afterAnchor = 0;
     qsizetype afterCursor = 0;
+    std::shared_ptr<BatchTextCommand> batch;
   };
 
   struct LineLayout;
@@ -199,6 +206,13 @@ private:
   void emitCursorPosition();
   void updateHistorySelection();
   void replayHistory(bool undo);
+  bool pointInSelection(const QPoint& point) const;
+  void startSelectionDrag();
+  bool selectionDragIsCurrent() const;
+  bool canDrop(const QMimeData* mime, const QObject* dragSource) const;
+  void updateDropPosition(const QPoint& point);
+  void clearDropPosition();
+  bool dropSelection(qsizetype position, bool copy);
   void scrollContentsBy(int dx, int dy) override;
 
   QMetaObject::Connection replacementConnection_;
@@ -221,6 +235,17 @@ private:
   int preferredColumn_ = -1;
   bool wordWrap_ = true;
   bool draggingSelection_ = false;
+  bool selectionDragPending_ = false;
+  QPoint selectionPressPoint_;
+  bool selectionDragActive_ = false;
+  quint64 textGeneration_ = 0;
+  quint64 selectionDragGeneration_ = 0;
+  quint64 selectionDragRevision_ = 0;
+  qsizetype selectionDragAnchor_ = 0, selectionDragCursor_ = 0;
+  bool selectionDropHandled_ = false;
+  qsizetype dropPosition_ = -1;
+  QPoint dropPoint_;
+  QTimer* dragScrollTimer_ = nullptr;
   bool applyingEdit_ = false;
   bool readOnly_ = false;
   bool cursorVisible_ = true;

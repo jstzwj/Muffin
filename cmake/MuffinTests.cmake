@@ -468,6 +468,13 @@ muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinFocusEscapeTest             SOURCE tests/editor/FocusEscapeTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinVirtualSourceEditTest       SOURCE tests/editor/VirtualSourceEditTest.cpp       LINK MuffinUi RESOURCE_LOCK)
+target_link_libraries(MuffinVirtualSourceEditTest PRIVATE Qt6::Test)
+# Offscreen's QPlatformDrag always returns IgnoreAction. Minimal runs Qt's
+# real drag loop so selection gestures and drop/cancel events can be exercised.
+add_test(NAME MuffinSourceSelectionDragTest COMMAND $<TARGET_FILE:MuffinVirtualSourceEditTest> --selection-drag)
+set_tests_properties(MuffinSourceSelectionDragTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"
+  RESOURCE_LOCK MuffinQtGui)
 add_dependencies(MuffinVirtualSourceEditTest muffin_text_fixture_fonts)
 muffin_use_theme_fonts(MuffinVirtualSourceEditTest)
 target_compile_definitions(MuffinVirtualSourceEditTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
