@@ -49,6 +49,8 @@ namespace Muffin.Setup
             CancelCommand = new RelayCommand(_ => Cancel(), _ => IsWorking);
             OpenLogCommand = new RelayCommand(_ => OpenLog());
             CloseCommand = new RelayCommand(_ => _ba.RequestShutdown());
+            RemovePersonalSettings = ba.Command.Action == LaunchAction.Uninstall &&
+                ba.Command.Relation == RelationType.None && ba.Engine.GetVariableNumeric("MuffinRemoveSettings") == 1;
         }
 
         public ICommand InstallCommand { get; }
@@ -120,6 +122,19 @@ namespace Muffin.Setup
 
         public bool Uninstalled { get; private set; }
 
+        private bool _removePersonalSettings;
+        public bool RemovePersonalSettings
+        {
+            get => _removePersonalSettings;
+            set
+            {
+                if (_removePersonalSettings == value) return;
+                SetProperty(ref _removePersonalSettings, value);
+                RaisePropertyChanged(nameof(UninstallBody));
+            }
+        }
+        public string CleanupWarning { get; private set; } = "";
+
         private bool _addContextMenu = true;
         public bool AddContextMenu
         {
@@ -165,7 +180,7 @@ namespace Muffin.Setup
                 nameof(OptionsLabel), nameof(AddContextMenuLabel), nameof(AssociateFilesLabel),
                 nameof(RepairLabel), nameof(UninstallLabel), nameof(InstalledTitle),
                 nameof(InstalledSub), nameof(UninstallTitle), nameof(UninstallBody),
-                nameof(KeepLabel), nameof(CancelLabel), nameof(SuccessInstalledTitle),
+                nameof(RemovePersonalSettingsLabel), nameof(KeepLabel), nameof(CancelLabel), nameof(SuccessInstalledTitle),
                 nameof(SuccessRemovedTitle), nameof(RestartNoteText), nameof(LaunchLabel),
                 nameof(CloseLabel), nameof(FailedTitle), nameof(OpenLogLabel),
                 nameof(Heading), nameof(PrimaryLabel));
@@ -188,7 +203,8 @@ namespace Muffin.Setup
         public string InstalledTitle => UiStrings.Get("InstalledTitle");
         public string InstalledSub => string.Format(UiStrings.Get("InstalledSub"), VersionText);
         public string UninstallTitle => UiStrings.Get("UninstallTitle");
-        public string UninstallBody => UiStrings.Get("UninstallBody");
+        public string UninstallBody => UiStrings.Get(RemovePersonalSettings ? "UninstallCleanupBody" : "UninstallBody");
+        public string RemovePersonalSettingsLabel => UiStrings.Get("RemovePersonalSettings");
         public string KeepLabel => UiStrings.Get("Keep");
         public string CancelLabel => UiStrings.Get("Cancel");
         public string SuccessInstalledTitle => UiStrings.Get("SuccessInstalled");
@@ -389,8 +405,30 @@ namespace Muffin.Setup
             }
             Uninstalled = Intent == SetupIntent.Uninstall;
 
-            if (status == 0)
+            if (status == 0 || status == 3010 || status == 1641)
             {
+                if (PersonalSettingsCleanup.ShouldClear(RemovePersonalSettings, status, Uninstalled,
+                                                       _ba.Command.Relation != RelationType.None))
+                {
+                    try
+                    {
+                        // A still-running editor can write its cached preferences back.
+                        // Do not terminate any process to clear settings.
+                        var editors = Process.GetProcessesByName("Muffin");
+                        var running = editors.Length != 0;
+                        foreach (var editor in editors) editor.Dispose();
+                        if (running)
+                            throw new InvalidOperationException("Muffin is still running");
+                        PersonalSettingsCleanup.Clear(Registry.CurrentUser);
+                        _ba.Engine.Log(LogLevel.Standard, "Removed current-user Muffin preferences");
+                    }
+                    catch (Exception error)
+                    {
+                        CleanupWarning = UiStrings.Get("CleanupWarning");
+                        _ba.Engine.Log(LogLevel.Error, "Could not clear preferences: " + error.GetType().Name);
+                        RaisePropertyChanged(nameof(CleanupWarning));
+                    }
+                }
                 ErrorMessage = "";
                 Page = SetupPage.Success;
             }
@@ -400,7 +438,7 @@ namespace Muffin.Setup
                 Page = SetupPage.Failed;
             }
 
-            // Windowless runs (quiet + Add/Remove Programs' embedded mode)
+            // Windowless runs (quiet and related-bundle removal)
             // must quit right after apply — there is no window to close.
             if (_ba.IsPassive || !_ba.HasWindow)
             {

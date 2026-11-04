@@ -42,10 +42,13 @@ namespace Muffin.Setup
 
         /// <summary>
         /// Full: interactive window. Passive: progress-only window.
-        /// Embedded (uninstall from Add/Remove Programs) and None (quiet):
-        /// headless — the engine drives everything and ARP shows its own UI.
+        /// Standalone ARP uninstall is interactive too, so the user can choose
+        /// whether to retain preferences. Related-bundle removal during an
+        /// upgrade and None (quiet) remain headless.
         /// </summary>
-        private bool ShowUi => _command.Display == Display.Full || IsPassive;
+        private bool ShowUi => _command.Display == Display.Full || IsPassive ||
+            (_command.Display == Display.Embedded && _command.Action == LaunchAction.Uninstall &&
+             _command.Relation == RelationType.None);
 
         protected override void Run()
         {

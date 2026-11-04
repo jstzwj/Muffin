@@ -1,4 +1,5 @@
 #include "app/WindowsIntegration.h"
+#include "io/ApplicationPaths.h"
 
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -137,6 +138,8 @@ const QStringList& WindowsIntegration::markdownExtensions() {
 }
 
 void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
+  if (ApplicationPaths::isPortable())
+    return;
 #ifdef Q_OS_WIN
   const std::wstring exe = quotedExePath();
   const std::wstring iconValue = exe + L",0";
@@ -214,6 +217,8 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
 }
 
 void WindowsIntegration::refreshLocalizedLabels() {
+  if (ApplicationPaths::isPortable())
+    return;
 #ifdef Q_OS_WIN
   bool changed = false;
   const auto verb = contextMenuLabel().toStdWString();
@@ -236,6 +241,8 @@ void WindowsIntegration::refreshLocalizedLabels() {
 }
 
 bool WindowsIntegration::isContextMenuEnabled() {
+  if (ApplicationPaths::isPortable())
+    return false;
 #ifdef Q_OS_WIN
   // The folder verb is the canonical marker that the context-menu set was
   // applied (it is always written whenever contextMenu is on).
@@ -246,6 +253,8 @@ bool WindowsIntegration::isContextMenuEnabled() {
 }
 
 bool WindowsIntegration::isAssociationEnabled() {
+  if (ApplicationPaths::isPortable())
+    return false;
 #ifdef Q_OS_WIN
   return keyExists(HKEY_CURRENT_USER, classesKey(kProgId));
 #else
@@ -254,6 +263,8 @@ bool WindowsIntegration::isAssociationEnabled() {
 }
 
 void WindowsIntegration::openDefaultAppsSettings() {
+  if (ApplicationPaths::isPortable())
+    return;
 #ifdef Q_OS_WIN
   // ms-settings: URIs are resolved by Windows 10+ shell; openUrl launches the
   // Settings app at the Default Apps page.

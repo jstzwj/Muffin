@@ -23,7 +23,7 @@ public:
     bool atomicSnapshot = false;
   };
 
-  // Production leaves `directory` empty to use AppDataLocation/drafts; tests pass
+  // Production leaves `directory` empty to use ApplicationPaths::dataDirectory()/drafts; tests pass
   // a temp dir.
   explicit DraftRecovery(QString directory = QString());
 

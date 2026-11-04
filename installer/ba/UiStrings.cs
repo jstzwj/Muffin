@@ -662,6 +662,59 @@ namespace Muffin.Setup
             ["vi"] = Vietnamese,
         };
 
+        static UiStrings()
+        {
+            var labels = new[] {
+                "Clear personal settings for the current user", "清除当前用户的个人设置", "清除目前使用者的個人設定",
+                "現在のユーザーの個人設定を削除", "현재 사용자의 개인 설정 삭제", "Persönliche Einstellungen des aktuellen Benutzers löschen",
+                "Effacer les paramètres personnels de l’utilisateur actuel", "Borrar los ajustes personales del usuario actual",
+                "Cancella le impostazioni personali dell’utente corrente", "Persoonlijke instellingen van de huidige gebruiker wissen",
+                "Usuń ustawienia osobiste bieżącego użytkownika", "Limpar as configurações pessoais do usuário atual",
+                "Удалить личные настройки текущего пользователя", "Geçerli kullanıcının kişisel ayarlarını sil",
+                "Xóa cài đặt cá nhân của người dùng hiện tại"
+            };
+            var bodies = new[] {
+                "Muffin and your personal settings will be removed. Notes, documents, recovery drafts, themes and replacement backups are kept.",
+                "将移除 Muffin 并清除个人设置。笔记、文档、恢复草稿、主题和替换备份会保留。",
+                "將移除 Muffin 並清除個人設定。筆記、文件、復原草稿、主題和取代備份會保留。",
+                "Muffin と個人設定を削除します。ノート、文書、復元用下書き、テーマ、置換バックアップは保持されます。",
+                "Muffin과 개인 설정을 삭제합니다. 메모, 문서, 복구 초안, 테마 및 바꾸기 백업은 유지됩니다.",
+                "Muffin und deine persönlichen Einstellungen werden entfernt. Notizen, Dokumente, Wiederherstellungsentwürfe, Themes und Ersetzungssicherungen bleiben erhalten.",
+                "Muffin et vos paramètres personnels seront supprimés. Notes, documents, brouillons de récupération, thèmes et sauvegardes de remplacement sont conservés.",
+                "Se eliminarán Muffin y tus ajustes personales. Se conservarán las notas, documentos, borradores de recuperación, temas y copias de seguridad de reemplazos.",
+                "Muffin e le impostazioni personali verranno rimossi. Note, documenti, bozze di recupero, temi e backup delle sostituzioni verranno conservati.",
+                "Muffin en je persoonlijke instellingen worden verwijderd. Notities, documenten, herstelconcepten, thema’s en vervangingsback-ups blijven behouden.",
+                "Muffin i ustawienia osobiste zostaną usunięte. Notatki, dokumenty, szkice odzyskiwania, motywy i kopie zapasowe zamian zostaną zachowane.",
+                "O Muffin e suas configurações pessoais serão removidos. Notas, documentos, rascunhos de recuperação, temas e backups de substituições serão mantidos.",
+                "Muffin и личные настройки будут удалены. Заметки, документы, черновики восстановления, темы и резервные копии замен сохранятся.",
+                "Muffin ve kişisel ayarlarınız kaldırılacak. Notlar, belgeler, kurtarma taslakları, temalar ve değiştirme yedekleri korunacak.",
+                "Muffin và cài đặt cá nhân sẽ bị xóa. Ghi chú, tài liệu, bản nháp khôi phục, chủ đề và bản sao lưu thay thế được giữ lại."
+            };
+            var warnings = new[] {
+                "Muffin was removed, but its settings could not be cleared. Close running Muffin instances and see the setup log.",
+                "Muffin 已移除，但未能清除设置。请关闭仍在运行的 Muffin 实例，并查看安装日志。",
+                "Muffin 已移除，但無法清除設定。請關閉仍在執行的 Muffin 執行個體，並查看安裝記錄。",
+                "Muffin は削除されましたが、設定を削除できませんでした。実行中の Muffin を終了し、セットアップログをご確認ください。",
+                "Muffin은 제거되었지만 설정을 지우지 못했습니다. 실행 중인 Muffin을 닫고 설치 로그를 확인하세요.",
+                "Muffin wurde entfernt, die Einstellungen konnten jedoch nicht gelöscht werden. Schließe laufende Muffin-Instanzen und prüfe das Installationsprotokoll.",
+                "Muffin a été supprimé, mais ses paramètres n’ont pas pu être effacés. Fermez les instances de Muffin et consultez le journal d’installation.",
+                "Muffin se eliminó, pero no se pudieron borrar sus ajustes. Cierra las instancias de Muffin y consulta el registro de instalación.",
+                "Muffin è stato rimosso, ma non è stato possibile cancellare le impostazioni. Chiudi le istanze di Muffin e consulta il registro di installazione.",
+                "Muffin is verwijderd, maar de instellingen konden niet worden gewist. Sluit actieve Muffin-vensters en bekijk het installatielogboek.",
+                "Muffin został usunięty, ale nie udało się wyczyścić ustawień. Zamknij uruchomione instancje Muffin i sprawdź dziennik instalacji.",
+                "O Muffin foi removido, mas não foi possível limpar as configurações. Feche as instâncias do Muffin e consulte o log de instalação.",
+                "Muffin удалён, но очистить настройки не удалось. Закройте запущенные экземпляры Muffin и проверьте журнал установки.",
+                "Muffin kaldırıldı ancak ayarları silinemedi. Çalışan Muffin örneklerini kapatıp kurulum günlüğünü inceleyin.",
+                "Đã xóa Muffin nhưng không thể xóa cài đặt. Hãy đóng các phiên Muffin đang chạy và xem nhật ký cài đặt."
+            };
+            for (var i = 0; i < LanguageCodes.Length; ++i)
+            {
+                Tables[LanguageCodes[i]]["RemovePersonalSettings"] = labels[i];
+                Tables[LanguageCodes[i]]["UninstallCleanupBody"] = bodies[i];
+                Tables[LanguageCodes[i]]["CleanupWarning"] = warnings[i];
+            }
+        }
+
         /// <summary>"auto" (follow system) or an entry of LanguageCodes.</summary>
         private static string _selected = "auto";
 

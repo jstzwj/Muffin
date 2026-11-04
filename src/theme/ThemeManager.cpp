@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 #include <QSet>
 #include <QStandardPaths>
+#include "io/ApplicationPaths.h"
 #include <QStringList>
 
 namespace muffin {
@@ -134,7 +135,7 @@ struct ThemeManager::DefinitionReadScope {
 };
 
 QString ThemeManager::themesDirectory() {
-  return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/themes");
+  return ApplicationPaths::dataDirectory() + QStringLiteral("/themes");
 }
 
 bool ThemeManager::installCssTheme(const QString& srcPath, const QString& destDir) {

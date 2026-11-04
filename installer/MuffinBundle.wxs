@@ -47,6 +47,8 @@
     <!-- Only used by the in-app updater. Contains a PID and base64 paths, not
          shell commands. Hidden so user paths do not enter the bundle log. -->
     <Variable Name="MuffinUpdate" Type="string" Value="" Hidden="yes" bal:Overridable="yes" />
+    <!-- Explicit quiet uninstall opt-in. It is never remembered or inherited by upgrades. -->
+    <Variable Name="MuffinRemoveSettings" Type="numeric" Value="0" bal:Overridable="yes" />
     <Chain>
       <!-- EnableFeatureSelection lets the BA answer PlanMsiFeature for each
            MSI feature from its checkboxes (see MuffinBa.OnPlanMsiFeature).

@@ -6,6 +6,7 @@
 #include "app/LanguageManager.h"
 #include "app/WindowsIntegration.h"
 #include "app/WindowsUpdater.h"
+#include "io/ApplicationPaths.h"
 #include "editor/EditorAccessibility.h"
 #include "theme/FontRendering.h"
 
@@ -21,10 +22,12 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QLoggingCategory>
+#include <QLocale>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QMessageBox>
 #include <QTimer>
+#include <QTranslator>
 #include <QStandardPaths>
 #include <QTextStream>
 
@@ -57,8 +60,7 @@ void installPerfFileLogger() {
   // directory, which during development is typically the repo root — silently littering
   // perf traces into the source tree. Anchor relative paths under the OS temp dir instead.
   if (QFileInfo(path).isRelative()) {
-    path = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-               .filePath(QStringLiteral("muffin/%1").arg(path));
+    path = QDir(muffin::ApplicationPaths::temporaryDirectory()).filePath(QStringLiteral("muffin/%1").arg(path));
     QDir().mkpath(QFileInfo(path).absolutePath());
   }
 
@@ -73,8 +75,6 @@ void installPerfFileLogger() {
 } // namespace
 
 int main(int argc, char* argv[]) {
-  installPerfFileLogger();
-
   // Qt 6 defaults to PassThrough (fractional) scaling and Per-Monitor V2 DPI
   // awareness. Set it explicitly so a stray env var or qt.conf can't silently
   // change it and reintroduce blurry chrome.
@@ -84,6 +84,17 @@ int main(int argc, char* argv[]) {
   QApplication::setApplicationName("Muffin");
   QApplication::setOrganizationName("Muffin");
   QApplication::setApplicationVersion(QStringLiteral(MUFFIN_VERSION));
+  QString storageError;
+  if (!muffin::ApplicationPaths::initialize(QCoreApplication::applicationFilePath(), &storageError)) {
+    QTranslator translator;
+    if (translator.load(QLocale::system(), QStringLiteral("muffin"), QStringLiteral("_"), QStringLiteral(":/i18n")))
+      app.installTranslator(&translator);
+    QMessageBox::critical(nullptr, QStringLiteral("Muffin"),
+                          QCoreApplication::translate("main", "Cannot write to the portable data folder.") +
+                              QLatin1Char('\n') + storageError);
+    return 1;
+  }
+  installPerfFileLogger();
   // Application window/taskbar icon for every platform. This is the primary
   // mechanism on Linux; on Windows/macOS the .exe/.app icon is also embedded,
   // and this makes the decoration appear immediately at launch.

@@ -6,6 +6,9 @@ if(NOT DEFINED DIST_DIR OR DIST_DIR STREQUAL "")
   message(FATAL_ERROR "DIST_DIR is required")
 endif()
 
+if(EXISTS "${DIST_DIR}/Data" OR EXISTS "${DIST_DIR}/Muffin.portable")
+  message(FATAL_ERROR "Distribution contains a portable profile. Preserve it and choose a clean MUFFIN_DIST_DIR: ${DIST_DIR}")
+endif()
 file(REMOVE_RECURSE "${DIST_DIR}")
 file(MAKE_DIRECTORY "${DIST_DIR}")
 

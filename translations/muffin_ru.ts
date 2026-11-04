@@ -977,17 +977,22 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">Быстрый нативный редактор Markdown, созданный на C++ и Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="118"/>
+        <location filename="../src/main.cpp" line="89"/>
+        <source>Cannot write to the portable data folder.</source>
+        <translation>Не удалось записать данные в папку переносной версии.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="125"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Быстрый, лёгкий, нативный редактор Markdown, созданный на C++ и Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="132"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>Открыть &lt;folder&gt; в файловом браузере боковой панели.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="135"/>
+        <location filename="../src/main.cpp" line="142"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Файл Markdown, текстовый файл или папка для открытия.</translation>
     </message>
@@ -1049,13 +1054,13 @@ Make it your default editor now?</source>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1580"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1610"/>
         <source>(no spelling suggestions)</source>
         <translation>(нет вариантов исправления)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="90"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1591"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1621"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>Игнорировать «%1»</translation>
     </message>
@@ -1454,8 +1459,8 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
         <source>File</source>
         <translation>Файл</translation>
     </message>
@@ -2900,7 +2905,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="186"/>
         <location filename="../src/app/MainWindowActions.cpp" line="228"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="50"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="51"/>
         <source>Cancel</source>
         <translation>Отмена</translation>
     </message>
@@ -3705,7 +3710,7 @@ Would you like to open the download page?</source>
         <translation>Открыть</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="129"/>
+        <location filename="../src/main.cpp" line="136"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="300"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <source>Open in New Window</source>
@@ -3734,7 +3739,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="306"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="864"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="30"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="31"/>
         <source>Move To</source>
         <translation>Переместить в</translation>
     </message>
@@ -3840,22 +3845,22 @@ Would you like to open the download page?</source>
         <translation>Копировать вкладку в новое окно</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="166"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="167"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>Этот файл изменён. Выполните поиск повторно, чтобы обновить совпадения.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="204"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="205"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>Это совпадение нельзя точно выделить в режиме предпросмотра. Оно показано в режиме исходного кода.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="230"/>
         <source>Preview Folder Replacement</source>
         <translation>Предпросмотр замены в папке</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3868,145 +3873,145 @@ Replace with: %3</source>
         <translation type="vanished">Включить пути: %1 · Исключить пути: %2 · Учитывать регистр: %3 · Регулярное выражение: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
         <source>Yes</source>
         <translation>Да</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
         <source>No</source>
         <translation>Нет</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
         <source>Matches</source>
         <translation>Совпадения</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="42"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="216"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="217"/>
         <source>Rename / Move</source>
         <translation>Переименовать / Переместить</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="44"/>
         <source>The destination already exists or is inside the folder being moved.</source>
         <translation>Путь назначения уже существует или находится внутри перемещаемой папки.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="50"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="51"/>
         <source>Checking links…</source>
         <translation>Проверка ссылок…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="69"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="70"/>
         <source>Preview Link Updates</source>
         <translation>Предпросмотр обновления ссылок</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="72"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="73"/>
         <source>%1 → %2
 Search folder: %3</source>
         <translation>%1 → %2
 Папка поиска: %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
         <source>Links</source>
         <translation>Ссылки</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="89"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="90"/>
         <source> (unsaved)</source>
         <translation> (не сохранено)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="96"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="263"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="97"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
         <source>Skipped</source>
         <translation>Пропущены</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="122"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="123"/>
         <source>Updates Markdown links, reference definitions and Markdown images in this folder. Code and external URLs are excluded. Unsaved notes stay unsaved and can be undone. Disk originals are backed up.
 Hidden folders, build folders, symbolic links, unreadable files and files over 8 MB are excluded; links outside this folder are not scanned.</source>
         <translation>Обновляет ссылки Markdown, определения ссылок и изображения Markdown в этой папке. Код и внешние URL исключаются. Несохранённые заметки остаются несохранёнными, а изменения можно отменить. Для оригиналов на диске создаются резервные копии.
 Скрытые папки, папки сборки, символические ссылки, недоступные для чтения файлы и файлы размером более 8 МБ исключаются; ссылки вне этой папки не проверяются.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="128"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="129"/>
         <source>Some files could not be checked. Their links may need manual updates.</source>
         <translation>Некоторые файлы не удалось проверить. Их ссылки может потребоваться обновить вручную.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="133"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="134"/>
         <source>Rename / Move Only</source>
         <translation>Только переименовать / переместить</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="135"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="136"/>
         <source>Update Links</source>
         <translation>Обновить ссылки</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="165"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="169"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="166"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="170"/>
         <source>A note changed after the preview. Please try again.</source>
         <translation>Заметка изменилась после предпросмотра. Повторите попытку.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="174"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="175"/>
         <source>A file changed on disk after the preview. Please try again.</source>
         <translation>Файл на диске изменился после предпросмотра. Повторите попытку.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="186"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="187"/>
         <source>
 Some originals could not be restored. Backups: %1</source>
         <translation>
 Некоторые оригиналы не удалось восстановить. Резервные копии: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="191"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="192"/>
         <source>Link updates could not be completed. The path was not changed.</source>
         <translation>Не удалось завершить обновление ссылок. Путь не был изменён.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="206"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="207"/>
         <source>Could not rename or move: %1</source>
         <translation>Не удалось переименовать или переместить: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="244"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="245"/>
         <source>Update Note Links</source>
         <translation>Обновить ссылки на заметки</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="275"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>Ссылки обновлены. Резервные копии оригиналов сохранены в %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="266"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>Не сохранены, изменены, недоступны для чтения, слишком велики, содержат разные окончания строк или не могут быть записаны без потери данных.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="269"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
         <source>Replacement preview</source>
         <translation>Предпросмотр замены</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="276"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … Предпросмотр сокращён; будет обработан весь файл.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="278"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
         <source>Before:
 %1
 
@@ -4019,29 +4024,29 @@ After:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="283"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="284"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>Файлы с несохранёнными изменениями пропускаются. Оригиналы сохраняются для восстановления. Файлы, изменённые после этого предпросмотра, не будут перезаписаны.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="297"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="298"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>Заменить %1 совпадений в %2 файлах</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
         <source>Folder Replacement</source>
         <translation>Замена в папке</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="331"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>Изменено файлов: %1; пропущено: %2.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="334"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -4049,19 +4054,19 @@ Recovery folder: %1</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="656"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="364"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
         <source>Undo Folder Replacement</source>
         <translation>Отменить замену в папке</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
         <source>No folder replacement is available to restore.</source>
         <translation>Нет замены в папке, которую можно отменить.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="347"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4072,29 +4077,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 Файлы, изменённые позже или содержащие несохранённые изменения, будут пропущены.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="349"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
         <source>Restore Originals</source>
         <translation>Восстановить оригиналы</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="351"/>
         <source>Open Recovery Folder</source>
         <translation>Открыть папку восстановления</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="366"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>Восстановлено файлов: %1; пропущено: %2.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
         <source>Updating files…</source>
         <translation>Обновление файлов…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
         <source>Stop after current file</source>
         <translation>Остановить после текущего файла</translation>
     </message>
@@ -4490,7 +4495,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>Форматы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Default Export Folder</source>
         <translation>Папка экспорта по умолчанию</translation>
     </message>
@@ -4499,23 +4504,23 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">Автоматически</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="241"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
         <source>Same folder as current file</source>
         <translation>В папке текущего файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Custom...</source>
         <translation>Другая...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="257"/>
         <source>Pandoc Path</source>
         <translation>Путь к Pandoc</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="258"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="259"/>
         <source>(Auto-detect)</source>
         <translation>(Автоопределение)</translation>
     </message>
@@ -4555,314 +4560,314 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation>Ниже</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>Общие настройки по умолчанию для всех форматов экспорта. Выберите формат, чтобы настроить его параметры.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="249"/>
         <source>Custom Folder</source>
         <translation>Выбранная папка</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="255"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>Для документов без названия используется папка «Документы».</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="257"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>All Files (*)</source>
         <translation>Все файлы (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="259"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="260"/>
         <source>Auto-detect</source>
         <translation>Определить автоматически</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>Для PDF, HTML и изображений используется движок отображения Muffin. Для остальных форматов требуется Pandoc.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>Используется при экспорте в %1. Изменения сохраняются сразу.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Theme</source>
         <translation>Тема</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Current theme</source>
         <translation>Текущая тема</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Default light theme</source>
         <translation>Стандартная светлая тема</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>Executable</source>
         <translation>Исполняемый файл</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Arguments</source>
         <translation>Аргументы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
         <source>Output Extension</source>
         <translation>Расширение выходного файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
         <source>Arguments must contain ${outputPath}. ${inputPath} is a temporary Markdown copy including unsaved edits. Also available: ${currentPath}, ${currentFolder}, ${fileName}.</source>
         <translation>Аргументы должны содержать ${outputPath}. ${inputPath} — временная копия Markdown, включающая несохранённые изменения. Также доступны: ${currentPath}, ${currentFolder}, ${fileName}.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="287"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
         <source>Quote arguments containing spaces. Variables are expanded after splitting arguments; no command shell is used.</source>
         <translation>Заключайте аргументы с пробелами в кавычки. Переменные подставляются после разделения аргументов; командная оболочка не используется.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>The command must create one file at ${outputPath}. Failed or canceled exports keep the existing destination.</source>
         <translation>Команда должна создать один файл по пути ${outputPath}. При ошибке или отмене экспорта существующий файл назначения сохраняется.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Page Size</source>
         <translation>Размер страницы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
         <source>Width</source>
         <translation>Ширина</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
         <source>Height</source>
         <translation>Высота</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Landscape</source>
         <translation>Альбомная ориентация</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
         <source>Page Margins</source>
         <translation>Поля страницы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="340"/>
         <source>Font Size (px)</source>
         <translation>Размер шрифта (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="322"/>
         <source>Start each level-one heading on a new page</source>
         <translation>Начинать каждый заголовок первого уровня с новой страницы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="322"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
         <source>Header</source>
         <translation>Верхний колонтитул</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
         <source>Footer</source>
         <translation>Нижний колонтитул</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
         <source>Show page numbers</source>
         <translation>Показывать номера страниц</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>Переменные колонтитулов: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Место выделяется автоматически, чтобы колонтитулы не перекрывали содержимое документа.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="329"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="357"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="330"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="358"/>
         <source>Include a table of contents</source>
         <translation>Добавить оглавление</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="332"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
         <source>Add to &lt;head&gt;</source>
         <translation>Добавить в &lt;head&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="334"/>
         <source>Add before document content</source>
         <translation>Добавить перед содержимым документа</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="335"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin не добавляет таблицу стилей темы в этот формат.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
         <source>Width (px)</source>
         <translation>Ширина (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
         <source>Output Scale</source>
         <translation>Масштаб вывода</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="341"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="342"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>Экспортирует один файл PNG. Максимум: 64 миллиона пикселей и 32 767 пикселей в высоту. Для длинных документов используйте PDF.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Требуется Pandoc. Укажите путь к нему в разделе «Общие».</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="345"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="346"/>
         <source>Reference Document</source>
         <translation>Документ-образец</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="348"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="349"/>
         <source>Custom CSS</source>
         <translation>Собственный CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="351"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="352"/>
         <source>Title</source>
         <translation>Название</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="353"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="354"/>
         <source>Author</source>
         <translation>Автор</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="358"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="359"/>
         <source>TOC Depth</source>
         <translation>Глубина оглавления</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="363"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="364"/>
         <source>Number sections</source>
         <translation>Нумеровать разделы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Line Wrapping</source>
         <translation>Перенос строк</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Do not wrap</source>
         <translation>Без переноса</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Automatic</source>
         <translation>Автоматически</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Preserve source wrapping</source>
         <translation>Сохранять переносы исходного текста</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="368"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="369"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Дополнительные аргументы Pandoc</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="369"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="370"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>Заключайте пути с пробелами в кавычки. Muffin управляет входным форматом, выходным форматом и путём вывода.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="372"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="373"/>
         <source>After Export</source>
         <translation>После экспорта</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="374"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="375"/>
         <source>Open the exported file directory</source>
         <translation>Открыть папку экспортированного файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="376"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="377"/>
         <source>Open the exported file</source>
         <translation>Открыть экспортированный файл</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="413"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="414"/>
         <source>New Export Preset</source>
         <translation>Новый профиль экспорта</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="418"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="419"/>
         <source>%1 (copy)</source>
         <translation>%1 (копия)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="419"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="462"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="420"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="463"/>
         <source>Name</source>
         <translation>Название</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="424"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="425"/>
         <source>Custom Command</source>
         <translation>Пользовательская команда</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="427"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="428"/>
         <source>Format</source>
         <translation>Формат</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="438"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="439"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="471"/>
         <source>Enter a non-empty, unique preset name.</source>
         <translation>Введите непустое и уникальное название профиля.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="462"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="463"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="471"/>
         <source>Rename Export Preset</source>
         <translation>Переименовать профиль экспорта</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="504"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="505"/>
         <source>Using: %1</source>
         <translation>Используется: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="505"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="506"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>Недопустимый исполняемый файл; будет определён автоматически.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="512"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="513"/>
         <source>Detected: %1</source>
         <translation>Обнаружено: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="511"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="512"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc не найден. Установите его или нажмите «Обзор», чтобы указать расположение.</translation>
     </message>
@@ -4870,7 +4875,7 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::PrefsFilesPage</name>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="460"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="462"/>
         <source>Startup</source>
         <translation>При запуске</translation>
     </message>
@@ -4883,12 +4888,12 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">Открыть последний файл</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="446"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="448"/>
         <source>File Open Protection</source>
         <translation>Защита при открытии файлов</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="447"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="449"/>
         <source>Extension protection</source>
         <translation>Проверка расширения</translation>
     </message>
@@ -4901,190 +4906,190 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">Разделяйте расширения запятыми, пробелами или точками с запятой. Можно добавлять и удалять расширения.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="448"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="450"/>
         <source>Allowed file extensions</source>
         <translation>Разрешённые расширения файлов</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="449"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="451"/>
         <source>Ask before opening files with extensions outside this list.</source>
         <translation>Запрашивать подтверждение перед открытием файлов с расширениями вне этого списка.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="450"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="452"/>
         <source>e.g. .txt, .log</source>
         <translation>Например: .txt, .log</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="451"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="453"/>
         <source>Add</source>
         <translation>Добавить</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="452"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="454"/>
         <source>Restore Defaults</source>
         <translation>Восстановить по умолчанию</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="453"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="455"/>
         <source>File size protection</source>
         <translation>Проверка размера файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="454"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="456"/>
         <source>Large files may take longer to open and use more memory.</source>
         <translation>Большие файлы могут открываться дольше и использовать больше памяти.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="455"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="457"/>
         <source>Warn before opening files larger than</source>
         <translation>Предупреждать перед открытием файлов размером больше</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="458"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="460"/>
         <source>File size unit</source>
         <translation>Единица измерения размера файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="461"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="463"/>
         <source>Opening Files</source>
         <translation>Открытие файлов</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="462"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="464"/>
         <source>Open files in tabs by default</source>
         <translation>По умолчанию открывать файлы во вкладках</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="463"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="465"/>
         <source>Files opened from the file manager or command line use the existing Muffin window. Turn this off to open them in a new window.</source>
         <translation>Файлы, открываемые из файлового менеджера или командной строки, используют существующее окно Muffin. Отключите этот параметр, чтобы открывать их в новом окне.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="469"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="471"/>
         <source>Always start fresh</source>
         <translation>Всегда начинать с чистого листа</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="472"/>
         <source>Restore previous session</source>
         <translation>Восстановить предыдущий сеанс</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="476"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="478"/>
         <source>Outline</source>
         <translation>Структура</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="477"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="479"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
         <translation>Разрешить сворачивание и разворачивание структуры на боковой панели</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="479"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="481"/>
         <source>Default File Type / Extension</source>
         <translation>Тип файла / расширение по умолчанию</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="486"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="488"/>
         <source>Plain Text (.txt)</source>
         <translation>Обычный текст (.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="492"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="494"/>
         <source>Save &amp; Restore</source>
         <translation>Сохранение и восстановление</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="493"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="495"/>
         <source>Auto Save</source>
         <translation>Автосохранение</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="494"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="496"/>
         <source>Auto-save changes to the previous file when switching files</source>
         <translation>Автоматически сохранять изменения предыдущего файла при переключении</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="495"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="497"/>
         <source>Restore Unsaved Drafts</source>
         <translation>Восстанавливать несохранённые черновики</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="497"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="499"/>
         <source>Recently Used Files</source>
         <translation>Недавние файлы</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="498"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="500"/>
         <source>Record history files and folders</source>
         <translation>Запоминать историю файлов и папок</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="499"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="501"/>
         <source>Clear History</source>
         <translation>Очистить историю</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="501"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="503"/>
         <source>When dragging files/folders into the window</source>
         <translation>При перетаскивании файлов/папок в окно</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="502"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="504"/>
         <source>When dragging a folder</source>
         <translation>При перетаскивании папки</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="507"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="518"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="530"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="509"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="520"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="532"/>
         <source>Open in Muffin</source>
         <translation>Открыть в Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="508"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="510"/>
         <source>Open in File Manager</source>
         <translation>Открыть в файловом менеджере</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="513"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="515"/>
         <source>When dragging a Markdown file</source>
         <translation>При перетаскивании файла Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="519"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="529"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="521"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="531"/>
         <source>Import File</source>
         <translation>Импортировать файл</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="524"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="526"/>
         <source>When dragging an importable file</source>
         <translation>При перетаскивании импортируемого файла</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="537"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="539"/>
         <source>Windows Integration</source>
         <translation>Интеграция с Windows</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="538"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="540"/>
         <source>Add &quot;Open with Muffin&quot; to File Explorer context menu for files and folders</source>
         <translation>Добавить «Открыть с помощью Muffin» в контекстное меню файлов и папок в Проводнике</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="540"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="542"/>
         <source>Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)</source>
         <translation>Зарегистрировать Muffin как редактор файлов Markdown (.md, .markdown, .mdx, .mkd, .mdown)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="541"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="543"/>
         <source>Set Muffin as Default…</source>
         <translation>Сделать Muffin редактором по умолчанию…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="585"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="587"/>
         <source>Remove .%1</source>
         <translation>Удалить .%1</translation>
     </message>
@@ -5933,13 +5938,13 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
         <translation type="vanished">Исключить пути (слова или части пути)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="240"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Match case</source>
         <translation>Учитывать регистр</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="414"/>
         <source>Regular expression</source>
         <translation>Регулярное выражение</translation>
@@ -6257,42 +6262,42 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="299"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="308"/>
         <source>Markdown source editor</source>
         <translation>Редактор исходного кода Markdown</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="300"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="309"/>
         <source>Plain-text Markdown source</source>
         <translation>Исходный код Markdown в виде простого текста</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1600"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1630"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1602"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1632"/>
         <source>Redo</source>
         <translation>Повторить</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1606"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1636"/>
         <source>Cut</source>
         <translation>Вырезать</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1612"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1642"/>
         <source>Copy</source>
         <translation>Копировать</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1616"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1646"/>
         <source>Paste</source>
         <translation>Вставить</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1627"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1657"/>
         <source>Select All</source>
         <translation>Выделить всё</translation>
     </message>
@@ -6300,17 +6305,17 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WindowsIntegration</name>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="19"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="20"/>
         <source>Open with Muffin</source>
         <translation>Открыть с помощью Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="23"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="24"/>
         <source>Muffin Markdown Document</source>
         <translation>Документ Markdown Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="27"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="28"/>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -6318,114 +6323,114 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="175"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="197"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="450"/>
+        <location filename="../src/main.cpp" line="182"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>Обновить Muffin</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="176"/>
+        <location filename="../src/main.cpp" line="183"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>Обновление отменено или его не удалось установить (код %1). Сеанс восстановлен. Можно повторить попытку через Справка &gt; Проверить обновления.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="208"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="211"/>
         <source>Cancel</source>
         <translation>Отмена</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="246"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="249"/>
         <source>Downloading Muffin %1… You can continue writing.</source>
         <translation>Загрузка Muffin %1… Вы можете продолжать писать.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="252"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="255"/>
         <source>Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.</source>
         <translation>Muffin %1 готов к установке. Перед перезапуском документы будут проверены на наличие несохранённых изменений. Windows может запросить права администратора.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="256"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="259"/>
         <source>Preparing to restart…</source>
         <translation>Подготовка к перезапуску…</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="260"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="263"/>
         <source>Muffin %1 is available. Download the update now?</source>
         <translation>Доступен Muffin %1. Загрузить обновление сейчас?</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="262"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
         <source>Restart and Update</source>
         <translation>Перезапустить и обновить</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="262"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
         <source>Download Update</source>
         <translation>Загрузить обновление</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="268"/>
         <source>Cancel Download</source>
         <translation>Отменить загрузку</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="268"/>
         <source>Later</source>
         <translation>Позже</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="291"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="317"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="294"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="320"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>Не удалось сохранить загружаемое обновление либо его размер превысил ожидаемый.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="299"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="302"/>
         <source>The update manifest is too large.</source>
         <translation>Манифест обновления слишком большой.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="325"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="328"/>
         <source>Could not download the update: %1</source>
         <translation>Не удалось загрузить обновление: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="348"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="351"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>Подпись обновления недействительна либо пакет не соответствует этой версии Windows. Ничего не установлено.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="360"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="365"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="363"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="368"/>
         <source>Could not create the update download folder.</source>
         <translation>Не удалось создать папку для загрузки обновления.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="374"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="464"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="473"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="377"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="467"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="476"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>Загруженное обновление неполное либо было изменено. Ничего не установлено.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="451"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="454"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>Перед обновлением закройте другие запущенные экземпляры Muffin. Обновление из приложения доступно только для установленных версий.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="522"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="578"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="525"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="581"/>
         <source>Could not save the session before updating.</source>
         <translation>Не удалось сохранить сеанс перед обновлением.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="542"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="545"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>Не удалось запустить установщик обновления. Текущая версия не изменена.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="600"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="603"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>Установщик не был готов к работе. Muffin останется открытым; повторите попытку.</translation>
     </message>

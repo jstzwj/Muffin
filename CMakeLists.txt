@@ -919,6 +919,8 @@ set(MUFFIN_CORE_SOURCES
   src/document/TopLevelRangeChange.h
   src/document/MarkdownTypes.h
   src/io/TextFileFormat.h
+  src/io/ApplicationPaths.cpp
+  src/io/ApplicationPaths.h
   src/document/ImageSyntaxOps.cpp
   src/document/ImageSyntaxOps.h
   src/document/LinkSyntaxOps.h
@@ -1689,6 +1691,18 @@ add_custom_target(dist
 )
 
 # --- Windows MSI installer target ---
+if(WIN32)
+  add_custom_target(portable
+    COMMAND ${CMAKE_COMMAND}
+      "-DBINARY_DIR=${CMAKE_BINARY_DIR}"
+      "-DDIST_DIR=${MUFFIN_DIST_DIR}"
+      "-DOUTPUT_DIR=${CMAKE_BINARY_DIR}/portable"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildPortable.cmake"
+    DEPENDS dist
+    COMMENT "Create independent portable distribution"
+    VERBATIM)
+endif()
+
 # Determine the WiX target architecture so the same 'msi' target produces an
 # x64 installer on x86_64 hosts and an arm64 installer on the windows-11-arm
 # runner. Prefer an explicit override; otherwise derive from the platform so a

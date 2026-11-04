@@ -68,6 +68,46 @@ internal static class IntegrationOptionsTest
         }
     }
 
+    private static void TestPersonalSettingsCleanup()
+    {
+        foreach (var requested in new[] { false, true })
+        foreach (var uninstall in new[] { false, true })
+        foreach (var related in new[] { false, true })
+        foreach (var status in new[] { 0, 1602, -1, 3010, 1641 })
+            Require(PersonalSettingsCleanup.ShouldClear(requested, status, uninstall, related) ==
+                    (requested && uninstall && !related && (status == 0 || status == 3010 || status == 1641)),
+                    "only successful, explicitly requested standalone uninstall clears settings");
+        var path = @"Software\MuffinCleanupTest\" + Guid.NewGuid().ToString("N");
+        try
+        {
+            using (var root = Registry.CurrentUser.CreateSubKey(path))
+            {
+                using (var settings = root.CreateSubKey(@"Software\Muffin\Muffin")) settings.SetValue("theme", "night");
+                using (var other = root.CreateSubKey(@"Software\Muffin\AnotherApp")) other.SetValue("keep", "yes");
+                PersonalSettingsCleanup.Clear(root);
+                Require(root.OpenSubKey(@"Software\Muffin\Muffin") == null, "remove only Muffin preferences");
+                using (var other = root.OpenSubKey(@"Software\Muffin\AnotherApp"))
+                    Require((string)other.GetValue("keep") == "yes", "keep other applications' preferences");
+                root.DeleteSubKeyTree(@"Software\Muffin\AnotherApp");
+                PersonalSettingsCleanup.Clear(root);
+                Require(root.OpenSubKey(@"Software\Muffin") == null, "remove empty publisher key");
+                PersonalSettingsCleanup.Clear(root); // An absent profile is valid.
+            }
+        }
+        finally { Registry.CurrentUser.DeleteSubKeyTree(path, false); }
+    }
+
+    private static void TestCleanupTranslations()
+    {
+        foreach (var language in UiStrings.LanguageCodes)
+        {
+            UiStrings.SetLanguage(language);
+            foreach (var key in new[] { "RemovePersonalSettings", "UninstallCleanupBody", "CleanupWarning" })
+                Require(!string.IsNullOrWhiteSpace(UiStrings.Get(key)) && UiStrings.Get(key) != key,
+                        "uninstall setting and preservation details are localized: " + language + "/" + key);
+        }
+    }
+
     // Optional package verification runs only against an already-built MSI.
     // Open it ignoring the installed product, cost its features, and evaluate
     // actions without ever executing InstallInitialize or changing the system.
@@ -227,6 +267,8 @@ internal static class IntegrationOptionsTest
             }
             UpdateHandoffTest.Run();
             TestRegistryChoices();
+            TestPersonalSettingsCleanup();
+            TestCleanupTranslations();
             if (args.Length > 0) TestPackage(args[0]);
             Console.WriteLine("Installer integration choice tests passed");
             return 0;

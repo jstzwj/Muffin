@@ -123,6 +123,9 @@
                         <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center" Margin="0,8,0,0"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Text="{Binding UninstallBody}" />
+                        <CheckBox Style="{StaticResource MfuCheckBox}" Margin="0,18,0,0"
+                                  HorizontalAlignment="Center" Content="{Binding RemovePersonalSettingsLabel}"
+                                  IsChecked="{Binding RemovePersonalSettings}" />
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -187,6 +190,9 @@
                                    HorizontalAlignment="Center" Margin="0,8,0,0"
                                    Text="{Binding RestartNoteText}"
                                    Visibility="{Binding RestartRecommended, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource BodyText}" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{Binding CleanupWarning}" />
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">

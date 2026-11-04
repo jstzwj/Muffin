@@ -11,6 +11,7 @@
 #include <QJsonObject>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include "io/ApplicationPaths.h"
 #include <QUuid>
 
 #include <QSet>
@@ -61,7 +62,7 @@ namespace muffin {
 
 DraftRecovery::DraftRecovery(QString directory) : directory_(std::move(directory)) {
   if (directory_.isEmpty()) {
-    directory_ = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    directory_ = ApplicationPaths::dataDirectory();
     if (!directory_.isEmpty()) {
       directory_ += QLatin1String("/drafts");
     }

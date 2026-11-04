@@ -271,6 +271,13 @@ jobs:
       - name: Build distribution
         run: cmake --build --preset conan-release --target dist
 
+      - name: Verify deployed Windows TLS backends
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = (Resolve-Path ./build/dist).Path + [IO.Path]::PathSeparator + $env:PATH
+          ./build/Release/MuffinWindowsTlsTest.exe --plugins ./build/dist
+
       # BuildDMG runs macdeployqt against build/Release/dist/Muffin.app. Do it
       # before the Unix tar archive so both published macOS artifacts contain
       # the deployed Qt frameworks.
@@ -305,33 +312,18 @@ jobs:
             env -i HOME="$HOME" QT_QPA_PLATFORM=offscreen build/Release/dist/Muffin --version
           fi
 
-      - name: Archive Windows distribution
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $archive = "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.7z"
-          & "$env:ProgramFiles/7-Zip/7z.exe" a -t7z $archive "./build/dist/*" -m0=LZMA2 -mx=9 -md=64m -ms=on -mmt=2
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & "$env:ProgramFiles/7-Zip/7z.exe" t $archive
-
       - name: Archive Unix distribution
         if: runner.os != 'Windows'
         shell: bash
         run: tar -czf "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.tar.gz" -C build/Release/dist .
 
       - name: Upload distribution artifact
+        if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}
           path: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.*
           if-no-files-found: error
-
-      - name: Build MSI installer
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          cmake --build --preset conan-release --target msi
 
       - name: Build setup bundle
         if: runner.os == 'Windows'
@@ -339,6 +331,27 @@ jobs:
         run: |
           export PATH="$PATH:$HOME/.dotnet/tools"
           cmake --build --preset conan-release --target bundle
+
+      # The installer uses the regular dist. Only the portable archive gets
+      # the marker that redirects application preferences and data beside it.
+      - name: Archive portable Windows distribution
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake "-DBINARY_DIR=$pwd/build" "-DDIST_DIR=$pwd/build/dist" "-DOUTPUT_DIR=$pwd/build/portable" -P cmake/BuildPortable.cmake
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $archive = "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.7z"
+          & "$env:ProgramFiles/7-Zip/7z.exe" a -t7z $archive "./build/portable/*" -m0=LZMA2 -mx=9 -md=64m -ms=on -mmt=2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:ProgramFiles/7-Zip/7z.exe" t $archive
+
+      - name: Upload portable Windows distribution artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}
+          path: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.7z
+          if-no-files-found: error
 
       - name: Verify installer integration choices
         if: runner.os == 'Windows'

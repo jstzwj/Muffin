@@ -111,6 +111,8 @@ editor_output/
 # ======================== Installer build ========================
 installer/ba/bin/
 installer/ba/obj/
+tests/installer/bin/
+tests/installer/obj/
 installer/*.wixpdb
 installer/*.exe
 

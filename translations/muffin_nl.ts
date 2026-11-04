@@ -981,17 +981,22 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
         <translation type="vanished">Een snelle native Markdown-editor gebouwd met C++ en Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="118"/>
+        <location filename="../src/main.cpp" line="89"/>
+        <source>Cannot write to the portable data folder.</source>
+        <translation>Kan niet schrijven naar de gegevensmap van de draagbare versie.</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="125"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="125"/>
+        <location filename="../src/main.cpp" line="132"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>&lt;folder&gt; openen in de bestandsbrowser van de zijbalk.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="135"/>
+        <location filename="../src/main.cpp" line="142"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Te openen Markdown- of tekstbestand (of map).</translation>
     </message>
@@ -1053,13 +1058,13 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1580"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1610"/>
         <source>(no spelling suggestions)</source>
         <translation>(geen spellingssuggesties)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="90"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1591"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1621"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; negeren</translation>
     </message>
@@ -1458,8 +1463,8 @@ Wilt u Muffin nu als uw standaardeditor instellen?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2155"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
         <source>File</source>
         <translation>Bestand</translation>
     </message>
@@ -2900,7 +2905,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     <message>
         <location filename="../src/app/MainWindowActions.cpp" line="186"/>
         <location filename="../src/app/MainWindowActions.cpp" line="228"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="50"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="51"/>
         <source>Cancel</source>
         <translation>Annuleren</translation>
     </message>
@@ -3703,7 +3708,7 @@ Wilt u de downloadpagina openen?</translation>
         <translation>Openen</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="129"/>
+        <location filename="../src/main.cpp" line="136"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="300"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <source>Open in New Window</source>
@@ -3732,7 +3737,7 @@ Wilt u de downloadpagina openen?</translation>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="306"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="864"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="30"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="31"/>
         <source>Move To</source>
         <translation>Verplaatsen naar</translation>
     </message>
@@ -3838,22 +3843,22 @@ Wilt u de downloadpagina openen?</translation>
         <translation>Tabblad naar nieuw venster kopiëren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="166"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="167"/>
         <source>This file changed. Search again to update its matches.</source>
         <translation>Dit bestand is gewijzigd. Zoek opnieuw om de overeenkomsten bij te werken.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="204"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="205"/>
         <source>This match cannot be selected precisely in live preview. Showing it in source mode.</source>
         <translation>Deze overeenkomst kan niet nauwkeurig worden geselecteerd in het livevoorbeeld. Ze wordt in de bronmodus weergegeven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="229"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="230"/>
         <source>Preview Folder Replacement</source>
         <translation>Voorbeeld van vervanging in map</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="233"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="234"/>
         <source>Folder: %1
 Find: %2
 Replace with: %3</source>
@@ -3866,145 +3871,145 @@ Vervangen door: %3</translation>
         <translation type="vanished">Paden opnemen: %1 · Paden uitsluiten: %2 · Hoofdlettergevoelig: %3 · Reguliere expressie: %4</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
         <source>Yes</source>
         <translation>Ja</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="244"/>
         <source>No</source>
         <translation>Nee</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="252"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="253"/>
         <source>Matches</source>
         <translation>Overeenkomsten</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="42"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="216"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="217"/>
         <source>Rename / Move</source>
         <translation>Hernoemen / Verplaatsen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="43"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="44"/>
         <source>The destination already exists or is inside the folder being moved.</source>
         <translation>De bestemming bestaat al of bevindt zich in de map die wordt verplaatst.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="50"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="51"/>
         <source>Checking links…</source>
         <translation>Links controleren…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="69"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="70"/>
         <source>Preview Link Updates</source>
         <translation>Voorbeeld van linkwijzigingen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="72"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="73"/>
         <source>%1 → %2
 Search folder: %3</source>
         <translation>%1 → %2
 Zoekmap: %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="84"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
         <source>Links</source>
         <translation>Links</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="89"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="90"/>
         <source> (unsaved)</source>
         <translation> (niet opgeslagen)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="96"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="263"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="97"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
         <source>Skipped</source>
         <translation>Overgeslagen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="122"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="123"/>
         <source>Updates Markdown links, reference definitions and Markdown images in this folder. Code and external URLs are excluded. Unsaved notes stay unsaved and can be undone. Disk originals are backed up.
 Hidden folders, build folders, symbolic links, unreadable files and files over 8 MB are excluded; links outside this folder are not scanned.</source>
         <translation>Werkt Markdown-links, verwijzingsdefinities en Markdown-afbeeldingen in deze map bij. Code en externe URL’s zijn uitgesloten. Niet-opgeslagen notities blijven niet-opgeslagen; de wijzigingen kunnen ongedaan worden gemaakt. Van de oorspronkelijke bestanden op schijf worden reservekopieën gemaakt.
 Verborgen mappen, buildmappen, symbolische koppelingen, onleesbare bestanden en bestanden groter dan 8 MB zijn uitgesloten; links buiten deze map worden niet gecontroleerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="128"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="129"/>
         <source>Some files could not be checked. Their links may need manual updates.</source>
         <translation>Sommige bestanden konden niet worden gecontroleerd. Hun links moeten mogelijk handmatig worden bijgewerkt.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="133"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="134"/>
         <source>Rename / Move Only</source>
         <translation>Alleen hernoemen / verplaatsen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="135"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="136"/>
         <source>Update Links</source>
         <translation>Links bijwerken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="165"/>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="169"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="166"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="170"/>
         <source>A note changed after the preview. Please try again.</source>
         <translation>Een notitie is gewijzigd na het voorbeeld. Probeer het opnieuw.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="174"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="175"/>
         <source>A file changed on disk after the preview. Please try again.</source>
         <translation>Een bestand op schijf is gewijzigd na het voorbeeld. Probeer het opnieuw.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="186"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="187"/>
         <source>
 Some originals could not be restored. Backups: %1</source>
         <translation>
 Sommige originelen konden niet worden hersteld. Reservekopieën: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="191"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="192"/>
         <source>Link updates could not be completed. The path was not changed.</source>
         <translation>De links konden niet volledig worden bijgewerkt. Het pad is niet gewijzigd.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="206"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="207"/>
         <source>Could not rename or move: %1</source>
         <translation>Kan niet hernoemen of verplaatsen: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="244"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="245"/>
         <source>Update Note Links</source>
         <translation>Notitielinks bijwerken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowNoteLinks.cpp" line="274"/>
+        <location filename="../src/app/MainWindowNoteLinks.cpp" line="275"/>
         <source>Links updated. Originals backed up in %1</source>
         <translation>Links bijgewerkt. Reservekopieën van de originelen opgeslagen in %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="265"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="266"/>
         <source>Unsaved, changed, unreadable, oversized, mixed line endings, or not losslessly writable.</source>
         <translation>Niet opgeslagen, gewijzigd, onleesbaar, te groot, met gemengde regeleinden of niet zonder verlies te schrijven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="269"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="270"/>
         <source>Replacement preview</source>
         <translation>Vervangingsvoorbeeld</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="275"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="276"/>
         <source>
 … Preview truncated; the full file will be processed.</source>
         <translation>
 … Voorbeeld ingekort; het volledige bestand wordt verwerkt.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="278"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="279"/>
         <source>Before:
 %1
 
@@ -4017,29 +4022,29 @@ Na:
 %2</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="283"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="284"/>
         <source>Files with unsaved changes are skipped. Originals are backed up for recovery. Files changed since this preview will not be overwritten.</source>
         <translation>Bestanden met niet-opgeslagen wijzigingen worden overgeslagen. Van de originelen worden reservekopieën gemaakt voor herstel. Bestanden die sinds dit voorbeeld zijn gewijzigd, worden niet overschreven.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="297"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="298"/>
         <source>Replace %1 matches in %2 files</source>
         <translation>%1 overeenkomsten in %2 bestanden vervangen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="329"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
         <source>Folder Replacement</source>
         <translation>Vervanging in map</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="330"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="331"/>
         <source>%1 files changed; %2 skipped.
 %3</source>
         <translation>%1 bestanden gewijzigd; %2 overgeslagen.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="333"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="334"/>
         <source>
 Recovery folder: %1</source>
         <translation>
@@ -4047,19 +4052,19 @@ Herstelmap: %1</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="656"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="345"/>
-        <location filename="../src/app/MainWindowSearch.cpp" line="364"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
         <source>Undo Folder Replacement</source>
         <translation>Vervanging in map ongedaan maken</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="341"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="342"/>
         <source>No folder replacement is available to restore.</source>
         <translation>Er is geen vervanging in een map om ongedaan te maken.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="346"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="347"/>
         <source>Restore the original files from this replacement?
 %1
 
@@ -4070,29 +4075,29 @@ Files edited afterward or containing unsaved changes will be skipped.</source>
 Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worden overgeslagen.</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="349"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
         <source>Restore Originals</source>
         <translation>Originelen herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="350"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="351"/>
         <source>Open Recovery Folder</source>
         <translation>Herstelmap openen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="365"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="366"/>
         <source>%1 files restored; %2 skipped.
 %3</source>
         <translation>%1 bestanden hersteld; %2 overgeslagen.
 %3</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
         <source>Updating files…</source>
         <translation>Bestanden bijwerken…</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="408"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="409"/>
         <source>Stop after current file</source>
         <translation>Stoppen na huidig bestand</translation>
     </message>
@@ -4488,7 +4493,7 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation>Indelingen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="245"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="246"/>
         <source>Default Export Folder</source>
         <translation>Standaard exportmap</translation>
     </message>
@@ -4497,23 +4502,23 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Auto</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="241"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
         <source>Same folder as current file</source>
         <translation>Zelfde map als huidige bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="242"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="243"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Custom...</source>
         <translation>Aangepast...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="257"/>
         <source>Pandoc Path</source>
         <translation>Pandoc-pad</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="258"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="259"/>
         <source>(Auto-detect)</source>
         <translation>(Automatisch detecteren)</translation>
     </message>
@@ -4553,314 +4558,314 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation>Omlaag</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="238"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="239"/>
         <source>Shared defaults for all export formats. Select a format to configure its own options.</source>
         <translation>Gedeelde standaardinstellingen voor alle exportformaten. Selecteer een formaat om de bijbehorende opties in te stellen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="248"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="249"/>
         <source>Custom Folder</source>
         <translation>Aangepaste map</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="255"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
         <source>Untitled documents use the Documents folder.</source>
         <translation>Naamloze documenten gebruiken de map Documenten.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="256"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="257"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>All Files (*)</source>
         <translation>Alle bestanden (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="259"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="260"/>
         <source>Auto-detect</source>
         <translation>Automatisch detecteren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="269"/>
         <source>PDF, HTML and images use Muffin&apos;s renderer. Other formats require Pandoc.</source>
         <translation>PDF, HTML en afbeeldingen gebruiken de renderer van Muffin. Voor andere formaten is Pandoc vereist.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="277"/>
         <source>Used when exporting as %1. Changes are saved immediately.</source>
         <translation>Wordt gebruikt bij het exporteren als %1. Wijzigingen worden direct opgeslagen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Theme</source>
         <translation>Thema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Current theme</source>
         <translation>Huidig thema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="278"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="279"/>
         <source>Default light theme</source>
         <translation>Standaard licht thema</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
         <source>Executable</source>
         <translation>Uitvoerbaar bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
         <source>Arguments</source>
         <translation>Argumenten</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
         <source>Output Extension</source>
         <translation>Uitvoerextensie</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="285"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="286"/>
         <source>Arguments must contain ${outputPath}. ${inputPath} is a temporary Markdown copy including unsaved edits. Also available: ${currentPath}, ${currentFolder}, ${fileName}.</source>
         <translation>De argumenten moeten ${outputPath} bevatten. ${inputPath} is een tijdelijke Markdown-kopie met niet-opgeslagen wijzigingen. Ook beschikbaar: ${currentPath}, ${currentFolder}, ${fileName}.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="287"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="288"/>
         <source>Quote arguments containing spaces. Variables are expanded after splitting arguments; no command shell is used.</source>
         <translation>Zet argumenten met spaties tussen aanhalingstekens. Variabelen worden na het splitsen van de argumenten ingevuld; er wordt geen opdrachtshell gebruikt.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="290"/>
         <source>The command must create one file at ${outputPath}. Failed or canceled exports keep the existing destination.</source>
         <translation>De opdracht moet één bestand aanmaken op ${outputPath}. Bij een mislukte of geannuleerde export blijft het bestaande doelbestand behouden.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="292"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="293"/>
         <source>Page Size</source>
         <translation>Paginaformaat</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
         <source>Width</source>
         <translation>Breedte</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="296"/>
         <source>Height</source>
         <translation>Hoogte</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
         <source>Landscape</source>
         <translation>Liggend</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="318"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="319"/>
         <source>Page Margins</source>
         <translation>Paginamarges</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="320"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="340"/>
         <source>Font Size (px)</source>
         <translation>Lettergrootte (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="321"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="322"/>
         <source>Start each level-one heading on a new page</source>
         <translation>Elke kop van niveau één op een nieuwe pagina beginnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="322"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
         <source>Header</source>
         <translation>Koptekst</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="323"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
         <source>Footer</source>
         <translation>Voettekst</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
         <source>Show page numbers</source>
         <translation>Paginanummers tonen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="326"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="327"/>
         <source>Header and footer variables: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Space is reserved automatically so they do not overlap the document.</source>
         <translation>Variabelen voor kop- en voetteksten: ${title}, ${author}, ${fileName}, ${date}, ${pageNo}, ${pageCount}. Er wordt automatisch ruimte gereserveerd zodat ze de documentinhoud niet overlappen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="329"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="357"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="330"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="358"/>
         <source>Include a table of contents</source>
         <translation>Inhoudsopgave opnemen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="332"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
         <source>Add to &lt;head&gt;</source>
         <translation>Toevoegen aan &lt;head&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="333"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="334"/>
         <source>Add before document content</source>
         <translation>Toevoegen vóór de documentinhoud</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="335"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="336"/>
         <source>Muffin adds no theme stylesheet to this format.</source>
         <translation>Muffin voegt geen themastijlblad toe aan dit formaat.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="337"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
         <source>Width (px)</source>
         <translation>Breedte (px)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="338"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="339"/>
         <source>Output Scale</source>
         <translation>Uitvoerschaal</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="341"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="342"/>
         <source>Exports one PNG. Maximum: 64 million pixels and 32,767 pixels in height. Use PDF for longer documents.</source>
         <translation>Exporteert één PNG. Maximum: 64 miljoen pixels en 32,767 pixels hoog. Gebruik PDF voor langere documenten.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="343"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="344"/>
         <source>Requires Pandoc. Configure its path under General.</source>
         <translation>Pandoc is vereist. Stel het pad in onder Algemeen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="345"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="346"/>
         <source>Reference Document</source>
         <translation>Referentiedocument</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="348"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="349"/>
         <source>Custom CSS</source>
         <translation>Aangepaste CSS</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="351"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="352"/>
         <source>Title</source>
         <translation>Titel</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="324"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="353"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="325"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="354"/>
         <source>Author</source>
         <translation>Auteur</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="358"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="359"/>
         <source>TOC Depth</source>
         <translation>Niveaus in inhoudsopgave</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="363"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="364"/>
         <source>Number sections</source>
         <translation>Secties nummeren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Line Wrapping</source>
         <translation>Regelafbreking</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Do not wrap</source>
         <translation>Regels niet afbreken</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Automatic</source>
         <translation>Automatisch</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="366"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="367"/>
         <source>Preserve source wrapping</source>
         <translation>Regelafbreking van de bron behouden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="368"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="369"/>
         <source>Additional Pandoc Arguments</source>
         <translation>Aanvullende Pandoc-argumenten</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="369"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="370"/>
         <source>Quote paths containing spaces. Muffin manages the input format, output format and output path.</source>
         <translation>Zet paden met spaties tussen aanhalingstekens. Muffin beheert het invoerformaat, het uitvoerformaat en het uitvoerpad.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="372"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="373"/>
         <source>After Export</source>
         <translation>Na exporteren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="374"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="375"/>
         <source>Open the exported file directory</source>
         <translation>De map van het geëxporteerde bestand openen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="376"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="377"/>
         <source>Open the exported file</source>
         <translation>Het geëxporteerde bestand openen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="413"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="414"/>
         <source>New Export Preset</source>
         <translation>Nieuwe exportvoorinstelling</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="418"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="419"/>
         <source>%1 (copy)</source>
         <translation>%1 (kopie)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="419"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="462"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="420"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="463"/>
         <source>Name</source>
         <translation>Naam</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="424"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="425"/>
         <source>Custom Command</source>
         <translation>Aangepaste opdracht</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="427"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="428"/>
         <source>Format</source>
         <translation>Formaat</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="438"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="439"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="471"/>
         <source>Enter a non-empty, unique preset name.</source>
         <translation>Voer een unieke, niet-lege naam voor de voorinstelling in.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="462"/>
-        <location filename="../src/app/PrefsExportPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="463"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="471"/>
         <source>Rename Export Preset</source>
         <translation>Exportvoorinstelling hernoemen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="504"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="505"/>
         <source>Using: %1</source>
         <translation>In gebruik: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="505"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="506"/>
         <source>Not a valid executable; will auto-detect.</source>
         <translation>Geen geldig uitvoerbaar bestand; wordt automatisch gedetecteerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="512"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="513"/>
         <source>Detected: %1</source>
         <translation>Gedetecteerd: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsExportPage.cpp" line="511"/>
+        <location filename="../src/app/PrefsExportPage.cpp" line="512"/>
         <source>Pandoc was not found. Install it, or click Browse to locate.</source>
         <translation>Pandoc is niet gevonden. Installeer het, of klik op ‘Bladeren’ om het te vinden.</translation>
     </message>
@@ -4868,7 +4873,7 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::PrefsFilesPage</name>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="460"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="462"/>
         <source>Startup</source>
         <translation>Opstarten</translation>
     </message>
@@ -4881,12 +4886,12 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Laatste bestand heropenen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="446"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="448"/>
         <source>File Open Protection</source>
         <translation>Beveiliging bij het openen van bestanden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="447"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="449"/>
         <source>Extension protection</source>
         <translation>Extensiebeveiliging</translation>
     </message>
@@ -4899,190 +4904,190 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Scheid extensies met komma&apos;s, spaties of puntkomma&apos;s. U kunt extensies toevoegen of verwijderen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="448"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="450"/>
         <source>Allowed file extensions</source>
         <translation>Toegestane bestandsextensies</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="449"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="451"/>
         <source>Ask before opening files with extensions outside this list.</source>
         <translation>Vraag om bevestiging voordat bestanden met extensies buiten deze lijst worden geopend.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="450"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="452"/>
         <source>e.g. .txt, .log</source>
         <translation>Bijv. .txt, .log</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="451"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="453"/>
         <source>Add</source>
         <translation>Toevoegen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="452"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="454"/>
         <source>Restore Defaults</source>
         <translation>Standaardwaarden herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="453"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="455"/>
         <source>File size protection</source>
         <translation>Beveiliging op bestandsgrootte</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="454"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="456"/>
         <source>Large files may take longer to open and use more memory.</source>
         <translation>Grote bestanden kunnen meer tijd nodig hebben om te openen en meer geheugen gebruiken.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="455"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="457"/>
         <source>Warn before opening files larger than</source>
         <translation>Waarschuwen vóór het openen van bestanden groter dan</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="458"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="460"/>
         <source>File size unit</source>
         <translation>Eenheid voor bestandsgrootte</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="461"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="463"/>
         <source>Opening Files</source>
         <translation>Bestanden openen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="462"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="464"/>
         <source>Open files in tabs by default</source>
         <translation>Bestanden standaard in tabbladen openen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="463"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="465"/>
         <source>Files opened from the file manager or command line use the existing Muffin window. Turn this off to open them in a new window.</source>
         <translation>Bestanden die vanuit de bestandsbeheerder of de opdrachtregel worden geopend, gebruiken het bestaande Muffin-venster. Schakel dit uit om ze in een nieuw venster te openen.</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="469"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="471"/>
         <source>Always start fresh</source>
         <translation>Altijd opnieuw beginnen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="470"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="472"/>
         <source>Restore previous session</source>
         <translation>Vorige sessie herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="476"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="478"/>
         <source>Outline</source>
         <translation>Overzicht</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="477"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="479"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
         <translation>Samenvouwen en uitvouwen van het overzicht in de zijbalk toestaan</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="479"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="481"/>
         <source>Default File Type / Extension</source>
         <translation>Standaard bestandstype / extensie</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="486"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="488"/>
         <source>Plain Text (.txt)</source>
         <translation>Platte tekst (.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="492"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="494"/>
         <source>Save &amp; Restore</source>
         <translation>Opslaan &amp; herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="493"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="495"/>
         <source>Auto Save</source>
         <translation>Automatisch opslaan</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="494"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="496"/>
         <source>Auto-save changes to the previous file when switching files</source>
         <translation>Wijzigingen automatisch opslaan bij het wisselen van bestanden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="495"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="497"/>
         <source>Restore Unsaved Drafts</source>
         <translation>Niet-opgeslagen concepten herstellen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="497"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="499"/>
         <source>Recently Used Files</source>
         <translation>Recent gebruikte bestanden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="498"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="500"/>
         <source>Record history files and folders</source>
         <translation>Geschiedenis van bestanden en mappen bijhouden</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="499"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="501"/>
         <source>Clear History</source>
         <translation>Geschiedenis wissen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="501"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="503"/>
         <source>When dragging files/folders into the window</source>
         <translation>Bij het slepen van bestanden/mappen naar het venster</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="502"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="504"/>
         <source>When dragging a folder</source>
         <translation>Bij het slepen van een map</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="507"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="518"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="530"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="509"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="520"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="532"/>
         <source>Open in Muffin</source>
         <translation>Openen in Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="508"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="510"/>
         <source>Open in File Manager</source>
         <translation>Openen in bestandsbeheerder</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="513"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="515"/>
         <source>When dragging a Markdown file</source>
         <translation>Bij het slepen van een Markdown-bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="519"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="529"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="521"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="531"/>
         <source>Import File</source>
         <translation>Bestand importeren</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="524"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="526"/>
         <source>When dragging an importable file</source>
         <translation>Bij het slepen van een importeerbaar bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="537"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="539"/>
         <source>Windows Integration</source>
         <translation>Windows-integratie</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="538"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="540"/>
         <source>Add &quot;Open with Muffin&quot; to File Explorer context menu for files and folders</source>
         <translation>&quot;Openen met Muffin&quot; toevoegen aan het contextmenu van Verkenner voor bestanden en mappen</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="540"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="542"/>
         <source>Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)</source>
         <translation>Muffin registreren als editor voor Markdown-bestanden (.md, .markdown, .mdx, .mkd, .mdown)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="541"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="543"/>
         <source>Set Muffin as Default…</source>
         <translation>Muffin als standaard instellen…</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="585"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="587"/>
         <source>Remove .%1</source>
         <translation>.%1 verwijderen</translation>
     </message>
@@ -5931,13 +5936,13 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
         <translation type="vanished">Paden uitsluiten (woorden of padsegmenten)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="240"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="241"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="412"/>
         <source>Match case</source>
         <translation>Hoofdlettergevoelig</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSearch.cpp" line="242"/>
+        <location filename="../src/app/MainWindowSearch.cpp" line="243"/>
         <location filename="../src/app/SearchPanelWidget.cpp" line="414"/>
         <source>Regular expression</source>
         <translation>Reguliere expressie</translation>
@@ -6255,42 +6260,42 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="299"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="308"/>
         <source>Markdown source editor</source>
         <translation>Markdown-broncode-editor</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="300"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="309"/>
         <source>Plain-text Markdown source</source>
         <translation>Markdown-broncode als platte tekst</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1600"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1630"/>
         <source>Undo</source>
         <translation>Ongedaan maken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1602"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1632"/>
         <source>Redo</source>
         <translation>Opnieuw</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1606"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1636"/>
         <source>Cut</source>
         <translation>Knippen</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1612"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1642"/>
         <source>Copy</source>
         <translation>Kopiëren</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1616"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1646"/>
         <source>Paste</source>
         <translation>Plakken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1627"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1657"/>
         <source>Select All</source>
         <translation>Alles selecteren</translation>
     </message>
@@ -6298,17 +6303,17 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::WindowsIntegration</name>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="19"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="20"/>
         <source>Open with Muffin</source>
         <translation>Openen met Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="23"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="24"/>
         <source>Muffin Markdown Document</source>
         <translation>Muffin Markdown-document</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsIntegration.cpp" line="27"/>
+        <location filename="../src/app/WindowsIntegration.cpp" line="28"/>
         <source>Open</source>
         <translation>Openen</translation>
     </message>
@@ -6316,114 +6321,114 @@ Bestanden die daarna zijn bewerkt of niet-opgeslagen wijzigingen bevatten, worde
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="175"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="197"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="450"/>
+        <location filename="../src/main.cpp" line="182"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>Muffin bijwerken</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="176"/>
+        <location filename="../src/main.cpp" line="183"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>De update is geannuleerd of kon niet worden geïnstalleerd (code %1). Uw sessie is hersteld. U kunt het opnieuw proberen via Help &gt; Controleren op updates.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="208"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="211"/>
         <source>Cancel</source>
         <translation>Annuleren</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="246"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="249"/>
         <source>Downloading Muffin %1… You can continue writing.</source>
         <translation>Muffin %1 wordt gedownload… U kunt verder schrijven.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="252"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="255"/>
         <source>Muffin %1 is ready. Your documents will be checked for unsaved changes before restarting. Windows may ask for administrator permission.</source>
         <translation>Muffin %1 is gereed. Voordat de toepassing opnieuw wordt gestart, worden uw documenten gecontroleerd op niet-opgeslagen wijzigingen. Windows kan om beheerdersrechten vragen.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="256"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="259"/>
         <source>Preparing to restart…</source>
         <translation>Opnieuw starten wordt voorbereid…</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="260"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="263"/>
         <source>Muffin %1 is available. Download the update now?</source>
         <translation>Muffin %1 is beschikbaar. De update nu downloaden?</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="262"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
         <source>Restart and Update</source>
         <translation>Opnieuw starten en bijwerken</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="262"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
         <source>Download Update</source>
         <translation>Update downloaden</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="268"/>
         <source>Cancel Download</source>
         <translation>Download annuleren</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="265"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="268"/>
         <source>Later</source>
         <translation>Later</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="291"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="317"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="294"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="320"/>
         <source>The update download could not be saved or exceeded its expected size.</source>
         <translation>De gedownloade update kon niet worden opgeslagen of is groter dan verwacht.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="299"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="302"/>
         <source>The update manifest is too large.</source>
         <translation>Het updatemanifest is te groot.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="325"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="328"/>
         <source>Could not download the update: %1</source>
         <translation>De update kon niet worden gedownload: %1</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="348"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="351"/>
         <source>The update signature is invalid or the package does not match this version of Windows. Nothing was installed.</source>
         <translation>De handtekening van de update is ongeldig of het pakket is niet geschikt voor deze versie van Windows. Er is niets geïnstalleerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="360"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="365"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="363"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="368"/>
         <source>Could not create the update download folder.</source>
         <translation>De downloadmap voor de update kon niet worden gemaakt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="374"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="464"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="473"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="377"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="467"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="476"/>
         <source>The downloaded update is incomplete or has been modified. Nothing was installed.</source>
         <translation>De gedownloade update is onvolledig of is gewijzigd. Er is niets geïnstalleerd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="451"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="454"/>
         <source>Close other running Muffin instances before updating. Only installed copies can be updated in the app.</source>
         <translation>Sluit andere actieve exemplaren van Muffin voordat u bijwerkt. Alleen geïnstalleerde exemplaren kunnen vanuit de app worden bijgewerkt.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="522"/>
-        <location filename="../src/app/WindowsUpdater.cpp" line="578"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="525"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="581"/>
         <source>Could not save the session before updating.</source>
         <translation>De sessie kon niet worden opgeslagen vóór het bijwerken.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="542"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="545"/>
         <source>Could not start the update installer. Your current version is unchanged.</source>
         <translation>Het installatieprogramma voor de update kon niet worden gestart. Uw huidige versie is ongewijzigd.</translation>
     </message>
     <message>
-        <location filename="../src/app/WindowsUpdater.cpp" line="600"/>
+        <location filename="../src/app/WindowsUpdater.cpp" line="603"/>
         <source>The installer did not become ready. Muffin will stay open; please try again.</source>
         <translation>Het installatieprogramma is niet gereed gekomen. Muffin blijft geopend; probeer het opnieuw.</translation>
     </message>

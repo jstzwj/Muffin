@@ -3,6 +3,7 @@
 #include "app/PreferencesSpinBox.h"
 
 #include "app/WindowsIntegration.h"
+#include "io/ApplicationPaths.h"
 #include "app/FileOpenProtection.h"
 
 #include <QCheckBox>
@@ -358,6 +359,7 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   winAssociateCheck_ = new QCheckBox(winCard);
   winSetDefaultButton_ = makeButton(winCard);
   winLayout->addWidget(winIntegrationLabel_);
+  winCard->setEnabled(!ApplicationPaths::isPortable());
   winLayout->addSpacing(2);
   winLayout->addWidget(winContextMenuCheck_);
   winLayout->addWidget(winAssociateCheck_);

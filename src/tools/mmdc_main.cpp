@@ -16,6 +16,7 @@
 //   page), print the structured diagnostic to stderr, and exit 1.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "io/ApplicationPaths.h"
 
 #include <QBuffer>
 #include <QCommandLineOption>
@@ -107,6 +108,11 @@ int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
   QCoreApplication::setApplicationName(QStringLiteral("muffin-mmdc"));
   QCoreApplication::setApplicationVersion(QStringLiteral(MUFFIN_VERSION));
+  QString storageError;
+  if (!muffin::ApplicationPaths::initialize(QCoreApplication::applicationFilePath(), &storageError)) {
+    printError(QStringLiteral("Cannot write to the portable data folder: ") + storageError);
+    return 1;
+  }
 
   QCommandLineParser parser;
   parser.setApplicationDescription(

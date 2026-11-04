@@ -2,6 +2,7 @@
 
 #include "image/CustomCommandUploader.h"
 #include "io/ImageFileOps.h"
+#include "io/ApplicationPaths.h"
 #include "document/LinkSyntaxOps.h"
 
 #include <QCoreApplication>
@@ -139,7 +140,8 @@ QString downloadNetworkImage(const QString& url) {
     suffix = QStringLiteral("png");
   }
   const QString tempPath =
-      QDir::tempPath() + QStringLiteral("/muffin_rehost_%1.%2").arg(QString::number(qint64(image.cacheKey())), suffix);
+      ApplicationPaths::temporaryDirectory() +
+      QStringLiteral("/muffin_rehost_%1.%2").arg(QString::number(qint64(image.cacheKey())), suffix);
   if (!image.save(tempPath, suffix.toUtf8().constData())) {
     return {};
   }
@@ -165,9 +167,9 @@ ImageInsertResult ImageInsertionPolicy::resolveHref(const ImageInsertRequest& re
     // somewhere with a real folder. The href stays absolute in the meantime.
     QDir saveDir(docDir);
     if (docDir.isEmpty()) {
-      QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+      QString base = ApplicationPaths::dataDirectory();
       if (base.isEmpty()) { // headless/odd environments: fall back to the OS temp dir.
-        base = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+        base = ApplicationPaths::temporaryDirectory();
       }
       saveDir = QDir(base + QStringLiteral("/muffin-user-images"));
     }

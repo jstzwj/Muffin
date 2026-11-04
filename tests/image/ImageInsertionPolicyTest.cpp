@@ -2,6 +2,7 @@
 #include "document/DocumentSession.h"
 #include "document/ImageSyntaxOps.h"
 #include "io/ImageFileOps.h"
+#include "io/ApplicationPaths.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -202,6 +203,9 @@ void testPastedImageIntoUntitledDocument() {
   require(QFile::exists(res.href),
           QStringLiteral("the pasted image should have been saved and referenced by an existing file, href='%1'")
               .arg(res.href));
+  if (muffin::ApplicationPaths::isPortable())
+    require(QFileInfo(res.href).absoluteFilePath().startsWith(muffin::ApplicationPaths::dataDirectory() + "/"),
+            QStringLiteral("unsaved portable images must not escape to the installed profile"));
 }
 
 } // namespace
@@ -252,5 +256,13 @@ int main(int argc, char** argv) {
   for (const QString& k : imageKeys) {
     QSettings().remove(k);
   }
+  QTemporaryDir portable;
+  require(portable.isValid(), QStringLiteral("portable image fixture"));
+  QFile marker(portable.filePath("Muffin.portable"));
+  require(marker.open(QIODevice::WriteOnly), QStringLiteral("portable image marker"));
+  marker.close();
+  QString error;
+  require(muffin::ApplicationPaths::initialize(portable.filePath("Muffin.exe"), &error), error);
+  testPastedImageIntoUntitledDocument();
   return 0;
 }

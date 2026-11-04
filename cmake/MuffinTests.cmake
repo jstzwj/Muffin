@@ -513,7 +513,9 @@ muffin_add_test(NAME MuffinBlockTableUndoTest      SOURCE tests/blocks/BlockTabl
 muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCodeFrontMatterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 
 # --- app ---
-muffin_add_test(NAME MuffinApplicationInstanceTest SOURCE tests/app/ApplicationInstanceTest.cpp LINK Qt6::Network
+muffin_add_test(NAME MuffinApplicationPathsTest SOURCE tests/app/ApplicationPathsTest.cpp LINK MuffinCore)
+add_test(NAME MuffinPortablePackagingTest COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_portable_packaging.py")
+muffin_add_test(NAME MuffinApplicationInstanceTest SOURCE tests/app/ApplicationInstanceTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Network
   EXTRA_SOURCES src/app/ApplicationInstance.cpp src/app/ApplicationInstance.h)
 target_include_directories(MuffinApplicationInstanceTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
@@ -618,7 +620,8 @@ target_compile_definitions(MuffinGuiPerformanceProbe PRIVATE
   MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}" MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinSidebarInteractionTest SOURCE tests/app/SidebarInteractionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 if(WIN32)
-  muffin_add_test(NAME MuffinWindowsIntegrationTest SOURCE tests/app/WindowsIntegrationTest.cpp LINK Qt6::Gui EXTRA_SOURCES src/app/WindowsIntegration.cpp src/translations.qrc "${MUFFIN_SHELL_TRANSLATIONS_RC}" EXTRA_LINK advapi32 shell32)
+  muffin_add_test(NAME MuffinWindowsTlsTest SOURCE tests/app/WindowsTlsTest.cpp LINK Qt6::Network)
+  muffin_add_test(NAME MuffinWindowsIntegrationTest SOURCE tests/app/WindowsIntegrationTest.cpp LINK MuffinCore EXTRA_SOURCES src/app/WindowsIntegration.cpp src/translations.qrc "${MUFFIN_SHELL_TRANSLATIONS_RC}" EXTRA_LINK Qt6::Gui advapi32 shell32)
   target_include_directories(MuffinWindowsIntegrationTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
   add_dependencies(MuffinWindowsIntegrationTest muffin-shell-translations)
   find_program(MUFFIN_TEST_DOTNET_COMMAND dotnet)

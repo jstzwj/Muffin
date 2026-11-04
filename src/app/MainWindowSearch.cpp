@@ -25,6 +25,7 @@
 #include <QSettings>
 #include <QSplitter>
 #include <QStandardPaths>
+#include "io/ApplicationPaths.h"
 #include <QTreeWidget>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -34,8 +35,7 @@
 
 namespace {
 QString recoveryRoot() {
-  return QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation))
-      .filePath("directory-replacements");
+  return QDir(muffin::ApplicationPaths::localDataDirectory()).filePath("directory-replacements");
 }
 
 bool renderedSearchRange(muffin::DocumentTab& document, qsizetype start, qsizetype length,

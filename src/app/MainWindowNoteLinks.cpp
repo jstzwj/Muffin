@@ -21,6 +21,7 @@
 #include <QSaveFile>
 #include <QSplitter>
 #include <QStandardPaths>
+#include "io/ApplicationPaths.h"
 #include <QStatusBar>
 #include <QTreeWidget>
 #include <QVBoxLayout>
@@ -150,8 +151,7 @@ bool muffin::MainWindow::renameOrMoveWithLinks(const QString& oldPath, const QSt
   }
   if (!update)
     plan.changes.clear();
-  const QString recovery =
-      QDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)).filePath("note-link-updates");
+  const QString recovery = QDir(ApplicationPaths::localDataDirectory()).filePath("note-link-updates");
   bool moved = false;
   auto report = runWorkspaceWrite([&](const OpenSearchBuffers& current, const SearchCancellation& writeCancel) {
     WorkspaceReplaceReport result;

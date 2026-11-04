@@ -1,4 +1,5 @@
 #include "mermaid/flowchart/FlowLabel.h"
+#include "io/ApplicationPaths.h"
 #include "mermaid/MermaidFontRegistry.h"
 
 #include "mermaid/math/MathMlCssLayout.h"
@@ -1665,7 +1666,8 @@ struct ChromiumGlyphBounds {
 #ifdef Q_OS_WIN
 class BundledNotoDWriteFace {
 public:
-  BundledNotoDWriteFace() : temporary_(QDir::tempPath() + QStringLiteral("/muffin-noto-XXXXXX.ttf")) {
+  BundledNotoDWriteFace()
+      : temporary_(muffin::ApplicationPaths::temporaryDirectory() + QStringLiteral("/muffin-noto-XXXXXX.ttf")) {
     QFile resource(QStringLiteral(":/mermaid/fonts/NotoSans-Regular.ttf"));
     if (!resource.open(QIODevice::ReadOnly) || !temporary_.open())
       return;

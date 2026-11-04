@@ -17,6 +17,7 @@
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
+#include "io/ApplicationPaths.h"
 #include <QTimer>
 #include <QUuid>
 #include <QVBoxLayout>
@@ -54,7 +55,7 @@ void cancelHandoff(const QString& ready) {
 
 #ifdef Q_OS_WIN
 void cleanupCompletedDownloads(QSettings& settings) {
-  const QDir temporary(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+  const QDir temporary(muffin::ApplicationPaths::temporaryDirectory());
   QStringList pending;
   for (const auto& path : settings.value(QStringLiteral("update/stagingFolders")).toStringList()) {
     const QFileInfo folder(path);
@@ -127,6 +128,8 @@ muffin::WindowsUpdater& muffin::WindowsUpdater::instance() {
 }
 
 bool muffin::WindowsUpdater::installedCopy() {
+  if (ApplicationPaths::isPortable())
+    return false;
 #ifdef Q_OS_WIN
   wchar_t path[32768];
   DWORD length = DWORD(std::size(path));
@@ -354,8 +357,8 @@ void muffin::WindowsUpdater::download() {
 }
 
 void muffin::WindowsUpdater::downloadInstaller() {
-  staging_ = std::make_unique<QTemporaryDir>(QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                                                 .filePath(QStringLiteral("Muffin-update-XXXXXX")));
+  staging_ = std::make_unique<QTemporaryDir>(
+      QDir(ApplicationPaths::temporaryDirectory()).filePath(QStringLiteral("Muffin-update-XXXXXX")));
   if (!staging_->isValid()) {
     fail(tr("Could not create the update download folder."));
     return;

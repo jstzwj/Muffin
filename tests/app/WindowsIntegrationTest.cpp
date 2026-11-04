@@ -1,5 +1,6 @@
 #include "app/WindowsIntegration.h"
 #include "app/WindowsShellResources.h"
+#include "io/ApplicationPaths.h"
 #include "../TestUtils.h"
 
 #include <QCoreApplication>
@@ -8,6 +9,8 @@
 #include <QSettings>
 #include <QUuid>
 #include <QTranslator>
+#include <QTemporaryDir>
+#include <QFile>
 
 using namespace muffin;
 
@@ -170,5 +173,25 @@ int main(int argc, char** argv) {
   QCoreApplication::setApplicationName("Muffin");
   runTest("testChoicesMatchAppliedIntegration", testChoicesMatchAppliedIntegration);
   runTest("testLocalizedLabelsKeepChoicesAndCommands", testLocalizedLabelsKeepChoicesAndCommands);
+  // Portable mode must not alter an installed copy's Explorer registrations.
+  WindowsIntegration::applyIntegration(true, true);
+  QTemporaryDir portable;
+  require(portable.isValid(), "portable integration fixture");
+  QFile marker(portable.filePath("Muffin.portable"));
+  require(marker.open(QIODevice::WriteOnly), "portable marker");
+  marker.close();
+  QString error;
+  require(ApplicationPaths::initialize(portable.filePath("Muffin.exe"), &error), error);
+  WindowsIntegration::applyIntegration(false, false);
+  WindowsIntegration::applyIntegration(true, true);
+  WindowsIntegration::refreshLocalizedLabels();
+  HKEY registration = nullptr;
+  require(RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\Muffin.md", 0, KEY_READ, &registration) ==
+              ERROR_SUCCESS,
+          "portable operations preserve installed registrations");
+  RegCloseKey(registration);
+  require(!WindowsIntegration::isContextMenuEnabled() && !WindowsIntegration::isAssociationEnabled() &&
+              QSettings().allKeys().isEmpty(),
+          "portable profile does not inherit installed associations or settings");
   return 0;
 }

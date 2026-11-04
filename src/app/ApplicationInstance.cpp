@@ -1,4 +1,5 @@
 #include "app/ApplicationInstance.h"
+#include "io/ApplicationPaths.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -35,8 +36,7 @@ QString serverName(const QString& identity) {
 
 muffin::ApplicationInstance::ApplicationInstance(const QString& identity, QObject* parent)
     : QObject(parent), serverName_(serverName(identity)),
-      lock_(QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                .filePath(serverName_ + QStringLiteral(".lock"))) {
+      lock_(QDir(ApplicationPaths::temporaryDirectory()).filePath(serverName_ + QStringLiteral(".lock"))) {
   // A responsive process can legitimately own this lock for weeks.
   lock_.setStaleLockTime(0);
   server_.setSocketOptions(QLocalServer::UserAccessOption);
@@ -93,8 +93,7 @@ muffin::ApplicationInstance::ApplicationInstance(const QString& identity, QObjec
 }
 
 QString muffin::ApplicationInstance::profileIdentity() {
-  return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + QLatin1Char('\n') +
-         QSettings().fileName();
+  return ApplicationPaths::localDataDirectory() + QLatin1Char('\n') + QSettings().fileName();
 }
 
 bool muffin::ApplicationInstance::listen() {

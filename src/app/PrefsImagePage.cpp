@@ -1,4 +1,5 @@
 #include "app/PrefsImagePage.h"
+#include "io/ApplicationPaths.h"
 
 #include "image/CustomCommandUploader.h"
 #include "image/ImageInsertAction.h"
@@ -304,7 +305,7 @@ void muffin::PrefsImagePage::testUploader() {
   // Generate a tiny throwaway image so the uploader has a real file to post.
   QImage test(16, 16, QImage::Format_RGB32);
   test.fill(Qt::white);
-  const QString tempPath = QDir::tempPath() + QStringLiteral("/muffin_upload_test.png");
+  const QString tempPath = ApplicationPaths::temporaryDirectory() + QStringLiteral("/muffin_upload_test.png");
   if (!test.save(tempPath, "PNG")) {
     QMessageBox::warning(this, tr("Test Upload"), tr("Could not create a test image."));
     return;
