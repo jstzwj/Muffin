@@ -219,7 +219,9 @@ void muffin::MainWindow::setupTabButton(DocumentTab* document) {
   auto* controls = new QWidget(tabs_->tabBar());
   controls->setObjectName(QStringLiteral("TabControls"));
   auto* layout = new QHBoxLayout(controls);
-  layout->setContentsMargins(0, 0, 0, 0);
+  // Leave breathing room between the trailing button's hover circle and the
+  // tab outline without shrinking its click target or shifting its artwork.
+  layout->setContentsMargins(0, 0, 6, 0);
   layout->setSpacing(2);
   auto* lock = new TabLockIndicator(controls);
   lock->setVisible(editingLocked(document));
