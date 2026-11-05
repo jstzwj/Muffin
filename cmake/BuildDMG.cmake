@@ -3,7 +3,7 @@
 # Required variables:
 #   DIST_DIR        - Path to the dist directory containing Muffin.app
 #   MUFFIN_VERSION  - Version string (e.g. "0.1.0")
-#   SOURCE_DIR      - Project source root (unused but kept for consistency)
+#   SOURCE_DIR      - Project source root containing Quick Look signing files
 #   MACDEPLOYQT     - Path to macdeployqt executable
 
 if(NOT DEFINED DIST_DIR OR DIST_DIR STREQUAL "")
@@ -27,7 +27,7 @@ message(STATUS "Using macdeployqt: ${MACDEPLOYQT}")
 
 # Run macdeployqt to deploy Qt frameworks into the app bundle
 execute_process(
-  COMMAND "${MACDEPLOYQT}" "${APP_BUNDLE}" -verbose=1
+  COMMAND "${MACDEPLOYQT}" "${APP_BUNDLE}" -verbose=1 -codesign=-
   RESULT_VARIABLE mdqt_result
   OUTPUT_VARIABLE mdqt_output
   ERROR_VARIABLE mdqt_error
@@ -37,6 +37,12 @@ if(mdqt_result)
     "macdeployqt failed:\n${mdqt_output}\n${mdqt_error}")
 endif()
 message(STATUS "macdeployqt completed successfully")
+
+# Reapply the sandbox entitlement after deployment, then seal the host last.
+if(EXISTS "${APP_BUNDLE}/Contents/PlugIns/MuffinQuickLook.appex")
+  set(ENTITLEMENTS "${SOURCE_DIR}/cmake/QuickLook.entitlements")
+  include("${SOURCE_DIR}/cmake/SignMacQuickLook.cmake")
+endif()
 
 # Create DMG staging area
 set(DMG_STAGING "${CMAKE_BINARY_DIR}/dmg-staging")

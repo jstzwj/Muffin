@@ -643,7 +643,12 @@ if(WIN32)
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/TestInstallerOptions.cmake")
   endif()
 endif()
+add_test(NAME MuffinQuickLookRegistrationTest
+  COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_macos_quicklook.py"
+    --source "${CMAKE_CURRENT_SOURCE_DIR}")
+
 if(APPLE)
+  muffin_add_quicklook_tests()
   # Keep Apple's ICU on its own system data. Muffin explicitly registers its
   # private .dat mapping, so segmentation must work without ICU_DATA. Exercise
   # that contract directly as well as through the file tree and editor UI.

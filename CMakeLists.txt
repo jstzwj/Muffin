@@ -1666,6 +1666,10 @@ if(APPLE)
   endforeach()
 endif()
 
+if(APPLE)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinQuickLook.cmake)
+endif()
+
 set(MUFFIN_DIST_DIR "${CMAKE_BINARY_DIR}/dist" CACHE PATH "Muffin distribution output directory")
 
 set(MUFFIN_QT_PLUGIN_DIRS)
@@ -1702,6 +1706,10 @@ add_custom_target(dist
   COMMENT "Create Muffin distribution directory"
   VERBATIM
 )
+
+if(APPLE)
+  add_dependencies(dist muffin-quicklook-embed)
+endif()
 
 # --- Windows MSI installer target ---
 if(WIN32)

@@ -285,6 +285,15 @@ jobs:
         if: runner.os == 'macOS'
         run: cmake --build --preset conan-release --target dmg
 
+      - name: Verify macOS Quick Look extension
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          # Historical release tags predate the Quick Look extension.
+          if [ -f scripts/check_macos_quicklook.py ]; then
+            python scripts/check_macos_quicklook.py --bundle build/Release/dist/Muffin.app
+          fi
+
       - name: Smoke test Windows distribution
         if: runner.os == 'Windows'
         shell: pwsh

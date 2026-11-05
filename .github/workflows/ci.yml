@@ -166,14 +166,18 @@ jobs:
 
       - name: Build macOS integration and font raster tests
         if: runner.os == 'macOS'
-        run: cmake --build --preset conan-release --target MuffinIcuWordBoundaryTest MuffinDocumentTabsTest MuffinSidebarInteractionTest MuffinFontMappingCompatibilityTest MuffinFractionalFontMappingCompatibilityTest MuffinCssPaintInteractionTest
+        run: cmake --build --preset conan-release --target MuffinQuickLook MuffinQuickLookTest MuffinIcuWordBoundaryTest MuffinDocumentTabsTest MuffinSidebarInteractionTest MuffinFontMappingCompatibilityTest MuffinFractionalFontMappingCompatibilityTest MuffinCssPaintInteractionTest
 
       - name: Test macOS integration and font raster
         if: runner.os == 'macOS'
-        run: ctest --preset conan-release --verbose -R 'Muffin(IcuWordBoundary|DocumentTabs|LazySessionView|SidebarInteraction|.*FontMappingCompatibility|.*CssPaintInteraction)Test'
+        run: ctest --preset conan-release --verbose -R 'Muffin(QuickLook|QuickLookRegistration|IcuWordBoundary|DocumentTabs|LazySessionView|SidebarInteraction|.*FontMappingCompatibility|.*CssPaintInteraction)Test'
 
       - name: Build
         run: cmake --build --preset conan-release
+
+      - name: Verify macOS Quick Look bundle
+        if: runner.os == 'macOS'
+        run: python scripts/check_macos_quicklook.py --bundle build/Release/Muffin.app
 
       - name: Verify bundled Math font contract
         run: ctest --preset conan-release --verbose -L math-font-oracle
