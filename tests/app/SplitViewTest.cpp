@@ -518,6 +518,12 @@ void continuousPreviewEdits() {
 void structuralPreviewEdits() {
   for (const auto [linked, gap] : {std::pair{true, false}, {false, false}, {true, true}, {false, true}}) {
     Fixture f;
+    if (gap) {
+      // Include a short viewport where inserting multiple lines legitimately
+      // scrolls the source to keep the editing caret visible.
+      f.window.resize(1100, 480);
+      QApplication::processEvents();
+    }
     QString text;
     for (int i = 0; i < 160; ++i)
       text += QStringLiteral("Paragraph %1 has some text.\n\n").arg(i);
@@ -549,8 +555,8 @@ void structuralPreviewEdits() {
     QApplication::processEvents();
     const auto frame = tab->renderView->viewport()->grab().toImage();
     const auto reading = tab->renderView->viewportPosition();
-    const int sourceScroll = input->verticalScrollBar()->value();
-    require(sourceScroll > 0 && reading.sourceOffset > 0, "structural fixture starts away from document start");
+    require(input->verticalScrollBar()->value() > 0 && reading.sourceOffset > 0,
+            "structural fixture starts away from document start");
     QSignalSpy scrolls(input->verticalScrollBar(), &QScrollBar::valueChanged);
 
     // Exercise both source structure editing and full AST replacement. The
@@ -569,6 +575,11 @@ void structuralPreviewEdits() {
       require(tab->renderView->viewport()->grab().toImage() == frame,
               "superseded preview builds keep the same stable frame");
     }
+    // Input may scroll to expose the new caret. The asynchronous preview must
+    // preserve that completed source edit's viewport, rather than the position
+    // from before typing (whose visibility depends on the platform's fonts).
+    const int sourceScroll = input->verticalScrollBar()->value();
+    scrolls.clear();
     waitFor([&] { return !tab->renderView->isLayoutPending(); }, "latest structural preview completes");
     QApplication::processEvents();
     require(input->verticalScrollBar()->value() == sourceScroll,
