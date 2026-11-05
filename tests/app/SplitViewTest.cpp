@@ -32,6 +32,8 @@
 #include <QWheelEvent>
 #include <QtTest/QTest>
 
+#include <utility>
+
 using namespace muffin;
 
 namespace {
@@ -514,7 +516,7 @@ void continuousPreviewEdits() {
 }
 
 void structuralPreviewEdits() {
-  for (const bool linked : {true, false}) {
+  for (const auto [linked, gap] : {std::pair{true, false}, {false, false}, {true, true}, {false, true}}) {
     Fixture f;
     QString text;
     for (int i = 0; i < 160; ++i)
@@ -526,6 +528,13 @@ void structuralPreviewEdits() {
     const auto offset = text.indexOf(QStringLiteral("Paragraph 80")) + QStringLiteral("Paragraph 80").size();
     tab->editor->setCursorPosition(offset);
     tab->editor->centerCursor();
+    if (gap) {
+      auto position = tab->editor->viewportPosition();
+      position.sourceOffset = text.indexOf(QStringLiteral("Paragraph 75")) - 1;
+      position.screenOffset = -20;
+      position.atStart = false;
+      tab->editor->restoreViewportPosition(position);
+    }
     tab->synchronizeViewports(true);
     QApplication::processEvents();
     tab->setSynchronizedScrolling(linked);
@@ -563,20 +572,40 @@ void structuralPreviewEdits() {
     waitFor([&] { return !tab->renderView->isLayoutPending(); }, "latest structural preview completes");
     QApplication::processEvents();
     require(input->verticalScrollBar()->value() == sourceScroll,
-            "publishing the new preview does not move the source viewport");
+            QStringLiteral("publishing the new preview does not move the source viewport (linked %1, gap %2): %3 -> %4")
+                .arg(linked)
+                .arg(gap)
+                .arg(sourceScroll)
+                .arg(input->verticalScrollBar()->value()));
     for (const auto& scroll : scrolls)
       require(scroll.first().toInt() == sourceScroll, "source never follows intermediate layout scroll positions");
     auto expected = linked ? tab->editor->viewportPosition() : reading;
     if (!linked)
       expected.sourceOffset += tab->session.markdownText().size() - text.size();
+    // A visible blank source line has no rendered text/caret. The reading
+    // contract places the next paragraph at this screen offset; resolving an
+    // editing caret in that gap intentionally falls back to the final block.
+    // Font/viewport metrics decide whether centerCursor lands on such a line,
+    // so exercise the gap explicitly instead of relying on the host platform.
+    const auto currentText = tab->session.markdownText().toString();
+    const auto sourceAnchor = expected.sourceOffset;
+    while (expected.sourceOffset < currentText.size() && currentText.at(expected.sourceOffset) == QLatin1Char('\n'))
+      ++expected.sourceOffset;
     const auto hit =
         tab->renderView->hitForCursorPosition(tab->editorController.cursorForSourceOffset(expected.sourceOffset));
-    const auto screenY = tab->renderView->mapDocumentToViewport(hit.cursorRect.topLeft()).y();
-    require(!hit.cursorRect.isEmpty() && qAbs(screenY - expected.screenOffset) <= 1,
-            QStringLiteral("structural preview preserves the text's screen position (linked %1): %2 -> %3")
+    // Gaps align the paragraph box; an actual text row aligns the caret. Font
+    // leading can put the caret several pixels below that box's top edge.
+    const auto anchorRect =
+        sourceAnchor == expected.sourceOffset ? hit.cursorRect : tab->renderView->nodeRect(hit.blockId);
+    const auto screenY = tab->renderView->mapDocumentToViewport(anchorRect.topLeft()).y();
+    require(!anchorRect.isEmpty() && qAbs(screenY - expected.screenOffset) <= 1,
+            QStringLiteral(
+                "structural preview preserves the text's screen position (linked %1, gap %4, offset %5): %2 -> %3")
                 .arg(linked)
                 .arg(expected.screenOffset)
-                .arg(screenY));
+                .arg(screenY)
+                .arg(gap)
+                .arg(expected.sourceOffset));
     require(tab->renderView->viewport()->grab().toImage() != frame || !linked,
             "completed preview publishes the changed visible content");
     const auto* node = tab->session.document().topLevelBlockAtOffset(tab->editor->cursorPosition());

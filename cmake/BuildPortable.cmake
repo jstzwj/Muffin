@@ -6,6 +6,10 @@ cmake_path(GET output FILENAME name)
 if(NOT parent STREQUAL build_root OR NOT name STREQUAL "portable" OR IS_SYMLINK "${output}")
   message(FATAL_ERROR "Portable staging must be the non-linked 'portable' child of the build directory.")
 endif()
+# The build/temp directory itself can be reached through a symlink or junction
+# (notably /var on macOS and hosted Windows runners). Compare and mutate using
+# the same canonical parent as input, after rejecting a linked staging leaf.
+cmake_path(APPEND parent "${name}" OUTPUT_VARIABLE output)
 if(EXISTS "${output}/Data")
   message(FATAL_ERROR "Portable staging contains personal data. Move it elsewhere before rebuilding: ${output}/Data")
 endif()

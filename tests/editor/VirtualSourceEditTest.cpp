@@ -619,21 +619,33 @@ void testSelectedSourceInkOverridesSyntaxWithoutMovingText() {
       const qreal scale = after.devicePixelRatio();
       const QRect selected(qCeil(start.left() * scale), qCeil(start.top() * scale),
                            qFloor((end.left() - start.left()) * scale), qFloor(start.height() * scale));
+      // Rasterizers can antialias every glyph pixel; requiring pixels equal to
+      // the solid pen colour fails for thin fonts on FreeType. Change only the
+      // selection ink and verify that glyph pixels respond inside the selection.
+      colors.selectionText = QColor("#167036");
+      edit.setColors(colors);
+      const auto recolored = edit.viewport()->grab().toImage();
       int selectedInk = 0;
       for (int y = selected.top(); y <= selected.bottom(); ++y)
         for (int x = selected.left(); x <= selected.right(); ++x) {
-          const auto pixel = after.pixelColor(x, y);
-          if (qAbs(pixel.red() - colors.selectionText.red()) < 8 &&
-              qAbs(pixel.green() - colors.selectionText.green()) < 8 &&
-              qAbs(pixel.blue() - colors.selectionText.blue()) < 8)
+          const auto pixel = after.pixelColor(x, y), changed = recolored.pixelColor(x, y);
+          if (qAbs(pixel.red() - changed.red()) + qAbs(pixel.green() - changed.green()) +
+                  qAbs(pixel.blue() - changed.blue()) >
+              24)
             ++selectedInk;
         }
-      require(selectedInk > 20, "selected URL and long-line glyphs use readable selection ink");
+      require(selectedInk > 20,
+              QStringLiteral("selected glyphs use selection ink (long line %1, wrap %2, changed pixels %3)")
+                  .arg(longLine)
+                  .arg(wrap)
+                  .arg(selectedInk));
       // The selection changes paint only: the rest of the shaped line, including
       // unselected URL syntax, must retain its original pixels and hit positions.
       const int right = qCeil((end.right() + 3) * scale);
       require(before.copy(right, selected.top(), 100, selected.height()) ==
-                  after.copy(right, selected.top(), 100, selected.height()),
+                      after.copy(right, selected.top(), 100, selected.height()) &&
+                  after.copy(right, selected.top(), 100, selected.height()) ==
+                      recolored.copy(right, selected.top(), 100, selected.height()),
               "partial selection preserves unselected text colour and geometry");
       require(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect() == end,
               "painting a selection preserves caret geometry");
