@@ -80,7 +80,7 @@ public:
   void setCursorHit(HitTestResult hit);
   void setCursorPosition(CursorPosition position);
   void setSelectionRange(SelectionRange selection);
-  void setEditingHtmlBlock(NodeId id);
+  void setEditingHtmlBlock(NodeId id, CursorPosition cursor = {});
   // Per-code-fence horizontal scroll state (owned by EditorController). EditorView mutates the
   // offset on Shift+wheel / scrollbar drag and passes it down to paint/hit-test.
   void setCodeFenceScroll(CodeFenceScrollController* controller);
@@ -218,19 +218,19 @@ private:
   void ensureVisibleBuilt();
   void prefetchViewport();
   // A stable on-screen reference used to keep the viewport from jumping when a layout change moves
-  // block heights. Captured as the top-level *node id* at the top of the viewport (not a slot
-  // index), so it survives in-place rebuilds, structural edits AND a full re-parse/rebuild — the
-  // scrollbar value is re-derived to keep that block pinned to its captured screen offset. This
-  // single mechanism replaces the old split between "anchored" (lazy promotion, marker reveal) and
-  // "unanchored" (every edit-driven refresh) paths that caused the scrollbar to flicker.
+  // block heights. Default anchors use a top-level node ID without promoting lazy
+  // detail. Explicit anchors also retain the actual child's geometry, so a change
+  // inside its render container cannot move the clicked child on screen.
   struct ViewportAnchor {
     bool valid = false;
     NodeId nodeId;
     qreal screenOffset = 0.0; // slotTop minus the unrounded logical scroll position
+    NodeId childId;
+    qreal childScreenOffset = 0.0;
   };
   // Resolve the block to anchor on into a ViewportAnchor. When `preferNode` is valid it is used
-  // directly (e.g. the cursor's block, so a marker reveal keeps the clicked line put); otherwise
-  // the topmost visible block is used. Invalid when the document is empty / above its first block.
+  // directly when its detail is available; the top-level anchor is retained as a
+  // fallback if the child disappears or is demoted. Otherwise use the topmost visible block.
   ViewportAnchor captureViewportAnchor(NodeId preferNode = {}) const;
   // Re-pin the captured block to its original screen offset after a layout change; returns true
   // when the scrollbar moved. A no-op (false) when the block was removed — the caller's

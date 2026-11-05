@@ -549,7 +549,8 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
   }
   updateCursorHitFromPosition();
   updateTableToolbar();
-  ensureCursorVisible();
+  if (reason != DocumentLayout::BlockUpdateReason::Representation)
+    ensureCursorVisible();
   // Include the caret so a caret outside the refreshed blocks (e.g. on the
   // virtual trailing paragraph below the last block) repaints too — both the
   // new position (to draw) and the previous one (to erase the ghost on move).
@@ -687,17 +688,36 @@ void EditorView::setSelectionRange(SelectionRange selection) {
   applySelectionRange(selection);
 }
 
-void EditorView::setEditingHtmlBlock(NodeId id) {
+void EditorView::setEditingHtmlBlock(NodeId id, CursorPosition cursor) {
   if (editingHtmlBlockId_ == id) {
+    if (cursor.isValid())
+      setCursorPosition(cursor);
     return;
   }
+  // Switching representation must not follow the previous block's caret or
+  // publish geometry for the new caret against the old HTML preview.
+  const ScopedViewportPin pin(*this, id.isValid() ? id : cursorPosition_.blockId);
+  const auto previousId = editingHtmlBlockId_;
+  const auto previousSelection = selection_;
   editingHtmlBlockId_ = id;
+  if (cursor.isValid()) {
+    cursorPosition_ = cursor;
+    selection_ = {cursor, cursor};
+    resetCaretBlink();
+  }
   if (layout_) {
     layout_->setEditingHtmlBlock(id);
   }
   clearHtmlHover();
   if (document_) {
-    rebuildLayout();
+    QVector<NodeId> dirty;
+    addSelectionBlocks(dirty, previousSelection);
+    addSelectionBlocks(dirty, selection_);
+    for (const auto blockId : {previousId, id})
+      if (blockId.isValid() && !dirty.contains(blockId))
+        dirty.append(blockId);
+    if (!refreshBlocksInternal(dirty, *document_, true, DocumentLayout::BlockUpdateReason::Representation))
+      rebuildLayout(true);
   }
 }
 

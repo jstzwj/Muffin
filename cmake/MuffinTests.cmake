@@ -687,6 +687,14 @@ foreach(_text_test MuffinVirtualSourceEditTest MuffinEditorCodeFenceSelectionTes
     RESOURCE_LOCK MuffinQtGui)
 endforeach()
 
+# Offscreen uses eager layout. Exercise the same pointer/caret transitions
+# with the desktop's lazy layout as well, including deferred promotions.
+add_test(NAME MuffinLazyEditorViewHitTestTest COMMAND $<TARGET_FILE:MuffinEditorViewHitTestTest>)
+get_property(_html_view_environment TEST MuffinEditorViewHitTestTest PROPERTY ENVIRONMENT_MODIFICATION)
+set_tests_properties(MuffinLazyEditorViewHitTestTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${_html_view_environment};QT_QPA_PLATFORM=set:minimal"
+  RESOURCE_LOCK MuffinQtGui)
+
 # Close the build-freshness manifest: the two first-party libraries and the
 # app contribute their exact compiled source lists (relative paths resolve
 # against the source root; generated/binary-dir entries are skipped by the

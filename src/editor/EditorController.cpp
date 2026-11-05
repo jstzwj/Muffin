@@ -267,7 +267,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
         static_cast<void (SelectionController::*)(SelectionRange, HitTestResult)>(&SelectionController::setSelection));
     connect(view_, &EditorView::textCommitted, &inputController_, &InputController::insertText);
     connect(view_, &EditorView::htmlEditToggleRequested, this, [this](NodeId blockId) {
-      if (!blockId.isValid()) {
+      if (!htmlLiteral_.blockById(blockId)) {
         return;
       }
       if (htmlLiteral_.isEditing() && htmlLiteral_.currentBlockId() == blockId) {
@@ -279,16 +279,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
         return;
       }
 
-      exitAllLiteralEditModes();
-      HitTestResult hit;
-      hit.zone = HitTestResult::Zone::Html;
-      hit.blockId = blockId;
-      hit.textNodeId = blockId;
-      selection_.setHitResult(hit);
-      if (htmlLiteral_.enterEditMode() && view_) {
-        view_->setEditingHtmlBlock(htmlLiteral_.currentBlockId());
-      }
-      emit stateChanged();
+      activateHtmlSource(htmlLiteral_.cursorFor(blockId, 0));
     });
     connect(view_, &EditorView::taskCheckboxToggled, this, [this](NodeId blockId) {
       if (paragraphController_.toggleTaskListItem(blockId)) {
@@ -1231,11 +1222,15 @@ bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& low
   return true;
 }
 
-void EditorController::exitAllLiteralEditModes() {
+void EditorController::deactivateLiteralEditors() {
   frontMatterLiteral_.exitEditMode();
   codeFenceController_.exitEditMode();
   htmlLiteral_.exitEditMode();
   mathLiteral_.exitEditMode();
+}
+
+void EditorController::exitAllLiteralEditModes() {
+  deactivateLiteralEditors();
   if (view_) {
     view_->setEditingHtmlBlock({});
   }
@@ -1271,13 +1266,30 @@ bool EditorController::insertFrontMatter(FrontMatterFormat format) {
 }
 
 bool EditorController::enterHtmlEditMode() {
-  if (!htmlLiteral_.enterEditMode()) {
-    return false;
+  auto cursor = selection_.cursorPosition();
+  if (cursor.blockId != htmlLiteral_.currentBlockId() || cursor.afterBlock)
+    cursor = {};
+  return activateHtmlSource(cursor);
+}
+
+bool EditorController::activateHtmlSource(CursorPosition initialPosition) {
+  CursorPosition cursor;
+  {
+    // Initialize directly at the requested caret, then publish it only once its
+    // source representation is ready. No observer sees preview geometry or EOF.
+    const QSignalBlocker blocker(&selection_);
+    if (!htmlLiteral_.enterEditMode(initialPosition))
+      return false;
+    // Validate the target before leaving other editors. The view applies both
+    // representation changes together, without first collapsing the old block.
+    frontMatterLiteral_.exitEditMode();
+    codeFenceController_.exitEditMode();
+    mathLiteral_.exitEditMode();
+    cursor = selection_.cursorPosition();
+    if (view_)
+      view_->setEditingHtmlBlock(htmlLiteral_.currentBlockId(), cursor);
   }
-  if (view_) {
-    view_->setEditingHtmlBlock(htmlLiteral_.currentBlockId());
-  }
-  emit stateChanged();
+  selection_.setCursorPosition(cursor);
   return true;
 }
 

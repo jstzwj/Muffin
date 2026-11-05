@@ -461,6 +461,12 @@ EditorView::ViewportAnchor EditorView::captureViewportAnchor(NodeId preferNode) 
   anchor.valid = true;
   anchor.nodeId = layout_->slotNodeId(slot); // node id survives re-parse / reorder / full rebuild
   anchor.screenOffset = layout_->slotTop(slot) - scrollY();
+  if (preferNode.isValid() && preferNode != anchor.nodeId) {
+    if (const auto* child = layout_->blockIfPromoted(preferNode)) {
+      anchor.childId = preferNode;
+      anchor.childScreenOffset = child->rect().top() - scrollY();
+    }
+  }
   return anchor;
 }
 
@@ -469,14 +475,20 @@ bool EditorView::restoreViewportAnchor(const ViewportAnchor& anchor) {
     viewportScrollRemainder_ = 0.0;
     return false;
   }
-  const qsizetype slot = layout_->topLevelIndexFor(anchor.nodeId);
-  if (slot < 0) {
-    viewportScrollRemainder_ = 0.0;
-    return false; // block removed by the change — leave cursor-follow to decide
+  qreal logicalScroll;
+  const auto* child = anchor.childId.isValid() ? layout_->blockIfPromoted(anchor.childId) : nullptr;
+  if (child) {
+    logicalScroll = child->rect().top() - anchor.childScreenOffset;
+  } else {
+    const qsizetype slot = layout_->topLevelIndexFor(anchor.nodeId);
+    if (slot < 0) {
+      viewportScrollRemainder_ = 0.0;
+      return false; // block removed by the change — leave cursor-follow to decide
+    }
+    logicalScroll = layout_->slotTop(slot) - anchor.screenOffset;
   }
   QScrollBar* bar = verticalScrollBar();
   const qreal previousScroll = scrollY();
-  const qreal logicalScroll = layout_->slotTop(slot) - anchor.screenOffset;
   const int target = qBound(bar->minimum(), qRound(logicalScroll), bar->maximum());
   // Keep the fraction even if the integer value does not change. A clamped
   // boundary cannot preserve the anchor, so discard its unreachable remainder.

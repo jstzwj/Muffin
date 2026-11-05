@@ -42,7 +42,9 @@ public:
 
   NodeId currentBlockId() const;
   bool isEditing() const;
-  bool enterEditMode();
+  // Explicit entry positions are normalized to this block's literal. Without
+  // one, retain the command's traditional end-of-literal entry behavior.
+  bool enterEditMode(CursorPosition initialPosition = {});
   bool exitEditMode();
   // A new source generation invalidates the old ID/type index. Preserve an active
   // mode only on the mapped caret's block; never flush old transient text into it.

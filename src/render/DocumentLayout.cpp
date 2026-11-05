@@ -734,7 +734,13 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   // Selection does not change the borrowed render topology. Reuse the native
   // subtree just as for a list, instead of relaying out the entire document.
   const bool selectionOnly = reason == BlockUpdateReason::Selection && styleDocumentRevision_ == document.revision();
-  if (!selectionOnly && flow_ && !flow_->empty()) {
+  // Source/preview switches must rebuild their representation even if the
+  // selection is unchanged, while retaining the AST topology, styles and
+  // measured surrounding blocks just like a selection-only update.
+  const bool representationOnly =
+      reason == BlockUpdateReason::Representation && styleDocumentRevision_ == document.revision();
+  const bool renderOnly = selectionOnly || representationOnly;
+  if (!renderOnly && flow_ && !flow_->empty()) {
     result.blockId = blockId;
     result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     const qreal oldHeight = totalHeight_;
@@ -767,7 +773,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
     const qreal oldHeight = totalHeight_;
     incrementalFormatting_ = true;
     formattingDirty_.insert(blockId);
-    if (!selectionOnly) {
+    if (!renderOnly) {
       theme.invalidateDocumentStyles({node->siblingIndex(), 1, 1, document.revision()}, &document);
       styleDocumentRevision_ = document.revision();
     }
@@ -802,7 +808,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   // A caret update can precede the queued structural range rebuild. Reject a
   // stale single-block request before clearing styles or walking counters for
   // a layout that cannot accept it; the range update owns that invalidation.
-  if (!selectionOnly && !refreshingStyles_ && !resourceOnlyUpdate_) {
+  if (!renderOnly && !refreshingStyles_ && !resourceOnlyUpdate_) {
     theme.invalidateDocumentStyles({node->siblingIndex(), 1, 1, document.revision()}, &document);
     styleDocumentRevision_ = document.revision();
     recomputeHeadingCounters(document, theme);
@@ -851,7 +857,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   slot.viewportGeneration = viewportGeneration_;
   slot.top = replacement->rect().top() - currentShift;
   slot.detailShift = currentShift;
-  if (!selectionOnly) {
+  if (!renderOnly) {
     // A local reparse can replace descendants while preserving the top-level
     // list/quote identity. Index the new AST subtree as well as its layouts:
     // otherwise restored selection endpoints exist but their carets cannot be
@@ -882,7 +888,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   }
 
   result.rebuilt = true;
-  if (resourceOnlyUpdate_ || selectionOnly)
+  if (resourceOnlyUpdate_ || renderOnly)
     return result;
   const qreal beforeRefresh = totalHeight_;
   result.shiftedRect = result.shiftedRect.united(refreshDependentStyles(document, theme, selection));

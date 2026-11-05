@@ -82,6 +82,53 @@ void testEnterEditAndTextEditing() {
           "html backspace markdown mismatch");
 }
 
+void testExplicitEntryPublishesTheRequestedLiteralCaret() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  LiteralBlockController controller(htmlSpec());
+  controller.setContext({&session, &selection, &undoStack, &brushQueue});
+  const QString markdown = QStringLiteral("<div>alpha</div>\n\nparagraph\n\n<section>beta</section>\n");
+  session.setMarkdownText(markdown, false);
+  const auto first = firstHtmlBlock(session)->id();
+  const auto& children = session.document().root().children();
+  const auto second = children.back()->id();
+  const auto paragraph = children.at(1)->id();
+  setHtmlHit(selection, firstHtmlBlock(session));
+  require(controller.enterEditMode(), "initial HTML source must activate");
+  auto expected = controller.cursorFor(second, 4);
+  int published = 0;
+  QObject::connect(
+      &selection, &SelectionController::selectionChanged, &selection, [&](SelectionRange range, HitTestResult) {
+        ++published;
+        require(controller.currentBlockId() == expected.blockId && SelectionRange{range.focus, expected}.isCollapsed(),
+                "entry must publish only the normalized requested caret on the active block");
+      });
+  require(controller.enterEditMode(expected), "explicit entry must switch away from an already active block");
+  require(published == 1, "explicit entry must publish exactly once");
+  auto requested = expected;
+  requested.text.textOffset = -50;
+  requested.text.nodeId = first;
+  requested.text.sourceOffset = 9999;
+  expected = controller.cursorFor(second, 0);
+  require(controller.enterEditMode(requested), "negative entry offsets must be clamped");
+  requested.text.textOffset = 9999;
+  expected = controller.cursorFor(second, 9999);
+  require(controller.enterEditMode(requested), "oversized entry offsets must be clamped");
+  requested.afterBlock = true;
+  requested.text.textOffset = 0;
+  require(controller.enterEditMode(requested), "a block-after entry must resolve to the end of the literal");
+  require(published == 4, "each successful entry must publish one final caret");
+  requested.blockId = paragraph;
+  require(!controller.enterEditMode(requested), "explicit entry must reject another block type");
+  require(published == 4 && controller.currentBlockId() == second &&
+              SelectionRange{selection.cursorPosition(), expected}.isCollapsed(),
+          "a rejected target must preserve the active source and caret without notification");
+  require(session.markdownText().toString() == markdown && !undoStack.canUndo(),
+          "literal activation must preserve document content and history");
+}
+
 void testSetHtmlRoundtripAndSanitizer() {
   DocumentSession session;
   SelectionController selection;
@@ -207,6 +254,7 @@ void testSanitizerClosesBypassClasses() {
 
 int main() {
   testEnterEditAndTextEditing();
+  testExplicitEntryPublishesTheRequestedLiteralCaret();
   testEditingIndentedHtmlPreservesSeparators();
   testSetHtmlRoundtripAndSanitizer();
   testStandaloneSanitizer();

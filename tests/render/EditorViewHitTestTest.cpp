@@ -4,6 +4,8 @@
 #include "theme/CssThemeMapper.h"
 #include <QTextOption>
 #include <QScrollBar>
+#include <QEventLoop>
+#include <QTimer>
 
 using namespace muffin;
 
@@ -1036,6 +1038,228 @@ void testCssContentOriginSharedByHitCursorAndSelection() {
   }
 }
 
+void testSwitchingHtmlSourceKeepsTheClickedBlockInPlace() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  const QString before = QStringLiteral("Before\n\n").repeated(30);
+  session.setMarkdownText(before + QStringLiteral("<div style=\"height: 240px;\">First block.</div>\n\n") +
+                              QStringLiteral("<div>Second block.</div>\n\n") + QStringLiteral("After\n\n").repeated(30),
+                          false);
+  view.resize(700, 400);
+  view.setDocument(session.document());
+  view.show();
+  QApplication::processEvents();
+  const auto* first = blockAt(session, 30);
+  const auto* second = blockAt(session, 31);
+  view.restoreViewportPosition({before.size(), 20, 0, true, false}, {});
+  const auto clickBlock = [&](NodeId id) {
+    const auto* block = view.blockLayoutForNode(id);
+    require(block != nullptr, "HTML switch fixture must have a block layout");
+    const auto point = view.mapDocumentToViewport(block->rect().topLeft() + QPointF(30, 8));
+    require(view.viewport()->rect().contains(point.toPoint()), "HTML switch click must be visible");
+    QMouseEvent press(QEvent::MouseButtonPress, point, point, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    QMouseEvent release(QEvent::MouseButtonRelease, point, point, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  };
+  clickBlock(first->id());
+  const auto beforeSwitch = view.mapDocumentToViewport(view.blockLayoutForNode(second->id())->rect().topLeft());
+  clickBlock(second->id());
+  require(controller.htmlLiteral().currentBlockId() == second->id(), "the clicked HTML block must become editable");
+  const auto afterSwitch = view.mapDocumentToViewport(view.blockLayoutForNode(second->id())->rect().topLeft());
+  require(qAbs(beforeSwitch.y() - afterSwitch.y()) <= 1,
+          "switching HTML source must pin the clicked block before collapsing the old source");
+  const auto paragraph = blockAt(session, 32)->id();
+  const auto paragraphTop = view.mapDocumentToViewport(view.blockLayoutForNode(paragraph)->rect().topLeft()).y();
+  clickBlock(paragraph);
+  require(!controller.htmlLiteral().isEditing() && controller.selection().cursorPosition().blockId == paragraph,
+          "clicking a paragraph must leave HTML editing and activate the clicked text");
+  require(qAbs(view.mapDocumentToViewport(view.blockLayoutForNode(paragraph)->rect().topLeft()).y() - paragraphTop) <=
+              1,
+          "leaving HTML editing must retain the clicked paragraph's position");
+  const auto unchanged = session.markdownText().toString();
+  require(controller.inputController().insertText("X"), "typing after leaving HTML editing must work");
+  controller.undo();
+  require(session.markdownText().toString() == unchanged, "typing after switching blocks must remain undoable");
+}
+
+void testNestedHtmlSourceSwitchKeepsTheClickedChildInPlace() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  const QString before = QStringLiteral("Before\n\n").repeated(30);
+  const QString containers = QStringLiteral("<div class=\"outer\">\n\n<section>\n\n");
+  const QString markdown = before + containers +
+                           QStringLiteral("<div style=\"height: 240px;\">First child.</div>\n\n") +
+                           QStringLiteral("<div>Second child.</div>\n\nChild paragraph.\n\n</section>\n\n</div>\n\n") +
+                           QStringLiteral("After\n\n").repeated(30);
+  session.setMarkdownText(markdown, false);
+  view.resize(700, 500);
+  view.setDocument(session.document());
+  view.show();
+  QApplication::processEvents();
+  const auto outer = blockAt(session, 30)->id();
+  const auto first = blockAt(session, 32)->id();
+  const auto second = blockAt(session, 33)->id();
+  const auto paragraph = blockAt(session, 34)->id();
+  view.restoreViewportPosition({before.size() + containers.size(), 40, 0, true, false}, {});
+  const auto screenTop = [&](NodeId id) {
+    const auto* block = view.blockLayoutForNode(id);
+    require(block != nullptr, "nested HTML fixture must have a block layout");
+    return view.mapDocumentToViewport(block->rect().topLeft()).y();
+  };
+  const auto clickBlock = [&](NodeId id) {
+    const auto* block = view.blockLayoutForNode(id);
+    require(block && block->rect().height() > 8, "nested HTML click target must have visible content");
+    const auto point = view.mapDocumentToViewport(block->rect().topLeft() + QPointF(30, 8));
+    require(view.viewport()->rect().contains(point.toPoint()), "nested HTML click must be inside the viewport");
+    QMouseEvent press(QEvent::MouseButtonPress, point, point, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    QMouseEvent release(QEvent::MouseButtonRelease, point, point, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  };
+  require(view.blockLayoutForNode(outer)->rect().contains(view.blockLayoutForNode(second)->rect().center()),
+          "HTML children must be laid out inside their shared outer container");
+  clickBlock(first);
+  const auto secondTop = screenTop(second);
+  clickBlock(second);
+  require(controller.htmlLiteral().currentBlockId() == second, "the nested clicked HTML child must become editable");
+  require(
+      qAbs(screenTop(second) - secondTop) <= 1,
+      QStringLiteral("nested source switching must pin the child rather than its outer container: before=%1 after=%2")
+          .arg(secondTop)
+          .arg(screenTop(second)));
+  QEventLoop pendingEvents;
+  QTimer::singleShot(350, &pendingEvents, &QEventLoop::quit);
+  pendingEvents.exec();
+  require(qAbs(screenTop(second) - secondTop) <= 1, "deferred layout must retain the nested child anchor");
+  const auto paragraphTop = screenTop(paragraph);
+  clickBlock(paragraph);
+  require(!controller.htmlLiteral().isEditing() && controller.selection().cursorPosition().blockId == paragraph,
+          "clicking nested Markdown must exit HTML editing at that paragraph");
+  require(qAbs(screenTop(paragraph) - paragraphTop) <= 1,
+          "collapsing nested HTML source must retain the clicked Markdown child");
+  require(session.markdownText().toString() == markdown && !controller.undoStack().canUndo(),
+          "nested representation switches must preserve source and undo history");
+  require(controller.inputController().insertText("X"), "nested Markdown must accept typing after source switching");
+  controller.undo();
+  require(session.markdownText().toString() == markdown, "typing after nested source switching must undo exactly");
+  controller.redo();
+  require(session.markdownText().toString() != markdown, "typing after nested source switching must redo");
+  controller.undo();
+  require(session.markdownText().toString() == markdown, "nested source history must remain repeatable");
+}
+
+void testHtmlActivationRetainsMeasuredSurroundingBlocks() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(700, 400);
+  view.setTheme(RenderTheme::fromDefinition(
+      CssThemeMapper::fromCss("#write{max-width:640px;padding:20px}p{font-size:16px;margin:12px 0}"
+                              "p:nth-child(even){font-size:24px;margin:30px 0}",
+                              "html-transition", {})));
+  const QString before = (QStringLiteral("Paragraph **with** words ").repeated(20) + "\n\n").repeated(60);
+  session.setMarkdownText(before + "<div>Editable HTML.</div>\n\n" + before, false);
+  view.setDocument(session.document());
+  view.show();
+  QApplication::processEvents();
+  const auto id = blockAt(session, 60)->id();
+  view.restoreViewportPosition({before.size(), 140, 0, true, false}, {});
+  QApplication::processEvents();
+  const auto* block = view.blockLayoutForNode(id);
+  const auto screenTop = view.mapDocumentToViewport(block->rect().topLeft()).y();
+  const auto point = view.mapDocumentToViewport(block->rect().topLeft() + QPointF(30, 8));
+  QMouseEvent press(QEvent::MouseButtonPress, point, point, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent release(QEvent::MouseButtonRelease, point, point, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  QEventLoop pendingEvents;
+  QTimer::singleShot(350, &pendingEvents, &QEventLoop::quit);
+  pendingEvents.exec();
+  const auto finalTop = view.mapDocumentToViewport(view.blockLayoutForNode(id)->rect().topLeft()).y();
+  require(qAbs(screenTop - finalTop) <= 1,
+          QStringLiteral("HTML activation must retain measured surroundings: before=%1 after=%2")
+              .arg(screenTop)
+              .arg(finalTop));
+}
+
+void testHtmlSourceActivationPublishesOnlyTheFinalCaret() {
+  for (const QString& html : {QStringLiteral("<div style=\"text-align: center;\">Centered text.</div>\n"),
+                              QStringLiteral("<div>\nfirst row\nsecond row\n</div>\n"),
+                              QStringLiteral("<div>\n") + QStringLiteral("<p>Another row.</p>\n").repeated(100) +
+                                  QStringLiteral("</div>\n")}) {
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+    const QString before = QStringLiteral("Before\n\n").repeated(30);
+    const QString markdown = before + html + QStringLiteral("\nAfter\n").repeated(30);
+    session.setMarkdownText(markdown, false);
+    view.resize(700, 400);
+    const auto* node = blockAt(session, 30);
+    require(node->type() == BlockType::HtmlBlock, "HTML activation fixture must contain a literal HTML block");
+    // A previous caret can be far away from the HTML under the pointer.
+    CursorPosition previous;
+    previous.blockId = blockAt(session, 60)->id();
+    previous.text.nodeId = previous.blockId;
+    controller.selection().setCursorPosition(previous);
+    view.setDocument(session.document());
+    view.show();
+    QApplication::processEvents();
+    view.restoreViewportPosition({before.size(), 20, 0, true, false}, {});
+    QApplication::processEvents();
+    const auto* rendered = view.blockLayoutForNode(node->id());
+    require(rendered != nullptr, "rendered HTML must have a block layout");
+    const qreal blockScreenY = view.mapDocumentToViewport(rendered->rect().topLeft()).y();
+    const auto click = view.mapDocumentToViewport(rendered->rect().topLeft() + QPointF(30, 8)).toPoint();
+    int published = 0;
+    const auto changed =
+        QObject::connect(&controller.selection(), &SelectionController::selectionChanged, &view,
+                         [&](SelectionRange selection, HitTestResult) {
+                           ++published;
+                           const auto* block = view.blockLayoutForNode(selection.focus.blockId);
+                           require(controller.htmlLiteral().isEditing() && block && block->literalEditing(),
+                                   "HTML source activation must not publish a caret against preview geometry");
+                         });
+    QMouseEvent press(QEvent::MouseButtonPress, click, click, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    QMouseEvent release(QEvent::MouseButtonRelease, click, click, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+    require(published == 1, "HTML source activation must publish only one final selection");
+    const auto cursor = controller.selection().cursorPosition();
+    const auto* source = view.blockLayoutForNode(node->id());
+    require(source != nullptr, "editable HTML source must have a block layout");
+    const auto caret = view.hitForCursorPosition(cursor).cursorRect;
+    require(cursor.blockId == node->id() && cursor.text.textOffset == 0,
+            "clicking rendered HTML should start editing at its source entry, not the trailing newline");
+    require(source->literalContentRect(view.theme()).contains(caret.center()),
+            "the HTML edit caret must stay inside its measured source box");
+    require(qAbs(view.mapDocumentToViewport(source->rect().topLeft()).y() - blockScreenY) <= 1,
+            "activating HTML source must preserve the clicked block's screen position");
+    QEventLoop pendingEvents;
+    QTimer::singleShot(80, &pendingEvents, &QEventLoop::quit);
+    pendingEvents.exec();
+    require(view.hitForCursorPosition(cursor).cursorRect == caret,
+            "the HTML edit caret must not drift after queued layout and paint events");
+    require(session.markdownText().toString() == markdown && !controller.undoStack().canUndo(),
+            "opening the HTML source must not modify the document or create history");
+    QObject::disconnect(changed);
+    auto inside = cursor;
+    inside.text.textOffset = 5;
+    inside.text.sourceOffset = 5;
+    controller.selection().setCursorPosition(inside);
+    require(controller.exitHtmlEditMode() && controller.enterHtmlEditMode(),
+            "the HTML edit command must allow leaving and reopening its source");
+    require(SelectionRange{controller.selection().cursorPosition(), inside}.isCollapsed(),
+            "reopening HTML source from a command must retain the existing source caret");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1047,6 +1271,10 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("EditorViewHitTestTest"));
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testNestedHtmlSourceSwitchKeepsTheClickedChildInPlace);
+  RUN_TEST(testHtmlActivationRetainsMeasuredSurroundingBlocks);
+  RUN_TEST(testSwitchingHtmlSourceKeepsTheClickedBlockInPlace);
+  RUN_TEST(testHtmlSourceActivationPublishesOnlyTheFinalCaret);
   RUN_TEST(testClickAfterTextStopsBeforeLineBreak);
   RUN_TEST(testCssContentOriginSharedByHitCursorAndSelection);
   RUN_TEST(testCrossBlockClickPreservesScreenPosition);

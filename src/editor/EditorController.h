@@ -105,6 +105,8 @@ signals:
 private:
   void finishHistoryReplay(const EditTransaction& transaction, bool undo);
   void remapCurrentSelection();
+  bool activateHtmlSource(CursorPosition initialPosition);
+  void deactivateLiteralEditors();
   void exitAllLiteralEditModes();
   MarkdownNode* htmlImageBlockAtCursor() const;
   bool enterLiteralEditMode(HitTestResult::Zone zone);

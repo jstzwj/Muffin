@@ -64,8 +64,8 @@ bool LiteralBlockController::isEditing() const {
   return editingId_.isValid() || editingIndex_ >= 0;
 }
 
-bool LiteralBlockController::enterEditMode() {
-  const NodeId id = currentBlockId();
+bool LiteralBlockController::enterEditMode(CursorPosition initialPosition) {
+  const NodeId id = initialPosition.isValid() ? initialPosition.blockId : currentBlockId();
   if (!id.isValid()) {
     if (rejectedHandler_) {
       rejectedHandler_(spec_.rejectedReason);
@@ -80,7 +80,9 @@ bool LiteralBlockController::enterEditMode() {
   editingId_ = id;
   editingIndex_ = blockIndexFor(id);
   if (ctx_.selection) {
-    ctx_.selection->setCursorPosition(cursorFor(id, node->literal().size()));
+    const qsizetype offset = initialPosition.isValid() && !initialPosition.afterBlock ? initialPosition.text.textOffset
+                                                                                      : node->literal().size();
+    ctx_.selection->setCursorPosition(cursorFor(id, offset));
   }
   return true;
 }
