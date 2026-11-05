@@ -46,8 +46,10 @@ def main():
         extension = contents / "PlugIns/MuffinQuickLook.appex"
         check(read_plist(contents / "Info.plist"), read_plist(extension / "Contents/Info.plist"), entitlements)
         subprocess.run(["/usr/bin/codesign", "--verify", "--strict", str(extension)], check=True)
+        # Without --xml codesign includes its binary entitlement blob header,
+        # which is not a plist document and cannot be parsed by plistlib.
         signed = subprocess.check_output(
-            ["/usr/bin/codesign", "--display", "--entitlements", "-", str(extension)], stderr=subprocess.DEVNULL)
+            ["/usr/bin/codesign", "--display", "--entitlements", "-", "--xml", str(extension)], stderr=subprocess.DEVNULL)
         check(read_plist(contents / "Info.plist"), read_plist(extension / "Contents/Info.plist"), plistlib.loads(signed))
         dependencies = subprocess.check_output(
             ["/usr/bin/otool", "-L", str(extension / "Contents/MacOS/MuffinQuickLook")], text=True)
