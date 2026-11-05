@@ -4,7 +4,7 @@
 
 #include <QColor>
 #include <QString>
-#include <QWidget>
+#include <QStatusBar>
 
 class QMenu;
 class QToolButton;
@@ -22,14 +22,14 @@ struct StatusBarStats {
   qsizetype selectedCharacters = -1;
 };
 
-// A self-painted status bar replacing the native QStatusBar + QLabel/QToolButton
-// stack. Paints a flat themed strip with: three real QToolButtons on the left
+// A self-painted QStatusBar, installed directly in the main window so native
+// item margins/frames cannot offset or clip its content. Paints three buttons on the left
 // (sidebar / source-mode / split-view toggles), an optional block-source preview in the
 // middle, and a right-aligned cluster (encoding·line-ending, a clickable stats
 // trigger, cursor position, and a clickable spell-check language button that
 // opens a language menu). Clicking the stats trigger emits statsClicked() so the
 // owner can compute counts and call showStatsPopup().
-class MUFFIN_UI_EXPORT StatusBarWidget : public QWidget {
+class MUFFIN_UI_EXPORT StatusBarWidget : public QStatusBar {
   Q_OBJECT
 
 public:

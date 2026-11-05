@@ -13,6 +13,10 @@ namespace muffin::font_rendering {
 // typographic property (family, size, weight, spacing, or kerning).
 void configureForScreen(QFont& font);
 
+// Application chrome uses one sans-serif stack and logical-pixel size. Document
+// themes and the source editor retain their independent typography.
+QFont uiFont();
+
 // Author spacing remains separate from the platform's synthetic-bold advance
 // correction. Reapplying this function is idempotent.
 void configureCssFont(QFont& font, qreal letterSpacing, qreal wordSpacing);

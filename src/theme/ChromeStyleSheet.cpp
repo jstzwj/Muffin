@@ -26,6 +26,32 @@ QString accentSelectionTint(const ThemeColors& c) {
 
 } // namespace
 
+QString scrollBarStyleSheet(const QColor& background, const QColor& foreground, const QString& scope) {
+  const auto tint = [&](qreal amount) {
+    return hexRgb(QColor::fromRgbF(background.redF() * (1 - amount) + foreground.redF() * amount,
+                                   background.greenF() * (1 - amount) + foreground.greenF() * amount,
+                                   background.blueF() * (1 - amount) + foreground.blueF() * amount));
+  };
+  const QString prefix = scope.isEmpty() ? QString() : scope + QLatin1Char(' ');
+  // 14px interaction gutter, 8px visible thumb. Keep the grab target generous
+  // without depending on the platform's native scrollbar width or arrows.
+  return QStringLiteral(
+             "%1QScrollBar:vertical { background:%2; width:14px; margin:0; border:0; }"
+             "%1QScrollBar::handle:vertical { background:%3; min-height:54px; border-radius:4px; margin:2px 3px; }"
+             "%1QScrollBar::handle:vertical:hover { background:%4; }"
+             "%1QScrollBar::handle:vertical:pressed { background:%4; }"
+             "%1QScrollBar::add-line:vertical, %1QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
+             "%1QScrollBar::add-page:vertical, %1QScrollBar::sub-page:vertical { background:%2; }"
+             "%1QScrollBar:horizontal { background:%2; height:14px; margin:0; border:0; }"
+             "%1QScrollBar::handle:horizontal { background:%3; min-width:54px; border-radius:4px; margin:3px 2px; }"
+             "%1QScrollBar::handle:horizontal:hover { background:%4; }"
+             "%1QScrollBar::handle:horizontal:pressed { background:%4; }"
+             "%1QScrollBar::add-line:horizontal, %1QScrollBar::sub-line:horizontal { width:0; border:0; background:transparent; }"
+             "%1QScrollBar::add-page:horizontal, %1QScrollBar::sub-page:horizontal { background:%2; }"
+             "%1QAbstractScrollArea::corner { background:%2; border:0; }")
+      .arg(prefix, hexRgb(background), tint(0.32), tint(0.50));
+}
+
 QString mainWindowStyleSheet(const ThemeDefinition& d) {
   const ThemeColors& c = d.colors;
   // A faint ink tint keeps the close button quieter than the whole-tab hover,
@@ -39,6 +65,8 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
   // QMenuBar::item varies by platform style, while an explicit colour is stable.
   return QStringLiteral(
              "QMainWindow { background: %1; }"
+             "QStatusBar { background:%1; border:0; padding:0; }"
+             "QStatusBar::item { border:0; }"
              "QMenuBar { background: %1; color: %2; padding: 0; font-size: 13px; }"
              "QMenuBar::item { padding: 4px 9px; background: transparent; color: %2; }"
              "QMenuBar::item:selected { background: %3; }"
@@ -93,7 +121,7 @@ QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
           "#WorkspaceSearchResults { background:%1; color:%5; border:0; }"
           "#WorkspaceSearchResults::item { min-height:24px; padding:2px; }"
           "#WorkspaceSearchResults::item:selected { background:%6; color:%7; }"
-          "#FolderToolbar QToolButton { padding: 0; min-width: 0; min-height: 0; border-radius: 4px; }"
+          "#FolderToolbar QToolButton { padding: 0; min-width: 0; min-height: 0; border:1px solid transparent; border-radius: 4px; }"
           "#FolderToolbar QToolButton:pressed { background: %6; }"
           "#FolderToolbar QToolButton:checked { background: %4; border: 1px solid %2; }"
           "#FolderToolbar QToolButton::menu-indicator { image: none; width: 0; }"
@@ -106,7 +134,7 @@ QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
   if (!outlineFoldable) {
     sheet += QStringLiteral("#OutlineTree::branch { image:none; width:0; }");
   }
-  return sheet;
+  return sheet + scrollBarStyleSheet(c.surface, c.chromeText);
 }
 
 QString quickOpenStyleSheet(const ThemeDefinition& d) {
@@ -116,13 +144,10 @@ QString quickOpenStyleSheet(const ThemeDefinition& d) {
              "QDialog#QuickOpenDialog QLabel { color:%3; background:transparent; }"
              "QLineEdit#QuickOpenFilter { background:%4; color:%2; border:1px solid %5; border-radius:5px; padding:7px; }"
              "QLineEdit#QuickOpenFilter:focus { border-color:%6; }"
-             "QListWidget#QuickOpenResults { background:%4; color:%2; border:0; outline:0; }"
-             "QScrollBar:vertical { width:8px; background:transparent; border:0; }"
-             "QScrollBar::handle:vertical { background:%5; min-height:28px; border-radius:4px; }"
-             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }"
-             "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }")
-      .arg(hexRgb(c.canvas), hexRgb(c.chromeText), hexRgb(c.chromeMuted), hexRgb(c.surface), hexRgb(c.border),
-           hexRgb(c.accent));
+             "QListWidget#QuickOpenResults { background:%4; color:%2; border:0; outline:0; }")
+             .arg(hexRgb(c.canvas), hexRgb(c.chromeText), hexRgb(c.chromeMuted), hexRgb(c.surface), hexRgb(c.border),
+                  hexRgb(c.accent)) +
+         scrollBarStyleSheet(c.surface, c.chromeText);
 }
 
 QPalette dialogPalette(const ThemeDefinition& d) {
@@ -288,15 +313,6 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              "QMessageBox#ShortcutResetConfirmation QLabel#qt_msgbox_informativelabel { color:%5; min-width:300px;"
              "  padding-top:4px; padding-bottom:12px; font-size:13px; }"
 
-             // QComboBox dropdown scrollbar (more specific than the page scrollbar below).
-             // Trough is opaque surface (not transparent): inside the Win11 transparent
-             // popup an unpainted trough renders black.
-             "QComboBox QAbstractItemView QScrollBar:vertical { width:8px; background:%3; margin:0; border:0; }"
-             "QComboBox QAbstractItemView QScrollBar::handle:vertical { background:%5; min-height:28px; border-radius:4px; }"
-             "QComboBox QAbstractItemView QScrollBar::handle:vertical:hover { background:%5; }"
-             "QComboBox QAbstractItemView QScrollBar::add-line:vertical, QComboBox QAbstractItemView QScrollBar::sub-line:vertical { height:0; }"
-             "QComboBox QAbstractItemView QScrollBar::add-page:vertical, QComboBox QAbstractItemView QScrollBar::sub-page:vertical { background:%3; }"
-
              // Sidebar QListWidget (category nav)
              "QListWidget { border:0; outline:0; background:transparent; }"
              "QListWidget::item { min-height:34px; padding-left:14px; margin:2px 6px; color:%5; border-radius:6px; border-left:3px solid transparent; }"
@@ -306,13 +322,6 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              // Page QScrollArea
              "QScrollArea { border:0; background:transparent; }"
              "QScrollArea > QWidget > QWidget { background:transparent; }"
-
-             // Page scrollbar (applies to every per-page scroll area)
-             "QScrollBar:vertical { width:8px; background:transparent; margin:0; border:0; }"
-             "QScrollBar::handle:vertical { background:%4; min-height:36px; border-radius:4px; }"
-             "QScrollBar::handle:vertical:hover { background:%5; }"
-             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }"
-             "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"
 
              // Themed labels — set via object name so they pick up the token from QSS
              // without needing the ThemeDefinition at label-construction time.
@@ -325,9 +334,13 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
              // Export page: its own format-list panel + header.
              "QWidget#exportPanel { background:%3; border-right:1px solid %4; }"
              "QLabel#exportPanelHeader { font-size:12px; font-weight:600; color:%5; }")
-      .arg(hexRgb(c.canvas), hexRgb(c.chromeText), hexRgb(c.surface), hexRgb(c.border), hexRgb(c.chromeMuted),
-           hexRgb(c.hover), hexRgb(c.accent), hexRgb(c.chromeSelection), hexRgb(c.chromeDisabled),
-           hexRgb(c.chromeSelectionText));
+             .arg(hexRgb(c.canvas), hexRgb(c.chromeText), hexRgb(c.surface), hexRgb(c.border), hexRgb(c.chromeMuted),
+                  hexRgb(c.hover), hexRgb(c.accent), hexRgb(c.chromeSelection), hexRgb(c.chromeDisabled),
+                  hexRgb(c.chromeSelectionText)) +
+         scrollBarStyleSheet(c.canvas, c.chromeText) +
+         // Popups need an opaque surface with the same inset/geometry, otherwise
+         // the transparent Windows 11 combo window can show black gutters.
+         scrollBarStyleSheet(c.surface, c.chromeText, QStringLiteral("QComboBox QAbstractItemView"));
 }
 
 } // namespace muffin

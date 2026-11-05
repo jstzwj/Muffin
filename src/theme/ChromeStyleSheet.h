@@ -15,6 +15,10 @@ namespace muffin {
 // Main window chrome: QMainWindow, menu bar, menu popups, generic tool buttons.
 QString mainWindowStyleSheet(const ThemeDefinition& theme);
 
+// Shared geometry, hit area and theme-derived ink for both editor panes and
+// application chrome. A scope keeps opaque combo popup tracks correctly styled.
+QString scrollBarStyleSheet(const QColor& background, const QColor& foreground, const QString& scope = {});
+
 // Sidebar: tab buttons, file/outline trees, empty-state label, new-file button.
 // outlineFoldable toggles the expand-arrow (::branch) rule, matching the
 // previous behaviour.

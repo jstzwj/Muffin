@@ -74,6 +74,24 @@ QString firstAvailableFontFamily(std::initializer_list<QString> candidates) {
 }
 
 } // namespace
+QFont uiFont() {
+  QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+#if defined(Q_OS_WIN)
+  // Use a UI face covering both CJK and Latin when available. A Latin-only
+  // first face can still invoke Windows' legacy SimSun glyph fallback.
+  QStringList families = {
+      firstAvailableFontFamily({QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Microsoft YaHei"),
+                                QStringLiteral("Segoe UI"), font.family()}),
+      firstAvailableFontFamily({QStringLiteral("Segoe UI"), font.family()})};
+  families.removeDuplicates();
+  font.setFamilies(families);
+#endif
+  font.setPixelSize(13);
+  font.setStyleStrategy(QFont::PreferAntialias);
+  configureForScreen(font);
+  return font;
+}
+
 // Resolved per-platform fallback families, cached until fonts change. Used both as
 // the legacy default (when a theme supplies no font) and as the substitution tail
 // appended after a theme-supplied family so missing glyphs (CJK, symbols) resolve.

@@ -1,4 +1,7 @@
 #include "app/MainWindow.h"
+#include "app/SidebarWidget.h"
+#include "app/StatusBarWidget.h"
+#include "app/UiMetrics.h"
 #include "app/FileOpenDispatcher.h"
 #include "app/NoteLinks.h"
 #include "app/QuickOpenDialog.h"
@@ -14,6 +17,7 @@
 #include "app/SearchSettings.h"
 #include "app/CommandDeclarations.h"
 #include "theme/ChromeStyleSheet.h"
+#include "theme/FontRendering.h"
 #include "editor/ShortcutSettings.h"
 #include "editor/EditorView.h"
 #include "editor/FindBarWidget.h"
@@ -43,6 +47,8 @@
 #include <QFileInfo>
 #include <QFileOpenEvent>
 #include <QFutureWatcher>
+#include <QFontDatabase>
+#include <QGlyphRun>
 #include <QFileDialog>
 #include <QSaveFile>
 #include <QMessageBox>
@@ -71,6 +77,8 @@
 #include <QSpinBox>
 #include <QStyleFactory>
 #include <QStyleOptionSpinBox>
+#include <QStyleOptionSlider>
+#include <QStatusBar>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -3383,6 +3391,131 @@ void tabLockIndicatorPreservesControlsAndFollowsTheme() {
   require(f.tabs->count() == 1 && f.current() == active, "close button still closes the clicked background tab");
 }
 
+void chromeAppearanceUsesSharedMetrics() {
+#ifdef Q_OS_WIN
+  if (QGuiApplication::platformName() == "windows" && QFontDatabase::families().contains("Microsoft YaHei UI")) {
+    QTextLayout text(QStringLiteral("菜单"), font_rendering::uiFont());
+    text.beginLayout();
+    text.createLine();
+    text.endLayout();
+    const auto runs = text.glyphRuns();
+    require(!runs.isEmpty() && runs.front().rawFont().familyName().contains("YaHei", Qt::CaseInsensitive),
+            "Chinese UI glyphs use the sans-serif UI face instead of a legacy serif fallback");
+  }
+#endif
+  Fixture f;
+  for (int i = 0; i < 48; ++i)
+    f.file(QStringLiteral("笔记-%1.md").arg(i, 2, 10, QLatin1Char('0')), "# Note\n");
+  auto* reading =
+      f.open(f.file(QStringLiteral("界面样例.md"), QStringLiteral("# 中文标题\n\n正文与 **粗体**。\n\n").repeated(80)));
+  f.open(f.file("second.md", "# Second document\n\nText\n"));
+  triggerTabMenu(f.window, reading, "Pin Tab");
+  f.tabs->setCurrentWidget(reading);
+  action(f.window, "File Tree")->trigger();
+  auto* sidebar = f.window.findChild<SidebarWidget*>();
+  sidebar->setFolderRoot(f.directory.path());
+  auto* tree = sidebar->findChild<QTreeView*>("FileTree");
+  auto* status = f.window.findChild<StatusBarWidget*>();
+  auto* bar = f.tabs->tabBar();
+  require(sidebar && tree && status, "chrome fixture exposes the sidebar and status bar");
+  require(status == f.window.statusBar(), "the painted status bar is installed without an outer item frame");
+  status->showMessage(QStringLiteral("Temporary status"), 30);
+  require(!status->sidebarButton()->isVisible() && status->currentMessage() == "Temporary status",
+          "temporary messages replace the normal status controls");
+  waitUntil([&] { return status->currentMessage().isEmpty(); }, "temporary status message expires");
+  require(status->sidebarButton()->isVisible(), "status controls return after a temporary message expires");
+  const auto iconBounds = [&](QToolButton* button) {
+    // Grab through the window so translucent button panels are composited on
+    // their actual surface, rather than discarding alpha from a child grab.
+    const QImage image = f.window.grab(QRect(button->mapTo(&f.window, QPoint()), button->size()))
+                             .toImage()
+                             .convertToFormat(QImage::Format_RGB32);
+    if (const auto capture = qEnvironmentVariable("MUFFIN_CHROME_SCREENSHOT"); !capture.isEmpty())
+      image.save(capture + QLatin1Char('-') + button->objectName() +
+                 (button->isDown() ? "-pressed.png" : "-normal.png"));
+    const qreal dpr = image.devicePixelRatio();
+    const QColor background = image.pixelColor(image.width() / 2, qRound(2 * dpr));
+    const bool dark = background.lightnessF() < 0.5;
+    QRect bounds;
+    // Exclude the outer panel/border and retain the solid part of the icon.
+    const int inset = qRound(3 * dpr);
+    for (int y = inset; y < image.height() - inset; ++y) {
+      for (int x = inset; x < image.width() - inset; ++x) {
+        const QColor pixel = image.pixelColor(x, y);
+        if ((dark && pixel.lightnessF() > background.lightnessF() + 0.10) ||
+            (!dark && pixel.lightnessF() < background.lightnessF() - 0.10))
+          bounds |= QRect(x, y, 1, 1);
+      }
+    }
+    require(!bounds.isEmpty(), button->objectName() + " icon has visible, unclipped ink");
+    return QRectF(bounds.x() / dpr, bounds.y() / dpr, bounds.width() / dpr, bounds.height() / dpr);
+  };
+  for (const char* theme : {"GitHub", "Night"}) {
+    action(f.window, theme)->trigger();
+    QApplication::processEvents();
+    if (const auto capture = qEnvironmentVariable("MUFFIN_CHROME_SCREENSHOT"); !capture.isEmpty())
+      f.window.grab().save(capture + QLatin1Char('-') + QString::fromLatin1(theme) + "-initial.png");
+    require(f.window.menuBar()->font().families() == font_rendering::uiFont().families() &&
+                status->font().families() == f.window.menuBar()->font().families() &&
+                status->font().pixelSize() == f.window.menuBar()->font().pixelSize(),
+            "menus and painted status text share the application UI font");
+    const QRect statusRect(status->mapTo(f.window.statusBar(), QPoint()), status->size());
+    require(statusRect.top() == 0 && statusRect.bottom() == f.window.statusBar()->height() - 1,
+            "outer status bar adds no asymmetric vertical padding");
+    QList<QToolButton*> buttons = {tabControlButton(bar, 0),  tabControlButton(bar, 1),
+                                   status->sidebarButton(),   status->sourceModeButton(),
+                                   status->splitViewButton(), sidebar->findChild<QToolButton*>("FolderPinButton")};
+    for (auto* button : buttons) {
+      const QSignalBlocker blocked(button);
+      button->setChecked(false);
+      button->setDown(false);
+      const QRectF normal = iconBounds(button);
+      require(qAbs(normal.center().x() - button->width() / 2.0) < 0.8 &&
+                  qAbs(normal.center().y() - button->height() / 2.0) < 0.8,
+              QStringLiteral("%1 icon is centered at this display scale (center %2,%3 in %4x%5)")
+                  .arg(button->objectName())
+                  .arg(normal.center().x())
+                  .arg(normal.center().y())
+                  .arg(button->width())
+                  .arg(button->height()));
+      button->setChecked(true);
+      button->setDown(true);
+      const auto pressed = iconBounds(button);
+      require(qAbs(pressed.center().x() - button->width() / 2.0) < 0.8 &&
+                  qAbs(pressed.center().y() - button->height() / 2.0) < 0.8,
+              QStringLiteral("%1 icon does not move when checked or pressed").arg(button->objectName()));
+      button->setChecked(false);
+      button->setDown(false);
+    }
+    for (auto* button : {status->sidebarButton(), status->sourceModeButton(), status->splitViewButton()}) {
+      require(button->geometry().top() == status->height() - button->geometry().bottom() - 1,
+              "status icon targets have equal top and bottom padding");
+    }
+    for (QScrollBar* scroll : {tree->verticalScrollBar(), f.current()->renderView->verticalScrollBar(),
+                               f.current()->editor->findChild<VirtualSourceEdit*>()->verticalScrollBar()}) {
+      require(scroll->style()->pixelMetric(QStyle::PM_ScrollBarExtent, nullptr, scroll) == 14,
+              "sidebar, rendered view and source view share the scrollbar hit area");
+      QStyleOptionSlider option;
+      option.initFrom(scroll);
+      option.orientation = Qt::Vertical;
+      option.rect = QRect(0, 0, 14, 300);
+      option.minimum = 0;
+      option.maximum = 1000;
+      option.pageStep = 10;
+      const auto handle =
+          scroll->style()->subControlRect(QStyle::CC_ScrollBar, &option, QStyle::SC_ScrollBarSlider, scroll);
+      require(handle.height() >= 54, "every scrollbar keeps a usable minimum thumb length");
+    }
+    if (const auto capture = qEnvironmentVariable("MUFFIN_CHROME_SCREENSHOT"); !capture.isEmpty()) {
+      LanguageManager::instance().setLanguage("zh_CN");
+      QApplication::processEvents();
+      require(f.window.grab().save(capture + QLatin1Char('-') + QString::fromLatin1(theme) + ".png"),
+              "capture native chrome appearance");
+      LanguageManager::instance().setLanguage("en");
+    }
+  }
+}
+
 class TabCloseSideStyle final : public QProxyStyle {
 public:
   explicit TabCloseSideStyle(QTabBar::ButtonPosition side)
@@ -4765,6 +4898,10 @@ int main(int argc, char** argv) {
   }
   QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
   QApplication app(argc, argv);
+  const auto uiFont = font_rendering::uiFont();
+  QApplication::setFont(uiFont);
+  for (const char* widgetClass : {"QMenu", "QMenuBar", "QToolTip"})
+    QApplication::setFont(uiFont, widgetClass);
   installMuffinTestCrashHandler();
   QStandardPaths::setTestModeEnabled(true);
   QApplication::setOrganizationName(QStringLiteral("MuffinTests"));
@@ -4783,6 +4920,10 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  if (QCoreApplication::arguments().contains(QStringLiteral("--chrome-appearance"))) {
+    runTest("chromeAppearanceUsesSharedMetrics", chromeAppearanceUsesSharedMetrics);
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--split-view"))) {
     runSplitViewTests();
     return 0;

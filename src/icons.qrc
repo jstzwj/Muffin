@@ -21,6 +21,7 @@
     <file alias="check.svg">icons/ui/check.svg</file>
     <file alias="radio-dot.svg">icons/ui/radio-dot.svg</file>
     <file alias="pin.svg">icons/ui/pin.svg</file>
+    <file alias="close.svg">icons/ui/close.svg</file>
     <file alias="chevron-down.svg">icons/ui/chevron-down.svg</file>
     <file alias="read-only.svg">icons/ui/read-only.svg</file>
     <file alias="scroll-linked.svg">icons/ui/scroll-linked.svg</file>

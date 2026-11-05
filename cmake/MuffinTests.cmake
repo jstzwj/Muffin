@@ -531,6 +531,12 @@ muffin_add_test(NAME MuffinDocumentTabsTest SOURCE tests/app/DocumentTabsTest.cp
 if(WIN32)
   target_link_libraries(MuffinDocumentTabsTest PRIVATE bcrypt msi.lib)
 endif()
+foreach(scale IN ITEMS 1 1.25 1.5)
+  add_test(NAME MuffinChromeAppearanceDpi${scale} COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --chrome-appearance)
+  set_tests_properties(MuffinChromeAppearanceDpi${scale} PROPERTIES
+    ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:offscreen;QT_SCALE_FACTOR=set:${scale}"
+    RESOURCE_LOCK MuffinQtGui)
+endforeach()
 add_test(NAME MuffinWindowsUpdateTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --windows-update)
 set_tests_properties(MuffinWindowsUpdateTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"

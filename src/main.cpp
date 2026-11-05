@@ -113,9 +113,11 @@ int main(int argc, char* argv[]) {
 
   // Keep application chrome on the same screen-rasterization policy as the
   // document, source editor, and inline HTML text.
-  QFont uiFont = QApplication::font();
-  muffin::font_rendering::configureForScreen(uiFont);
+  const QFont uiFont = muffin::font_rendering::uiFont();
   QApplication::setFont(uiFont);
+  // Menu/tooltip class fonts otherwise keep the platform's separate defaults.
+  for (const char* widgetClass : {"QMenu", "QMenuBar", "QToolTip"})
+    QApplication::setFont(uiFont, widgetClass);
 
   // Windows 11 strokes a dark DWM border around Qt::Popup top-levels (menus,
   // combo dropdowns) on top of the theme's own QSS hairline; clear it so

@@ -377,9 +377,8 @@ void muffin::MainWindow::setupMenuBar() {
 }
 
 void muffin::MainWindow::setupStatusBar() {
-  statusBar()->setSizeGripEnabled(false);
-
   statusBar_ = new StatusBarWidget(this);
+  setStatusBar(statusBar_);
   // Reuse the widget's internal buttons so every existing reference (icon/checked/
   // tooltip/click) keeps working without rewiring.
   sidebarButton_ = statusBar_->sidebarButton();
@@ -400,8 +399,6 @@ void muffin::MainWindow::setupStatusBar() {
   outlineTimer_->setSingleShot(true);
   outlineTimer_->setInterval(200);
   connect(outlineTimer_, &QTimer::timeout, this, &muffin::MainWindow::refreshSidebarOutline);
-
-  statusBar()->addWidget(statusBar_, 1);
 }
 
 void muffin::MainWindow::updateTitle() {

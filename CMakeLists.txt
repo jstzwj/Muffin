@@ -1247,6 +1247,7 @@ set(MUFFIN_UI_SOURCES
   src/app/OutlineModel.h
   src/app/StatusBarWidget.cpp
   src/app/StatusBarWidget.h
+  src/app/ChromeIconButton.h
   src/editor/SourceEditorWidget.cpp
   src/editor/SourceEditorWidget.h
   src/editor/SourceLineHeightIndex.cpp

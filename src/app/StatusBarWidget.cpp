@@ -1,4 +1,5 @@
 #include "app/StatusBarWidget.h"
+#include "app/ChromeIconButton.h"
 
 #include "app/UiMetrics.h"
 
@@ -92,9 +93,7 @@ public:
              QWidget* parent = nullptr)
       : QFrame(parent, Qt::Popup), rows_(rows), bg_(bg), text_(text), muted_(muted), border_(border) {
     setFrameShape(QFrame::NoFrame);
-    QFont labelFont = font();
-    labelFont.setPointSizeF(labelFont.pointSizeF() > 0 ? labelFont.pointSizeF() : 9.0);
-    setFont(labelFont);
+    const QFont labelFont = font();
     const QFontMetrics fm(labelFont);
     int maxLabel = 0;
     int maxValue = 0;
@@ -158,18 +157,13 @@ void drawChevron(QPainter& p, int cx, int cy, const QColor& color) {
 
 } // namespace
 
-muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
+muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QStatusBar(parent) {
+  setSizeGripEnabled(false);
   setFixedHeight(muffin::ui_metrics::kStatusBarHeight);
   setMouseTracking(true);
   setAttribute(Qt::WA_StyledBackground, false);
 
-  // Match the bumped chrome size (~10pt ≈ 13px @96dpi) and inherit the app
-  // font's PreferVerticalHinting so the painted segments anti-alias smoothly.
-  QFont barFont = font();
-  barFont.setPointSizeF(10.0);
-  setFont(barFont);
-
-  sidebarButton_ = new QToolButton(this);
+  sidebarButton_ = new ChromeIconButton(this);
   sidebarButton_->setObjectName(QStringLiteral("statusSidebarToggle"));
   sidebarButton_->setIconSize(QSize(muffin::ui_metrics::kStatusIconSize, muffin::ui_metrics::kStatusIconSize));
   sidebarButton_->setCheckable(true);
@@ -177,14 +171,14 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   sidebarButton_->setFocusPolicy(Qt::NoFocus);
   sidebarButton_->setCursor(Qt::PointingHandCursor);
 
-  sourceModeButton_ = new QToolButton(this);
+  sourceModeButton_ = new ChromeIconButton(this);
   sourceModeButton_->setObjectName(QStringLiteral("statusSourceMode"));
   sourceModeButton_->setIconSize(QSize(muffin::ui_metrics::kStatusIconSize, muffin::ui_metrics::kStatusIconSize));
   sourceModeButton_->setCheckable(true);
   sourceModeButton_->setAutoRaise(true);
   sourceModeButton_->setFocusPolicy(Qt::NoFocus);
   sourceModeButton_->setCursor(Qt::PointingHandCursor);
-  splitViewButton_ = new QToolButton(this);
+  splitViewButton_ = new ChromeIconButton(this);
   splitViewButton_->setObjectName(QStringLiteral("statusSplitView"));
   splitViewButton_->setIconSize(sourceModeButton_->iconSize());
   splitViewButton_->setCheckable(true);
@@ -199,6 +193,13 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   });
   connect(sourceModeButton_, &QToolButton::toggled, this, [this] { updateButtonToolTips(); });
   connect(splitViewButton_, &QToolButton::toggled, this, [this] { updateButtonToolTips(); });
+  connect(this, &QStatusBar::messageChanged, this, [this](const QString& message) {
+    for (auto* button : {sidebarButton_, sourceModeButton_, splitViewButton_})
+      button->setVisible(message.isEmpty());
+    hover_ = Hover::None;
+    setCursor(Qt::ArrowCursor);
+    update();
+  });
 
   // Defaults until applyThemeColors() is called.
   bg_ = QColor(0xff, 0xff, 0xff);
@@ -303,13 +304,15 @@ void muffin::StatusBarWidget::applyThemeColors(const QColor& bg, const QColor& t
   checked.setAlpha(12);
   QColor pressed = text;
   pressed.setAlpha(30);
-  setStyleSheet(QStringLiteral("QToolButton { background: transparent; border: 0; border-radius: 5px; padding: 0; }"
-                               "QToolButton:hover { background: %1; }"
-                               "QToolButton:checked { background: %2; }"
-                               "QToolButton:checked:hover { background: %1; }"
-                               "QToolButton:pressed, QToolButton:checked:pressed { background: %3; }"
-                               "QToolButton#statusSidebarToggle { border-radius: 12px; }")
-                    .arg(hover.name(QColor::HexArgb), checked.name(QColor::HexArgb), pressed.name(QColor::HexArgb)));
+  setStyleSheet(
+      QStringLiteral("QToolButton { background: transparent; border: 0; border-radius: 5px; padding: 0; color:%4; }"
+                     "QToolButton:hover { background: %1; color:%5; }"
+                     "QToolButton:checked { background: %2; color:%5; }"
+                     "QToolButton:checked:hover { background: %1; }"
+                     "QToolButton:pressed, QToolButton:checked:pressed { background: %3; }"
+                     "QToolButton#statusSidebarToggle { border-radius: 12px; }")
+          .arg(hover.name(QColor::HexArgb), checked.name(QColor::HexArgb), pressed.name(QColor::HexArgb),
+               muted.name(QColor::HexArgb), text.name(QColor::HexArgb)));
 
   sourceModeButton_->setIcon(makeStatusIcon(IconKind::SourceMode, muted_, text_));
   splitViewButton_->setIcon(makeStatusIcon(IconKind::SplitView, muted_, text_));
@@ -365,7 +368,7 @@ void muffin::StatusBarWidget::relayoutButtons() {
 }
 
 void muffin::StatusBarWidget::resizeEvent(QResizeEvent* event) {
-  QWidget::resizeEvent(event);
+  QStatusBar::resizeEvent(event);
   relayoutButtons();
 }
 
@@ -384,7 +387,7 @@ bool muffin::StatusBarWidget::event(QEvent* event) {
   // layer — so a hover over "EN" or the word count gives no hint that it's interactive.
   // Intercept the tooltip event and route it per-segment via the same layout test the
   // paint/mouse handlers use.
-  if (event->type() == QEvent::ToolTip) {
+  if (event->type() == QEvent::ToolTip && currentMessage().isEmpty()) {
     auto* he = static_cast<QHelpEvent*>(event);
     const SegmentRects r = layoutSegments();
     const QPoint pos = he->pos();
@@ -412,7 +415,7 @@ bool muffin::StatusBarWidget::event(QEvent* event) {
     }
     QToolTip::hideText();
   }
-  return QWidget::event(event);
+  return QStatusBar::event(event);
 }
 
 void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {
@@ -425,6 +428,11 @@ void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {
   p.fillRect(rect(), bg_);
   p.setPen(QPen(border_, 1));
   p.drawLine(QPointF(0, 0.5), QPointF(width(), 0.5));
+
+  if (!currentMessage().isEmpty()) {
+    drawSegmentText(p, currentMessage(), rect().adjusted(8, 1, -8, 0), text_);
+    return;
+  }
 
   const SegmentRects r = layoutSegments();
   const int cy = height() / 2;
@@ -450,7 +458,10 @@ void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {
   // Block-source preview (monospace-ish, muted), elided to the middle area.
   if (!blockSource_.isEmpty() && r.blockSource.width() > 24) {
     QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    mono.setPointSizeF(font().pointSizeF());
+    if (font().pixelSize() > 0)
+      mono.setPixelSize(font().pixelSize());
+    else
+      mono.setPointSizeF(font().pointSizeF());
     p.setFont(mono);
     const QFontMetrics mfm(mono);
     const QString elided = mfm.elidedText(blockSource_, Qt::ElideRight, r.blockSource.width());
@@ -461,6 +472,10 @@ void muffin::StatusBarWidget::paintEvent(QPaintEvent*) {
 }
 
 void muffin::StatusBarWidget::mouseMoveEvent(QMouseEvent* event) {
+  if (!currentMessage().isEmpty()) {
+    QStatusBar::mouseMoveEvent(event);
+    return;
+  }
   const QPointF pos = event->position();
   const SegmentRects r = layoutSegments();
   Hover next = Hover::None;
@@ -474,7 +489,7 @@ void muffin::StatusBarWidget::mouseMoveEvent(QMouseEvent* event) {
     setCursor(next == Hover::None ? Qt::ArrowCursor : Qt::PointingHandCursor);
     update();
   }
-  QWidget::mouseMoveEvent(event);
+  QStatusBar::mouseMoveEvent(event);
 }
 
 void muffin::StatusBarWidget::leaveEvent(QEvent* event) {
@@ -483,12 +498,12 @@ void muffin::StatusBarWidget::leaveEvent(QEvent* event) {
     setCursor(Qt::ArrowCursor);
     update();
   }
-  QWidget::leaveEvent(event);
+  QStatusBar::leaveEvent(event);
 }
 
 void muffin::StatusBarWidget::mousePressEvent(QMouseEvent* event) {
-  if (event->button() != Qt::LeftButton) {
-    QWidget::mousePressEvent(event);
+  if (event->button() != Qt::LeftButton || !currentMessage().isEmpty()) {
+    QStatusBar::mousePressEvent(event);
     return;
   }
   const QPoint pos = event->position().toPoint();
@@ -505,7 +520,7 @@ void muffin::StatusBarWidget::mousePressEvent(QMouseEvent* event) {
     }
     return;
   }
-  QWidget::mousePressEvent(event);
+  QStatusBar::mousePressEvent(event);
 }
 
 void muffin::StatusBarWidget::ensureSpellMenu() {

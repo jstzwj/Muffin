@@ -1,4 +1,5 @@
 #include "app/MainWindow.h"
+#include "app/ChromeIconButton.h"
 #include "editor/ShortcutSettings.h"
 
 #include "app/MarkdownSettings.h"
@@ -223,14 +224,14 @@ void muffin::MainWindow::setupTabButton(DocumentTab* document) {
   auto* lock = new TabLockIndicator(controls);
   lock->setVisible(editingLocked(document));
   layout->addWidget(lock);
-  auto* button = new QToolButton(controls);
+  auto* button = new ChromeIconButton(controls, 20);
   button->setObjectName(document->pinned ? QStringLiteral("PinTabButton") : QStringLiteral("CloseTabButton"));
   if (document->pinned) {
-    button->setIcon(QIcon(QStringLiteral(":/icons/ui/pin.svg")));
-    button->setIconSize(QSize(14, 14));
+    button->setSvgIcon(QStringLiteral(":/icons/ui/pin.svg"));
   } else {
-    button->setText(QString(QChar(0x00d7)));
+    button->setSvgIcon(QStringLiteral(":/icons/ui/close.svg"));
   }
+  button->setIconSize(QSize(14, 14));
   button->setFixedSize(20, 20);
   button->setAutoRaise(true);
   button->setToolTip(document->pinned ? tr("Unpin Tab") : tr("Close Tab"));

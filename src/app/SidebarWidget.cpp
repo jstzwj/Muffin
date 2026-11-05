@@ -1,4 +1,5 @@
 #include "app/SidebarWidget.h"
+#include "app/ChromeIconButton.h"
 #include "editor/ShortcutSettings.h"
 #include "app/OutlineModel.h"
 #include "app/FileTreeModel.h"
@@ -251,7 +252,7 @@ void muffin::SidebarWidget::setupFilesPanel() {
   tools->setContentsMargins(10, 12, 8, 4);
   tools->setSpacing(2);
   const auto button = [&](const char* name) {
-    auto* result = new QToolButton(toolbar);
+    auto* result = new ChromeIconButton(toolbar);
     result->setObjectName(QString::fromLatin1(name));
     result->setAutoRaise(true);
     result->setFixedSize(24, 24);
