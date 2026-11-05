@@ -1,4 +1,5 @@
 #include "app/MainWindow.h"
+#include "app/ChromeIconButton.h"
 #include "editor/ShortcutSettings.h"
 #include "app/FileOpenConfirmation.h"
 #include "diagnostics/ScopedPerfProbe.h"
@@ -73,6 +74,23 @@
 namespace {
 
 Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
+
+// QTabWidget bottom-aligns a short corner widget with the tab strip. Reserve
+// the strip's full preferred height and center the fixed-size button inside it.
+class TabBarCorner final : public QWidget {
+public:
+  explicit TabBarCorner(QTabBar* bar, QWidget* parent) : QWidget(parent), bar_(bar) {
+    auto* layout = new QHBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+  }
+
+  QSize sizeHint() const override { return QWidget::sizeHint().expandedTo(QSize(0, bar_->sizeHint().height())); }
+  QSize minimumSizeHint() const override { return sizeHint(); }
+
+private:
+  QTabBar* bar_;
+};
 
 QString zoneName(muffin::HitTestResult::Zone zone) {
   switch (zone) {
@@ -313,12 +331,15 @@ void muffin::MainWindow::setupUi() {
   tab_->renderView->setThemeViewport(this);
   tabs_->addTab(tab_, tab_->session.displayName());
   setupTabButton(tab_);
-  auto* newTabButton = new QToolButton(tabs_);
+  auto* corner = new TabBarCorner(tabs_->tabBar(), tabs_);
+  auto* newTabButton = new ChromeIconButton(corner, 28);
   newTabButton->setObjectName(QStringLiteral("NewTabButton"));
-  newTabButton->setText(QStringLiteral("+"));
+  newTabButton->setSvgIcon(QStringLiteral(":/icons/ui/plus.svg"));
+  newTabButton->setIconSize(QSize(16, 16));
   newTabButton->setAutoRaise(true);
-  newTabButton->setFixedSize(28, 28);
-  tabs_->setCornerWidget(newTabButton, Qt::TopRightCorner);
+  corner->layout()->addWidget(newTabButton);
+  corner->layout()->setAlignment(newTabButton, Qt::AlignCenter);
+  tabs_->setCornerWidget(corner, Qt::TopRightCorner);
   updateTabBarVisibility();
   connect(newTabButton, &QToolButton::clicked, this, &MainWindow::startNewDocument);
   retranslateTabs();

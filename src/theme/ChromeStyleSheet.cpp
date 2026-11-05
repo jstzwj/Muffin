@@ -105,6 +105,16 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
 
 QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
   const ThemeColors& c = d.colors;
+  // Toolbar toggles need a quiet state cue even when the theme uses a strong
+  // hover colour for list rows. Keep their artwork and geometry unchanged.
+  QColor toolbarHover = c.chromeText;
+  toolbarHover.setAlpha(18);
+  QColor toolbarChecked = c.chromeText;
+  toolbarChecked.setAlpha(12);
+  QColor toolbarBorder = c.chromeText;
+  toolbarBorder.setAlpha(32);
+  QColor toolbarPressed = c.chromeText;
+  toolbarPressed.setAlpha(30);
   QString sheet =
       QStringLiteral(
           "#MuffinSidebar { background: %1; border-right: 1px solid %2; }"
@@ -122,15 +132,18 @@ QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
           "#WorkspaceSearchResults::item { min-height:24px; padding:2px; }"
           "#WorkspaceSearchResults::item:selected { background:%6; color:%7; }"
           "#FolderToolbar QToolButton { padding: 0; min-width: 0; min-height: 0; border:1px solid transparent; border-radius: 4px; }"
-          "#FolderToolbar QToolButton:pressed { background: %6; }"
-          "#FolderToolbar QToolButton:checked { background: %4; border: 1px solid %2; }"
+          "#FolderToolbar QToolButton:hover { background: %8; }"
+          "#FolderToolbar QToolButton:checked { background: %9; border: 1px solid %10; }"
+          "#FolderToolbar QToolButton:checked:hover { background: %8; }"
+          "#FolderToolbar QToolButton:pressed, #FolderToolbar QToolButton:checked:pressed { background: %11; }"
           "#FolderToolbar QToolButton::menu-indicator { image: none; width: 0; }"
           "#FileTree, #OutlineTree { background: %1; color: %5; border: 0; padding: 4px 0; outline: 0; }"
           "#FileTree::item, #OutlineTree::item { min-height: 22px; padding: 1px 4px; border: 0; }"
           "#FileTree::item:hover, #OutlineTree::item:hover { background: %4; color: %5; }"
           "#FileTree::item:selected, #OutlineTree::item:selected { background: %6; color: %7; }")
           .arg(hexRgb(c.surface), hexRgb(c.border), hexRgb(c.chromeMuted), hexRgb(c.hover), hexRgb(c.chromeText),
-               hexRgb(c.chromeSelection), hexRgb(c.chromeSelectionText));
+               hexRgb(c.chromeSelection), hexRgb(c.chromeSelectionText), hexRgb(toolbarHover), hexRgb(toolbarChecked),
+               hexRgb(toolbarBorder), hexRgb(toolbarPressed));
   if (!outlineFoldable) {
     sheet += QStringLiteral("#OutlineTree::branch { image:none; width:0; }");
   }

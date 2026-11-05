@@ -258,7 +258,7 @@ void muffin::MainWindow::updateTabBarVisibility() {
 
 void muffin::MainWindow::retranslateTabs() {
   tabs_->tabBar()->setAccessibleName(tr("Open Documents"));
-  auto* button = static_cast<QToolButton*>(tabs_->cornerWidget());
+  auto* button = tabs_->findChild<QToolButton*>(QStringLiteral("NewTabButton"));
   if (button) {
     const auto key = ShortcutSettings::instance().sequence(QStringLiteral("file.new"), QKeySequence::New);
     button->setToolTip(tr("New Tab") + (key.isEmpty()
