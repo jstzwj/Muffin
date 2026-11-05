@@ -183,7 +183,7 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 
 bool InputController::insertText(QString text) {
   clearVerticalNavigationX();
-  if (ctx_.session && !ctx_.session->isEditingAllowed()) {
+  if ((ctx_.session && !ctx_.session->isEditingAllowed()) || (ctx_.view && ctx_.view->editingLocked())) {
     return false;
   }
   if (ctx_.hasSession() && ctx_.session->markdownText().isEmpty()) {
@@ -786,7 +786,8 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
   // it and then falls through so the keystroke keeps editing normally.
   // Custom command shortcuts have already been resolved above or by QAction. Only reject raw
   // editing keys here; do not use a second, hard-coded shortcut list for read-only mode.
-  if (!ctx_.session->isEditingAllowed() && !editor_keys::isCursorNavigationKey(event->key())) {
+  if ((!ctx_.session->isEditingAllowed() || ctx_.view->editingLocked()) &&
+      !editor_keys::isCursorNavigationKey(event->key())) {
     hideEmojiPopup();
     return true;
   }

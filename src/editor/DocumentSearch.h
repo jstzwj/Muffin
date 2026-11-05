@@ -1,5 +1,7 @@
 #pragma once
 
+#include "document/SourceTextChange.h"
+
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -47,7 +49,8 @@ public:
   static QString expandReplacement(const QString& replacement, const SearchMatch& match, bool regularExpression);
   static SearchResults replaceAll(const QString& text, const QString& pattern, const QString& replacement,
                                   SearchOptions options, QString* output, Cancellation cancel = {},
-                                  QVector<qsizetype>* sourcePositions = nullptr);
+                                  QVector<qsizetype>* sourcePositions = nullptr,
+                                  SourceTextChange* sourceChange = nullptr);
 
 private:
   DocumentSearch() = delete;

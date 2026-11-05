@@ -3,6 +3,7 @@
     <file alias="sidebar-collapse.svg">icons/statusbar/sidebar-collapse.svg</file>
     <file alias="sidebar-expand.svg">icons/statusbar/sidebar-expand.svg</file>
     <file alias="source-code.svg">icons/statusbar/source-code.svg</file>
+    <file alias="split-view.svg">icons/statusbar/split-view.svg</file>
   </qresource>
   <qresource prefix="/icons/table-toolbar">
     <file alias="resize.svg">icons/table-toolbar/resize.svg</file>
@@ -21,6 +22,10 @@
     <file alias="radio-dot.svg">icons/ui/radio-dot.svg</file>
     <file alias="pin.svg">icons/ui/pin.svg</file>
     <file alias="chevron-down.svg">icons/ui/chevron-down.svg</file>
+    <file alias="read-only.svg">icons/ui/read-only.svg</file>
+    <file alias="scroll-linked.svg">icons/ui/scroll-linked.svg</file>
+    <file alias="scroll-unlinked.svg">icons/ui/scroll-unlinked.svg</file>
+    <file alias="split-layout.svg">icons/ui/split-layout.svg</file>
   </qresource>
   <qresource prefix="/app">
     <file alias="muffin.png">../resources/app-icons/muffin-256.png</file>

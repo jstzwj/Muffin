@@ -159,6 +159,7 @@ void focusedSaveDialogSelectsExactPath() {
 struct Fixture {
   QTemporaryDir directory;
   SettingsOverride sourceMode{"view/sourceMode", false};
+  SettingsOverride splitMode{"view/splitMode", false};
   MainWindow window;
   QTabWidget* tabs = nullptr;
 
@@ -4730,6 +4731,8 @@ void sessionRestoresNestedAndLiteralCoordinates() {
 void runWindowsUpdateTests();
 int runWindowsUpdateHandoffTest();
 
+void runSplitViewTests();
+
 int main(int argc, char** argv) {
   // A deterministic converter process for export plumbing tests. Actual
   // Pandoc need not be installed on CI, and can fail after partial output.
@@ -4780,6 +4783,10 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  if (QCoreApplication::arguments().contains(QStringLiteral("--split-view"))) {
+    runSplitViewTests();
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--closed-and-presets"))) {
     runTest("reopenClosedDocuments", reopenClosedDocuments);
     runTest("reopeningWaitsForFileConfirmation", reopeningWaitsForFileConfirmation);

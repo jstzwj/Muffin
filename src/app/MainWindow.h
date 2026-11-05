@@ -443,6 +443,7 @@ private:
   SidebarWidget* sidebar_ = nullptr;
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
+  QToolButton* splitViewButton_ = nullptr;
   StatusBarWidget* statusBar_ = nullptr;
   // Sidebar width transition; per-document view transitions live with their tab.
   QVariantAnimation* sidebarAnimation_ = nullptr;

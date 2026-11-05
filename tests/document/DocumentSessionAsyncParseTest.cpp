@@ -20,6 +20,38 @@ using namespace muffin;
 
 namespace {
 
+void testCommittedSourceChanges() {
+  DocumentSession session;
+  session.setMarkdownText("first paragraph\n\nsecond paragraph\n", false);
+  QVector<SourceTextChange> changes;
+  QObject::connect(&session, &DocumentSession::sourceTextChanged, &session,
+                   [&](const SourceTextChange& change) { changes.append(change); });
+  QObject::connect(&session, &DocumentSession::parsed, &session,
+                   [&] { require(!changes.isEmpty(), "committed mapping precedes parsed consumers"); });
+  require(session.applyTextDelta(5, 0, " longer", true), "local text edit succeeds");
+  require(changes.size() == 1 && changes.back().mapOffset(20) == 27, "local commit publishes one exact source mapping");
+  require(!session.applyTextDelta(-1, 0, "x", true) && changes.size() == 1,
+          "rejected edits never move reading anchors");
+  const auto old = session.markdownText().toString();
+  auto next = old;
+  next.insert(0, "```cpp\nx\n```\n\n");
+  require(session.applyMarkdownText(next, true), "full-text fallback succeeds");
+  require(changes.size() == 2 && changes.back().mapOffset(old.size() - 3) == next.size() - 3,
+          "full-text commits preserve unchanged suffix anchors");
+  require(session.applyMarkdownText(next, true) && changes.size() == 2,
+          "reparsing unchanged text does not double-map anchors");
+  const SourceTextChange separated{{{2, 1, 4}, {20, 3, 1}}};
+  require(separated.mapOffset(10) == 13 && separated.mapOffset(30) == 31 && separated.reversed().mapOffset(13) == 10 &&
+              separated.reversed().mapOffset(31) == 30 && separated.mapOffset(-1) == -1,
+          "separated edits map unchanged interiors and reverse without losing invalid anchors");
+  PieceTable fragmented("aaaBBBccc");
+  fragmented.replace(3, 6, QStringView(u"XXX"));
+  const auto full = SourceTextChange::between(fragmented, QStringView(u"aaaYYYYccc"));
+  require(full.edits.size() == 1 && full.edits[0].start == 3 && full.edits[0].removed == 3 &&
+              full.edits[0].inserted == 4 && full.mapOffset(7) == 8,
+          "full-text mapping compares piece-table chunks without flattening");
+}
+
 void drainAsyncParses() {
   for (int i = 0; i < 4; ++i) {
     require(QThreadPool::globalInstance()->waitForDone(10000), "async test workers finish");
@@ -324,6 +356,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setApplicationName(QStringLiteral("DocumentSessionAsyncParseTest"));
   QCoreApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testCommittedSourceChanges);
   RUN_TEST(testOpenDocumentAsyncEmitsParsed);
   RUN_TEST(testCompletedAndSupersededParsesReleaseSources);
   RUN_TEST(testReentrantOpenKeepsLatestBusyState);

@@ -384,6 +384,7 @@ void muffin::MainWindow::setupStatusBar() {
   // tooltip/click) keeps working without rewiring.
   sidebarButton_ = statusBar_->sidebarButton();
   sourceModeButton_ = statusBar_->sourceModeButton();
+  splitViewButton_ = statusBar_->splitViewButton();
   statusBar_->setSpellLanguage(SpellChecker::instance().language(), SpellChecker::instance().isEnabled());
   const int lineBreak = QSettings().value(QStringLiteral("editor/defaultLineBreak"), 1).toInt();
   statusBar_->setEncodingLineEnding(
@@ -470,6 +471,8 @@ void muffin::MainWindow::syncLockEditingAction() {
 }
 
 QString muffin::MainWindow::commandEditingDisabledReason() const {
+  if (tab_->previewActive())
+    return tr("This pane is a read-only preview. Edit the Markdown source on the left.");
   if (editingLocked())
     return tr("Editing is locked. Unlock editing to change this document.");
   if (tab_->session.isOpenInProgress())
@@ -513,7 +516,7 @@ void muffin::MainWindow::applyEditingLockedTo(DocumentTab* document) {
   }
   const bool locked = editingLocked(document);
   if (document->renderView) {
-    document->renderView->setEditingLocked(locked);
+    document->renderView->setEditingLocked(locked || document->viewMode() == DocumentViewMode::Split);
   }
   document->session.setEditingReadOnly(locked);
   updateTabLabel(document);
@@ -694,15 +697,13 @@ void muffin::MainWindow::updateViewMode() {
     return;
   }
   const QAction* action = commands_.action(QStringLiteral("view.source_mode"));
-  const bool sourceMode = action && action->isChecked();
-  const bool wasSourceMode = tab_->viewStack->currentWidget() == tab_->editor;
-
-  // Switch backend
-  if (sourceMode) {
-    tab_->backend = std::make_unique<SourceEditorBackend>(tab_->editor);
-  } else {
-    tab_->backend = std::make_unique<RenderEditorBackend>(tab_->editorController, tab_->session, tab_->renderView);
-  }
+  const auto* splitAction = commands_.action(QStringLiteral("view.split"));
+  const auto mode = splitAction && splitAction->isChecked() ? DocumentViewMode::Split
+                    : action && action->isChecked()         ? DocumentViewMode::Source
+                                                            : DocumentViewMode::Rendered;
+  const bool sourceMode = mode != DocumentViewMode::Rendered;
+  const bool wasSourceMode = tab_->hasSourcePane();
+  const auto sourceViewport = tab_->editor->viewportPosition();
 
   if (sourceMode && !wasSourceMode) {
     syncSourceEditorIfNeeded();
@@ -735,23 +736,24 @@ void muffin::MainWindow::updateViewMode() {
   if (isVisible() && !reducedMotion() && tab_->viewStack->currentWidget() != nullptr) {
     outgoingSnapshot = tab_->viewStack->currentWidget()->grab();
   }
-  tab_->viewStack->setCurrentWidget(sourceMode ? static_cast<QWidget*>(tab_->editor)
-                                               : static_cast<QWidget*>(tab_->renderView));
+  tab_->setViewMode(mode);
+  applyEditingLockedTo(tab_);
   if (!outgoingSnapshot.isNull()) {
     showViewSwitchOverlay(outgoingSnapshot);
   }
   if (sourceModeButton_) {
-    sourceModeButton_->setChecked(sourceMode);
+    sourceModeButton_->setChecked(mode == DocumentViewMode::Source);
   }
-  if (!sourceMode) {
+  splitViewButton_->setChecked(mode == DocumentViewMode::Split);
+  if (tab_->hasRenderPane()) {
     tab_->ensureRenderViewCurrent();
     // Source → Render: scroll to the block at the source cursor position
     tab_->renderView->refreshPendingResources();
     const qsizetype sourcePos = tab_->editor->cursorPosition();
-    if (wasSourceMode)
+    if (wasSourceMode && !sourceMode)
       tab_->editorController.selectSourceRange(tab_->editor->anchorPosition(), sourcePos);
     MarkdownNode* block = tab_->session.document().topLevelBlockAtOffset(sourcePos);
-    if (block) {
+    if (block && mode != DocumentViewMode::Split) {
       if (tab_->renderView->isLayoutPending()) {
         tab_->renderView->restoreViewportPosition({sourcePos, 0, 0, true, sourcePos == 0},
                                                   tab_->editorController.cursorForSourceOffset(sourcePos));
@@ -759,8 +761,15 @@ void muffin::MainWindow::updateViewMode() {
         tab_->renderView->scrollToNode(block->id());
       }
     }
-    tab_->renderView->setFocus(Qt::OtherFocusReason);
   }
+  tab_->focusEditor();
+  if (mode == DocumentViewMode::Split) {
+    if (wasSourceMode)
+      tab_->editor->restoreViewportPosition(sourceViewport);
+    tab_->synchronizeViewports(true);
+  }
+  updateAllActions();
+  scheduleSessionSave();
   updateStatus();
 }
 
@@ -917,7 +926,7 @@ void muffin::MainWindow::setFocusMode(bool enabled) {
   focusMode_ = enabled;
 
   for (DocumentTab* document : documentTabs()) {
-    document->renderView->setFocusMode(enabled);
+    document->setFocusMode(enabled);
   }
 
   if (QAction* action = commands_.action(QStringLiteral("view.focus"))) {
@@ -929,18 +938,12 @@ void muffin::MainWindow::setTypewriterMode(bool enabled) {
   typewriterMode_ = enabled;
 
   for (DocumentTab* document : documentTabs()) {
-    document->renderView->setTypewriterMode(enabled);
-    document->renderView->setTypewriterCursorMiddle(
-        QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
+    document->setTypewriterMode(enabled,
+                                QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   }
 
   if (QAction* action = commands_.action(QStringLiteral("view.typewriter"))) {
     action->setChecked(enabled);
-  }
-
-  // Apply immediately if just enabled
-  if (enabled && tab_->backend) {
-    tab_->backend->centerCursor();
   }
 }
 
@@ -974,6 +977,7 @@ void muffin::MainWindow::loadAppearanceSettings() {
   setContentWidthPx(settings.value(QStringLiteral("appearance/contentWidthPx"), 0).toInt());
 
   restorePersistentActionStates();
+  setFocusMode(settings.value(QStringLiteral("appearance/focusMode"), false).toBool());
 
   if (QAction* action = commands_.action(QStringLiteral("view.word_wrap")); action && !action->isChecked()) {
     tab_->editor->setWordWrapEnabled(false);
@@ -991,8 +995,8 @@ void muffin::MainWindow::loadAppearanceSettings() {
     setTypewriterMode(true);
   }
   if (tab_->renderView) {
-    tab_->renderView->setTypewriterCursorMiddle(
-        settings.value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
+    tab_->setTypewriterMode(typewriterMode_,
+                            settings.value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   }
 }
 
@@ -1049,6 +1053,7 @@ void muffin::MainWindow::applyTheme(QString name) {
     muffin::diag::ScopedPerfProbe viewsPerf("theme.activeViews", themePerf);
     document->renderView->setTheme(theme);
     document->editor->setTheme(theme);
+    document->setSplitTheme(theme);
   }
   muffin::diag::ScopedPerfProbe chromePerf("theme.chrome", themePerf);
   if (sidebar_) {

@@ -16,6 +16,8 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 
+#include <algorithm>
+
 namespace muffin {
 
 // Pull the stateless geometry/hit-test helpers into scope so call sites read as
@@ -92,16 +94,25 @@ void EditorView::restoreViewportPosition(const ViewportPosition& position, Curso
   }
   if (!layout_ || !document_ || position.sourceOffset < 0)
     return;
+  if (position.textAnchor && readingPositionResolver_)
+    textPosition = readingPositionResolver_(position.sourceOffset);
   stopScrollAnimation();
   viewportScrollRemainder_ = 0.0;
   if (position.atStart) {
     verticalScrollBar()->setValue(0);
     return;
   }
-  auto* node =
-      document_->topLevelBlockAtOffset(qBound<qsizetype>(0, position.sourceOffset, document_->markdownText().size()));
-  if (!node)
+  const auto& blocks = document_->root().children();
+  if (blocks.empty())
     return;
+  // A source row can lie in whitespace with no AST node. The editing resolver
+  // deliberately falls back to the last block there (for trailing carets).
+  // Reading instead follows the next block, or the last one only past EOF.
+  const auto offset = qBound<qsizetype>(0, position.sourceOffset, document_->markdownText().size());
+  const auto next = std::lower_bound(blocks.begin(), blocks.end(), offset, [](const auto& block, qsizetype value) {
+    return block->sourceRange().byteEnd < value;
+  });
+  const auto* node = (next == blocks.end() ? blocks.back() : *next).get();
   const auto slot = layout_->topLevelIndexFor(node->id());
   if (slot < 0)
     return;
@@ -109,13 +120,22 @@ void EditorView::restoreViewportPosition(const ViewportPosition& position, Curso
     ScopedViewportPin pin(*this);
     layout_->ensureBuilt(slot, slot, theme_);
   }
+  const auto* cursorHost = document_->node(textPosition.blockId);
+  while (cursorHost && cursorHost->parent() && cursorHost->parent()->type() != BlockType::Document)
+    cursorHost = cursorHost->parent();
   const auto anchorY = [&] {
-    if (position.textAnchor && textPosition.isValid()) {
+    // A caret resolved through a gap may belong to a completely different
+    // block. Block-after carets also express editing intent, not a reading row.
+    if (position.textAnchor && textPosition.isValid() && !textPosition.afterBlock && cursorHost == node &&
+        node->sourceRange().containsByte(offset)) {
       const auto hit = hitForCursorPosition(textPosition);
       if (!hit.cursorRect.isEmpty())
         return hit.cursorRect.top();
     }
-    return layout_->slotTop(slot);
+    // HTML flow can group many AST siblings in one rendering slot. Anchor to
+    // this node's geometry, rather than the opening container's top edge.
+    const auto* block = layout_->block(node->id(), theme_);
+    return block ? block->rect().top() : layout_->slotTop(slot);
   };
   verticalScrollBar()->setValue(qRound(anchorY() - position.screenOffset));
   // Visible lazy promotions can shift slots above the text row; re-pin once
@@ -177,7 +197,10 @@ int EditorView::typewriterScrollTarget(const QRectF& cursor) const {
 }
 
 void EditorView::ensureCursorVisible() {
-  if (togglingTaskCheckbox_) {
+  // The preview's reading position is independent of document commands and
+  // history selection restoration. Explicit navigation uses scrollToNode /
+  // scrollToCursorCentered; following the source is owned by DocumentTab.
+  if (livePreview_ || togglingTaskCheckbox_) {
     return;
   }
   const QRectF cursor = effectiveCursorRect();
@@ -219,6 +242,9 @@ void EditorView::scrollToCursorCentered() {
 }
 
 void EditorView::setTypewriterMode(bool enabled) {
+  if (typewriterMode_ == enabled)
+    return;
+  stopScrollAnimation();
   typewriterMode_ = enabled;
   updateScrollBars();
   if (enabled && cursorHit_.isValid()) {
@@ -231,6 +257,8 @@ void EditorView::setTypewriterMode(bool enabled) {
 }
 
 void EditorView::setTypewriterCursorMiddle(bool enabled) {
+  if (typewriterCursorMiddle_ == enabled)
+    return;
   typewriterCursorMiddle_ = enabled;
   updateScrollBars();
   if (typewriterMode_ && cursorHit_.isValid()) {
@@ -356,6 +384,8 @@ void EditorView::scrollContentsBy(int dx, int dy) {
   }
   updateCodeLanguageEditor();
   updateTableToolbar();
+  if (!inScrollBuild_ && !publishingLayout_ && !isLayoutPending())
+    emit viewportPositionChanged();
 }
 
 void EditorView::ensureVisibleBuilt() {

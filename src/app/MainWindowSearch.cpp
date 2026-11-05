@@ -167,6 +167,18 @@ void muffin::MainWindow::applySearchNavigation(DocumentTab* document) {
     return;
   }
   document->pendingViewState.reset();
+  if (document->viewMode() == DocumentViewMode::Split) {
+    document->searchSourceFallback = false;
+    document->editor->setSelection(document->pendingSearchOffset,
+                                   document->pendingSearchOffset + document->pendingSearchLength);
+    document->focusEditor();
+    document->editor->ensureCursorVisible();
+    document->synchronizeViewports(true);
+    sidebar_->setCurrentPath(document->session.filePath());
+    statusBar()->clearMessage();
+    scheduleSessionSave();
+    return;
+  }
   const bool preferRender = !document->backend->isSourceMode() || document->searchSourceFallback;
   SelectionRange range;
   const bool render = preferRender && renderedSearchRange(*document, document->pendingSearchOffset,

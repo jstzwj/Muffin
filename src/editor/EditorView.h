@@ -13,12 +13,15 @@
 #include <QElapsedTimer>
 #include <QPoint>
 #include <QPointer>
+#include <QPixmap>
+#include "document/SourceTextChange.h"
 #include <QRectF>
 #include <QHash>
 #include <QSet>
 #include <QTextLayout>
 
 #include <memory>
+#include <functional>
 
 class QPropertyAnimation;
 class QTimer;
@@ -43,6 +46,16 @@ public:
 
   void setDocument(const MarkdownDocument& document, QString documentPath = {}, bool cooperative = false);
   bool isLayoutPending() const { return bool(layoutBuild_); }
+  // A live preview retains only its last viewport-sized frame while a new AST
+  // is laid out. The retained image never refers to nodes in the retired AST.
+  void setLivePreview(bool enabled);
+  ViewportPosition lastPresentedViewportPosition() const;
+  void mapPreviewReadingPosition(const SourceTextChange& change);
+  // The tab supplies the same document source resolver used by editing and
+  // navigation. Resolve only on publication, after the newest AST is bound.
+  void setReadingPositionResolver(std::function<CursorPosition(qsizetype)> resolver) {
+    readingPositionResolver_ = std::move(resolver);
+  }
   // True while an async open parse is in flight: paintEvent shows a centered loading hint instead of
   // the (stale/empty) page.
   void setLoading(bool loading);
@@ -55,7 +68,7 @@ public:
   // by the spell-check overlay toggle so we don't rebuild the whole large document at once;
   // un-promoted blocks pick up the new state when they scroll into view.
   bool refreshVisibleBlocks(const MarkdownDocument& document);
-  bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
+  bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document, bool preserveViewport = false);
   // Full IME context (surrounding text, cursor offset within it, current selection, font) so
   // predictive/conversion IMEs (pinyin, kana) can see context and do reconversion. Public like
   // cursorHit()/effectiveCursorRect() so tests can query it directly.
@@ -125,6 +138,8 @@ public:
 signals:
   void layoutBusyChanged(bool busy);
   void layoutReady();
+  // Geometry changes inside a layout transaction do not represent user scrolling.
+  void viewportPositionChanged();
   void linkActivated(QString href);
   void historyNavigationRequested(bool forward);
   void blockClicked(HitTestResult result);
@@ -168,6 +183,7 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  CooperativeTask prepareLayoutBuild(const MarkdownDocument& document);
   void advanceLayoutBuild(quint64 generation, quint64 revision);
   void retireLayout(std::unique_ptr<DocumentLayout> layout);
   std::unique_ptr<DocumentLayout> layoutBuild_;
@@ -176,6 +192,12 @@ private:
   quint64 layoutBuildGeneration_ = 0;
   quint64 layoutBuildRevision_ = 0;
   std::optional<QPair<ViewportPosition, CursorPosition>> layoutReadingPosition_;
+  std::function<CursorPosition(qsizetype)> readingPositionResolver_;
+  bool publishingLayout_ = false;
+  bool livePreview_ = false;
+  QPixmap previewFrame_;
+  ViewportPosition previewFramePosition_;
+  qreal previewFrameScrollY_ = 0;
   void syncViewportBackground();
   void retranslateAccessibility();
   struct HeadingBadge {
@@ -295,6 +317,7 @@ private:
   // Centered spinner + H1-sized translatable "Loading…" shown while an async open parse is
   // in flight, replacing the stale/empty page so the user gets immediate feedback.
   void paintLoadingOverlay(QPainter& painter) const;
+  void paintDocument(QPainter& painter, const QRegion& dirtyRegion);
   HeadingBadge headingBadgeForBlock(NodeId blockId) const;
   QRectF headingBadgeViewportRectForBlock(NodeId blockId) const;
   QRectF htmlHoverButtonViewportRect() const;

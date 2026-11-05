@@ -86,11 +86,14 @@ public:
   };
   const FormattingReuseStats& formattingReuseStats() const { return formattingReuseStats_; }
   struct ResourceRefreshResult {
+    bool needsRebuild = false;
     qsizetype updatedBlocks = 0;
     bool geometryChanged = false;
     QRectF dirty;
   };
-  ResourceRefreshResult refreshResources(const RenderTheme& theme, SelectionRange selection = {});
+  ResourceRefreshResult refreshResources(const RenderTheme& theme, SelectionRange selection = {},
+                                         bool deferRebuild = false);
+  bool resourceRefreshRequiresRebuild() const;
   void invalidateRenderState() { builder_.invalidateRenderState(); }
 
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth,
@@ -122,6 +125,8 @@ public:
                                   SelectionRange selection, BlockUpdateReason reason = BlockUpdateReason::Content);
   RangeRebuildResult rebuildTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document,
                                           const RenderTheme& theme, SelectionRange selection);
+  bool supportsLocalRangeRebuild(TopLevelRangeChange range, const MarkdownDocument& document) const;
+  CooperativeTask ensureBuiltSteps(qsizetype first, qsizetype last, const RenderTheme& theme);
 
   qreal pageLeft() const;  // content left
   qreal pageWidth() const; // content width
@@ -200,7 +205,8 @@ private:
   void ensureSlotDetailPosition(qsizetype index) const;
 
   void configureBuilder(SelectionRange selection, bool reuseFormatting = false);
-  qreal promoteSlot(qsizetype index, const RenderTheme& theme); // returns height delta
+  void promoteSlot(qsizetype index, const RenderTheme& theme);
+  CooperativeTask promoteSlotSteps(qsizetype index, const RenderTheme& theme);
   void shiftSuffixFrom(qsizetype index, qreal delta);
   void recomputeTotalHeight(const RenderTheme& theme);
   qsizetype slotIndexAtY(qreal y) const; // first slot whose top+height > y

@@ -2,6 +2,7 @@
 
 #include "document/MarkdownDocument.h"
 #include "document/TopLevelRangeChange.h"
+#include "document/SourceTextChange.h"
 #include "edit/UndoStack.h"
 #include "Export.h"
 #include "io/TextFileFormat.h"
@@ -46,7 +47,7 @@ public:
   // reload, option change or lock invalidates the pending generation.
   void applyBatchAsync(PieceTable target, QString label, qsizetype beforeAnchor, qsizetype beforeCursor,
                        qsizetype afterAnchor, qsizetype afterCursor, ViewportPosition beforeViewport = {},
-                       ViewportPosition afterViewport = {});
+                       ViewportPosition afterViewport = {}, SourceTextChange sourceChange = {});
   bool replayBatchAsync(bool undo);
   void cancelBatch();
   bool isBatchPending() const { return bool(batchCancellation_); }
@@ -137,6 +138,9 @@ public:
                          qsizetype removedLength, QString insertedText, bool modified);
 
 signals:
+  // Emitted once for a successful text commit, before parsed/layout consumers.
+  // Failed edits and superseded workers never publish a position mapping.
+  void sourceTextChanged(const muffin::SourceTextChange& change);
   void documentAboutToBeReplaced();
   void documentTextChanged(QString text);
   void documentLocallyEdited(qsizetype start, qsizetype removedLength, QString insertedText);

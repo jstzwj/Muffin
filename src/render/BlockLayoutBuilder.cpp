@@ -461,13 +461,17 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& 
   };
   auto result = build();
   if (result)
-    result->setLayoutSelection(selection_);
-  if (result && result->rect().width() > 0) {
+    finishBuild(*result, node, theme);
+  return result;
+}
+
+void BlockLayoutBuilder::finishBuild(BlockLayout& layout, const MarkdownNode& node, const RenderTheme& theme) {
+  layout.setLayoutSelection(selection_);
+  if (layout.rect().width() > 0) {
     diag::ScopedPerfProbe generatedPerf("block.generatedContent", blockBuildDetailPerf());
-    result->layoutGeneratedContent(
+    layout.layoutGeneratedContent(
         node, theme, headingCounterText_ ? headingCounterText_->value(node.id()) : QPair<QString, QString>());
   }
-  return result;
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(const MarkdownNode& node, const RenderTheme& theme,
@@ -997,9 +1001,45 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(const MarkdownN
   return layout;
 }
 
+CooperativeTask BlockLayoutBuilder::buildSteps(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
+                                               qreal width, std::unique_ptr<BlockLayout>& result, int depth) {
+  const auto flow = theme.markdownFlow(node);
+  const auto* container = flow->container(node);
+  const auto key = container ? container->attributes.tag : cssTagForNode(node);
+  const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
+  if ((container || node.type() == BlockType::BlockQuote || node.type() == BlockType::List) &&
+      !(style && (style->layout.display == "none" || style->layout.establishesFormattingContext()))) {
+    auto task = buildContainerSteps(node, theme, x, y, width, result, depth);
+    while (task.resumeFor(0))
+      co_yield nullptr;
+    // Resource scopes are thread-local: never retain one across an event-loop
+    // yield. Aggregate the completed children only after the container is ready.
+    LayoutResourceScope resources;
+    LayoutResources::instance().read(LayoutResources::fontKey());
+    for (const auto& child : result->children())
+      LayoutResources::instance().record(child->reuse.resources);
+    finishBuild(*result, node, theme);
+    result->reuse.resources = resources.dependencies;
+  } else {
+    result = build(node, theme, x, y, width, depth);
+  }
+}
+
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNode& node, const RenderTheme& theme,
                                                                 qreal x, qreal y, qreal width, int depth) {
-  auto layout = std::make_unique<BlockLayout>(node.id());
+  std::unique_ptr<BlockLayout> result;
+  auto task = buildContainerSteps(node, theme, x, y, width, result, depth, false);
+  task.resumeFor(-1);
+  return result;
+}
+
+CooperativeTask BlockLayoutBuilder::buildContainerSteps(const MarkdownNode& node, const RenderTheme& theme, qreal x,
+                                                        qreal y, qreal width, std::unique_ptr<BlockLayout>& result,
+                                                        int depth, bool cooperative) {
+  // The unpublished document owns partial containers, so cancelling a coroutine
+  // does not synchronously destroy all children already materialized in it.
+  result = std::make_unique<BlockLayout>(node.id());
+  auto* layout = result.get();
   layout->setType(node.type());
   layout->setDepth(depth);
   const auto flow = theme.markdownFlow(node);
@@ -1049,7 +1089,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
     cursorY += source->height();
     layout->setLiteralTextLayout(std::move(source));
   }
-  std::vector<std::unique_ptr<BlockLayout>> children;
+  auto& children = layout->children();
   const MarkdownNode* previousChild = nullptr;
   bool omittedOnlyRenderChildren = !node.children().empty();
 
@@ -1065,10 +1105,18 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
     } else if (!firstChildMarginCollapses) {
       cursorY += spacingBeforeInFlow(*child, theme, false, childWidth);
     }
-    auto childLayout = build(*child, theme, childX, cursorY, childWidth, depth + 1);
+    children.push_back({});
+    auto& childLayout = children.back();
+    if (cooperative) {
+      auto task = buildSteps(*child, theme, childX, cursorY, childWidth, childLayout, depth + 1);
+      while (task.resumeFor(0))
+        co_yield nullptr;
+    } else {
+      childLayout = build(*child, theme, childX, cursorY, childWidth, depth + 1);
+    }
     cursorY = childLayout->rect().bottom();
     previousChild = child;
-    children.push_back(std::move(childLayout));
+    co_yield nullptr;
   }
   if (htmlContainer) {
     auto closing = build(*htmlContainer->closing, theme, childX, cursorY, childWidth, depth + 1);
@@ -1098,8 +1146,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(const MarkdownNo
     box.lineHeight = containerSourceLineHeight(node, theme, containerKey);
     layout->setCssBoxGeometry(std::move(box));
   }
-  layout->setChildren(std::move(children));
-  return layout;
 }
 
 BlockLayoutBuilder::ListMarkerLayout BlockLayoutBuilder::listMarkerLayout(const MarkdownNode& itemNode,
@@ -1937,6 +1983,11 @@ qsizetype BlockLayoutBuilder::sourceOffsetForLineEnd(int line) const {
 BlockLayoutBuilder::EstimateResult
 BlockLayoutBuilder::estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const {
   return heightEstimator_.estimateHeight(node, theme, width, depth);
+}
+
+CooperativeTask BlockLayoutBuilder::estimateHeightSteps(const MarkdownNode& node, const RenderTheme& theme, qreal width,
+                                                        EstimateResult& result, int depth) const {
+  return heightEstimator_.estimateHeightSteps(node, theme, width, result, depth);
 }
 
 } // namespace muffin

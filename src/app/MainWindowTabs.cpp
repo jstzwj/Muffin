@@ -26,6 +26,7 @@
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QStackedWidget>
+#include <QSplitter>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QToolButton>
@@ -149,17 +150,17 @@ void muffin::MainWindow::configureTab(DocumentTab* document) {
   const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
   document->renderView->setTheme(theme);
   document->editor->setTheme(theme);
+  document->setSplitTheme(theme);
   document->openConfirmation->setTheme(theme);
   document->renderView->setZoomPercent(zoomPercent_);
   document->editor->setZoomPercent(zoomPercent_);
   document->renderView->setFontSizePx(fontSizePx_);
   document->editor->setFontSizePx(fontSizePx_);
   document->renderView->setContentWidthPx(contentWidthPx_);
-  document->renderView->setFocusMode(focusMode_);
-  document->renderView->setTypewriterMode(typewriterMode_);
+  document->setFocusMode(focusMode_);
   applyEditingLockedTo(document); // a tab opened while 锁定编辑 starts locked too
-  document->renderView->setTypewriterCursorMiddle(
-      QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
+  document->setTypewriterMode(typewriterMode_,
+                              QSettings().value(QStringLiteral("editor/typewriterCursorMiddle"), true).toBool());
   if (const QAction* wrap = commands_.action(QStringLiteral("view.word_wrap"))) {
     document->editor->setWordWrapEnabled(wrap->isChecked());
   }
@@ -171,10 +172,8 @@ muffin::DocumentTab* muffin::MainWindow::createDocumentTab() {
   document->session.setParseOptions(markdownParseOptions());
   document->editorController.inputController().setEmojiProvider(&emojiProvider_);
   configureTab(document);
-  if (tab_->backend->isSourceMode() && !tab_->searchSourceFallback) {
-    document->backend = std::make_unique<SourceEditorBackend>(document->editor);
-    document->viewStack->setCurrentWidget(document->editor);
-  }
+  if (!tab_->searchSourceFallback)
+    document->setViewMode(tab_->viewMode());
   connectEditorSignals(document);
   connectRenderSignals(document);
   connectSessionSignals(document);
@@ -435,6 +434,7 @@ void muffin::MainWindow::activateTab(int index) {
     tab_->pendingTheme.reset();
     tab_->renderView->setTheme(theme);
     tab_->editor->setTheme(theme);
+    tab_->setSplitTheme(theme);
     tab_->openConfirmation->setTheme(theme);
   }
   wordCountTimer_->stop();
@@ -443,10 +443,13 @@ void muffin::MainWindow::activateTab(int index) {
   tab_->wordCountDirty = true;
   if (QAction* action = commands_.action(QStringLiteral("view.source_mode"))) {
     const QSignalBlocker blocker(action);
-    action->setChecked(tab_->backend->isSourceMode());
+    action->setChecked(tab_->viewMode() == DocumentViewMode::Source);
   }
-  sourceModeButton_->setChecked(tab_->backend->isSourceMode());
-  if (tab_->renderViewDirty && !tab_->backend->isSourceMode() && !tab_->session.isOpenInProgress()) {
+  if (auto* action = commands_.action(QStringLiteral("view.split")))
+    action->setChecked(tab_->viewMode() == DocumentViewMode::Split);
+  sourceModeButton_->setChecked(tab_->viewMode() == DocumentViewMode::Source);
+  splitViewButton_->setChecked(tab_->viewMode() == DocumentViewMode::Split);
+  if (tab_->renderViewDirty && tab_->hasRenderPane() && !tab_->session.isOpenInProgress()) {
     tab_->ensureRenderViewCurrent();
   }
   tab_->renderView->refreshPendingResources();
@@ -520,14 +523,7 @@ void muffin::MainWindow::reopenClosedFile() {
       document->pendingViewState = closed.view;
       document->editingLocked = closed.editingLocked;
       setTabPinned(document, closed.view.value(QStringLiteral("pinned")).toBool());
-      const bool source = closed.view.value(QStringLiteral("sourceMode")).toBool();
-      if (source)
-        document->backend = std::make_unique<SourceEditorBackend>(document->editor);
-      else
-        document->backend =
-            std::make_unique<RenderEditorBackend>(document->editorController, document->session, document->renderView);
-      document->viewStack->setCurrentWidget(source ? static_cast<QWidget*>(document->editor)
-                                                   : static_cast<QWidget*>(document->renderView));
+      document->restoreViewMode(closed.view);
       applyEditingLockedTo(document);
       restoreTabViewState(document);
       updateTabLabel(document);
@@ -717,12 +713,7 @@ void muffin::MainWindow::copyTabToNewWindow(DocumentTab* document) {
                                   document->session.document().isModified());
     copy->pinned = document->pinned;
     copy->pendingViewState = view;
-    if (document->backend->isSourceMode())
-      copy->backend = std::make_unique<SourceEditorBackend>(copy->editor);
-    else
-      copy->backend = std::make_unique<RenderEditorBackend>(copy->editorController, copy->session, copy->renderView);
-    copy->viewStack->setCurrentWidget(copy->backend->isSourceMode() ? static_cast<QWidget*>(copy->editor)
-                                                                    : static_cast<QWidget*>(copy->renderView));
+    copy->restoreViewMode(view);
     window->setupTabButton(copy);
     window->updateTabLabel(copy);
     window->updateTabBarVisibility();
@@ -782,7 +773,7 @@ QVariantMap muffin::MainWindow::tabViewState(DocumentTab* document) const {
     state.insert(QStringLiteral("pinned"), document->pinned);
     return state;
   }
-  const bool source = document->backend->isSourceMode();
+  const bool source = document->hasSourcePane();
   if (source && document->searchSourceFallback) {
     const auto offset = qMax<qsizetype>(0, document->editor->cursorPosition());
     return {{QStringLiteral("version"), 1},
@@ -796,6 +787,16 @@ QVariantMap muffin::MainWindow::tabViewState(DocumentTab* document) const {
   QVariantMap state{{QStringLiteral("version"), 1},
                     {QStringLiteral("sourceMode"), source},
                     {QStringLiteral("pinned"), document->pinned}};
+  state.insert(QStringLiteral("splitView"), document->viewMode() == DocumentViewMode::Split);
+  state.insert(QStringLiteral("splitReturnSource"), document->singleViewMode() == DocumentViewMode::Source);
+  state.insert(QStringLiteral("synchronizedScrolling"), document->synchronizedScrolling());
+  state.insert(QStringLiteral("splitVertical"), document->splitOrientation() == Qt::Vertical);
+  state.insert(QStringLiteral("splitPreviewFirst"), document->previewFirst());
+  const auto sizes = document->splitSizes();
+  state.insert(QStringLiteral("splitSizes"), QVariantList{sizes[0], sizes[1]});
+  if (document->viewMode() == DocumentViewMode::Split) {
+    state.insert(QStringLiteral("previewViewport"), viewportState(document->renderView->viewportPosition()));
+  }
   if (source) {
     state.insert(QStringLiteral("anchor"), qlonglong(document->editor->anchorPosition()));
     state.insert(QStringLiteral("focus"), qlonglong(document->editor->cursorPosition()));
@@ -839,9 +840,17 @@ void muffin::MainWindow::restoreTabViewState(DocumentTab* document) {
   auto viewport = viewportPosition(state.value(QStringLiteral("viewport")).toMap());
   if (viewport.sourceOffset >= 0)
     viewport.sourceOffset = bounded(viewport.sourceOffset);
-  if (document->backend->isSourceMode()) {
+  if (document->hasSourcePane()) {
     document->editor->setSelection(anchor, focus);
     document->editor->restoreViewportPosition(viewport);
+    if (document->viewMode() == DocumentViewMode::Split) {
+      document->ensureRenderViewCurrent();
+      auto previewViewport = viewportPosition(state.value(QStringLiteral("previewViewport")).toMap());
+      if (document->synchronizedScrolling() || previewViewport.sourceOffset < 0)
+        previewViewport = viewport;
+      document->renderView->restoreViewportPosition(
+          previewViewport, document->editorController.cursorForSourceOffset(previewViewport.sourceOffset));
+    }
   } else {
     document->ensureRenderViewCurrent();
     // Literal editing modes need a real hit, so retain the whole restoration

@@ -48,6 +48,7 @@
 #include <QTextCharFormat>
 #include <QUrl>
 #include <QKeyEvent>
+#include <algorithm>
 
 namespace muffin {
 
@@ -236,7 +237,11 @@ void EditorView::refreshPendingResources() {
   DocumentLayout::ResourceRefreshResult result;
   {
     ScopedViewportPin pin(*this);
-    result = layout_->refreshResources(theme_, selection_);
+    result = layout_->refreshResources(theme_, selection_, livePreview_);
+  }
+  if (result.needsRebuild) {
+    setDocument(*document_, documentPath_, true);
+    return;
   }
   if (!result.updatedBlocks)
     return;
@@ -254,9 +259,14 @@ void EditorView::refreshPendingResources() {
 }
 
 void EditorView::setDocument(const MarkdownDocument& document, QString documentPath, bool cooperative) {
-  if (document_ != &document || documentPath_ != documentPath ||
-      (layoutBuild_ && layoutBuildRevision_ != document.revision()))
+  cooperative = cooperative || livePreview_;
+  if (document_ != &document || documentPath_ != documentPath) {
     layoutReadingPosition_.reset();
+    previewFrame_ = {};
+    previewFramePosition_ = {};
+  }
+  if (livePreview_ && !layoutReadingPosition_)
+    layoutReadingPosition_ = qMakePair(previewFramePosition_, CursorPosition{});
   cssPaintContext_.clear();
   cssPaintTimer_->stop();
   if (document_ != &document || documentPath_ != documentPath) {
@@ -279,8 +289,7 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
     const auto size = themeViewportSize();
     theme_.updateForViewport(size.width(), size.height());
     layoutBuildTheme_ = theme_.detachedPrototype();
-    layoutBuildTask_ = layoutBuild_->rebuildSteps(document, *layoutBuildTheme_, viewport()->width(), selection_,
-                                                  documentPath_, DocumentLayout::BuildPolicy::Lazy);
+    layoutBuildTask_ = prepareLayoutBuild(document);
     setLoading(true);
     emit layoutBusyChanged(true);
     const auto generation = layoutBuildGeneration_, revision = document.revision();
@@ -289,6 +298,33 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
   }
   rebuildLayout();
   updateTableToolbar();
+}
+
+void EditorView::setLivePreview(bool enabled) {
+  if (livePreview_ == enabled)
+    return;
+  livePreview_ = enabled;
+  if (enabled)
+    stopScrollAnimation();
+  if (!enabled) {
+    previewFrame_ = {};
+    previewFramePosition_ = {};
+  }
+  setLoading(loading_);
+  viewport()->update();
+}
+
+ViewportPosition EditorView::lastPresentedViewportPosition() const {
+  return livePreview_ ? previewFramePosition_ : viewportPosition();
+}
+
+void EditorView::mapPreviewReadingPosition(const SourceTextChange& change) {
+  if (!livePreview_)
+    return;
+  const auto map = [&](ViewportPosition& position) { position.sourceOffset = change.mapOffset(position.sourceOffset); };
+  map(previewFramePosition_);
+  if (layoutReadingPosition_)
+    map(layoutReadingPosition_->first);
 }
 
 void EditorView::retireLayout(std::unique_ptr<DocumentLayout> layout) {
@@ -303,6 +339,44 @@ void EditorView::retireLayout(std::unique_ptr<DocumentLayout> layout) {
     }
   });
   timer->start(0);
+}
+
+CooperativeTask EditorView::prepareLayoutBuild(const MarkdownDocument& document) {
+  auto task = layoutBuild_->rebuildSteps(document, *layoutBuildTheme_, viewport()->width(), selection_, documentPath_,
+                                         DocumentLayout::BuildPolicy::Lazy);
+  while (task.resumeFor(0))
+    co_yield nullptr;
+  if (!livePreview_)
+    co_return;
+  // Materialize the destination before publication. A single HTML container
+  // can own thousands of Markdown children; promoting it after publication
+  // would put the entire cost back into the GUI-thread commit.
+  for (;;) {
+    const auto position = layoutReadingPosition_ ? layoutReadingPosition_->first : previewFramePosition_;
+    const auto& nodes = document.root().children();
+    if (nodes.empty())
+      co_return;
+    const auto offset = qMax<qsizetype>(0, position.sourceOffset);
+    const auto next = std::lower_bound(nodes.begin(), nodes.end(), offset, [](const auto& node, qsizetype value) {
+      return node->sourceRange().byteEnd < value;
+    });
+    const auto* node = (next == nodes.end() ? nodes.back() : *next).get();
+    const auto index = layoutBuild_->topLevelIndexFor(node->id());
+    if (index >= 0) {
+      auto build = layoutBuild_->ensureBuiltSteps(index, index, *layoutBuildTheme_);
+      while (build.resumeFor(0))
+        co_yield nullptr;
+      const auto* block = layoutBuild_->block(node->id());
+      const auto top = block ? block->rect().top() - position.screenOffset : layoutBuild_->slotTop(index);
+      const auto range = layoutBuild_->slotRangeOverlappingY(top - 80, top + viewport()->height() + 80);
+      auto visible = layoutBuild_->ensureBuiltSteps(range.first, range.second, *layoutBuildTheme_);
+      while (visible.resumeFor(0))
+        co_yield nullptr;
+    }
+    const auto latest = layoutReadingPosition_ ? layoutReadingPosition_->first : previewFramePosition_;
+    if (latest.sourceOffset == position.sourceOffset && latest.screenOffset == position.screenOffset)
+      break;
+  }
 }
 
 void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
@@ -326,28 +400,30 @@ void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
     return;
   }
   layoutBuildTask_ = {};
+  const QScopedValueRollback<bool> publishing(publishingLayout_, true);
   theme_ = std::move(*layoutBuildTheme_);
   layoutBuildTheme_.reset();
   retireLayout(std::move(layout_));
   layout_ = std::move(layoutBuild_);
-  setLoading(false);
   {
     ScopedViewportPin pin(*this);
-    if (cursorPosition_.isValid()) {
+    if (!livePreview_ && cursorPosition_.isValid()) {
       const auto index = layout_->topLevelIndexFor(cursorPosition_.blockId);
       if (index >= 0)
         layout_->ensureBuilt(index, index, theme_);
     }
   }
-  ensureVisibleBuilt();
+  if (layoutReadingPosition_) {
+    const auto position = std::exchange(layoutReadingPosition_, {});
+    restoreViewportPosition(position->first, position->second);
+  } else {
+    ensureVisibleBuilt();
+  }
   if (cursorPosition_.isValid()) {
     cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
     cursorVisible_ = cursorHit_.isValid();
   }
-  if (layoutReadingPosition_) {
-    const auto position = std::exchange(layoutReadingPosition_, {});
-    restoreViewportPosition(position->first, position->second);
-  }
+  setLoading(false);
   updateCodeLanguageEditor();
   updateTableToolbar();
   viewport()->update();
@@ -359,14 +435,18 @@ void EditorView::setLoading(bool loading) {
   loading = loading || isLayoutPending();
   if (loading_ != loading) {
     loading_ = loading;
-    if (loading_) {
-      loadingPhase_ = 0.0; // each load animates from the top of the ring
-      loadingTimer_->start();
-    } else {
-      loadingTimer_->stop();
+    if (!loading_) {
       queueResourceRefresh(); // Also consume deferred updates if an open was cancelled.
     }
     diag::updateViewport(viewport());
+  }
+  if (loading_ && (!livePreview_ || previewFrame_.isNull())) {
+    if (!loadingTimer_->isActive()) {
+      loadingPhase_ = 0.0;
+      loadingTimer_->start();
+    }
+  } else {
+    loadingTimer_->stop();
   }
 }
 
@@ -479,11 +559,14 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
   return true;
 }
 
-bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document) {
+bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document,
+                                      bool preserveViewport) {
   PerfTimer perf("view.refreshTopLevelRange");
   if (!layout_ || isLayoutPending() || document_ != &document) {
     return false;
   }
+  if (livePreview_ && !layout_->supportsLocalRangeRebuild(range, document))
+    return false; // The caller schedules a cancellable cooperative replacement.
 
   // Rebuild the changed range inside a viewport pin, then dirty against the reconciled offset.
   DocumentLayout::RangeRebuildResult result;
@@ -498,7 +581,8 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
   updateCursorHitFromPosition();
   updateCodeLanguageEditor();
   updateTableToolbar();
-  ensureCursorVisible();
+  if (!preserveViewport)
+    ensureCursorVisible();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
   const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
@@ -728,6 +812,8 @@ bool EditorView::event(QEvent* event) {
     cssPaintTimer_->stop();
   if (event->type() == QEvent::Hide && viewportPrefetchTimer_)
     viewportPrefetchTimer_->stop();
+  if (event->type() == QEvent::Hide)
+    previewFrame_ = {}; // Inactive tabs retain their reading anchor, not a screen-sized bitmap.
   if (event->type() == QEvent::Leave) {
     cssPaintContext_.pointer.reset();
     cssPaintContext_.pressed = false;
@@ -784,7 +870,15 @@ bool EditorView::viewportEvent(QEvent* event) {
 
 void EditorView::resizeEvent(QResizeEvent* event) {
   PerfTimer perf("view.resize");
+  const auto reading = livePreview_ ? viewportPosition() : ViewportPosition{};
   QAbstractScrollArea::resizeEvent(event);
+  if (livePreview_ && document_) {
+    // Reflow follows the reading row, including deep inside an HTML container.
+    // Its top-level container's origin and the editing caret are not anchors.
+    setDocument(*document_, documentPath_, true);
+    restoreViewportPosition(reading, {});
+    return;
+  }
   if (isLayoutPending() && document_) {
     setDocument(*document_, documentPath_, true);
     return;
@@ -923,7 +1017,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       event->accept();
       return;
     }
-    if (hit.isValid() && hit.taskCheckboxHit) {
+    if (!editingLocked_ && hit.isValid() && hit.taskCheckboxHit) {
       stopScrollAnimation();
       const QScopedValueRollback<bool> toggling(togglingTaskCheckbox_, true);
       const ScopedViewportPin pin(*this);
@@ -1638,7 +1732,7 @@ void EditorView::clearHtmlHover() {
 
 void EditorView::repaintAnimatedMermaidBlocks() {
   PerfTimer perf("view.repaintMermaidAnim");
-  if (!layout_ || !mermaidAnimationTimer_ || !mermaidAnimationTimer_->isActive())
+  if (!layout_ || loading_ || !mermaidAnimationTimer_ || !mermaidAnimationTimer_->isActive())
     return;
   const auto blocks = layout_->visibleBlocks(documentViewportRect().adjusted(0, -40, 0, 40), theme_);
   QRectF dirty;

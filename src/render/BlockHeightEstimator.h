@@ -20,6 +20,8 @@ public:
   void beginPass(quint64 fontGeneration, bool codeBlockWrap, bool showLineNumbers);
   void setSelection(SelectionRange selection) { selection_ = std::move(selection); }
   EstimateResult estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth = 0) const;
+  CooperativeTask estimateHeightSteps(const MarkdownNode& node, const RenderTheme& theme, qreal width,
+                                      EstimateResult& result, int depth = 0) const;
 
 private:
   SelectionRange selection_;
@@ -29,6 +31,8 @@ private:
   // Height-estimate helpers mirroring the build* dispatch. Never touch TextLayout.
   EstimateResult estimateParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal width) const;
   EstimateResult estimateContainer(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const;
+  CooperativeTask estimateContainerSteps(const MarkdownNode& node, const RenderTheme& theme, qreal width,
+                                         EstimateResult& result, int depth) const;
   EstimateResult estimateListItem(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth) const;
   EstimateResult estimateLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal width) const;
   EstimateResult estimateTable(const MarkdownNode& node, const RenderTheme& theme, qreal width) const;

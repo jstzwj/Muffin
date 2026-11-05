@@ -5,6 +5,7 @@
 #include "document/MarkdownNode.h"
 #include "document/PieceTable.h"
 #include "document/ViewportPosition.h"
+#include "document/SourceTextChange.h"
 
 #include <QString>
 #include <QVector>
@@ -60,6 +61,7 @@ struct BatchTextCommand {
   qsizetype beforeAnchor = 0, beforeCursor = 0;
   qsizetype afterAnchor = 0, afterCursor = 0;
   ViewportPosition beforeViewport, afterViewport;
+  SourceTextChange sourceChange;
 };
 
 enum class NodeAttribute {

@@ -528,6 +528,33 @@ void htmlResources() {
     sameFresh(layout, session, theme, 420);
   }
 }
+void mixedMarkdownResources() {
+  const QString url = QStringLiteral("https://example.invalid/mixed-markdown-resources.png");
+  auto& loader = ImageLoader::instance();
+  for (const auto policy : {DocumentLayout::BuildPolicy::Eager, DocumentLayout::BuildPolicy::Lazy}) {
+    loader.store(url, image({60, 30}, Qt::red));
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral("![before](%1)\n\n<div align=\"center\">\n\n![inside](%1)\n\n"
+                                           "</div>\n\n![after](%1)\n")
+                                .arg(url),
+                            false);
+    auto theme = RenderTheme::github();
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 520, {}, {}, policy);
+    layout.buildAll(theme);
+    const auto before = layout.totalHeight();
+    loader.store(url, image({60, 130}, Qt::blue));
+    const auto deferred = layout.refreshResources(theme, {}, true);
+    require(deferred.needsRebuild && deferred.updatedBlocks == 3 && layout.totalHeight() == before,
+            "preview detects stale HTML resource geometry without synchronously rebuilding it");
+    const auto update = layout.refreshResources(theme);
+    require(update.updatedBlocks == 3 && update.geometryChanged && layout.totalHeight() > before,
+            "one resource update refreshes every mixed Markdown/HTML owner, including lazy layouts");
+    sameFresh(layout, session, theme, 520);
+    const auto settled = layout.refreshResources(theme, {}, true);
+    require(!settled.needsRebuild && settled.updatedBlocks == 0, "mixed flow consumes the resource update once");
+  }
+}
 void listMarkerEdits() {
   for (const auto& display : {QString("block"), QString("grid")}) {
     DocumentSession session;
@@ -838,6 +865,7 @@ int main(int argc, char** argv) {
   nestedEdits();
   listMarkerEdits();
   htmlResources();
+  mixedMarkdownResources();
   htmlStructuralEdits();
   fontsAndMermaid();
   realThemes();

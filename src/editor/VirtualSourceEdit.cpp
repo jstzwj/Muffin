@@ -1,4 +1,5 @@
 #include "editor/VirtualSourceEdit.h"
+#include <QSignalBlocker>
 #include "editor/EditorController.h"
 #include "editor/EditorKeyRouting.h"
 #include "editor/ShortcutSettings.h"
@@ -941,7 +942,9 @@ void VirtualSourceEdit::invalidateLayoutCache() {
 void VirtualSourceEdit::updateScrollBars() {
   verticalScrollBar()->setSingleStep(baseLineHeight());
   verticalScrollBar()->setPageStep(qMax(baseLineHeight(), viewport()->height()));
-  verticalScrollBar()->setRange(0, boundedScrollRange(heights_.totalHeight() - viewport()->height()));
+  const int padding = typewriterMode_ && typewriterCursorMiddle_ ? viewport()->height() / 2 : 0;
+  verticalScrollBar()->setRange(
+      -padding, boundedScrollRange(qMax<qint64>(0, heights_.totalHeight() - viewport()->height()) + padding));
   if (wordWrap_) {
     horizontalScrollBar()->setRange(0, 0);
   } else {
@@ -977,7 +980,8 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
   if (source().isEmpty() && !placeholder_.isEmpty()) {
     painter.setFont(sourceFont_);
     painter.setPen(colors_.lineNumber);
-    drawDocumentText(painter, QPointF(kGutterWidth + kTextInset, baseLineHeight()), placeholder_);
+    drawDocumentText(painter, QPointF(kGutterWidth + kTextInset, baseLineHeight() - verticalScrollBar()->value()),
+                     placeholder_);
     if (dropPosition_ >= 0)
       painter.fillRect(cursorRectForOffset(dropPosition_), colors_.text);
     return;
@@ -1000,6 +1004,10 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
                        colors_.currentLine);
     }
 
+    painter.save();
+    if (focusMode_ && line != currentLine &&
+        !(selStart < lineLayout->sourceStart + lineLayout->length && selEnd > lineLayout->sourceStart))
+      painter.setOpacity(0.35);
     painter.setFont(lineNumberFont_);
     painter.setPen(colors_.lineNumber);
     painter.drawText(QRectF(0, y, kGutterWidth - 10, baseLineHeight()), Qt::AlignRight | Qt::AlignVCenter,
@@ -1074,6 +1082,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
       lineLayout->layout->draw(&painter, QPointF(originX, y), selections);
     }
 
+    painter.restore();
     y += lineLayout->height;
     ++line;
   }
@@ -1178,7 +1187,7 @@ QRect VirtualSourceEdit::cursorRectForOffset(qsizetype offset) const {
   const qsizetype local = offset - start;
   const std::shared_ptr<LineLayout> layout = buildLineLayout(line);
   qreal x = kGutterWidth + kTextInset - horizontalScrollBar()->value();
-  qreal y = heights_.yForLine(line) - verticalScrollBar()->value();
+  qreal y = heights_.yForLine(line);
   int height = baseLineHeight();
   if (layout->longLine) {
     const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
@@ -1198,7 +1207,11 @@ QRect VirtualSourceEdit::cursorRectForOffset(qsizetype offset) const {
       height = qMax(height, static_cast<int>(std::ceil(textLine.height())));
     }
   }
-  return QRect(static_cast<int>(std::round(x)), static_cast<int>(std::round(y)), 2, height);
+  // Round document geometry before translating it. Rounding a negative
+  // offscreen row and then a positive onscreen row at a half pixel must not
+  // produce different caret targets on successive typewriter scrolls.
+  return QRect(static_cast<int>(std::round(x)), static_cast<int>(std::round(y) - verticalScrollBar()->value()), 2,
+               height);
 }
 
 void VirtualSourceEdit::moveCursorTo(qsizetype position, bool keepAnchor) {
@@ -1212,9 +1225,32 @@ void VirtualSourceEdit::moveCursorTo(qsizetype position, bool keepAnchor) {
 }
 
 void VirtualSourceEdit::ensureCursorVisible() {
+  if (typewriterMode_) {
+    const int line = lineForOffset(cursor_);
+    heights_.setHeight(line, measuredLineHeight(line));
+    // Publishing a target based on estimated rows above the caret would move
+    // it again when those rows are painted. Measure only its preceding visible
+    // window, using the same line layouts as painting and hit testing.
+    qint64 before = cursorRectForOffset(cursor_).top() + verticalScrollBar()->value() - heights_.yForLine(line);
+    for (int previous = line - 1; previous >= 0 && before < viewport()->height(); --previous) {
+      const int height = measuredLineHeight(previous);
+      heights_.setHeight(previous, height);
+      before += height;
+    }
+    updateScrollBars();
+  }
   const QRect rect = cursorRectForOffset(cursor_);
+  // QRect::center() truncates negative half coordinates toward zero. Use a
+  // translation-invariant row centre when the old caret is above the viewport.
+  const int centerY = rect.top() + rect.height() / 2;
   int vertical = verticalScrollBar()->value();
-  if (rect.top() < 0)
+  if (typewriterMode_ && typewriterCursorMiddle_)
+    vertical += centerY - viewport()->height() / 2;
+  else if (typewriterMode_ && centerY < viewport()->height() / 3)
+    vertical += centerY - viewport()->height() / 3;
+  else if (typewriterMode_ && centerY > viewport()->height() * 2 / 3)
+    vertical += centerY - viewport()->height() * 2 / 3;
+  else if (rect.top() < 0)
     vertical += rect.top() - baseLineHeight();
   else if (rect.bottom() > viewport()->height())
     vertical += rect.bottom() - viewport()->height() + baseLineHeight();
@@ -1231,9 +1267,29 @@ void VirtualSourceEdit::ensureCursorVisible() {
 }
 
 void VirtualSourceEdit::centerCursor() {
-  const qint64 lineY = heights_.yForLine(lineForOffset(cursor_));
-  verticalScrollBar()->setValue(boundedScrollRange(lineY - viewport()->height() / 2));
-  ensureCursorVisible();
+  const int line = lineForOffset(cursor_);
+  heights_.setHeight(line, measuredLineHeight(line));
+  updateScrollBars();
+  const auto rect = cursorRectForOffset(cursor_);
+  verticalScrollBar()->setValue(verticalScrollBar()->value() + rect.top() + rect.height() / 2 -
+                                viewport()->height() / 2);
+}
+
+void VirtualSourceEdit::setFocusMode(bool enabled) {
+  if (focusMode_ == enabled)
+    return;
+  focusMode_ = enabled;
+  viewport()->update();
+}
+
+void VirtualSourceEdit::setTypewriterMode(bool enabled, bool cursorMiddle) {
+  if (typewriterMode_ == enabled && typewriterCursorMiddle_ == cursorMiddle)
+    return;
+  typewriterMode_ = enabled;
+  typewriterCursorMiddle_ = cursorMiddle;
+  updateScrollBars();
+  if (enabled)
+    ensureCursorVisible();
 }
 
 int VirtualSourceEdit::cursorLine() const {
@@ -1334,11 +1390,18 @@ void VirtualSourceEdit::restoreViewportPosition(const ViewportPosition& position
 }
 
 void VirtualSourceEdit::resizeEvent(QResizeEvent* event) {
-  QAbstractScrollArea::resizeEvent(event);
+  const auto position = viewportPosition();
   if (event->size().width() != event->oldSize().width()) {
-    resetGeometryIndex(true);
-    ensureCursorVisible();
+    {
+      // Estimated heights may briefly clamp the scrollbar. Do not publish
+      // that intermediate position to a linked preview during rewrapping.
+      const QSignalBlocker block(verticalScrollBar());
+      QAbstractScrollArea::resizeEvent(event);
+      resetGeometryIndex(false);
+    }
+    restoreViewportPosition(position);
   } else {
+    QAbstractScrollArea::resizeEvent(event);
     // Showing or hiding window chrome changes height without rewrapping text.
     // Keep the reader's scroll position even when the caret is off screen.
     updateScrollBars();

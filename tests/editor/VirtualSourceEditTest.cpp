@@ -525,6 +525,70 @@ void testHeightResizePreservesReadingPosition() {
   }
 }
 
+void testWidthResizePreservesReadingPosition() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.resize(600, 300);
+  const auto line = QStringLiteral("words and wrapping text ").repeated(60) + QLatin1Char('\n');
+  const auto document = line.repeated(60);
+  edit.setStandaloneText(document);
+  edit.show();
+  edit.setSelection(12, 2);
+  edit.restoreViewportPosition({line.size() * 30 + 180, 0, 0, true, false});
+  QApplication::processEvents();
+  for (const int width : {400, 720, 460, 600}) {
+    const auto before = edit.viewportPosition();
+    edit.resize(width, 300);
+    QApplication::processEvents();
+    const auto after = edit.viewportPosition();
+    require(document.left(after.sourceOffset).count('\n') == document.left(before.sourceOffset).count('\n') &&
+                qAbs(after.sourceOffset - before.sourceOffset) < 120,
+            "width changes retain nearby reading text instead of following an offscreen caret");
+    require(edit.anchorPosition() == 12 && edit.cursorPosition() == 2,
+            "rewrapping preserves the independent reverse selection");
+  }
+}
+
+void testWritingModesUseTheVisualCaretRow() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.resize(460, 300);
+  const auto line = QStringLiteral("wrapped words ").repeated(160) + QLatin1Char('\n');
+  edit.setStandaloneText(line.repeated(5));
+  edit.show();
+  QApplication::processEvents();
+  edit.setTypewriterMode(true, true);
+  for (const qsizetype offset : {qsizetype(0), line.size() + 700, line.size() * 4 + 900}) {
+    edit.setCursorPosition(offset);
+    QApplication::processEvents();
+    const auto caret = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+    require(qAbs(caret.center().y() - edit.viewport()->height() / 2) <= 2,
+            "source typewriter mode centers the actual wrapped caret row, including document start");
+  }
+  edit.setTypewriterMode(true, false);
+  edit.setCursorPosition(line.size() * 2 + 700);
+  const int relaxedScroll = edit.verticalScrollBar()->value();
+  edit.ensureCursorVisible();
+  require(
+      edit.verticalScrollBar()->minimum() == 0 && edit.verticalScrollBar()->value() == relaxedScroll,
+      QStringLiteral(
+          "relaxed typewriter mode keeps a stable comfort band without boundary padding: min=%1 before=%2 after=%3 caret=%4 height=%5")
+          .arg(edit.verticalScrollBar()->minimum())
+          .arg(relaxedScroll)
+          .arg(edit.verticalScrollBar()->value())
+          .arg(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect().center().y())
+          .arg(edit.viewport()->height()));
+  edit.setTypewriterMode(false, true);
+  edit.setStandaloneText(QStringLiteral("identical plain text\n").repeated(5));
+  edit.setCursorPosition(25);
+  const auto normal = edit.viewport()->grab().toImage();
+  edit.setFocusMode(true);
+  const auto focused = edit.viewport()->grab().toImage();
+  require(normal != focused, "source focus mode dims other logical lines");
+  edit.setFocusMode(false);
+  require(edit.viewport()->grab().toImage() == normal, "leaving focus mode restores source syntax colors");
+}
+
 QImage captureEdit(VirtualSourceEdit& edit) {
   return edit.grab().toImage();
 }
@@ -759,6 +823,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
   RUN_TEST(testWrappedSourceEditingPreservesViewport);
   RUN_TEST(testHeightResizePreservesReadingPosition);
+  RUN_TEST(testWidthResizePreservesReadingPosition);
+  RUN_TEST(testWritingModesUseTheVisualCaretRow);
   RUN_TEST(testPersistentReadingAnchorSurvivesRewrap);
 #undef RUN_TEST
   qInfo("All source-editor IME tests passed.");

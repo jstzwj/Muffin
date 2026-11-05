@@ -222,7 +222,7 @@ QString DocumentSearch::expandReplacement(const QString& replacement, const Sear
 
 SearchResults DocumentSearch::replaceAll(const QString& text, const QString& pattern, const QString& replacement,
                                          SearchOptions options, QString* output, Cancellation cancel,
-                                         QVector<qsizetype>* sourcePositions) {
+                                         QVector<qsizetype>* sourcePositions, SourceTextChange* sourceChange) {
   QString replaced;
   replaced.reserve(text.size());
   qsizetype copied = 0;
@@ -230,10 +230,13 @@ SearchResults DocumentSearch::replaceAll(const QString& text, const QString& pat
   const auto originalPositions = sourcePositions ? *sourcePositions : QVector<qsizetype>();
   auto mappedPositions = originalPositions;
   bool changed = false;
+  SourceTextChange edits;
   auto result = scan(PieceTable(text), pattern, options, cancel, [&](const SearchMatch& match, qsizetype) {
     replaced += QStringView(text).mid(copied, match.start - copied);
     const auto inserted = expandReplacement(replacement, match, options.regularExpression);
     changed = changed || QStringView(text).mid(match.start, match.length) != inserted;
+    if (sourceChange && QStringView(text).mid(match.start, match.length) != inserted)
+      edits.edits.append({match.start, match.length, inserted.size()});
     for (qsizetype i = 0; i < originalPositions.size(); ++i) {
       const auto offset = originalPositions[i];
       if (offset >= match.start && offset < match.start + match.length)
@@ -253,6 +256,8 @@ SearchResults DocumentSearch::replaceAll(const QString& text, const QString& pat
     *output = std::move(replaced);
     if (sourcePositions)
       *sourcePositions = std::move(mappedPositions);
+    if (sourceChange)
+      *sourceChange = std::move(edits);
   }
   return result;
 }

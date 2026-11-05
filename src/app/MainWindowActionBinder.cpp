@@ -46,7 +46,7 @@ void MainWindow::bindCommands() {
       auto handler = decl.handler;
       const bool requiresEditable = decl.requiresEditableDocument;
       commands_.bind(decl.id, [this, requiresEditable, handler = std::move(handler)] {
-        if (!requiresEditable || tab_->session.isEditingAllowed())
+        if (!requiresEditable || (tab_->session.isEditingAllowed() && !tab_->previewActive()))
           handler(*this);
       });
     }
@@ -54,7 +54,7 @@ void MainWindow::bindCommands() {
 }
 
 bool MainWindow::commandEnabled(const CommandDeclaration& declaration) const {
-  if (declaration.requiresEditableDocument && !tab_->session.isEditingAllowed())
+  if (declaration.requiresEditableDocument && (!tab_->session.isEditingAllowed() || tab_->previewActive()))
     return false;
   return declaration.enabled ? declaration.enabled(*this) : declaration.enabledInitial;
 }
@@ -342,6 +342,8 @@ void MainWindow::restorePersistentActionStates() {
   if (QAction* action = window.commands_.action(QStringLiteral("view.source_mode"))) {
     action->setChecked(sourceMode);
   }
+  if (QAction* action = window.commands_.action(QStringLiteral("view.split")))
+    action->setChecked(settings.value(QStringLiteral("view/splitMode"), false).toBool());
   const bool focusMode = settings.value(QStringLiteral("appearance/focusMode"), false).toBool();
   if (QAction* action = window.commands_.action(QStringLiteral("view.focus"))) {
     action->setChecked(focusMode);

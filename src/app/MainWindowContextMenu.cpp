@@ -82,8 +82,10 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
           for (int i = 0; i < qMin(suggestions.size(), cap); ++i) {
             const QString suggestion = suggestions.at(i);
             QAction* replace = menu.addAction(suggestion);
+            replace->setEnabled(tab_->session.isEditingAllowed() && !tab_->previewActive());
             connect(replace, &QAction::triggered, this, [this, start, length, suggestion]() {
-              tab_->session.applyTextDelta(start, length, suggestion, true);
+              if (!tab_->previewActive())
+                tab_->session.applyTextDelta(start, length, suggestion, true);
             });
           }
         }

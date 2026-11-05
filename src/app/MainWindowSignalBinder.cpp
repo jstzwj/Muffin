@@ -57,6 +57,12 @@ private:
 
 void muffin::MainWindow::connectEditorSignals(DocumentTab* tab) {
   auto& window = *this; // preserves the window.X call sites after the friend→member split
+  tab->commandTargetChanged = [this, tab] {
+    if (tab_ == tab) {
+      updateAllActions();
+      updateStatus();
+    }
+  };
   QObject::connect(tab->editor, &SourceEditorWidget::cursorPositionChanged, tab->windowConnections,
                    [&window, tab](int line, int column) {
                      tab->cursorLine = line;
@@ -65,9 +71,6 @@ void muffin::MainWindow::connectEditorSignals(DocumentTab* tab) {
                        return;
                      }
                      window.updateCursorStatus(line, column);
-                     if (!window.restoringViewState_ && window.typewriterMode_ && tab->backend->isSourceMode()) {
-                       tab->backend->centerCursor();
-                     }
                    });
 }
 
@@ -79,7 +82,8 @@ void muffin::MainWindow::connectRenderSignals(DocumentTab* tab) {
                        return;
                      }
                      window.updateRenderCursorStatus(hit);
-                     if (!window.restoringViewState_ && window.typewriterMode_ && !tab->backend->isSourceMode()) {
+                     if (!window.restoringViewState_ && window.typewriterMode_ &&
+                         tab->viewMode() == DocumentViewMode::Rendered) {
                        tab->renderView->scrollToCursorCenteredAnimated();
                      }
                    });
@@ -221,8 +225,6 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
     tab->session.cancelBatch();
   });
   connect(tab->windowConnections, &QObject::destroyed, &tab->session, &DocumentSession::cancelBatch);
-  connect(tab->renderView, &EditorView::layoutBusyChanged, &tab->session, &DocumentSession::setPresentationBusy,
-          Qt::UniqueConnection);
   connect(tab->renderView, &EditorView::layoutReady, tab->windowConnections, [this, tab] {
     restoreTabViewState(tab);
     applySearchNavigation(tab);
@@ -230,9 +232,9 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
   });
   connect(&tab->session, &DocumentSession::batchViewportRestored, tab->windowConnections,
           [tab](ViewportPosition position) {
-            if (tab->backend->isSourceMode())
+            if (tab->hasSourcePane())
               tab->editor->restoreViewportPosition(position);
-            else
+            if (tab->hasRenderPane() && (!tab->hasSourcePane() || tab->synchronizedScrolling()))
               tab->renderView->restoreViewportPosition(
                   position, tab->editorController.cursorForSourceOffset(position.sourceOffset));
           });
@@ -249,12 +251,7 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
     return false;
   });
   connect(&tab->session, &DocumentSession::documentLocallyEdited, tab->windowConnections,
-          [tab](qsizetype, qsizetype, const QString&) {
-            tab->editor->notifyDocumentChanged();
-            if (tab->backend->isSourceMode()) {
-              tab->renderViewDirty = true;
-            }
-          });
+          [tab](qsizetype, qsizetype, const QString&) { tab->editor->notifyDocumentChanged(); });
   connect(&tab->session, &DocumentSession::filePathChanged, tab->windowConnections, [this, tab](const QString& path) {
     tab->editor->setDocumentPath(path);
     updateTabLabel(tab);
@@ -269,7 +266,7 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
   connect(
       &tab->session, &DocumentSession::filePathChanged, tab->windowConnections,
       [this, tab] {
-        if (tab_ != tab || tab->session.isOpenInProgress() || tab->backend->isSourceMode()) {
+        if (tab_ != tab || tab->session.isOpenInProgress() || !tab->hasRenderPane()) {
           tab->renderViewDirty = true;
           return;
         }
@@ -304,8 +301,9 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
           [this, tab] { queueExternalFileChange(tab); });
   connect(&tab->fileController, &FileController::documentBecameClean, tab->windowConnections,
           [this, tab](const QString& path) { clearDraftSnapshot(path, tab->draftKey); });
-  connect(&tab->session, &DocumentSession::parseBusy, tab->windowConnections,
-          [tab](bool busy) { tab->renderView->setLoading(busy && tab->pendingOpenPath.isEmpty()); });
+  connect(&tab->session, &DocumentSession::parseBusy, tab->windowConnections, [tab](bool busy) {
+    tab->renderView->setLoading((busy || tab->renderView->isLayoutPending()) && tab->pendingOpenPath.isEmpty());
+  });
   connect(&tab->session, &DocumentSession::editingAvailabilityChanged, tab->windowConnections, [this, tab] {
     if (tab == tab_)
       scheduleEditorStateRefresh();
@@ -333,11 +331,14 @@ void muffin::MainWindow::connectSessionSignals(DocumentTab* tab) {
     tab->outlineDirty = tab->outlineDirty || outlineChanged;
     tab->wordCountDirty = true;
     // A background parse updates only its own views; the sidebar and status describe the active tab.
-    if (!tab->session.lastParseWasLocalEdit() || tab->session.lastChangeWasBatch()) {
-      tab->renderViewDirty = true;
-      tab->renderViewBatchDirty = tab->renderViewBatchDirty || tab->session.lastChangeWasBatch();
-      if (tab_ == tab && !tab->backend->isSourceMode())
-        tab->ensureRenderViewCurrent();
+    if (!tab->session.lastParseWasLocalEdit() || tab->session.lastChangeWasBatch() || tab->hasSourcePane()) {
+      if (!(tab_ == tab && tab->refreshPreviewAfterLocalEdit())) {
+        tab->renderViewDirty = true;
+        tab->renderViewBatchDirty =
+            tab->renderViewBatchDirty || tab->session.lastChangeWasBatch() || tab->hasSourcePane();
+        if (tab_ == tab && tab->hasRenderPane())
+          tab->ensureRenderViewCurrent();
+      }
     }
     if (tab_ != tab) {
       return;
@@ -562,6 +563,10 @@ void muffin::MainWindow::connectChromeSignals() {
     if (QAction* action = window.commands_.action(QStringLiteral("view.source_mode"))) {
       action->trigger();
     }
+  });
+  QObject::connect(window.splitViewButton_, &QToolButton::clicked, &window, [&window] {
+    if (auto* action = window.commands_.action(QStringLiteral("view.split")))
+      action->trigger();
   });
 
   // Status bar: clicking the stats trigger pops a detail panel with the computed counts.

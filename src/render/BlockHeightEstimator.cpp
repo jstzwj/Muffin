@@ -237,12 +237,34 @@ BlockHeightEstimator::estimateParagraphLike(const MarkdownNode& node, const Rend
 BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(const MarkdownNode& node,
                                                                              const RenderTheme& theme, qreal width,
                                                                              int depth) const {
+  EstimateResult result;
+  auto task = estimateContainerSteps(node, theme, width, result, depth);
+  task.resumeFor(-1);
+  return result;
+}
+
+CooperativeTask BlockHeightEstimator::estimateHeightSteps(const MarkdownNode& node, const RenderTheme& theme,
+                                                          qreal width, EstimateResult& result, int depth) const {
+  if (theme.markdownFlow(node)->container(node) || node.type() == BlockType::BlockQuote ||
+      node.type() == BlockType::List) {
+    auto task = estimateContainerSteps(node, theme, width, result, depth);
+    while (task.resumeFor(0))
+      co_yield nullptr;
+  } else {
+    result = estimateHeight(node, theme, width, depth);
+  }
+}
+
+CooperativeTask BlockHeightEstimator::estimateContainerSteps(const MarkdownNode& node, const RenderTheme& theme,
+                                                             qreal width, EstimateResult& result, int depth) const {
   if (depth > 64) {
-    return {estimateLineHeight(theme.paragraphFont()), true};
+    result = {estimateLineHeight(theme.paragraphFont()), true};
+    co_return;
   }
   const auto* container = theme.markdownFlow(node)->container(node);
   if (node.children().empty() && !container) {
-    return {TextFontMetrics(theme.paragraphFont()).height(), false};
+    result = {TextFontMetrics(theme.paragraphFont()).height(), false};
+    co_return;
   }
   const bool isQuote = node.type() == BlockType::BlockQuote;
   const bool quoteBox = isQuote || container;
@@ -271,10 +293,14 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(con
     } else if (!firstChildMarginCollapses) {
       total += spacingBeforeInFlow(*child, theme, /*fast=*/true, childWidth);
     }
-    const EstimateResult r = estimateHeight(*child, theme, childWidth, depth + 1);
+    EstimateResult r;
+    auto task = estimateHeightSteps(*child, theme, childWidth, r, depth + 1);
+    while (task.resumeFor(0))
+      co_yield nullptr;
     total += r.height;
     mustMeasure = mustMeasure || r.mustMeasure;
     previousChild = child;
+    co_yield nullptr;
   }
   if (previousChild && !lastChildMarginCollapses) {
     total += spacingAfterInFlow(*previousChild, theme, /*fast=*/true, childWidth);
@@ -283,7 +309,7 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateContainer(con
   if (!previousChild && !(quoteBox && omittedOnlyRenderChildren)) {
     total += TextFontMetrics(theme.paragraphFont()).height();
   }
-  return {total, mustMeasure};
+  result = {total, mustMeasure};
 }
 
 BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateListItem(const MarkdownNode& node,

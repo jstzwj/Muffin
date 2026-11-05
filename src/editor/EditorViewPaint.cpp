@@ -104,26 +104,53 @@ void EditorView::paintEvent(QPaintEvent* event) {
   // Resolve deferred geometry before the first frame can expose stale metrics.
   refreshPendingResources();
   PerfTimer perf("view.paint");
-  const QRegion dirtyRegion = event ? event->region() : QRegion(viewport()->rect());
+  QRegion dirtyRegion = event ? event->region() : QRegion(viewport()->rect());
   if (dirtyRegion.isEmpty()) {
     return;
   }
 
-  QPainter painter(viewport());
-  painter.setRenderHint(QPainter::Antialiasing, true);
-  painter.setRenderHint(QPainter::TextAntialiasing, true);
-  painter.setClipRegion(dirtyRegion);
-  for (const QRect& rect : dirtyRegion) {
-    painter.fillRect(rect, theme_.viewportBackgroundColor());
-  }
-
   if (loading_) {
-    // Async open parse is in flight (no document yet, or a stale one): show a centered spinner +
-    // label instead of the stale page so the user sees feedback while the worker parses.
-    paintLoadingOverlay(painter);
+    QPainter painter(viewport());
+    painter.setClipRegion(dirtyRegion);
+    painter.fillRect(viewport()->rect(), theme_.viewportBackgroundColor());
+    if (livePreview_ && !previewFrame_.isNull())
+      painter.drawPixmap(0, 0, previewFrame_);
+    else
+      paintLoadingOverlay(painter);
     return;
   }
 
+  if (!livePreview_) {
+    QPainter painter(viewport());
+    paintDocument(painter, dirtyRegion);
+    return;
+  }
+  const qreal dpr = viewport()->devicePixelRatioF();
+  const QSize size = (QSizeF(viewport()->size()) * dpr).toSize();
+  if (previewFrame_.size() != size || previewFrame_.devicePixelRatioF() != dpr) {
+    previewFrame_ = QPixmap(size);
+    previewFrame_.setDevicePixelRatio(dpr);
+    dirtyRegion = viewport()->rect();
+  }
+  if (previewFrameScrollY_ != scrollY())
+    dirtyRegion = viewport()->rect();
+  {
+    QPainter painter(&previewFrame_);
+    paintDocument(painter, dirtyRegion);
+  }
+  previewFrameScrollY_ = scrollY();
+  previewFramePosition_ = viewportPosition();
+  QPainter painter(viewport());
+  painter.setClipRegion(dirtyRegion);
+  painter.drawPixmap(0, 0, previewFrame_);
+}
+
+void EditorView::paintDocument(QPainter& painter, const QRegion& dirtyRegion) {
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  painter.setClipRegion(dirtyRegion);
+  for (const QRect& rect : dirtyRegion)
+    painter.fillRect(rect, theme_.viewportBackgroundColor());
   if (!layout_) {
     return;
   }

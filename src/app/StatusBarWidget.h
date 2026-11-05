@@ -23,8 +23,8 @@ struct StatusBarStats {
 };
 
 // A self-painted status bar replacing the native QStatusBar + QLabel/QToolButton
-// stack. Paints a flat themed strip with: two real QToolButtons on the left
-// (sidebar / source-mode toggles), an optional block-source preview in the
+// stack. Paints a flat themed strip with: three real QToolButtons on the left
+// (sidebar / source-mode / split-view toggles), an optional block-source preview in the
 // middle, and a right-aligned cluster (encoding·line-ending, a clickable stats
 // trigger, cursor position, and a clickable spell-check language button that
 // opens a language menu). Clicking the stats trigger emits statsClicked() so the
@@ -39,6 +39,7 @@ public:
   // the owner wires them exactly as before.
   QToolButton* sidebarButton() const;
   QToolButton* sourceModeButton() const;
+  QToolButton* splitViewButton() const;
 
   // Painted-segment setters.
   void setCursorStatus(const QString& text);
@@ -48,6 +49,7 @@ public:
   void setSpellLanguage(const QString& localeCode, bool enabled);
   void setSidebarChecked(bool checked);
   void setSourceModeChecked(bool checked);
+  void setSplitViewChecked(bool checked);
 
   // Per-theme colors; also recolors the button icons and re-styles the buttons.
   void applyThemeColors(const QColor& bg, const QColor& text, const QColor& muted, const QColor& border);
@@ -95,6 +97,7 @@ private:
 
   QToolButton* sidebarButton_ = nullptr;
   QToolButton* sourceModeButton_ = nullptr;
+  QToolButton* splitViewButton_ = nullptr;
   QMenu* spellMenu_ = nullptr;
 
   QString cursorStatus_;

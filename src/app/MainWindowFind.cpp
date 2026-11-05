@@ -10,7 +10,7 @@
 namespace {
 using namespace muffin;
 QPair<qsizetype, qsizetype> selectedSourceRange(DocumentTab* tab) {
-  if (tab->backend->isSourceMode())
+  if (tab->hasSourcePane())
     return {tab->editor->selectionStart(), tab->editor->selectionEnd()};
   if (!tab->editorController.selection().hasCursor())
     return {0, 0};
@@ -28,9 +28,10 @@ void showMatch(DocumentTab* tab, const SearchResults& results) {
   const auto& match = results.selectedMatch;
   tab->lastFindOffset = match.start;
   tab->lastFindLength = match.length;
-  if (tab->backend->isSourceMode()) {
+  if (tab->hasSourcePane()) {
     tab->editor->setSelection(match.start, match.start + match.length);
     tab->editor->ensureCursorVisible();
+    tab->synchronizeViewports(true);
   } else {
     tab->editorController.selectSourceRange(match.start, match.start + match.length);
     tab->renderView->scrollToCursorCentered();
@@ -40,6 +41,7 @@ void showMatch(DocumentTab* tab, const SearchResults& results) {
 
 struct SearchJobResult {
   SearchResults search;
+  SourceTextChange sourceChange;
   QString replacement;
   PieceTable preparedText;
   QVector<qsizetype> mappedPositions;
@@ -83,6 +85,8 @@ template <typename Work, typename Finish> void runSearch(DocumentTab* tab, Work 
 void muffin::MainWindow::showFindBar() {
   if (!tab_->findBar)
     return;
+  if (tab_->viewMode() == DocumentViewMode::Split)
+    tab_->focusEditor();
   tab_->findBar->setReplaceVisible(false);
   const auto range = selectedSourceRange(tab_);
   if (range.first >= 0 && range.second > range.first && range.second - range.first <= 4096) {
@@ -198,7 +202,7 @@ void muffin::MainWindow::performReplace(const QString& findText, const QString& 
           return;
         }
         const QString replacement = DocumentSearch::expandReplacement(replaceText, match, regularExpression);
-        if (tab->backend->isSourceMode())
+        if (tab->hasSourcePane())
           tab->editor->insertText(replacement);
         else
           tab->editorController.replaceSourceRangeWithUndo(match.start, match.length, replacement, tr("Replace"));
@@ -214,10 +218,9 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
     return;
   auto* tab = tab_;
   const auto range = tab->editorController.selection().selection();
-  const auto anchor = tab->backend->isSourceMode() ? tab->editor->anchorPosition() : range.anchor.text.sourceOffset;
-  const auto cursor = tab->backend->isSourceMode() ? tab->editor->cursorPosition() : range.focus.text.sourceOffset;
-  const auto viewport =
-      tab->backend->isSourceMode() ? tab->editor->viewportPosition() : tab->renderView->viewportPosition();
+  const auto anchor = tab->hasSourcePane() ? tab->editor->anchorPosition() : range.anchor.text.sourceOffset;
+  const auto cursor = tab->hasSourcePane() ? tab->editor->cursorPosition() : range.focus.text.sourceOffset;
+  const auto viewport = tab->hasSourcePane() ? tab->editor->viewportPosition() : tab->renderView->viewportPosition();
   runSearch(
       tab,
       [=](const PieceTable& snapshot, const DocumentSearch::Cancellation& cancel) {
@@ -225,7 +228,7 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
         result.mappedPositions = {anchor, cursor, viewport.sourceOffset};
         result.search =
             DocumentSearch::replaceAll(snapshot.toString(), findText, replaceText, {regularExpression, caseSensitive},
-                                       &result.replacement, cancel, &result.mappedPositions);
+                                       &result.replacement, cancel, &result.mappedPositions, &result.sourceChange);
         if (result.search.valid && !result.search.canceled && result.search.changed)
           result.preparedText = PieceTable(std::move(result.replacement));
         return result;
@@ -253,7 +256,8 @@ void muffin::MainWindow::performReplaceAll(const QString& findText, const QStrin
               Qt::SingleShotConnection);
           tab->findBar->setSearchBusy();
           tab->session.applyBatchAsync(std::move(result.preparedText), tr("Replace All"), anchor, cursor,
-                                       result.mappedPositions[0], result.mappedPositions[1], viewport, afterViewport);
+                                       result.mappedPositions[0], result.mappedPositions[1], viewport, afterViewport,
+                                       std::move(result.sourceChange));
         } else {
           tab->findBar->setResultInfo(result.search.totalMatches - 1, result.search.totalMatches);
         }

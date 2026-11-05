@@ -12,6 +12,7 @@
 #include <QSignalBlocker>
 #include <QTabWidget>
 #include <QTimer>
+#include <QToolButton>
 
 muffin::MainWindow::NavigationEntry muffin::MainWindow::navigationEntry() const {
   return {tab_, tab_->session.filePath(), tabViewState(tab_)};
@@ -74,18 +75,17 @@ void muffin::MainWindow::applyLinkNavigation(DocumentTab* document) {
       document->session.isOpenInProgress() || !document->isVisible() || sessionUpdatesPaused_)
     return;
   const auto request = *pendingNavigation_;
-  if (document->renderViewDirty && !document->backend->isSourceMode()) {
+  if (document->renderViewDirty && document->hasRenderPane()) {
     document->ensureRenderViewCurrent();
   }
-  if (!document->backend->isSourceMode() && document->renderView->isLayoutPending())
+  if (!document->hasSourcePane() && document->renderView->isLayoutPending())
     return;
   if (request.restore) {
-    const bool source = request.restore->view.value(QStringLiteral("sourceMode")).toBool();
-    if (source != document->backend->isSourceMode()) {
-      const QSignalBlocker blocker(commands_.action(QStringLiteral("view.source_mode")));
-      commands_.action(QStringLiteral("view.source_mode"))->setChecked(source);
-      updateViewMode();
-    }
+    document->restoreViewMode(request.restore->view);
+    commands_.action(QStringLiteral("view.source_mode"))->setChecked(document->viewMode() == DocumentViewMode::Source);
+    commands_.action(QStringLiteral("view.split"))->setChecked(document->viewMode() == DocumentViewMode::Split);
+    sourceModeButton_->setChecked(document->viewMode() == DocumentViewMode::Source);
+    splitViewButton_->setChecked(document->viewMode() == DocumentViewMode::Split);
     document->pendingViewState = request.restore->view;
     restoreTabViewState(document);
   } else if (request.hasFragment) {
@@ -99,9 +99,10 @@ void muffin::MainWindow::applyLinkNavigation(DocumentTab* document) {
                                : node ? node->sourceRange().byteStart
                                       : 0;
       document->pendingViewState.reset();
-      if (document->backend->isSourceMode()) {
+      if (document->hasSourcePane()) {
         document->editor->setCursorPosition(offset);
         document->editor->restoreViewportPosition({offset, 0, 0, true, offset == 0});
+        document->synchronizeViewports(true);
       } else {
         document->editorController.setCursorForSourceOffset(offset);
         if (node)

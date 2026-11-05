@@ -257,7 +257,8 @@ const std::shared_ptr<const BatchTextCommand>& EditTransaction::batchTextCommand
 }
 qint64 EditTransaction::retainedTextBytes() const {
   if (isBatchTextCommand() && batchTextCommand())
-    return batchTextCommand()->before.backingStoreBytes() + batchTextCommand()->after.backingStoreBytes();
+    return batchTextCommand()->before.backingStoreBytes() + batchTextCommand()->after.backingStoreBytes() +
+           qint64(batchTextCommand()->sourceChange.edits.capacity()) * sizeof(SourceTextChange::Edit);
   if (isSnapshot())
     return qint64(before().markdownText.size() + after().markdownText.size()) * sizeof(QChar);
   if (isSourceTextCommand())

@@ -68,6 +68,8 @@ public:
   qsizetype findTextBackward(QStringView text, qsizetype from = -1) const;
   void ensureCursorVisible();
   void centerCursor();
+  void setFocusMode(bool enabled);
+  void setTypewriterMode(bool enabled, bool cursorMiddle);
   ViewportPosition viewportPosition() const;
   void restoreViewportPosition(const ViewportPosition& position);
   int cursorLine() const;

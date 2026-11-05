@@ -82,9 +82,13 @@ public:
   // containing inline math/images) and the estimate is a placeholder.
   using EstimateResult = BlockHeightEstimate;
   EstimateResult estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth = 0) const;
+  CooperativeTask estimateHeightSteps(const MarkdownNode& node, const RenderTheme& theme, qreal width,
+                                      EstimateResult& result, int depth = 0) const;
 
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
                                      int depth = 0);
+  CooperativeTask buildSteps(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                             std::unique_ptr<BlockLayout>& result, int depth = 0);
   std::unique_ptr<BlockLayout> buildAllocated(const MarkdownNode& node, const RenderTheme& theme, QRectF allocation,
                                               qreal containingWidth, int depth = 0,
                                               const CssGridInheritance& inherited = {});
@@ -109,6 +113,7 @@ private:
   bool materializing_ = true;
   std::unique_ptr<BlockLayout> buildFresh(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                           qreal width, int depth);
+  void finishBuild(BlockLayout& layout, const MarkdownNode& node, const RenderTheme& theme);
   QByteArray renderSettingsSignature_;
   quint64 fontGeneration_ = 0;
   quint64 renderStateGeneration_ = 0;
@@ -132,6 +137,8 @@ private:
                                                qreal width, int depth);
   std::unique_ptr<BlockLayout> buildContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                               qreal width, int depth);
+  CooperativeTask buildContainerSteps(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                      std::unique_ptr<BlockLayout>& result, int depth, bool cooperative = true);
   std::unique_ptr<BlockLayout> buildListItem(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
                                              qreal width, int depth);
   std::unique_ptr<BlockLayout> buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,

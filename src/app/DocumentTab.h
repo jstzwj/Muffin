@@ -14,11 +14,15 @@
 #include <QPointer>
 #include <QVariantMap>
 #include <memory>
+#include <functional>
 
 class QLabel;
 class QPropertyAnimation;
 class QStackedWidget;
+class QSplitter;
+class QToolButton;
 class QTimer;
+class QAction;
 
 namespace muffin {
 
@@ -26,6 +30,8 @@ class EditorView;
 class FindBarWidget;
 class FileOpenConfirmation;
 class SourceEditorWidget;
+
+enum class DocumentViewMode { Rendered, Source, Split };
 
 struct ExportRecord {
   ExportPreset preset;
@@ -37,10 +43,33 @@ struct ExportRecord {
 // A tab owns the entire editing lifetime, including undo stacks and both viewports.
 // Switching documents never rebinds a view or replaces another document's buffer.
 class DocumentTab final : public QWidget {
+  Q_OBJECT
 public:
   explicit DocumentTab(QWidget* parent = nullptr);
   ~DocumentTab() override;
   void ensureRenderViewCurrent();
+  bool refreshPreviewAfterLocalEdit();
+  DocumentViewMode viewMode() const { return viewMode_; }
+  bool hasSourcePane() const { return viewMode_ != DocumentViewMode::Rendered; }
+  bool hasRenderPane() const { return viewMode_ != DocumentViewMode::Source; }
+  DocumentViewMode singleViewMode() const { return singleViewMode_; }
+  void setViewMode(DocumentViewMode mode);
+  void restoreViewMode(const QVariantMap& state);
+  bool previewActive() const { return viewMode_ == DocumentViewMode::Split && previewActive_; }
+  void focusEditor();
+  void synchronizeViewports(bool fromSource);
+  bool synchronizedScrolling() const;
+  void setSynchronizedScrolling(bool enabled);
+  QList<int> splitSizes() const;
+  Qt::Orientation splitOrientation() const;
+  bool previewFirst() const;
+  void setSplitLayout(Qt::Orientation orientation, bool previewFirst);
+  void setSplitTheme(const RenderTheme& theme);
+  void setFocusMode(bool enabled);
+  void setTypewriterMode(bool enabled, bool cursorMiddle);
+  // The focus target is separate from the layout: preview commands can copy a
+  // rendered selection without making the source buffer read-only.
+  std::function<void()> commandTargetChanged;
 
   // Replaced when the page moves between windows; deleting this context also
   // cancels queued callbacks that still refer to the previous window.
@@ -59,6 +88,7 @@ public:
   std::optional<QString> pendingRecoveredDraftText;
   QString pendingRecoveredDraftKey;
   QStackedWidget* viewStack = nullptr;
+  QSplitter* viewSplitter = nullptr;
   EditorView* renderView = nullptr;
   SourceEditorWidget* editor = nullptr;
   FindBarWidget* findBar = nullptr;
@@ -102,6 +132,32 @@ public:
   bool wordCountDirty = true;
   bool outlineDirty = true;
   quint64 sidebarOutlineRevision = 0;
+
+private:
+  bool eventFilter(QObject* watched, QEvent* event) override;
+  void changeEvent(QEvent* event) override;
+  void retranslateSplitUi();
+  void updateCommandTarget(bool preview);
+  void applyWritingModes();
+  void scheduleViewportSynchronization();
+  QWidget* splitPage_ = nullptr;
+  QWidget* sourcePane_ = nullptr;
+  QWidget* previewPane_ = nullptr;
+  QToolButton* synchronizeButton_ = nullptr;
+  QToolButton* splitLayoutButton_ = nullptr;
+  QAction* sideBySideAction_ = nullptr;
+  QAction* topAndBottomAction_ = nullptr;
+  QAction* swapPanesAction_ = nullptr;
+  DocumentViewMode viewMode_ = DocumentViewMode::Rendered;
+  DocumentViewMode singleViewMode_ = DocumentViewMode::Rendered;
+  bool previewActive_ = false;
+  bool synchronizing_ = false;
+  bool synchronizationQueued_ = false;
+  bool scrollFromSource_ = true;
+  bool focusMode_ = false;
+  bool typewriterMode_ = false;
+  bool typewriterCursorMiddle_ = true;
+  QList<int> splitSizes_{1, 1};
 };
 
 } // namespace muffin

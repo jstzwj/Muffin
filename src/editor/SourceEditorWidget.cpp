@@ -10,6 +10,7 @@
 #include <QHBoxLayout>
 
 muffin::SourceEditorWidget::SourceEditorWidget(QWidget* parent) : QWidget(parent) {
+  setAttribute(Qt::WA_StyledBackground, true);
   auto* layout = new QHBoxLayout(this);
   layout->setContentsMargins(0, 16, 0, 0);
   layout->setSpacing(0);
@@ -153,6 +154,14 @@ void muffin::SourceEditorWidget::ensureCursorVisible() {
 }
 void muffin::SourceEditorWidget::centerCursor() {
   editor_->centerCursor();
+}
+
+void muffin::SourceEditorWidget::setFocusMode(bool enabled) {
+  editor_->setFocusMode(enabled);
+}
+
+void muffin::SourceEditorWidget::setTypewriterMode(bool enabled, bool cursorMiddle) {
+  editor_->setTypewriterMode(enabled, cursorMiddle);
 }
 muffin::ViewportPosition muffin::SourceEditorWidget::viewportPosition() const {
   return editor_->viewportPosition();

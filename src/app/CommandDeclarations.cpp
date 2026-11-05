@@ -1957,9 +1957,24 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .handler =
              [](MainWindow& window) {
                window.tab_->searchSourceFallback = false;
+               window.commands_.action(QStringLiteral("view.split"))->setChecked(false);
                window.updateViewMode();
+               QSettings().setValue(QStringLiteral("view/splitMode"), false);
                QSettings().setValue(QStringLiteral("view/sourceMode"),
                                     window.commands_.action(QStringLiteral("view.source_mode"))->isChecked());
+             }},
+        {.id = QStringLiteral("view.split"),
+         .category = CommandCategory::View,
+         .text = muffin::MainWindow::tr("Source and Preview"),
+         .checkable = true,
+         .handler =
+             [](MainWindow& window) {
+               window.tab_->searchSourceFallback = false;
+               const bool split = window.commands_.action(QStringLiteral("view.split"))->isChecked();
+               window.commands_.action(QStringLiteral("view.source_mode"))
+                   ->setChecked(!split && window.tab_->singleViewMode() == DocumentViewMode::Source);
+               window.updateViewMode();
+               QSettings().setValue(QStringLiteral("view/splitMode"), split);
              }},
         {.id = QStringLiteral("view.word_wrap"),
          .category = CommandCategory::View,
@@ -2539,6 +2554,7 @@ const std::vector<muffin::MenuSpec>& muffin::mainMenuSpec() {
                  {.kind = MenuItem::Kind::Separator},
                  // Editor modes
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.source_mode")},
+                 {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.split")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.word_wrap")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.focus")},
                  {.kind = MenuItem::Kind::Action, .commandId = QStringLiteral("view.typewriter")},

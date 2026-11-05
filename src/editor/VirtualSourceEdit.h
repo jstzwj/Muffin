@@ -121,6 +121,8 @@ public:
 
   void ensureCursorVisible();
   void centerCursor();
+  void setFocusMode(bool enabled);
+  void setTypewriterMode(bool enabled, bool cursorMiddle);
   ViewportPosition viewportPosition() const;
   void restoreViewportPosition(const ViewportPosition& position);
   int cursorLine() const;
@@ -235,6 +237,9 @@ private:
   qsizetype anchor_ = 0;
   int preferredColumn_ = -1;
   bool wordWrap_ = true;
+  bool focusMode_ = false;
+  bool typewriterMode_ = false;
+  bool typewriterCursorMiddle_ = true;
   bool draggingSelection_ = false;
   bool selectionDragPending_ = false;
   QPoint selectionPressPoint_;

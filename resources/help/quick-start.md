@@ -9,10 +9,15 @@ Welcome to **Muffin**, a fast, native Markdown editor built with C++ and Qt.
 - **File → Reopen Closed File** (`Ctrl+Shift+T`, `⌘+Shift+T` on macOS) reopens the most recently closed file, including its editing mode, selection and reading position. Each window remembers up to 32 closed files until it exits. Reopening reads the latest disk content; discarded unsaved changes are not restored.
 - **Preferences → Files → Open files in tabs by default** is enabled by default. Files opened from the file manager or command line use tabs in the existing window; turn it off to open a new window instead. **Open in New Window** and the command-line `--new-window` option explicitly request a separate window.
 
-## Two editing modes
+## Editing views
 
 - **Render mode** (the default) shows a live, formatted page — type Markdown, see the result.
-- **Source mode** shows the raw Markdown text. Toggle it from the **View** menu.
+- **Source mode** shows the raw Markdown text. Use the bottom-left `</>` button or **View → Source Code Mode** (`Ctrl+/`, `⌘+/` on macOS).
+- **Source and Preview** shows editable Markdown on the left and a read-only native preview on the right. Use the split button immediately to the right of `</>`, or **View → Source and Preview**. Click it again to return to your preceding single view. The `</>` button switches directly to source-only mode.
+
+Drag the divider to resize the panes while retaining your reading position. The preview header's **Split layout** menu offers **Side by side**, **Top and bottom**, and **Swap source and preview**. **Synchronized scrolling** follows the same source location in both panes; turn it off to scroll independently. Each tab remembers its view, orientation, pane order, divider ratio and scrolling policy, including when restored in a later session. Both views share the same document and undo history. Assign a split-view shortcut in **Preferences → Keyboard Shortcuts**.
+
+In source and split views, **Focus Mode** dims other source lines and **Typewriter Mode** follows the source caret's visual row. The preview stays fully visible and follows only the scrolling policy. Returning to rendered editing restores these modes there. The cursor-centering preference also applies to source editing.
 
 ## Write your first document
 

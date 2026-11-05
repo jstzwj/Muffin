@@ -470,7 +470,10 @@ CooperativeTask DocumentLayout::rebuildSteps(const MarkdownDocument& document, c
     for (const auto& child : children) {
       cursorY += previous ? spacingBetweenBlocks(*previous, *child, theme, /*fast=*/true, pageWidth_)
                           : spacingBeforeBlock(*child, theme, cursorY, /*fast=*/true, pageWidth_);
-      const BlockLayoutBuilder::EstimateResult est = builder_.estimateHeight(*child, theme, pageWidth_);
+      BlockLayoutBuilder::EstimateResult est;
+      auto estimate = builder_.estimateHeightSteps(*child, theme, pageWidth_, est);
+      while (estimate.resumeFor(0))
+        co_yield nullptr;
       BlockSlot slot;
       slot.nodeId = child->id();
       slot.type = child->type();
@@ -596,7 +599,16 @@ bool DocumentLayout::releaseDetails(int budgetMs) {
   QElapsedTimer timer;
   timer.start();
   while (!slots_.empty()) {
-    slots_.pop_back();
+    auto* block = slots_.back().detail.get();
+    if (block && !block->children().empty()) {
+      // Containers may own most of a document. Release one leaf at a time,
+      // including a partially built child left by a cancelled coroutine.
+      while (block->children().back() && !block->children().back()->children().empty())
+        block = block->children().back().get();
+      block->children().pop_back();
+    } else {
+      slots_.pop_back();
+    }
     if (timer.elapsed() >= budgetMs)
       return true;
   }
@@ -876,6 +888,31 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   result.shiftedRect = result.shiftedRect.united(refreshDependentStyles(document, theme, selection));
   result.heightDelta += totalHeight_ - beforeRefresh;
   return result;
+}
+
+bool DocumentLayout::resourceRefreshRequiresRebuild() const {
+  return formattingRoot_ || (flow_ && !flow_->empty());
+}
+
+bool DocumentLayout::supportsLocalRangeRebuild(TopLevelRangeChange range, const MarkdownDocument& document) const {
+  if (!range.isValid() || document_ != &document || resourceRefreshRequiresRebuild())
+    return false;
+  // Inspect only the replacement window. Do not construct MarkdownFlow just to
+  // decide whether a GUI-thread local splice is possible.
+  int remaining = 64;
+  const auto localNode = [&](const auto& self, const MarkdownNode& node) -> bool {
+    if (--remaining < 0 || node.type() == BlockType::HtmlBlock)
+      return false;
+    for (const auto& child : node.children())
+      if (!self(self, *child))
+        return false;
+    return true;
+  };
+  const auto& blocks = document.root().children();
+  for (auto i = range.first; i < qMin<qsizetype>(blocks.size(), range.first + range.newCount); ++i)
+    if (i < 0 || !localNode(localNode, *blocks[size_t(i)]))
+      return false;
+  return true;
 }
 
 DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(TopLevelRangeChange range,
@@ -1249,18 +1286,26 @@ QPair<qsizetype, qsizetype> DocumentLayout::slotRangeOverlappingY(qreal yTop, qr
 
 void DocumentLayout::ensureBuilt(qsizetype first, qsizetype last, const RenderTheme& theme) {
   ThemePerfScope performance(ThemePerfStage::Layout);
+  auto task = ensureBuiltSteps(first, last, theme);
+  task.resumeFor(-1);
+}
+
+CooperativeTask DocumentLayout::ensureBuiltSteps(qsizetype first, qsizetype last, const RenderTheme& theme) {
   if (slots_.empty()) {
-    return;
+    co_return;
   }
   first = qBound(qsizetype(0), first, static_cast<qsizetype>(slots_.size()) - 1);
   last = qBound(qsizetype(0), last, static_cast<qsizetype>(slots_.size()) - 1);
   for (qsizetype i = first; i <= last; ++i) {
     if (!slots_.at(static_cast<size_t>(i)).detail ||
         slots_.at(static_cast<size_t>(i)).viewportGeneration != viewportGeneration_) {
-      promoteSlot(i, theme);
+      auto task = promoteSlotSteps(i, theme);
+      while (task.resumeFor(0))
+        co_yield nullptr;
     } else {
       ensureSlotDetailPosition(i);
     }
+    co_yield nullptr;
   }
 }
 
@@ -1656,7 +1701,7 @@ void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
 }
 
 DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const RenderTheme& theme,
-                                                                       SelectionRange selection) {
+                                                                       SelectionRange selection, bool deferRebuild) {
   ResourceRefreshResult result;
   if (!document_)
     return result;
@@ -1682,20 +1727,39 @@ DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const Ren
   }
   if (affected.isEmpty())
     return result;
+  if (deferRebuild && resourceRefreshRequiresRebuild()) {
+    result.needsRebuild = true;
+    return result;
+  }
   // Image/diagram pixels cannot change CSS selectors or computed text styles.
   // Font metrics can, so font database updates retain the style refresh path.
   QScopedValueRollback resourceUpdate(resourceOnlyUpdate_, !fontsChanged);
-  if (formattingRoot_) {
+  // HTML flow refreshes rebuild the document just like a root formatting
+  // context. Rebuild once: iterating the old affected ids after the first
+  // rebuild would dereference details discarded by the lazy skeleton.
+  if (resourceRefreshRequiresRebuild()) {
     const auto oldHeight = totalHeight_;
     QHash<NodeId, QRectF> oldRects;
-    for (const auto& slot : slots_)
-      if (slot.detail)
+    for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i) {
+      const auto& slot = slots_[size_t(i)];
+      if (slot.detail) {
+        ensureSlotDetailPosition(i);
         oldRects.insert(slot.nodeId, slot.detail->rect());
+      }
+    }
     incrementalFormatting_ = true;
     rebuild(*document_, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    // Preserve the materialized reading window. Its replacement geometry must
+    // be measured before comparing rectangles or restoring the viewport pin;
+    // other slots remain lazy.
+    for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i)
+      if (oldRects.contains(slots_[size_t(i)].nodeId))
+        ensureBuilt(i, i, theme);
     result.geometryChanged = oldHeight != totalHeight_;
-    for (const auto& slot : slots_)
+    for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i) {
+      const auto& slot = slots_[size_t(i)];
       if (slot.detail) {
+        ensureSlotDetailPosition(i);
         const auto before = oldRects.value(slot.nodeId);
         if (before != slot.detail->rect()) {
           result.geometryChanged = true;
@@ -1703,6 +1767,7 @@ DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const Ren
         } else if (affected.contains(slot.nodeId))
           result.dirty = result.dirty.united(slot.detail->visualOverflowRect());
       }
+    }
   } else {
     formattingReuseStats_ = {};
     for (const auto id : affected) {
@@ -1763,14 +1828,19 @@ void DocumentLayout::setPreedit(QString text, QVector<QTextLayout::FormatRange> 
   preeditCursor_ = cursor;
 }
 
-qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
+void DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
+  auto task = promoteSlotSteps(index, theme);
+  task.resumeFor(-1);
+}
+
+CooperativeTask DocumentLayout::promoteSlotSteps(qsizetype index, const RenderTheme& theme) {
   if (!document_ || index < 0 || index >= static_cast<qsizetype>(slots_.size())) {
-    return 0.0;
+    co_return;
   }
   // A resize can arrive after the AST edit and before its queued layout
   // refresh. Old slots must never be resolved against that newer generation.
   if (styleDocumentRevision_ != document_->revision())
-    return 0.0;
+    co_return;
   const auto nodeAt = [&](qsizetype i) -> const MarkdownNode* {
     return i >= 0 && i < qsizetype(slots_.size()) ? document_->node(slots_[size_t(i)].nodeId) : nullptr;
   };
@@ -1778,11 +1848,11 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   const auto* previousNode = nodeAt(index - 1);
   const auto* nextNode = nodeAt(index + 1);
   if (!currentNode || (index > 0 && !previousNode) || (index + 1 < qsizetype(slots_.size()) && !nextNode))
-    return 0.0;
+    co_return;
   BlockSlot& slot = slots_.at(static_cast<size_t>(index));
   if (slot.detail && slot.viewportGeneration == viewportGeneration_) {
     ensureSlotDetailPosition(index);
-    return 0.0; // already promoted
+    co_return; // already promoted
   }
   if (slot.detail) {
     removeLayoutIndexFor(*slot.detail);
@@ -1799,7 +1869,10 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   const qreal ownDelta = newTop - oldTop;
   shiftSuffixFrom(index, ownDelta);
   const qreal currentShift = slotShift(index);
-  auto built = builder_.build(node, theme, pageLeft_, newTop, pageWidth_);
+  auto& built = slot.detail;
+  auto task = builder_.buildSteps(node, theme, pageLeft_, newTop, pageWidth_, built);
+  while (task.resumeFor(0))
+    co_yield nullptr;
   slot.height = built->height();
   slot.measured = true;
   slot.detailLeft = pageLeft_;
@@ -1813,14 +1886,12 @@ qreal DocumentLayout::promoteSlot(qsizetype index, const RenderTheme& theme) {
   // recomputed it structurally → the suffix jumped (visible "bottom margin shrinks").
   // The shift runs inside the caller's viewport pin, so it is invisible on scroll.
   const qreal newNextTop = nextTopAfterBuild(node, *built, nextNode, theme, pageWidth_);
-  slot.detail = std::move(built);
   qreal delta = 0.0;
   if (index + 1 < static_cast<qsizetype>(slots_.size())) {
     delta = newNextTop - slotTop(index + 1);
   }
   shiftSuffixFrom(index + 1, delta);
   recomputeTotalHeight(theme);
-  return ownDelta + delta;
 }
 
 void DocumentLayout::shiftSuffixFrom(qsizetype index, qreal delta) {

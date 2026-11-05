@@ -362,14 +362,7 @@ void muffin::MainWindow::restoreSessionState(const QVariantMap& snapshot) {
           tab_->pinned = view.value(QStringLiteral("pinned")).toBool();
           setupTabButton(tab_);
           tab_->pendingViewState = view;
-          const bool source = view.value(QStringLiteral("sourceMode")).toBool();
-          if (source)
-            tab_->backend = std::make_unique<SourceEditorBackend>(tab_->editor);
-          else
-            tab_->backend =
-                std::make_unique<RenderEditorBackend>(tab_->editorController, tab_->session, tab_->renderView);
-          tab_->viewStack->setCurrentWidget(source ? static_cast<QWidget*>(tab_->editor)
-                                                   : static_cast<QWidget*>(tab_->renderView));
+          tab_->restoreViewMode(view);
         }
       }
       if (i == active)

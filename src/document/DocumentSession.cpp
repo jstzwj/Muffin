@@ -575,6 +575,7 @@ struct muffin::DocumentSession::AsyncParseResult {
   QVector<qsizetype> pendingMarkers;
   QString publishedText;
   std::optional<TextDelta> candidate;
+  SourceTextChange sourceChange;
   std::shared_ptr<LocalParseInput> local;
   bool unchanged = false;
 
@@ -625,7 +626,8 @@ void muffin::DocumentSession::cancelBatch() {
 
 void muffin::DocumentSession::applyBatchAsync(PieceTable target, QString label, qsizetype beforeAnchor,
                                               qsizetype beforeCursor, qsizetype afterAnchor, qsizetype afterCursor,
-                                              ViewportPosition beforeViewport, ViewportPosition afterViewport) {
+                                              ViewportPosition beforeViewport, ViewportPosition afterViewport,
+                                              SourceTextChange sourceChange) {
   if (!isEditingAllowed())
     return;
   auto command = std::make_shared<BatchTextCommand>();
@@ -638,6 +640,7 @@ void muffin::DocumentSession::applyBatchAsync(PieceTable target, QString label, 
   command->afterCursor = afterCursor;
   command->beforeViewport = beforeViewport;
   command->afterViewport = afterViewport;
+  command->sourceChange = std::move(sourceChange);
   prepareBatch(std::move(command), std::move(label), 0);
 }
 
@@ -744,6 +747,8 @@ void muffin::DocumentSession::prepareBatch(std::shared_ptr<BatchTextCommand> com
               }
               if (direction >= 0)
                 command->afterMarkers = pendingMarkerOffsets_;
+              if (direction == 0)
+                command->sourceChange = prepared->sourceChange;
               if (direction < 0)
                 undoStack_.takeUndo();
               else if (direction > 0)
@@ -758,7 +763,9 @@ void muffin::DocumentSession::prepareBatch(std::shared_ptr<BatchTextCommand> com
               return parseGeneration_ == committedGeneration && document_.revision() == committedRevision;
             };
             lastChangeWasBatch_ = true;
-            document_.publishPreparedState();
+            emit sourceTextChanged(prepared->sourceChange);
+            if (current())
+              document_.publishPreparedState();
             if (current())
               emit undoStack_.stateChanged();
             if (current() && wasModified != document_.isModified())
@@ -785,6 +792,10 @@ void muffin::DocumentSession::prepareBatch(std::shared_ptr<BatchTextCommand> com
       CmarkGfmParser parser;
       local->parsed = parser.parseDocument(QStringView(local->markdown), local->options);
       result->publishedText = target.toString();
+      result->sourceChange = direction < 0 ? command->sourceChange.reversed() : command->sourceChange;
+      if (result->sourceChange.edits.isEmpty())
+        result->sourceChange =
+            SourceTextChange::between(direction < 0 ? command->after : command->before, result->publishedText);
       return result;
     }
     if (allowLocal) {
@@ -817,8 +828,15 @@ void muffin::DocumentSession::prepareBatch(std::shared_ptr<BatchTextCommand> com
         }
       }
     }
-    return prepareParse(direction < 0 ? command->before : command->after, options,
-                        direction < 0 ? command->beforeMarkers : command->afterMarkers, metrics, cancel);
+    auto result =
+        prepareParse(target, options, direction < 0 ? command->beforeMarkers : command->afterMarkers, metrics, cancel);
+    if (result) {
+      result->sourceChange = direction < 0 ? command->sourceChange.reversed() : command->sourceChange;
+      if (result->sourceChange.edits.isEmpty())
+        result->sourceChange =
+            SourceTextChange::between(direction < 0 ? command->after : command->before, result->publishedText);
+    }
+    return result;
   }));
   emit batchEditStarted();
 }
@@ -1232,6 +1250,7 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
   pendingDemoteAtOffsets_.clear();
   PerfTimer perf("session.fullParse");
   const auto sharedText = std::make_shared<const QString>(text);
+  const auto sourceChange = SourceTextChange::between(markdownText(), *sharedText);
   ParseResult result;
   {
     PerfTimer parsePerf("session.parse");
@@ -1262,6 +1281,10 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     }
   }
   pendingMarkerOffsets_ = collectPendingMarkerOffsets(QStringView(*sharedText), document_.root());
+  if (!sourceChange.edits.isEmpty())
+    emit sourceTextChanged(sourceChange);
+  if (generation != parseGeneration_)
+    return;
   emit parsed(lastParseElapsedMs_);
   if (replacedAsync && generation == parseGeneration_)
     emit parseBusy(isOpenInProgress());
@@ -1517,6 +1540,9 @@ bool muffin::DocumentSession::tryApplyTopLevelLocalEdit(qsizetype sourceStart, q
   document_.setModified(modified);
   lastParseElapsedMs_ = parsedSlice.elapsedMs;
   lastParseWasLocalEdit_ = true;
-  emit parsed(lastParseElapsedMs_);
+  const auto committedRevision = document_.revision();
+  emit sourceTextChanged(SourceTextChange{{{sourceStart, sourceEnd - sourceStart, replacementText.size()}}});
+  if (document_.revision() == committedRevision)
+    emit parsed(lastParseElapsedMs_);
   return true;
 }

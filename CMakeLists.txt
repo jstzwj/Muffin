@@ -173,6 +173,7 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/app/WorkspaceSearch.cpp
   src/app/WorkspaceReplace.cpp
   src/app/MainWindowTabs.cpp
+  src/app/DocumentTab.cpp
   src/app/FileOpenConfirmation.cpp
   src/app/PreferencesDialog.cpp
   src/app/HelpViewerDialog.cpp

@@ -74,6 +74,45 @@ void slicedLayoutParity() {
   }
 }
 
+void slicedHtmlPromotionParity() {
+  DocumentSession session;
+  session.setMarkdownText("<div align=\"center\">\n\n# Heading\n\nparagraph **bold**\n\n"
+                          "<section>\n\n> quote\n>\n> second paragraph\n\n- one\n- two\n\n</section>\n\n</div>\n",
+                          false);
+  auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(
+      "div::before {content:'Container'; display:block;} section::after {content:'End'; display:block;}",
+      "HTML promotion", {}));
+  auto slicedTheme = theme.detachedPrototype();
+  DocumentLayout eager, sliced;
+  eager.rebuild(session.document(), theme, 800);
+  sliced.rebuild(session.document(), slicedTheme, 800, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+  auto task = sliced.ensureBuiltSteps(0, sliced.slotCount() - 1, slicedTheme);
+  int checkpoints = 0;
+  while (task.resumeFor(0))
+    ++checkpoints;
+  require(checkpoints > 5, "HTML promotion yields inside containers, including nested Markdown blocks");
+  for (const auto& node : session.document().root().children()) {
+    const auto* a = eager.block(node->id());
+    const auto* b = sliced.block(node->id());
+    require(bool(a) == bool(b) &&
+                (!a || (a->rect() == b->rect() && a->positionedPseudoRects() == b->positionedPseudoRects())),
+            "cooperative HTML promotion preserves synchronous layout geometry");
+  }
+  require(qAbs(eager.totalHeight() - sliced.totalHeight()) < 0.01,
+          "cooperative HTML promotion preserves the document height");
+  auto cancelledTheme = theme.detachedPrototype();
+  DocumentLayout cancelled;
+  cancelled.rebuild(session.document(), cancelledTheme, 800, {}, {}, DocumentLayout::BuildPolicy::Lazy);
+  auto partial = cancelled.ensureBuiltSteps(0, cancelled.slotCount() - 1, cancelledTheme);
+  for (int i = 0; i < 8; ++i)
+    require(partial.resumeFor(0), "cancel a nested HTML promotion before completion");
+  partial = {};
+  int releaseSlices = 0;
+  while (cancelled.releaseDetails(0))
+    ++releaseSlices;
+  require(releaseSlices > 2, "cancelled containers release their materialized children in bounded slices");
+}
+
 void interruptedBuildsDoNotPublishCachesOrKeepPerfScopes() {
   DocumentSession session;
   session.setMarkdownText("# First\n\n# Second\n\n# Third\n", false);
@@ -146,6 +185,7 @@ void literalEditorsFollowMappedSelectionAfterReplacement() {
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
   slicedLayoutParity();
+  slicedHtmlPromotionParity();
   interruptedBuildsDoNotPublishCachesOrKeepPerfScopes();
   literalEditorsFollowMappedSelectionAfterReplacement();
   DocumentSession session;

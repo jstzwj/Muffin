@@ -25,7 +25,7 @@
 
 namespace {
 
-enum class IconKind { SidebarExpand, SidebarCollapse, SourceMode };
+enum class IconKind { SidebarExpand, SidebarCollapse, SourceMode, SplitView };
 
 // Load a status-bar SVG, recolor it to `ink`, and rasterize it as a multi-size
 // QIcon. Mirrors the free function that used to live in MainWindow.cpp.
@@ -40,6 +40,9 @@ QIcon makeStatusIcon(IconKind kind, const QColor& ink, const QColor& activeInk) 
     break;
   case IconKind::SourceMode:
     path = ":/icons/statusbar/source-code.svg";
+    break;
+  case IconKind::SplitView:
+    path = ":/icons/statusbar/split-view.svg";
     break;
   }
   QFile svgFile(QString::fromLatin1(path));
@@ -175,11 +178,19 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
   sidebarButton_->setCursor(Qt::PointingHandCursor);
 
   sourceModeButton_ = new QToolButton(this);
+  sourceModeButton_->setObjectName(QStringLiteral("statusSourceMode"));
   sourceModeButton_->setIconSize(QSize(muffin::ui_metrics::kStatusIconSize, muffin::ui_metrics::kStatusIconSize));
   sourceModeButton_->setCheckable(true);
   sourceModeButton_->setAutoRaise(true);
   sourceModeButton_->setFocusPolicy(Qt::NoFocus);
   sourceModeButton_->setCursor(Qt::PointingHandCursor);
+  splitViewButton_ = new QToolButton(this);
+  splitViewButton_->setObjectName(QStringLiteral("statusSplitView"));
+  splitViewButton_->setIconSize(sourceModeButton_->iconSize());
+  splitViewButton_->setCheckable(true);
+  splitViewButton_->setAutoRaise(true);
+  splitViewButton_->setFocusPolicy(Qt::NoFocus);
+  splitViewButton_->setCursor(Qt::PointingHandCursor);
 
   // Keep the ring's center dot in sync with sidebar visibility.
   connect(sidebarButton_, &QToolButton::toggled, this, [this] {
@@ -187,6 +198,7 @@ muffin::StatusBarWidget::StatusBarWidget(QWidget* parent) : QWidget(parent) {
     updateButtonToolTips();
   });
   connect(sourceModeButton_, &QToolButton::toggled, this, [this] { updateButtonToolTips(); });
+  connect(splitViewButton_, &QToolButton::toggled, this, [this] { updateButtonToolTips(); });
 
   // Defaults until applyThemeColors() is called.
   bg_ = QColor(0xff, 0xff, 0xff);
@@ -203,6 +215,9 @@ QToolButton* muffin::StatusBarWidget::sidebarButton() const {
 }
 QToolButton* muffin::StatusBarWidget::sourceModeButton() const {
   return sourceModeButton_;
+}
+QToolButton* muffin::StatusBarWidget::splitViewButton() const {
+  return splitViewButton_;
 }
 
 void muffin::StatusBarWidget::setCursorStatus(const QString& text) {
@@ -261,6 +276,9 @@ void muffin::StatusBarWidget::setSourceModeChecked(bool checked) {
   if (sourceModeButton_)
     sourceModeButton_->setChecked(checked);
 }
+void muffin::StatusBarWidget::setSplitViewChecked(bool checked) {
+  splitViewButton_->setChecked(checked);
+}
 
 void muffin::StatusBarWidget::updateSidebarIcon() {
   if (!sidebarButton_) {
@@ -277,7 +295,7 @@ void muffin::StatusBarWidget::applyThemeColors(const QColor& bg, const QColor& t
   muted_ = muted;
   border_ = border;
 
-  // Style the two child buttons so they blend with the painted bar.
+  // Style the child buttons so they blend with the painted bar.
   // Translucent theme ink stays subtle on light, dark, and tinted themes alike.
   QColor hover = text;
   hover.setAlpha(18);
@@ -294,6 +312,7 @@ void muffin::StatusBarWidget::applyThemeColors(const QColor& bg, const QColor& t
                     .arg(hover.name(QColor::HexArgb), checked.name(QColor::HexArgb), pressed.name(QColor::HexArgb)));
 
   sourceModeButton_->setIcon(makeStatusIcon(IconKind::SourceMode, muted_, text_));
+  splitViewButton_->setIcon(makeStatusIcon(IconKind::SplitView, muted_, text_));
   updateSidebarIcon();
   update();
 }
@@ -326,8 +345,8 @@ muffin::StatusBarWidget::SegmentRects muffin::StatusBarWidget::layoutSegments() 
   r.encoding = QRect(r.rightEdge - encW, 0, encW, h);
   r.rightEdge = r.encoding.left() - gap;
 
-  // Left cluster starts after the two tool buttons (laid out in relayoutButtons).
-  r.leftStart = (sourceModeButton_ ? sourceModeButton_->geometry().right() + 8 : 0) + 4;
+  // Left cluster starts after the tool buttons (laid out in relayoutButtons).
+  r.leftStart = (splitViewButton_ ? splitViewButton_->geometry().right() + 8 : 0) + 4;
 
   // Block-source fills the middle.
   r.blockSource = QRect(r.leftStart, 0, qMax(0, r.rightEdge - r.leftStart - gap), h);
@@ -342,6 +361,7 @@ void muffin::StatusBarWidget::relayoutButtons() {
   const int y = (height() - size) / 2;
   sidebarButton_->setGeometry(2, y, size, size);
   sourceModeButton_->setGeometry(2 + size + 6, y, size, size);
+  splitViewButton_->setGeometry(2 + 2 * (size + 6), y, size, size);
 }
 
 void muffin::StatusBarWidget::resizeEvent(QResizeEvent* event) {
@@ -567,4 +587,7 @@ void muffin::StatusBarWidget::updateButtonToolTips() {
   sidebarButton_->setAccessibleName(sidebarHint);
   sourceModeButton_->setToolTip(sourceHint);
   sourceModeButton_->setAccessibleName(sourceHint);
+  const auto splitHint = splitViewButton_->isChecked() ? tr("Exit split view") : tr("Source and preview side by side");
+  splitViewButton_->setToolTip(splitHint);
+  splitViewButton_->setAccessibleName(splitHint);
 }
