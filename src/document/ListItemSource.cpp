@@ -71,7 +71,6 @@ void appendRebasedLine(QString& result, QStringView line, QStringView expected, 
 
 struct CodePrefix {
   InlineRange lines;
-  qsizetype contentStart;
   QString from;
   QString to;
 };
@@ -91,8 +90,21 @@ void collectCodePrefixes(const PieceTable& markdown, const MarkdownNode& node, c
       if (ch != QLatin1Char('>') && !ch.isSpace())
         ch = QLatin1Char(' ');
     prefix = expandedPrefix(prefix);
+    // cmark may locate the literal at a tab whose first columns still belong
+    // to the four-column code gutter. Keep the remaining tab columns literal.
+    qsizetype gutter = from.size() + 4;
+    for (auto* parent = node.parent(); parent; parent = parent->parent()) {
+      if (parent->type() == BlockType::ListItem) {
+        gutter = expandedPrefix(listContentPrefix(markdown, listItemSource(markdown, *parent))).size() + 4;
+        break;
+      }
+    }
+    if (const auto quote = prefix.lastIndexOf(u'>'); quote >= 0)
+      gutter = qMax(gutter, quote + 6);
+    if (prefix.size() < gutter)
+      prefix += QString(gutter - prefix.size(), u' ');
     if (prefix.startsWith(from))
-      prefixes.append({{start, range.byteEnd}, range.byteStart, prefix, to + prefix.mid(from.size())});
+      prefixes.append({{start, range.byteEnd}, prefix, to + prefix.mid(from.size())});
     return;
   }
   for (const auto& child : node.children())
@@ -164,19 +176,22 @@ QString listContentPrefix(const PieceTable& markdown, const ListItemSource& sour
   const qsizetype delimiterEnd = source.markerToken.end;
   const auto prefix = markdown.mid(source.firstLine.start, delimiterEnd - source.firstLine.start);
   const auto column = columnAfter(prefix);
-  qsizetype padding =
-      columnAfter(markdown.mid(delimiterEnd, source.markerContentStart() - delimiterEnd), column) - column;
-  if (source.markerContentStart() == source.firstLine.end || padding < 1 || padding > 4)
+  qsizetype end = delimiterEnd;
+  while (end < source.firstLine.end && markdown.at(end).isSpace())
+    ++end;
+  qsizetype padding = columnAfter(markdown.mid(delimiterEnd, end - delimiterEnd), column) - column;
+  if (end == source.firstLine.end || padding < 1 || padding > 4)
     padding = 1;
   return listContinuationPrefix(markdown, source) +
          QString(delimiterEnd - source.item.start + padding, QLatin1Char(' '));
 }
 
-QString rebaseListItemSource(const PieceTable& markdown, InlineRange range, const ListItemSource& from,
-                             const ListItemSource& to) {
+namespace {
+QString rebaseToPrefix(const PieceTable& markdown, InlineRange range, const ListItemSource& from,
+                       const QString& targetPrefix) {
   const QString text = markdown.mid(range.start, range.length());
   const QString oldPrefix = expandedPrefix(listContentPrefix(markdown, from));
-  const QString newPrefix = expandedPrefix(listContentPrefix(markdown, to));
+  const QString newPrefix = expandedPrefix(targetPrefix);
   if (oldPrefix == newPrefix || text.isEmpty())
     return text;
   QVector<CodePrefix> code;
@@ -196,9 +211,9 @@ QString rebaseListItemSource(const PieceTable& markdown, InlineRange range, cons
     const CodePrefix* gutter =
         codeIndex < code.size() && code.at(codeIndex).lines.start <= absolute ? &code.at(codeIndex) : nullptr;
     if (index == 0) {
-      if (gutter && absolute < gutter->contentStart) {
-        const qsizetype start = lineStartOffset(markdown, absolute);
-        const auto column = columnAfter(markdown.mid(start, absolute - start));
+      const qsizetype start = lineStartOffset(markdown, absolute);
+      const auto column = columnAfter(markdown.mid(start, absolute - start));
+      if (gutter && column < gutter->from.size()) {
         appendRebasedLine(result, line, gutter->from, QStringView(gutter->to).mid(newPrefix.size()), column);
       } else {
         result += line;
@@ -209,6 +224,65 @@ QString rebaseListItemSource(const PieceTable& markdown, InlineRange range, cons
     index = next;
   }
   return result;
+}
+} // namespace
+
+QString rebaseListItemSource(const PieceTable& markdown, InlineRange range, const ListItemSource& from,
+                             const ListItemSource& to) {
+  return rebaseToPrefix(markdown, range, from, listContentPrefix(markdown, to));
+}
+
+QVector<ListSourceEdit> listItemNumberEdits(const PieceTable& markdown, const ListItemSource& source, int number) {
+  QVector<ListSourceEdit> edits;
+  if (!source.isValid() || !source.marker.ordered)
+    return edits;
+  const auto digits = InlineRange{source.markerToken.start, source.markerToken.end - 1};
+  const auto replacement = QString::number(number);
+  if (markdown.mid(digits.start, digits.length()) == replacement)
+    return edits;
+  edits.append({digits, replacement});
+  const auto delta = replacement.size() - digits.length();
+  if (!delta)
+    return edits;
+  auto prefix = listContentPrefix(markdown, source);
+  if (delta > 0)
+    prefix += QString(delta, u' ');
+  else
+    prefix.chop(-delta);
+  // A tab after the delimiter reaches a column stop, so its visual width
+  // would change with the number. Preserve the padding width explicitly.
+  const InlineRange padding{source.markerToken.end, source.markerContentStart()};
+  const auto gap = markdown.mid(padding.start, padding.length());
+  if (gap.contains(u'\t')) {
+    const auto width = expandedPrefix(listContentPrefix(markdown, source)).size() -
+                       expandedPrefix(listContinuationPrefix(markdown, source)).size() - source.markerToken.length();
+    edits.append({padding, QString(width, u' ')});
+  }
+  // Keep the marker padding outside literal code-gutter rebasing, including
+  // an indented code block beginning on the marker's own physical line.
+  const InlineRange tail{source.markerContentStart(), source.item.end};
+  const auto before = markdown.mid(tail.start, tail.length());
+  const auto after = rebaseToPrefix(markdown, tail, source, prefix);
+  qsizetype oldLine = 0, newLine = 0;
+  while (oldLine < before.size()) {
+    const auto oldNewline = before.indexOf(u'\n', oldLine), newNewline = after.indexOf(u'\n', newLine);
+    const auto oldEnd = oldNewline < 0 ? before.size() : oldNewline + 1;
+    const auto newEnd = newNewline < 0 ? after.size() : newNewline + 1;
+    auto left = QStringView(before).mid(oldLine, oldEnd - oldLine);
+    auto right = QStringView(after).mid(newLine, newEnd - newLine);
+    qsizetype common = 0, suffix = 0;
+    while (common < left.size() && common < right.size() && left[common] == right[common])
+      ++common;
+    while (suffix < left.size() - common && suffix < right.size() - common &&
+           left[left.size() - 1 - suffix] == right[right.size() - 1 - suffix])
+      ++suffix;
+    if (common != left.size() || common != right.size())
+      edits.append({{tail.start + oldLine + common, tail.start + oldEnd - suffix},
+                    right.mid(common, right.size() - common - suffix).toString()});
+    oldLine = oldEnd;
+    newLine = newEnd;
+  }
+  return edits;
 }
 
 namespace {
@@ -261,11 +335,12 @@ QString renumberListItems(const PieceTable& markdown, InlineRange source, const 
     if (!bounds.marker.ordered || bounds.markerStart() < source.start) {
       continue;
     }
-    // Authored leading zeroes are part of the number too.
-    const qsizetype numberEnd = bounds.markerToken.end - 1;
-    const QString number = QString::number(sequential ? nextNumber++ : 1);
-    result.replace(bounds.markerStart() - source.start + delta, numberEnd - bounds.markerStart(), number);
-    delta += number.size() - (numberEnd - bounds.markerStart());
+    for (const auto& edit : listItemNumberEdits(markdown, bounds, sequential ? nextNumber++ : 1)) {
+      if (edit.range.start < source.start || edit.range.end > source.end)
+        continue;
+      result.replace(edit.range.start - source.start + delta, edit.range.length(), edit.text);
+      delta += edit.text.size() - edit.range.length();
+    }
   }
   return result;
 }

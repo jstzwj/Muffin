@@ -80,6 +80,17 @@ void testEnableAlertBoxFalseLeavesQuotePlain() {
   require(quote->alertKind() == AlertKind::None, "with enableAlertBox=false the marker must not be recognized");
 }
 
+void testAuthoredAlertMarkersOnly() {
+  CmarkGfmParser parser;
+  for (const auto& source : {QStringLiteral("> \\[!NOTE]\n> body"), QStringLiteral("> `[!NOTE]`\n> body"),
+                             QStringLiteral("> **[!NOTE]**\n> body"), QStringLiteral("> &#91;!NOTE]\n> body"),
+                             QStringLiteral("> first line\n> [!NOTE]")}) {
+    const auto parsed = parser.parseDocument(source, {});
+    const auto* quote = firstBlockOfType(*parsed.root, BlockType::BlockQuote);
+    require(quote && quote->alertKind() == AlertKind::None,
+            "escaped, formatted or non-leading marker text must remain an ordinary quote");
+  }
+}
 int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("AlertBoxParseTest"));
@@ -90,6 +101,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testNonAlertBlockquoteIsNone);
   RUN_TEST(testUnknownAlertKindIsNone);
   RUN_TEST(testEnableAlertBoxFalseLeavesQuotePlain);
+  RUN_TEST(testAuthoredAlertMarkersOnly);
 #undef RUN_TEST
   return 0;
 }

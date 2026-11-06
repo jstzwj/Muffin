@@ -15,6 +15,7 @@
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "Export.h"
+#include "document/BlockStructure.h"
 
 #include <QObject>
 
@@ -75,6 +76,32 @@ public:
   CursorCommandState queryCursorCommandState() const;
   bool moveBlockUp();
   bool moveBlockDown();
+  enum class BlockAction {
+    Copy,
+    Cut,
+    Delete,
+    Duplicate,
+    InsertBefore,
+    InsertAfter,
+    MoveUp,
+    MoveDown,
+    Paragraph,
+    Heading1,
+    Heading2,
+    Heading3,
+    Heading4,
+    Heading5,
+    Heading6,
+    BulletList,
+    OrderedList,
+    TaskList,
+    Quote,
+    Code
+  };
+  BlockTarget blockTarget(NodeId id) const;
+  bool canPerformBlockAction(BlockTarget target, BlockAction action) const;
+  bool performBlockAction(BlockTarget target, BlockAction action);
+  bool moveBlock(BlockTarget source, BlockTarget destination, bool after);
   void clearHistoryAndSelection();
   void activateHit(HitTestResult hit);
 
@@ -118,7 +145,7 @@ private:
   bool applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
   bool selectWordAtCursor(const BlockEditContext& context);
-  bool swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower);
+  bool applyBlockPlan(BlockSourcePlan plan, const QString& label, bool preserveReading);
 
   DocumentSession* session_ = nullptr;
   EditorView* view_ = nullptr;

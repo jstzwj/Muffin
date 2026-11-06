@@ -15,6 +15,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QPoint>
+#include <QPointer>
 #include <QSaveFile>
 #include <QStatusBar>
 #include <QString>
@@ -30,6 +31,45 @@
 // command actions from `commands_` (labels / shortcuts / handlers / enabled-
 // state for free), keyed off the click's HitTestResult zone. The pattern mirrors
 // MainWindowSignalBinder's tableMoreActionsRequested handler.
+
+void muffin::MainWindow::buildBlockContextMenu(DocumentTab* document, BlockTarget target, QPoint globalPos) {
+  using Action = EditorController::BlockAction;
+  if (!document || !document->editorController.canPerformBlockAction(target, Action::Copy))
+    return;
+  QPointer<DocumentTab> owner(document);
+  QMenu menu(this);
+  menu.setObjectName(QStringLiteral("blockContextMenu"));
+  const auto add = [&](QMenu* parent, const QString& label, Action operation) {
+    auto* action = parent->addAction(label);
+    action->setEnabled(document->editorController.canPerformBlockAction(target, operation));
+    connect(action, &QAction::triggered, parent, [this, owner, target, operation] {
+      if (owner && tab_ == owner && owner->viewMode() == DocumentViewMode::Rendered &&
+          owner->renderView->blockHandlesEnabled())
+        owner->editorController.performBlockAction(target, operation);
+    });
+  };
+  add(&menu, tr("Insert Block Above"), Action::InsertBefore);
+  add(&menu, tr("Insert Block Below"), Action::InsertAfter);
+  menu.addSeparator();
+  add(&menu, tr("Copy Block"), Action::Copy);
+  add(&menu, tr("Cut Block"), Action::Cut);
+  add(&menu, tr("Duplicate Block"), Action::Duplicate);
+  add(&menu, tr("Delete Block"), Action::Delete);
+  auto* convert = menu.addMenu(tr("Turn Into"));
+  convert->setEnabled(document->editorController.canPerformBlockAction(target, Action::Paragraph));
+  add(convert, tr("Paragraph"), Action::Paragraph);
+  for (int level = 1; level <= 6; ++level)
+    add(convert, tr("Heading %1").arg(level), Action(int(Action::Heading1) + level - 1));
+  add(convert, tr("Bulleted List"), Action::BulletList);
+  add(convert, tr("Numbered List"), Action::OrderedList);
+  add(convert, tr("Task List"), Action::TaskList);
+  add(convert, tr("Quote"), Action::Quote);
+  add(convert, tr("Code Block"), Action::Code);
+  menu.addSeparator();
+  add(&menu, tr("Move Block Up"), Action::MoveUp);
+  add(&menu, tr("Move Block Down"), Action::MoveDown);
+  menu.exec(globalPos);
+}
 
 void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint globalPos) {
   // Refresh every command's enabled/checked predicate so the menu reflects the

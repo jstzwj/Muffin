@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/TopLevelRangeChange.h"
+#include "document/BlockStructure.h"
 #include "editor/HtmlBlockHoverController.h"
 #include "editor/ViewportPosition.h"
 #include "Export.h"
@@ -123,6 +124,12 @@ public:
   // IME and drop input. Mouse selection and the right-click context menu keep working.
   void setEditingLocked(bool locked);
   bool editingLocked() const { return editingLocked_; }
+  void setBlockHandlesEnabled(bool enabled);
+  bool blockHandlesEnabled() const { return blockHandlesEnabled_; }
+  BlockTarget blockHandleTarget() const { return blockHandleTarget_; }
+  QRectF blockHandleRect() const;
+  bool blockInteractionActive() const { return blockHandlePressed_; }
+  void cancelBlockInteraction();
   const BlockLayout* blockAtViewportPos(QPointF viewportPos) const;
   // Direct layout lookup by node id (resolves nested blocks such as a list item,
   // unlike blockAtViewportPos which returns the innermost block under a point).
@@ -161,6 +168,8 @@ signals:
   // receiver can build a caret-based menu from the command registry. MainWindow
   // owns commands_ and builds/execs the menu; EditorView stays decoupled.
   void contextMenuRequested(HitTestResult hit, QPoint globalPos);
+  void blockMenuRequested(BlockTarget target, QPoint globalPos);
+  void blockMoveRequested(BlockTarget source, BlockTarget destination, bool after);
 
 protected:
   void changeEvent(QEvent* event) override;
@@ -183,6 +192,19 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  bool blockHandlesAvailable() const;
+  void updateBlockHandleHover(QPointF point);
+  BlockTarget blockTargetAt(QPointF point) const;
+  bool blockHandlePress(QMouseEvent* event);
+  bool blockHandleMove(QMouseEvent* event);
+  bool blockHandleRelease(QMouseEvent* event);
+  void updateBlockDrop(QPointF point);
+  void paintBlockHandle(QPainter& painter) const;
+  bool blockHandlesEnabled_ = false;
+  BlockTarget blockHandleTarget_, blockDragSource_, blockDropTarget_;
+  bool blockHandlePressed_ = false, blockHandleDragging_ = false, blockDropAfter_ = false;
+  QPointF blockHandlePressPosition_, blockDragPosition_;
+  QTimer* blockDragScrollTimer_ = nullptr;
   CooperativeTask prepareLayoutBuild(const MarkdownDocument& document);
   void advanceLayoutBuild(quint64 generation, quint64 revision);
   void retireLayout(std::unique_ptr<DocumentLayout> layout);

@@ -1,4 +1,5 @@
 #include "document/MarkdownDocument.h"
+#include "document/BlockStructure.h"
 
 #include <QElapsedTimer>
 #include <QLoggingCategory>
@@ -51,6 +52,13 @@ void resolveOutline(QVector<muffin::OutlineEntry>& entries, const muffin::NodeIn
 } // namespace
 
 namespace muffin {
+MarkdownDocument::~MarkdownDocument() = default;
+
+const BlockStructure& MarkdownDocument::blockStructure() const {
+  if (!blockStructure_ || blockStructure_->revision() != revision())
+    blockStructure_ = std::make_unique<BlockStructure>(*this);
+  return *blockStructure_;
+}
 
 MarkdownDocument::MarkdownDocument(QObject* parent)
     : QObject(parent), root_(std::make_unique<MarkdownNode>(BlockType::Document)) {

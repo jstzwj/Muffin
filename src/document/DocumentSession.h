@@ -117,6 +117,7 @@ public:
   // (full path: parseAndStore sets lastParseWasLocalEdit_=false, so the rendered view rebuilds via
   // the `parsed` signal). No-op (no re-parse) when unchanged, so callers can invoke unconditionally.
   void setParseOptions(ParseOptions options);
+  const ParseOptions& parseOptions() const { return parseOptions_; }
   // False means the edit was rejected; callers must not advance selection or undo history.
   bool applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
   // 锁定编辑 / locked editing: reject every incremental user edit (typing, IME commit, paste,

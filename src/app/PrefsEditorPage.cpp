@@ -78,10 +78,13 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   auto* liveLayout = makeCardLayout(liveCard);
   liveRenderLabel_ = makeSectionLabel(liveCard);
   showBlockSourceCheck_ = new QCheckBox(liveCard);
+  blockHandlesCheck_ = new QCheckBox(liveCard);
+  blockHandlesCheck_->setObjectName(QStringLiteral("blockHandlesEnabled"));
   showMermaidAsSourceCheck_ = new QCheckBox(liveCard);
   liveLayout->addWidget(liveRenderLabel_);
   liveLayout->addSpacing(2);
   liveLayout->addWidget(showBlockSourceCheck_);
+  liveLayout->addWidget(blockHandlesCheck_);
   liveLayout->addWidget(showMermaidAsSourceCheck_);
   cardColumn->addWidget(liveCard);
 
@@ -179,6 +182,8 @@ muffin::PrefsEditorPage::PrefsEditorPage(QWidget* parent) : PreferencesPage(pare
   wireBoolSetting(matchMarkdownCheck_, QStringLiteral("editor/matchMarkdown"));
   wireBoolSetting(emojiAutocompleteCheck_, QStringLiteral("editor/emojiAutocomplete"));
   wireBoolSetting(showBlockSourceCheck_, QStringLiteral("editor/showBlockSource"));
+  wireBoolSetting(blockHandlesCheck_, QStringLiteral("editor/blockHandlesEnabled"));
+  connect(blockHandlesCheck_, &QCheckBox::toggled, this, &muffin::PrefsEditorPage::blockHandlesChanged);
   wireBoolSetting(showMermaidAsSourceCheck_, QStringLiteral("editor/showMermaidAsSource"));
   wireBoolSetting(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"));
   wireBoolSetting(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"));
@@ -221,6 +226,8 @@ void muffin::PrefsEditorPage::retranslateUi() {
 
   liveRenderLabel_->setText(tr("Live Rendering"));
   showBlockSourceCheck_->setText(tr("Show Markdown source of the current block element"));
+  blockHandlesCheck_->setText(tr("Show block handles"));
+  blockHandlesCheck_->setToolTip(tr("Hover to open a block menu or drag to move the complete block."));
   showMermaidAsSourceCheck_->setText(tr("Show Mermaid diagrams as source code instead of rendering"));
 
   copyLabel_->setText(tr("Default Copy Behavior"));
@@ -254,6 +261,7 @@ void muffin::PrefsEditorPage::loadSettings() {
   loadCheck(matchMarkdownCheck_, QStringLiteral("editor/matchMarkdown"), false);
   loadCheck(emojiAutocompleteCheck_, QStringLiteral("editor/emojiAutocomplete"), true);
   loadCheck(showBlockSourceCheck_, QStringLiteral("editor/showBlockSource"), false);
+  loadCheck(blockHandlesCheck_, QStringLiteral("editor/blockHandlesEnabled"), false);
   loadCheck(showMermaidAsSourceCheck_, QStringLiteral("editor/showMermaidAsSource"), false);
   loadCheck(copyAsMarkdownCheck_, QStringLiteral("editor/copyAsMarkdown"), true);
   loadCheck(copyLineWhenNoSelectionCheck_, QStringLiteral("editor/copyLineNoSelection"), false);

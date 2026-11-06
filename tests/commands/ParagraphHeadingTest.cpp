@@ -211,6 +211,37 @@ void testParagraphAlignmentPreservesContentAndUndo() {
           "nested Markdown prefixes are never damaged by HTML alignment");
 }
 
+void testSharedConversionsAndNestedPrefixes() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+  session.setMarkdownText("## > quoted ##", false);
+  setSourceCursor(selection, blockAt(session, 0), 5, 7);
+  require(paragraph.setHeadingLevel(0) && session.markdownText().toString() == "\\> quoted" &&
+              blockAt(session, 0)->type() == BlockType::Paragraph,
+          "caret heading command must use the same semantic demotion as the block menu");
+  require(selection.cursorPosition().text.sourceOffset == 5, "caret must follow the unchanged quoted text");
+  require(paragraph.convertToOrderedList() && session.markdownText().toString() == "1. \\> quoted",
+          "caret list conversion must retain protected paragraph content");
+  const auto undo = undoStack.takeUndo().textDeltaCommand();
+  session.applyTextDelta(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText, true);
+  selection.setCursorPosition(undo.beforeCursor);
+  require(session.markdownText().toString() == "\\> quoted", "list conversion undo must keep semantic protection");
+
+  session.setMarkdownText("> ## Title ##\n>\n> After", false);
+  auto* heading = firstChildOfType(blockAt(session, 0), BlockType::Heading);
+  setSourceCursor(selection, heading, 2, 7);
+  require(paragraph.setHeadingLevel(0) && session.markdownText().toString() == "> Title\n>\n> After",
+          "nested heading conversion must retain its outer quote prefix");
+  session.setMarkdownText("- First\n  continued", false);
+  auto* content = firstChildOfType(firstChildOfType(blockAt(session, 0), BlockType::ListItem), BlockType::Paragraph);
+  setSourceCursor(selection, content, 2, 4);
+  require(paragraph.setHeadingLevel(2) && session.markdownText().toString() == "- ## First continued",
+          "multiline list content must lose only continuation indentation during heading conversion");
+}
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -224,6 +255,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testHeadingPreservesCursorInContent);
   RUN_TEST(testHeadingMultiBlockDocument);
   RUN_TEST(testParagraphAlignmentPreservesContentAndUndo);
+  RUN_TEST(testSharedConversionsAndNestedPrefixes);
 #undef RUN_TEST
   return 0;
 }

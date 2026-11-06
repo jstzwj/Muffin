@@ -244,6 +244,7 @@ void EditorView::paintDocument(QPainter& painter, const QRegion& dirtyRegion) {
   paintPreedit(painter);
   paintInsertionCursor(painter);
   paintHeadingBadge(painter);
+  paintBlockHandle(painter);
 }
 
 void EditorView::paintSelection(QPainter& painter) const {

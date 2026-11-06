@@ -30,6 +30,7 @@ public:
   std::unique_ptr<PreparedState> installState(std::unique_ptr<PreparedState> state, bool publish = true);
   void publishPreparedState() { emit documentReset(); }
   explicit MarkdownDocument(QObject* parent = nullptr);
+  ~MarkdownDocument() override;
 
   MarkdownNode& root();
   const MarkdownNode& root() const;
@@ -54,6 +55,7 @@ public:
   quint64 outlineRevision() const { return outlineRevision_; }
 
   quint64 revision() const;
+  const class BlockStructure& blockStructure() const;
   bool isModified() const;
   void setModified(bool modified);
 
@@ -81,6 +83,7 @@ private:
   mutable quint64 resolvedOutlineRevision_ = quint64(-1);
   quint64 outlineRevision_ = 0;
   quint64 revision_ = 0;
+  mutable std::unique_ptr<class BlockStructure> blockStructure_;
   bool modified_ = false;
 };
 

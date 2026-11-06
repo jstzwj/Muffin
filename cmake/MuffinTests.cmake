@@ -509,6 +509,18 @@ muffin_add_test(NAME MuffinCodeFenceControllerTest SOURCE tests/blocks/CodeFence
 muffin_add_test(NAME MuffinCodeFenceScrollControllerTest SOURCE tests/blocks/CodeFenceScrollControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinMathBlockControllerTest SOURCE tests/blocks/MathBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinHtmlBlockControllerTest SOURCE tests/blocks/HtmlBlockControllerTest.cpp LINK MuffinUi)
+muffin_add_test(NAME MuffinBlockStructureTest SOURCE tests/document/BlockStructureTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinBlockHandleTest SOURCE tests/editor/BlockHandleTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+foreach(_block_scale 1.25 1.5)
+  add_test(NAME MuffinBlockHandleDpi${_block_scale} COMMAND $<TARGET_FILE:MuffinBlockHandleTest>)
+  set_tests_properties(MuffinBlockHandleDpi${_block_scale} PROPERTIES
+    ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_SCALE_FACTOR=set:${_block_scale}"
+    RESOURCE_LOCK MuffinQtGui)
+endforeach()
+add_test(NAME MuffinLazyBlockHandleTest COMMAND $<TARGET_FILE:MuffinBlockHandleTest>)
+set_tests_properties(MuffinLazyBlockHandleTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"
+  RESOURCE_LOCK MuffinQtGui)
 muffin_add_test(NAME MuffinHtmlSanitizerTest       SOURCE tests/blocks/HtmlSanitizerTest.cpp       LINK MuffinUi)
 muffin_add_test(NAME MuffinBlockTableUndoTest      SOURCE tests/blocks/BlockTableUndoTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCodeFrontMatterTest.cpp LINK MuffinUi RESOURCE_LOCK)

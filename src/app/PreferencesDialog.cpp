@@ -157,6 +157,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
           &PreferencesDialog::disableTypewriterFocusRequested);
   connect(editorPage_, &PrefsEditorPage::lockEditingSettingsChanged, this,
           &PreferencesDialog::lockEditingSettingsChanged);
+  connect(editorPage_, &PrefsEditorPage::blockHandlesChanged, this, &PreferencesDialog::blockHandlesChanged);
   connect(appearancePage_, &PrefsAppearancePage::themeRequested, this, &PreferencesDialog::themeRequested);
   connect(appearancePage_, &PrefsAppearancePage::importThemeRequested, this, &PreferencesDialog::importThemeRequested);
   connect(appearancePage_, &PrefsAppearancePage::statusBarVisibleRequested, this,

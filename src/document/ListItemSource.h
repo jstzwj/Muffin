@@ -36,6 +36,14 @@ QString listContentPrefix(const PieceTable& markdown, const ListItemSource& sour
 QString rebaseListItemSource(const PieceTable& markdown, InlineRange range, const ListItemSource& from,
                              const ListItemSource& to);
 
+struct ListSourceEdit {
+  InlineRange range;
+  QString text;
+};
+// Sparse edits for one direct item's number and the continuation prefixes that
+// depend on its width. Literal content and descendant list markers stay intact.
+QVector<ListSourceEdit> listItemNumberEdits(const PieceTable& markdown, const ListItemSource& source, int number);
+
 // Only direct AST siblings belong to a numbering run. Literal blocks, nested lists and
 // marker-looking continuation text must never be renumbered. An authored blank separator
 // ends the run, retaining the editor's existing split-list behavior.

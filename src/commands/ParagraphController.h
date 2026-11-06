@@ -12,6 +12,7 @@
 namespace muffin {
 
 class MarkdownNode;
+struct InlineBlockFormat;
 
 class MUFFIN_UI_EXPORT ParagraphController final : public QObject, private EditorContextHolder {
   Q_OBJECT
@@ -89,6 +90,7 @@ private:
   };
 
   bool resolveBlockContext(BlockContext& context) const;
+  bool convertInlineBlockFormat(InlineBlockFormat format, const QString& label);
   // Walk up from the caret's block to the nearest ListItem (nullptr if none).
   MarkdownNode* currentListItem() const;
   // Resolves context for insert-paragraph-before/after: succeeds for Paragraph/Heading

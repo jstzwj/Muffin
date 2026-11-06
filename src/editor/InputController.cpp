@@ -140,6 +140,18 @@ void InputController::setCodeFenceController(CodeFenceController* codeFenceContr
 
 bool InputController::eventFilter(QObject* watched, QEvent* event) {
   if (watched == ctx_.view || (ctx_.view && watched == ctx_.view->viewport())) {
+    if (ctx_.view && ctx_.view->blockInteractionActive() &&
+        (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride)) {
+      const auto* key = static_cast<QKeyEvent*>(event);
+      if (key->key() == Qt::Key_Escape) {
+        if (event->type() == QEvent::KeyPress)
+          ctx_.view->cancelBlockInteraction();
+        event->accept();
+        return true;
+      }
+      if (event->type() == QEvent::KeyPress)
+        ctx_.view->cancelBlockInteraction();
+    }
     if (event->type() == QEvent::ShortcutOverride) {
       auto* keyEvent = static_cast<QKeyEvent*>(event);
       if (ShortcutSettings::instance().matches(*keyEvent, QStringLiteral("edit.select_all"), QKeySequence::SelectAll)) {

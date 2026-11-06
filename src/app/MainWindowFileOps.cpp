@@ -469,6 +469,12 @@ void muffin::MainWindow::showPreferences() {
         window->applyLockEditingSettings();
     }
   });
+  connect(&dialog, &PreferencesDialog::blockHandlesChanged, this, [](bool enabled) {
+    for (QWidget* widget : QApplication::topLevelWidgets())
+      if (auto* window = qobject_cast<MainWindow*>(widget))
+        for (auto* document : window->documentTabs())
+          document->renderView->setBlockHandlesEnabled(enabled);
+  });
   connect(&dialog, &PreferencesDialog::disableTypewriterFocusRequested, this, [this] {
     setTypewriterMode(false);
     setFocusMode(false);

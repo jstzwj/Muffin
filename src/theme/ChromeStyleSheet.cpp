@@ -84,6 +84,17 @@ QString mainWindowStyleSheet(const ThemeDefinition& d) {
              "QToolButton:checked { color: %2; background: %3; }"
              "QTabWidget#DocumentTabs::pane { border: 0; }"
              "QTabWidget#DocumentTabs QTabBar { background: %1; font-size: 13px; font-weight: normal; }"
+             // Match Qt's reserved scroller geometry. Global tool-button padding
+             // otherwise expands each 16px arrow to 38px and overlaps its peer.
+             "QTabWidget#DocumentTabs QTabBar::scroller { width: 56px; }"
+             "QTabWidget#DocumentTabs QToolButton#ScrollLeftButton,"
+             "QTabWidget#DocumentTabs QToolButton#ScrollRightButton {"
+             " min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 0;"
+             " background: %1; color: %7; }"
+             "QTabWidget#DocumentTabs QToolButton#ScrollLeftButton:hover,"
+             "QTabWidget#DocumentTabs QToolButton#ScrollRightButton:hover { background: %3; color: %2; }"
+             "QTabWidget#DocumentTabs QToolButton#ScrollLeftButton:disabled,"
+             "QTabWidget#DocumentTabs QToolButton#ScrollRightButton:disabled { color: %8; }"
              "QTabWidget#DocumentTabs QTabBar::tab { background: transparent; color: %7;"
              " margin: 4px 3px; padding: 4px 10px; min-width: 104px; max-width: 220px;"
              " border: 1px solid transparent; border-radius: 6px; }"

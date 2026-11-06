@@ -938,6 +938,14 @@ set(MUFFIN_CORE_SOURCES
   src/document/NodeIndex.cpp
   src/document/NodeIndex.h
   src/document/MarkdownDocument.cpp
+  src/document/BlockStructure.cpp
+  src/document/BlockStructure.h
+  src/document/BlockSourceBoundary.cpp
+  src/document/BlockSourceBoundary.h
+  src/document/InlineBlockConversion.cpp
+  src/document/InlineBlockConversion.h
+  src/document/HtmlContainerStructure.cpp
+  src/document/HtmlContainerStructure.h
   src/document/MarkdownDocument.h
   src/document/SourcePositionIndex.cpp
   src/document/SourcePositionIndex.h
@@ -1284,6 +1292,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/EditorContextHolder.h
   src/editor/CursorPosition.h
   src/editor/EditorController.cpp
+  src/editor/EditorBlockActions.cpp
+  src/editor/EditorViewBlockHandle.cpp
   src/editor/EditorController.h
   src/app/EditorBackend.h
   src/app/RenderEditorBackend.cpp

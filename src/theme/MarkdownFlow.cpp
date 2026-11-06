@@ -1,12 +1,11 @@
 #include "theme/MarkdownFlow.h"
+#include "document/HtmlContainerStructure.h"
 #include "theme/NodeCssElement.h"
 #include "theme/DocumentStyleTree.h"
 
 #include "html/HtmlBoxBuilder.h"
 #include "html/HtmlParser.h"
 
-#include <QRegularExpression>
-#include <QSet>
 #include <functional>
 
 namespace muffin {
@@ -18,36 +17,23 @@ struct Boundary {
 };
 
 std::optional<Boundary> boundary(const MarkdownNode& node) {
-  if (node.type() != BlockType::HtmlBlock)
-    return std::nullopt;
-  const QString source = node.literal().trimmed();
-  // One complete boundary token. Quoted '>' is an attribute character, not
-  // the end of the tag. The HTML parser below owns attribute/entity decoding.
-  static const QRegularExpression token(R"(^<(\/?)([A-Za-z][A-Za-z0-9-]*)(?:\s+(?:[^<>"']|"[^"]*"|'[^']*')*)?\s*>$)");
-  const auto match = token.match(source);
-  if (!match.hasMatch() || source.endsWith("/>"))
-    return std::nullopt;
-  static const QSet<QString> containers{"div",    "section", "article", "aside",      "main",  "header",
-                                        "footer", "nav",     "figure",  "blockquote", "center"};
-  const QString tag = match.captured(2).toLower();
-  if (!containers.contains(tag))
+  const auto token = htmlContainerBoundary(node);
+  if (!token)
     return std::nullopt;
   Boundary result;
-  result.tag = tag;
-  result.closing = !match.captured(1).isEmpty();
-  if (result.closing) {
-    if (source.mid(2, source.size() - 3).trimmed().compare(tag, Qt::CaseInsensitive) != 0)
-      return std::nullopt;
+  result.tag = token->tag;
+  result.closing = token->closing;
+  if (result.closing)
     return result;
-  }
+  const QString source = node.literal().trimmed();
   html::HtmlDocument document;
   if (!document.parse(source))
     return std::nullopt;
   auto root = html::HtmlBoxBuilder().build(document);
-  if (!root || root->children().size() != 1 || root->children().front()->cssTag != tag)
+  if (!root || root->children().size() != 1 || root->children().front()->cssTag != token->tag)
     return std::nullopt;
   const auto& box = *root->children().front();
-  result.attributes.tag = tag;
+  result.attributes.tag = token->tag;
   result.attributes.id = box.cssId;
   result.attributes.classes = box.cssClasses;
   result.attributes.attributes = box.cssAttributes;
@@ -76,25 +62,15 @@ CooperativeTask MarkdownFlow::scanSteps(const MarkdownNode& owner) {
   const auto& source = owner.children();
   if (source.empty())
     co_return;
-  struct Open {
-    size_t index;
-    Boundary token;
-  };
-  std::vector<Open> stack;
   QHash<size_t, QPair<size_t, CssElement>> pairs;
+  QHash<size_t, size_t> structure;
+  auto structureTask = htmlContainerPairSteps(owner, structure);
+  while (structureTask.resumeFor(0))
+    co_yield nullptr;
   for (size_t i = 0; i < source.size(); ++i) {
-    if (const auto token = boundary(*source[i])) {
-      if (!token->closing && stack.size() < 64)
-        stack.push_back({i, *token});
-      else if (token->closing && !stack.empty() && stack.back().token.tag == token->tag) {
-        pairs.insert(stack.back().index, {i, stack.back().token.attributes});
-        stack.pop_back();
-      } else {
-        // Do not let malformed nesting silently consume unrelated Markdown.
-        stack.clear();
-        pairs.clear();
-      }
-    }
+    if (const auto close = structure.constFind(i); close != structure.cend())
+      if (const auto token = boundary(*source[i]))
+        pairs.insert(i, {*close, token->attributes});
     auto task = scanSteps(*source[i]);
     while (task.resumeFor(0))
       co_yield nullptr;

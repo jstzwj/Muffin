@@ -1584,6 +1584,58 @@ void lockedEditingScopesSurviveLoading() {
   }
 }
 
+void blockHandlesFollowPreferencesAndTargetedMenu() {
+  SettingsOverride enabled("editor/blockHandlesEnabled", false);
+  Fixture first;
+  Fixture second;
+  auto* document = first.open(first.file("blocks.md", "First\n\nSecond\n"));
+  const auto changePreference = [&](bool value) {
+    QTimer::singleShot(0, &first.window, [&] {
+      auto* dialog = first.window.findChild<PreferencesDialog*>();
+      require(dialog, "block handle preferences dialog exists");
+      auto* check = dialog->findChild<QCheckBox*>("blockHandlesEnabled");
+      require(check, "block handle preference exists");
+      check->setChecked(value);
+      dialog->accept();
+    });
+    action(first.window, "Preferences...")->trigger();
+  };
+  require(!document->renderView->blockHandlesEnabled() && !second.current()->renderView->blockHandlesEnabled(),
+          "block handles default to disabled in all windows");
+  changePreference(true);
+  require(document->renderView->blockHandlesEnabled() && second.current()->renderView->blockHandlesEnabled(),
+          "changing the preference updates existing windows immediately");
+  auto* other = first.open(first.file("other-blocks.md", "Other\n"));
+  require(other->renderView->blockHandlesEnabled(), "new tabs inherit the enabled preference");
+  first.tabs->setCurrentWidget(document);
+  document->editorController.setCursorForSourceOffset(1);
+  const auto caret = document->editorController.selection().cursorPosition();
+  const auto target =
+      document->editorController.blockTarget(document->session.document().root().children().back()->id());
+  bool handled = false;
+  QTimer::singleShot(0, &first.window, [&] {
+    auto* menu = first.window.findChild<QMenu*>("blockContextMenu");
+    require(menu && menu->isVisible(), "handle opens the block menu");
+    for (auto* item : menu->actions()) {
+      if (item->text() == "Copy Block") {
+        item->trigger();
+        handled = true;
+        break;
+      }
+    }
+    menu->close();
+  });
+  document->renderView->blockMenuRequested(target, first.window.mapToGlobal(QPoint(300, 200)));
+  require(handled && QApplication::clipboard()->text() == "Second",
+          "the block menu copies its hovered target rather than the caret's block");
+  require(SelectionRange{caret, document->editorController.selection().cursorPosition()}.isCollapsed(),
+          "the block menu preserves the writing caret");
+  changePreference(false);
+  require(!document->renderView->blockHandlesEnabled() && !other->renderView->blockHandlesEnabled() &&
+              !second.current()->renderView->blockHandlesEnabled(),
+          "disabling the preference reaches background tabs and other windows");
+}
+
 void lockedEditingPreferencesSyncAcrossWindows() {
   SettingsOverride enabled("editor/lockEditingEnabled", true);
   SettingsOverride scope("editor/lockEditingScope", 0);
@@ -3852,6 +3904,7 @@ void closeFolder(MainWindow& window) {
 }
 
 void tabBarOnlyForMultipleDocuments() {
+  SettingsOverride themeSetting{"appearance/themeName", QStringLiteral("GitHub")};
   Fixture f;
   auto* bar = f.tabs->tabBar();
   auto* plus = f.window.findChild<QToolButton*>(QStringLiteral("NewTabButton"));
@@ -3880,6 +3933,35 @@ void tabBarOnlyForMultipleDocuments() {
   require(a != b && f.tabs->count() == 2 && bar->isVisible() && plus->isVisible(),
           "opening the second sidebar document shows the tab strip");
   require(b->mapTo(f.tabs, QPoint(0, 0)).y() >= bar->height(), "visible tab strip sits above the editor");
+  const auto checkTrailingButton = [&] {
+    waitUntil(
+        [&] {
+          const auto last = bar->tabRect(bar->count() - 1);
+          const QRect button(plus->mapTo(f.tabs, QPoint()) - bar->pos(), plus->size());
+          return button.left() > last.right() && button.left() - last.right() <= 12 &&
+                 qAbs(button.center().y() - last.center().y()) <= 2;
+        },
+        "new-tab button settles beside the last tab after the strip layout changes");
+    const auto last = bar->tabRect(bar->count() - 1);
+    const QRect button(plus->mapTo(f.tabs, QPoint()) - bar->pos(), plus->size());
+    if (const QString screenshot = qEnvironmentVariable("MUFFIN_TAB_SCREENSHOT");
+        !screenshot.isEmpty() && bar->count() == 2)
+      require(f.window.grab().save(screenshot + QStringLiteral(".multiple.png")),
+              "save trailing new-tab button capture");
+    require(button.left() > last.right() && button.left() - last.right() <= 12,
+            "new-tab button follows the last tab without a window-width gap");
+    require(qAbs(button.center().y() - last.center().y()) <= 2,
+            QStringLiteral("new-tab button stays vertically centered (button y=%1 h=%2; tab y=%3 h=%4)")
+                .arg(button.y())
+                .arg(button.height())
+                .arg(last.y())
+                .arg(last.height()));
+  };
+  checkTrailingButton();
+  f.window.resize(1200, 700);
+  checkTrailingButton();
+  f.window.resize(800, 700);
+  checkTrailingButton();
   sidebar->fileOpenRequested(first);
   require(f.tabs->count() == 2 && f.current() == a, "reopening a sidebar document selects its tab");
   f.close(b);
@@ -3895,6 +3977,77 @@ void tabBarOnlyForMultipleDocuments() {
             "failed second open reports failure");
     checkSingle();
   }
+  for (int i = 0; i < 8; ++i)
+    f.open(f.file(QStringLiteral("overflow-%1.md").arg(i), "# Note\n"));
+  QApplication::processEvents();
+  require(bar->sizeHint().width() > f.tabs->width(), "tab overflow fixture exceeds the strip width");
+  const QRect button(plus->mapTo(f.tabs, QPoint()), plus->size());
+  require(plus->isVisible() && f.tabs->rect().contains(button) && !button.intersects(bar->geometry()),
+          "overflow keeps the new-tab button visible outside the scrolling tabs");
+  require(f.tabs->cornerWidget()->width() <= plus->width() + 8, "overflow reserves only the new-tab button width");
+  const auto checkOverflowButtons = [&] {
+    QApplication::processEvents();
+    auto* left = bar->findChild<QToolButton*>(QStringLiteral("ScrollLeftButton"));
+    auto* right = bar->findChild<QToolButton*>(QStringLiteral("ScrollRightButton"));
+    require(left && right && left->isVisible() && right->isVisible(), "overflow exposes both scroll arrows");
+    if (const QString capture = qEnvironmentVariable("MUFFIN_TAB_SCREENSHOT"); !capture.isEmpty())
+      require(f.window.grab().save(capture + QStringLiteral(".overflow.png")), "capture overflowing tabs");
+    const int reserved = bar->style()->pixelMetric(QStyle::PM_TabBarScrollButtonWidth, nullptr, bar);
+    require(left->width() == reserved && right->width() == reserved,
+            QStringLiteral("scroll arrows fit their reserved width (reserved=%1, actual=%2/%3)")
+                .arg(reserved)
+                .arg(left->width())
+                .arg(right->width()));
+    // Native styles may intentionally share a one-pixel button border.
+    const int sharedBorder = bar->style()->pixelMetric(QStyle::PM_TabBar_ScrollButtonOverlap, nullptr, bar);
+    require(
+        bar->rect().contains(left->geometry()) && bar->rect().contains(right->geometry()) &&
+            left->geometry().intersected(right->geometry()).width() <= sharedBorder,
+        QStringLiteral("scroll arrows stay separate inside the strip (bar %1x%2, left %3,%4 %5x%6, right %7,%8 %9x%10)")
+            .arg(bar->width())
+            .arg(bar->height())
+            .arg(left->x())
+            .arg(left->y())
+            .arg(left->width())
+            .arg(left->height())
+            .arg(right->x())
+            .arg(right->y())
+            .arg(right->width())
+            .arg(right->height()));
+    const auto checkHitTargets = [&] {
+      for (auto* arrow : {left, right})
+        for (int offset : {4, arrow->width() / 2, arrow->width() - 5})
+          require(bar->childAt(QPoint(arrow->x() + offset, arrow->geometry().center().y())) == arrow,
+                  "tab close controls cannot cover a scroll arrow's click target");
+    };
+    checkHitTargets();
+    const auto previous = bar->tabRect(0).left();
+    if (left->isEnabled()) {
+      QTest::mouseClick(left, Qt::LeftButton);
+      require(bar->tabRect(0).left() > previous, "left arrow scrolls toward earlier tabs");
+      checkHitTargets();
+      const auto scrolled = bar->tabRect(0).left();
+      QTest::mouseClick(right, Qt::LeftButton);
+      require(bar->tabRect(0).left() < scrolled, "right arrow scrolls toward later tabs");
+      checkHitTargets();
+    }
+  };
+  checkOverflowButtons();
+  for (const char* theme : {"GitHub", "Night"}) {
+    action(f.window, theme)->trigger();
+    checkOverflowButtons();
+  }
+  const int count = f.tabs->count();
+  QTest::mouseClick(plus, Qt::LeftButton);
+  require(f.tabs->count() == count + 1, "trailing new-tab button remains clickable with overflowing tabs");
+  f.window.resize(2000, 700);
+  checkTrailingButton();
+  f.window.resize(800, 700);
+  QApplication::processEvents();
+  require(f.window.width() == 800, "the trailing button does not inflate the window's minimum width");
+  while (f.tabs->count() > 1)
+    f.close(f.current());
+  checkSingle();
 }
 
 void formatActionsFollowSelectionAndDocumentChanges() {
@@ -4922,6 +5075,11 @@ int main(int argc, char** argv) {
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
   if (QCoreApplication::arguments().contains(QStringLiteral("--chrome-appearance"))) {
     runTest("chromeAppearanceUsesSharedMetrics", chromeAppearanceUsesSharedMetrics);
+    runTest("tabBarOnlyForMultipleDocuments", tabBarOnlyForMultipleDocuments);
+    return 0;
+  }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--block-handles"))) {
+    runTest("blockHandlesFollowPreferencesAndTargetedMenu", blockHandlesFollowPreferencesAndTargetedMenu);
     return 0;
   }
   if (QCoreApplication::arguments().contains(QStringLiteral("--split-view"))) {
@@ -5034,6 +5192,7 @@ int main(int argc, char** argv) {
   if (QCoreApplication::arguments().contains(QStringLiteral("--note-links")))
     return 0;
   runTest("continuousEditingWorkflow", continuousEditingWorkflow);
+  runTest("blockHandlesFollowPreferencesAndTargetedMenu", blockHandlesFollowPreferencesAndTargetedMenu);
   runLockedEditingTests();
   runTest("configurableShortcuts", configurableShortcuts);
   runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);

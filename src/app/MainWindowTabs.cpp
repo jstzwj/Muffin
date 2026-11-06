@@ -157,6 +157,8 @@ void muffin::MainWindow::configureTab(DocumentTab* document) {
   document->editor->setZoomPercent(zoomPercent_);
   document->renderView->setFontSizePx(fontSizePx_);
   document->editor->setFontSizePx(fontSizePx_);
+  document->renderView->setBlockHandlesEnabled(
+      QSettings().value(QStringLiteral("editor/blockHandlesEnabled"), false).toBool());
   document->renderView->setContentWidthPx(contentWidthPx_);
   document->setFocusMode(focusMode_);
   applyEditingLockedTo(document); // a tab opened while 锁定编辑 starts locked too

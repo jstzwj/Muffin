@@ -22,6 +22,7 @@ signals:
   void disableTypewriterFocusRequested();
   // 锁定编辑 的功能开关或作用范围被改动，主窗口需要重新落状态。
   void lockEditingSettingsChanged();
+  void blockHandlesChanged(bool enabled);
 
 private:
   void loadSettings();
@@ -37,6 +38,7 @@ private:
   QCheckBox* emojiAutocompleteCheck_ = nullptr;
   QLabel* liveRenderLabel_ = nullptr;
   QCheckBox* showBlockSourceCheck_ = nullptr;
+  QCheckBox* blockHandlesCheck_ = nullptr;
   QCheckBox* showMermaidAsSourceCheck_ = nullptr;
   QLabel* copyLabel_ = nullptr;
   QCheckBox* copyAsMarkdownCheck_ = nullptr;

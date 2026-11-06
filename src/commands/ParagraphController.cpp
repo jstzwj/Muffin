@@ -2,6 +2,7 @@
 
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
+#include "document/InlineBlockConversion.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
@@ -385,37 +386,30 @@ bool ParagraphController::setHeadingLevel(int level) {
     return true; // no-op
   }
 
-  QString newPrefix;     // ATX prefix ("# "). Empty for setext.
-  QString trailingBlock; // setext underline ("\n===" / "\n---"). Empty for ATX.
-  const bool setext =
-      level > 0 && (level == 1 || level == 2) && headingStyleIndex() == 1 && !context.contentText.isEmpty();
-  if (level > 0) {
-    if (setext) {
-      const QChar line = (level == 1) ? QLatin1Char('=') : QLatin1Char('-');
-      trailingBlock = QStringLiteral("\n") + QString(line).repeated(qMax(1, context.contentText.size()));
-    } else {
-      newPrefix = QStringLiteral("#").repeated(level) + QLatin1Char(' ');
-    }
-  }
+  InlineBlockFormat format;
+  format.kind = level == 0 ? InlineBlockFormat::Paragraph : InlineBlockFormat::Heading;
+  format.level = level;
+  format.setext = headingStyleIndex() == 1;
+  return convertInlineBlockFormat(format, level > 0 ? QStringLiteral("Set Heading %1").arg(level)
+                                                    : QStringLiteral("Set Paragraph"));
+}
 
-  const QString insertedText = newPrefix + context.contentText + trailingBlock;
-  const qsizetype removedLength = context.blockEnd - context.blockStart;
-
-  // Compute cursor offset within the content
-  const qsizetype cursorContentOffset =
-      context.cursorSourceOffset >= context.contentStart
-          ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
-          : 0;
-  // For ATX the content follows newPrefix; for setext newPrefix is empty so the cursor still lands on
-  // the content at blockStart (a setext heading's first line is the content text).
-  const qsizetype nextCursorOffset = context.blockStart + newPrefix.size() + cursorContentOffset;
-
-  return applyBlockDelta(
-      EditTransaction::Kind::ReplaceDocumentText,
-      level > 0 ? QStringLiteral("Set Heading %1").arg(level) : QStringLiteral("Set Paragraph"), context.blockStart,
-      removedLength, insertedText, nextCursorOffset,
-      {LocalEditNodeHint{context.blockId, context.blockStart, level > 0 ? BlockType::Heading : BlockType::Paragraph}},
-      true);
+bool ParagraphController::convertInlineBlockFormat(InlineBlockFormat format, const QString& label) {
+  BlockContext context;
+  if (!resolveBlockContext(context))
+    return false;
+  const auto converted =
+      convertInlineBlock(ctx_.session->markdownText(), *context.node, format, ctx_.session->parseOptions());
+  if (!converted.valid)
+    return false;
+  const auto sourceCursor = context.cursorSourceOffset >= 0 ? context.cursorSourceOffset : context.contentStart;
+  const auto nextCursor = converted.change.mapOffset(sourceCursor);
+  const auto type = format.kind == InlineBlockFormat::Heading ? BlockType::Heading : BlockType::Paragraph;
+  QVector<LocalEditNodeHint> hints;
+  if (format.kind == InlineBlockFormat::Heading || format.kind == InlineBlockFormat::Paragraph)
+    hints.append({context.blockId, converted.range.start, type});
+  return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, label, converted.range.start,
+                         converted.range.length(), converted.text, nextCursor, std::move(hints), true);
 }
 
 bool ParagraphController::promoteHeading() {
@@ -627,54 +621,23 @@ bool ParagraphController::toggleQuote() {
 }
 
 bool ParagraphController::convertToOrderedList() {
-  BlockContext context;
-  if (!resolveBlockContext(context)) {
-    return false;
-  }
-
-  const QString inserted = QStringLiteral("1. ") + context.contentText;
-  const qsizetype cursorContentOffset =
-      context.cursorSourceOffset >= context.contentStart
-          ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
-          : 0;
-  const qsizetype nextCursor = context.blockStart + 3 + cursorContentOffset;
-
-  return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Convert to Ordered List"),
-                         context.blockStart, context.blockEnd - context.blockStart, inserted, nextCursor, {}, true);
+  InlineBlockFormat format;
+  format.kind = InlineBlockFormat::OrderedList;
+  return convertInlineBlockFormat(format, QStringLiteral("Convert to Ordered List"));
 }
 
 bool ParagraphController::convertToUnorderedList() {
-  BlockContext context;
-  if (!resolveBlockContext(context)) {
-    return false;
-  }
-
-  const QString inserted = unorderedListMarker() + QStringLiteral(" ") + context.contentText;
-  const qsizetype cursorContentOffset =
-      context.cursorSourceOffset >= context.contentStart
-          ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
-          : 0;
-  const qsizetype nextCursor = context.blockStart + 2 + cursorContentOffset;
-
-  return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Convert to Unordered List"),
-                         context.blockStart, context.blockEnd - context.blockStart, inserted, nextCursor, {}, true);
+  InlineBlockFormat format;
+  format.kind = InlineBlockFormat::BulletList;
+  format.bullet = unorderedListMarker();
+  return convertInlineBlockFormat(format, QStringLiteral("Convert to Unordered List"));
 }
 
 bool ParagraphController::convertToTaskList() {
-  BlockContext context;
-  if (!resolveBlockContext(context)) {
-    return false;
-  }
-
-  const QString inserted = unorderedListMarker() + QStringLiteral(" [ ] ") + context.contentText;
-  const qsizetype cursorContentOffset =
-      context.cursorSourceOffset >= context.contentStart
-          ? qBound<qsizetype>(0, context.cursorSourceOffset - context.contentStart, context.contentText.size())
-          : 0;
-  const qsizetype nextCursor = context.blockStart + 6 + cursorContentOffset;
-
-  return applyBlockDelta(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Convert to Task List"),
-                         context.blockStart, context.blockEnd - context.blockStart, inserted, nextCursor, {}, true);
+  InlineBlockFormat format;
+  format.kind = InlineBlockFormat::TaskList;
+  format.bullet = unorderedListMarker();
+  return convertInlineBlockFormat(format, QStringLiteral("Convert to Task List"));
 }
 
 bool ParagraphController::toggleTaskListItem(NodeId blockId) {

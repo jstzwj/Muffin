@@ -168,6 +168,11 @@ void muffin::MainWindow::connectRenderSignals(DocumentTab* tab) {
                      }
                      window.buildEditorContextMenu(hit, globalPos);
                    });
+  QObject::connect(tab->renderView, &EditorView::blockMenuRequested, tab->windowConnections,
+                   [&window, tab](BlockTarget target, QPoint globalPos) {
+                     if (window.tab_ == tab && tab->viewMode() == DocumentViewMode::Rendered)
+                       window.buildBlockContextMenu(tab, target, globalPos);
+                   });
 
   connect(tab->renderView, &EditorView::linkActivated, tab->windowConnections, [&window, tab](const QString& href) {
     if (window.tab_ == tab)

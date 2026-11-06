@@ -75,18 +75,23 @@ namespace {
 
 Q_LOGGING_CATEGORY(mainWindowPerf, "muffin.perf", QtWarningMsg)
 
-// QTabWidget bottom-aligns a short corner widget with the tab strip. Reserve
-// the strip's full preferred height and center the fixed-size button inside it.
+// Reserve the unused part of the strip so the button follows the tabs. When
+// tabs overflow, keep only the button's minimum width; Qt retains its native
+// scrolling area. A stable minimum hint lets the window shrink again.
 class TabBarCorner final : public QWidget {
 public:
   explicit TabBarCorner(QTabBar* bar, QWidget* parent) : QWidget(parent), bar_(bar) {
     auto* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(4, 0, 4, 0);
     layout->setSpacing(0);
   }
 
-  QSize sizeHint() const override { return QWidget::sizeHint().expandedTo(QSize(0, bar_->sizeHint().height())); }
-  QSize minimumSizeHint() const override { return sizeHint(); }
+  QSize sizeHint() const override {
+    auto hint = minimumSizeHint();
+    hint.setWidth(qMax(hint.width(), parentWidget()->width() - bar_->sizeHint().width()));
+    return hint;
+  }
+  QSize minimumSizeHint() const override { return QWidget::sizeHint().expandedTo(QSize(0, bar_->sizeHint().height())); }
 
 private:
   QTabBar* bar_;
@@ -338,7 +343,7 @@ void muffin::MainWindow::setupUi() {
   newTabButton->setIconSize(QSize(16, 16));
   newTabButton->setAutoRaise(true);
   corner->layout()->addWidget(newTabButton);
-  corner->layout()->setAlignment(newTabButton, Qt::AlignCenter);
+  corner->layout()->setAlignment(newTabButton, Qt::AlignLeading | Qt::AlignVCenter);
   tabs_->setCornerWidget(corner, Qt::TopRightCorner);
   updateTabBarVisibility();
   connect(newTabButton, &QToolButton::clicked, this, &MainWindow::startNewDocument);

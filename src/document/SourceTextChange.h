@@ -13,10 +13,17 @@ struct SourceTextChange {
     qsizetype start = 0, removed = 0, inserted = 0;
   };
   QVector<Edit> edits;
+  struct Move {
+    qsizetype from = 0, length = 0, to = 0;
+  };
+  QVector<Move> moves;
 
   qsizetype mapOffset(qsizetype offset) const {
     if (offset < 0)
       return offset;
+    for (const auto& move : moves)
+      if (offset >= move.from && offset <= move.from + move.length)
+        return move.to + offset - move.from;
     qsizetype shift = 0;
     for (const auto& edit : edits) {
       if (offset < edit.start)
@@ -30,6 +37,8 @@ struct SourceTextChange {
 
   SourceTextChange reversed() const {
     SourceTextChange result;
+    for (const auto& move : moves)
+      result.moves.append({move.to, move.length, move.from});
     result.edits.reserve(edits.size());
     qsizetype shift = 0;
     for (const auto& edit : edits) {

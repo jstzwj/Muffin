@@ -236,6 +236,7 @@ private:
   // already been moved to the click by EditorView, so caret-based commands land
   // on the right target. Mirrors the tableMoreActionsRequested pattern.
   void buildEditorContextMenu(const HitTestResult& hit, QPoint globalPos);
+  void buildBlockContextMenu(DocumentTab* document, BlockTarget target, QPoint globalPos);
   void exportMermaidDiagram(NodeId blockId);
   // PNG twin of exportMermaidDiagram: same fence lookup, file dialog, and
   // status-bar confirmation; rasterizes at 2x for crispness (the same DPR the

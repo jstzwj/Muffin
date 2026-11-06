@@ -55,6 +55,7 @@ signals:
   void restoreDraftsRequested();
   void disableTypewriterFocusRequested();
   void lockEditingSettingsChanged();
+  void blockHandlesChanged(bool enabled);
 
 protected:
   void changeEvent(QEvent* event) override;

@@ -192,6 +192,8 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   connect(tableToolbar_, &TableToolbar::resizeRequested, this, &EditorView::tableResizeRequested);
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
+    if (!blockInteractionActive())
+      cancelBlockInteraction();
     clearHtmlHover();
     updateCodeLanguageEditor();
     updateTableToolbar();
@@ -259,6 +261,7 @@ void EditorView::refreshPendingResources() {
 }
 
 void EditorView::setDocument(const MarkdownDocument& document, QString documentPath, bool cooperative) {
+  cancelBlockInteraction();
   cooperative = cooperative || livePreview_;
   if (document_ != &document || documentPath_ != documentPath) {
     layoutReadingPosition_.reset();
@@ -304,6 +307,8 @@ void EditorView::setLivePreview(bool enabled) {
   if (livePreview_ == enabled)
     return;
   livePreview_ = enabled;
+  if (enabled)
+    cancelBlockInteraction();
   if (enabled)
     stopScrollAnimation();
   if (!enabled) {
@@ -748,6 +753,8 @@ void EditorView::setEditingLocked(bool locked) {
     return;
   }
   editingLocked_ = locked;
+  if (locked)
+    cancelBlockInteraction();
   setAttribute(Qt::WA_InputMethodEnabled, !locked);
   if (locked) {
     resetComposition();
@@ -834,6 +841,8 @@ bool EditorView::event(QEvent* event) {
     viewportPrefetchTimer_->stop();
   if (event->type() == QEvent::Hide)
     previewFrame_ = {}; // Inactive tabs retain their reading anchor, not a screen-sized bitmap.
+  if (event->type() == QEvent::Hide || event->type() == QEvent::WindowDeactivate)
+    cancelBlockInteraction();
   if (event->type() == QEvent::Leave) {
     cssPaintContext_.pointer.reset();
     cssPaintContext_.pressed = false;
@@ -881,6 +890,8 @@ bool EditorView::event(QEvent* event) {
 
 bool EditorView::viewportEvent(QEvent* event) {
   if (event->type() == QEvent::Leave) {
+    if (!blockInteractionActive())
+      cancelBlockInteraction();
     cssPaintContext_.pointer.reset();
     cssPaintContext_.pressed = false;
     diag::updateViewport(viewport());
@@ -984,6 +995,8 @@ void EditorView::wheelEvent(QWheelEvent* event) {
 }
 
 void EditorView::mousePressEvent(QMouseEvent* event) {
+  if (blockHandlePress(event))
+    return;
   if (event->button() == Qt::BackButton || event->button() == Qt::ForwardButton) {
     emit historyNavigationRequested(event->button() == Qt::ForwardButton);
     event->accept();
@@ -1085,6 +1098,8 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
 }
 
 void EditorView::mouseMoveEvent(QMouseEvent* event) {
+  if (blockHandleMove(event))
+    return;
   cssPaintContext_.pointer = event->position();
   cssPaintContext_.pressed = event->buttons().testFlag(Qt::LeftButton);
   diag::updateViewport(viewport());
@@ -1124,10 +1139,13 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
   }
   updateHtmlHover(event->position());
   updateMouseCursor(event->position());
+  updateBlockHandleHover(event->position());
   QAbstractScrollArea::mouseMoveEvent(event);
 }
 
 void EditorView::mouseReleaseEvent(QMouseEvent* event) {
+  if (blockHandleRelease(event))
+    return;
   cssPaintContext_.pointer = event->position();
   cssPaintContext_.pressed = false;
   diag::updateViewport(viewport());
@@ -1702,7 +1720,14 @@ EditorView::HeadingBadge EditorView::headingBadgeForBlock(NodeId blockId) const 
   const TextFontMetrics headingMetrics(theme_.headingFont(level));
   const qreal lineCenterY = blockRect.top() + headingMetrics.height() / 2.0;
   const qreal badgeY = lineCenterY - badgeHeight / 2.0 - scrollY();
-  return HeadingBadge{topId, QRectF(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight), level};
+  const QRectF badgeRect(blockRect.left() - badgeWidth - 4.0, badgeY, badgeWidth, badgeHeight);
+  // The gutter is shared by contextual annotations and block controls. Hover
+  // gives the handle priority; all badge consumers (paint and dirty regions)
+  // use this same visibility rule, rather than painting both into one slot.
+  const auto handle = blockHandleRect();
+  if (!handle.isEmpty() && (blockHandleTarget_.id == topId || handle.intersects(badgeRect)))
+    return {};
+  return HeadingBadge{topId, badgeRect, level};
 }
 
 HtmlBlockHoverController::Inputs EditorView::htmlHoverInputs() const {

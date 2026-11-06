@@ -427,35 +427,6 @@ void annotateMathDelimiters(QStringView markdown, MarkdownNode& root) {
   visit(visit, markdown, root);
 }
 
-// Collects the leading plain text of a paragraph's inlines (enough to test a GitHub alert marker),
-// stopping at the first line break so the marker must sit on the blockquote's first line.
-QString leadingInlineText(const QVector<InlineNode>& inlines) {
-  QString text;
-  const auto visit = [&](auto&& self, const QVector<InlineNode>& nodes) -> void {
-    for (const InlineNode& node : nodes) {
-      if (text.size() >= 32) {
-        return;
-      }
-      switch (node.type()) {
-      case InlineType::Text:
-      case InlineType::Code:
-      case InlineType::InlineMath:
-      case InlineType::HtmlInline:
-        text += node.text();
-        break;
-      case InlineType::SoftBreak:
-      case InlineType::LineBreak:
-        return;
-      default:
-        break;
-      }
-      self(self, node.children());
-    }
-  };
-  visit(visit, inlines);
-  return text;
-}
-
 // Returns the alert kind for a blockquote whose first line is `[!NOTE]`/`[!TIP]`/... (case
 // insensitive, matching GitHub's five kinds), else None.
 AlertKind alertKindFromFirstLine(const QString& firstLine) {
@@ -488,12 +459,21 @@ AlertKind alertKindFromFirstLine(const QString& firstLine) {
 
 // Tags each blockquote whose first line is a GitHub alert marker with its kind, so the renderer can
 // draw a themed card instead of a plain quote bar. Mirrors annotateMathDelimiters's tree walk.
-void annotateAlertKinds(MarkdownNode& root) {
-  const auto visit = [](auto&& self, MarkdownNode& node) -> void {
+void annotateAlertKinds(QStringView markdown, MarkdownNode& root) {
+  const auto visit = [markdown](auto&& self, MarkdownNode& node) -> void {
     if (node.type() == BlockType::BlockQuote) {
       MarkdownNode* paragraph = node.firstChildByType(BlockType::Paragraph);
       if (paragraph) {
-        const AlertKind kind = alertKindFromFirstLine(leadingInlineText(paragraph->inlines()));
+        // Test the authored marker, not decoded inline text: escaped brackets,
+        // code spans and emphasis are ordinary content, even if they display
+        // the same characters as an alert marker.
+        const auto start = paragraph->sourceRange().byteStart;
+        auto firstLine = start >= 0 && start <= markdown.size()
+                             ? markdown.mid(start, qMin<qsizetype>(32, markdown.size() - start))
+                             : QStringView();
+        if (const auto newline = firstLine.indexOf(u'\n'); newline >= 0)
+          firstLine = firstLine.first(newline);
+        const AlertKind kind = alertKindFromFirstLine(firstLine.toString());
         if (kind != AlertKind::None) {
           node.setAlertKind(kind);
         }
@@ -1690,7 +1670,7 @@ ParseResult CmarkGfmParser::parseDocumentImpl(QStringView markdown, const ParseO
   }
   if (options.enableAlertBox) {
     ParsePerfTimer t("parse.annotateAlertKinds", metrics);
-    annotateAlertKinds(*result.root);
+    annotateAlertKinds(markdownToParse, *result.root);
   }
   if (options.enableHighlight) {
     ParsePerfTimer t("parse.splitHighlight", metrics);

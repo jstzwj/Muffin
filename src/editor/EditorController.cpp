@@ -262,6 +262,8 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 
   if (view_) {
     connect(view_, &EditorView::blockClicked, this, &EditorController::activateHit);
+    connect(view_, &EditorView::blockMoveRequested, this,
+            [this](BlockTarget source, BlockTarget destination, bool after) { moveBlock(source, destination, after); });
     connect(
         view_, &EditorView::selectionChanged, &selection_,
         static_cast<void (SelectionController::*)(SelectionRange, HitTestResult)>(&SelectionController::setSelection));
@@ -1114,111 +1116,6 @@ bool EditorController::selectWordAtCursor(const BlockEditContext& context) {
   range.focus.text.nodeId = context.editableNode ? context.editableNode->id() : context.node->id();
   range.focus.text.textOffset = seg.end;
   selection_.setSelection(range);
-  return true;
-}
-
-bool EditorController::moveBlockUp() {
-  if (!session_ || !selection_.hasCursor()) {
-    return false;
-  }
-
-  const CursorPosition cursor = selection_.cursorPosition();
-  MarkdownNode* current = session_->document().node(cursor.blockId);
-  if (!current) {
-    return false;
-  }
-
-  // Walk up to top-level child of Document
-  while (current->parent() && current->parent()->type() != BlockType::Document) {
-    current = current->parent();
-  }
-  if (!current || !current->parent() || current->parent()->type() != BlockType::Document) {
-    return false;
-  }
-
-  MarkdownNode* prev = current->previousSibling();
-  if (!prev) {
-    return false;
-  }
-
-  return swapTopLevelBlocks(*prev, *current);
-}
-
-bool EditorController::moveBlockDown() {
-  if (!session_ || !selection_.hasCursor()) {
-    return false;
-  }
-
-  const CursorPosition cursor = selection_.cursorPosition();
-  MarkdownNode* current = session_->document().node(cursor.blockId);
-  if (!current) {
-    return false;
-  }
-
-  // Walk up to top-level child of Document
-  while (current->parent() && current->parent()->type() != BlockType::Document) {
-    current = current->parent();
-  }
-  if (!current || !current->parent() || current->parent()->type() != BlockType::Document) {
-    return false;
-  }
-
-  MarkdownNode* next = current->nextSibling();
-  if (!next) {
-    return false;
-  }
-
-  return swapTopLevelBlocks(*current, *next);
-}
-
-bool EditorController::swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower) {
-  const PieceTable& markdown = session_->markdownText();
-  const SourceRange upperRange = upper.sourceRange();
-  const SourceRange lowerRange = lower.sourceRange();
-
-  qsizetype upperStart = upperRange.byteStart;
-  qsizetype lowerEnd = lowerRange.byteEnd;
-
-  // Extend lowerEnd to include trailing newline for clean swap
-  while (lowerEnd < markdown.size() && markdown.at(lowerEnd) == QLatin1Char('\n')) {
-    ++lowerEnd;
-  }
-
-  const QString upperText = markdown.mid(upperStart, lowerRange.byteStart - upperStart);
-  const QString lowerText = markdown.mid(lowerRange.byteStart, lowerEnd - lowerRange.byteStart);
-
-  // Compute new cursor source offset: same relative position within the moved block
-  const CursorPosition caret = selection_.cursorPosition();
-  qsizetype cursorSrcOff = caret.text.sourceOffset;
-  if (cursorSrcOff < 0) {
-    // A caret placed by hit-test or programmatic navigation may carry no source offset (-1). Resolve
-    // it from the caret's block so the post-swap caret stays on the moved block instead of falling
-    // through to the document-start fallback.
-    if (caret.blockId == upper.id()) {
-      cursorSrcOff = upperStart;
-    } else if (caret.blockId == lower.id()) {
-      cursorSrcOff = lowerRange.byteStart;
-    }
-  }
-  qsizetype newCursorOffset = cursorSrcOff;
-
-  // The block moves by the difference in text lengths
-  // Current block text (upperText) gets replaced by lowerText, then upperText
-  // If cursor was in the upper block, it shifts by (lowerText.size() - 0) = lowerText.size()
-  // If cursor was in the lower block, it shifts by -(upperText.size())
-  const qsizetype upperBlockEnd = lowerRange.byteStart;
-  if (cursorSrcOff >= upperStart && cursorSrcOff < upperBlockEnd) {
-    // Cursor was in upper block, it shifts down by lowerText.size()
-    newCursorOffset = cursorSrcOff + lowerText.size();
-  } else if (cursorSrcOff >= lowerRange.byteStart && cursorSrcOff <= lowerEnd) {
-    // Cursor was in lower block, it shifts up by upperText.size()
-    newCursorOffset = cursorSrcOff - upperText.size();
-  }
-
-  const QString combined = lowerText + upperText;
-  inputController_.performLocalEdit(EditTransaction::Kind::ReplaceDocumentText, QStringLiteral("Move Block"),
-                                    upperStart, lowerEnd - upperStart, combined, CursorPosition{}, newCursorOffset, {},
-                                    false, true);
   return true;
 }
 
