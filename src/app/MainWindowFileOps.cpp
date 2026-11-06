@@ -449,6 +449,11 @@ void muffin::MainWindow::showPreferences() {
     setFontSizePx(px);
     saveAppearanceFontSizePx(fontSizePx_);
   });
+  connect(&dialog, &PreferencesDialog::typographyChanged, this, [] {
+    for (auto* widget : QApplication::topLevelWidgets())
+      if (auto* window = qobject_cast<MainWindow*>(widget))
+        window->applyTheme(window->themeManager_.currentThemeName());
+  });
   connect(&dialog, &PreferencesDialog::contentWidthPxRequested, this, [this](int px) {
     setContentWidthPx(px);
     saveAppearanceContentWidthPx(contentWidthPx_);

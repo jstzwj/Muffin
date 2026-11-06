@@ -21,7 +21,7 @@ public:
   explicit ThemeManager(const QString& themeDirectory, QObject* parent = nullptr);
 
   QString currentThemeName() const;
-  RenderTheme currentTheme(int zoomPercent = 100, int fontSizePx = 16) const;
+  RenderTheme currentTheme(int zoomPercent = 100, int fontSizePx = 16, TypographyOverrides typography = {}) const;
   QStringList availableThemes() const;
 
   // Metadata only: enumerating menus/preferences never loads a theme.

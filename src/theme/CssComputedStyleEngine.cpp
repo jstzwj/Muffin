@@ -44,6 +44,7 @@ struct Candidate {
   bool important = false;
   int specificity = 0;
   int order = 0;
+  bool userOverride = false;
 };
 
 const QSet<QString>& inheritedProperties() {
@@ -2024,13 +2025,15 @@ void CssComputedStyleEngine::applyStyleForElement(const std::vector<RuleMatch>& 
     const std::vector<CssDeclaration>* declarations;
     QString selector;
     int specificity;
+    bool userOverride = false;
   };
   std::vector<Match> matches;
   if (!presentationDeclarations.empty())
     matches.push_back({&presentationDeclarations, {}, 0});
   for (const auto& match : matched) {
     const auto& selector = parsedSelectors_[match.selector];
-    matches.push_back({&sheet_.rules()[match.rule].declarations, selector.selectorText, selector.specificity});
+    matches.push_back({&sheet_.rules()[match.rule].declarations, selector.selectorText, selector.specificity,
+                       sheet_.rules()[match.rule].userOverride});
   }
   if (!inlineDeclarations.empty())
     matches.push_back({&inlineDeclarations, QStringLiteral("style attribute"), 1000000});
@@ -2087,9 +2090,11 @@ void CssComputedStyleEngine::applyStyleForElement(const std::vector<RuleMatch>& 
         }
         const auto expanded = custom ? std::vector<CssDeclaration>{resolved} : expandDeclaration(resolved, {});
         for (const auto& component : expanded) {
-          Candidate c{component.value, match.selector, component.important, match.specificity, ++order};
+          Candidate c{component.value,   match.selector, component.important,
+                      match.specificity, ++order,        match.userOverride};
           const auto it = winners.constFind(component.property);
-          if (it == winners.constEnd() || cascadeBeats(c, it.value()))
+          if (it == winners.constEnd() ||
+              (c.userOverride != it->userOverride ? c.userOverride : cascadeBeats(c, it.value())))
             winners.insert(component.property, c);
         }
       }

@@ -126,6 +126,7 @@ RenderTheme RenderTheme::fromDefinitionWithEngine(const ThemeDefinition& input, 
   const ThemeColors& c = definition.colors;
   RenderTheme t(nullptr);
   t.sourceSheet_ = definition.sourceSheet;
+  t.effectiveSheet_ = definition.sourceSheet;
   t.sourceId_ = definition.id;
   t.fontAliases_ = definition.fontAliases;
   t.backgroundColor_ = c.background;
@@ -271,6 +272,18 @@ void RenderTheme::setFontSizePx(int px) {
   cssViewportWidth_ = -1.0;
 }
 
+void RenderTheme::setTypographyOverrides(TypographyOverrides overrides) {
+  if (typography_ == overrides)
+    return;
+  // Retain a cache-free base only when an overlay is needed. It must never be
+  // another owner of the live engine: unique ownership permits local rebinds
+  // and releasing inline views as layout detail is evicted.
+  if (overrides.hasDocumentOverrides() && !baseStyleEngine_)
+    baseStyleEngine_ = styleEngine_->withEnvironment(styleEngine_->environment());
+  typography_ = std::move(overrides);
+  cssViewportWidth_ = -1;
+}
+
 bool RenderTheme::updateForViewport(qreal width, qreal height) {
   diag::ScopedPerfProbe perf("theme.viewportProjection", themeDetailPerf());
   if (!sourceSheet_)
@@ -283,6 +296,7 @@ bool RenderTheme::updateForViewport(qreal width, qreal height) {
   environment.viewportWidth = cssWidth;
   environment.viewportHeight = cssHeight;
   environment.textScale = fontSizePx_ / 16.0;
+  environment.textScale *= typographyScale_;
   environment.dark = backgroundColor_.lightnessF() < 0.5;
   const bool reuseProjection =
       cssViewportWidth_ >= 0 && !viewportUnits_ && !percentagePageBox_ && styleEngine_->sameActiveRules(environment);
@@ -300,7 +314,8 @@ bool RenderTheme::updateForViewport(qreal width, qreal height) {
   }
   QByteArray projectionKey;
   QDataStream keyStream(&projectionKey, QIODevice::WriteOnly);
-  keyStream << sourceSheet_->revision() << cssWidth << cssHeight << zoomPercent_ << fontSizePx_ << environment.dark;
+  keyStream << sourceSheet_->revision() << cssWidth << cssHeight << zoomPercent_ << fontSizePx_ << environment.dark
+            << typography_.values();
   if (projectionCache_)
     if (const auto* cached = projectionCache_->entries.object(projectionKey)) {
       diag::ScopedPerfProbe cachePerf("theme.reuseProjection", themeDetailPerf());
@@ -311,9 +326,27 @@ bool RenderTheme::updateForViewport(qreal width, qreal height) {
       *this = std::move(resolved);
       return true;
     }
-  auto engine = styleEngine_->withEnvironment(environment);
-  const auto definition = CssThemeMapper::fromSheet(*sourceSheet_, sourceId_, environment, engine.get());
+  auto engine = (baseStyleEngine_ ? baseStyleEngine_ : styleEngine_)->withEnvironment(environment);
+  auto definition = CssThemeMapper::fromSheet(*sourceSheet_, sourceId_, environment, engine.get());
+  qreal bodyScale = 1;
+  if (typography_.hasDocumentOverrides()) {
+    const auto paragraph = std::find_if(definition.elementStyles.begin(), definition.elementStyles.end(),
+                                        [](const auto& style) { return style.key == QStringLiteral("p"); });
+    const qreal bodySize = paragraph != definition.elementStyles.end() && paragraph->text.fontSizePx > 0
+                               ? paragraph->text.fontSizePx
+                               : definition.bodyFontPx;
+    bodyScale = typography_.bodySize > 0 ? typography_.bodySize / qMax<qreal>(1, bodySize) : 1;
+    auto sheet = *sourceSheet_;
+    sheet.mergeIn(typography_.styleSheet(bodyScale));
+    environment.textScale = fontSizePx_ / 16.0 * bodyScale;
+    engine = std::make_shared<CssComputedStyleEngine>(muffin::documentStyleSheet(sheet), environment);
+    definition = CssThemeMapper::fromSheet(sheet, sourceId_, environment, engine.get());
+  }
   RenderTheme resolved = fromDefinitionWithEngine(definition, zoomPercent_, fontSizePx_, std::move(engine));
+  resolved.sourceSheet_ = sourceSheet_;
+  resolved.baseStyleEngine_ = baseStyleEngine_;
+  resolved.typography_ = typography_;
+  resolved.typographyScale_ = bodyScale;
   resolved.contentWidthPx_ = contentWidthPx_;
   const auto before = cssViewportWidth_ < 0 ? CssEnvironment{} : documentCssEnvironment();
   const bool fontsChanged =
@@ -345,7 +378,7 @@ CssEnvironment RenderTheme::documentCssEnvironment() const {
     environment.viewportWidth = cssViewportWidth_;
   if (cssViewportHeight_ > 0)
     environment.viewportHeight = cssViewportHeight_;
-  environment.textScale = fontSizePx_ / 16.0;
+  environment.textScale = fontSizePx_ / 16.0 * typographyScale_;
   environment.dark = backgroundColor_.lightnessF() < 0.5;
   return environment;
 }
@@ -752,7 +785,7 @@ std::shared_ptr<const CssPaintRecipe> RenderTheme::paintRecipeForElement(const C
       [&](CssElementState state) {
         return states[(state.hover ? 1 : 0) | ((state.focus || state.mdFocus) ? 2 : 0) | (state.active ? 4 : 0)];
       },
-      *sourceSheet_, documentCssEnvironment().reducedMotion, stateMask);
+      *documentStyleSheet(), documentCssEnvironment().reducedMotion, stateMask);
   if (sharedPaintRecipeCount_ >= 512) {
     sharedPaintRecipes_.clear();
     sharedPaintRecipeCount_ = 0;
@@ -1482,7 +1515,7 @@ qreal RenderTheme::scaled(qreal value) const {
 }
 
 qreal RenderTheme::scaledFont(qreal value) const {
-  return scaled(value) * static_cast<qreal>(fontSizePx_) / 16.0;
+  return scaled(value) * static_cast<qreal>(fontSizePx_) / 16.0 * typographyScale_;
 }
 
 } // namespace muffin

@@ -1636,6 +1636,114 @@ void blockHandlesFollowPreferencesAndTargetedMenu() {
           "disabling the preference reaches background tabs and other windows");
 }
 
+void typographyPreferencesUpdateViewsAndExports() {
+  SettingsOverride typography("appearance/typography", QVariantMap{}),
+      category("preferences/lastCategory", "appearance"), pdfFonts("export/pdf/useEditorTypography", false),
+      scale("appearance/fontSizePx", 16), zoom("appearance/zoomPercent", 100);
+  Fixture first;
+  Fixture second;
+  auto* hidden = first.open(first.file("hidden-fonts.md", "# Heading\n\nHidden body\n"));
+  auto* active = first.open(first.file("active-fonts.md", "# Heading\n\nActive body\n"));
+  const auto source = active->session.markdownText().toString();
+  const auto captures = qEnvironmentVariable("MUFFIN_TYPOGRAPHY_SCREENSHOT_DIR");
+  auto* preferencesAction = action(first.window, "Preferences...");
+  const auto language = LanguageManager::instance().currentLanguageCode();
+  const auto restoreLanguage = qScopeGuard([&] { LanguageManager::instance().setLanguage(language); });
+  if (!captures.isEmpty()) {
+    QDir().mkpath(captures);
+    LanguageManager::instance().setLanguage("zh_CN");
+  }
+  QTimer::singleShot(0, &first.window, [&] {
+    auto* dialog = first.window.findChild<PreferencesDialog*>();
+    require(dialog, "typography preferences dialog exists");
+    const auto set = [&](const char* name, int size) {
+      auto* combo = dialog->findChild<QComboBox*>(name);
+      require(combo, "typography size control exists");
+      combo->setCurrentIndex(combo->findData(size));
+    };
+    set("TypographyBodySize", 22);
+    set("TypographyCodeSize", 18);
+    set("TypographyH1Size", 29);
+    if (!captures.isEmpty()) {
+      for (const auto& theme : {QStringLiteral("github"), QStringLiteral("night")}) {
+        dialog->setThemeDefinition(ThemeDefinition::builtIn(theme).value());
+        dialog->resize(1040, 900);
+        QTest::qWait(30);
+        require(dialog->grab().save(QDir(captures).filePath(theme + ".png")), "capture typography preferences");
+        auto* family = dialog->findChild<QComboBox*>("TypographyBodyFamily");
+        auto* card = family->parentWidget();
+        QPixmap cardCapture(card->size() * dialog->devicePixelRatioF());
+        cardCapture.setDevicePixelRatio(dialog->devicePixelRatioF());
+        cardCapture.fill(dialog->palette().color(QPalette::Window));
+        card->render(&cardCapture);
+        require(cardCapture.save(QDir(captures).filePath(theme + "-typography.png")),
+                "capture the complete expanded typography group");
+        family->showPopup();
+        const auto index = family->model()->index(qMax(0, family->findData("Arial")), 0);
+        family->view()->setCurrentIndex(index);
+        family->view()->scrollTo(index, QAbstractItemView::PositionAtTop);
+        QTest::qWait(30);
+        require(family->view()->window()->grab().save(QDir(captures).filePath(theme + "-fonts.png")),
+                "capture the font list previews");
+        family->hidePopup();
+      }
+      auto* family = dialog->findChild<QComboBox*>("TypographyBodyFamily");
+      const auto saved = TypographyOverrides::load();
+      for (const auto& code : {QStringLiteral("ja"), QStringLiteral("ko"), QStringLiteral("en")}) {
+        require(LanguageManager::instance().setLanguage(code), "load localized font samples");
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::LanguageChange);
+        QTest::qWait(30);
+        family->showPopup();
+        const auto index = family->model()->index(qMax(0, family->findData("Arial")), 0);
+        family->view()->setCurrentIndex(index);
+        family->view()->scrollTo(index, QAbstractItemView::PositionAtTop);
+        QTest::qWait(30);
+        require(family->view()->window()->grab().save(QDir(captures).filePath(code + "-fonts.png")),
+                "capture samples after a live interface language change");
+        family->hidePopup();
+      }
+      require(TypographyOverrides::load() == saved, "changing sample language preserves font settings");
+    }
+    set("TypographySourceSize", 20);
+    dialog->resize(880, 620);
+    QTest::qWait(20);
+    for (const auto* name : {"TypographyBodyFamily", "TypographyCodeFamily", "TypographyBodySize", "TypographyCodeSize",
+                             "TypographySourceSize", "TypographyH1Size", "TypographyH2Size", "TypographyH3Size",
+                             "TypographyH4Size", "TypographyH5Size", "TypographyH6Size"}) {
+      const auto* combo = dialog->findChild<QComboBox*>(name);
+      require(combo && combo->isVisible() && combo->rect().width() > 80 && combo->mapTo(dialog, QPoint()).x() >= 0 &&
+                  combo->mapTo(dialog, QPoint(combo->width(), 0)).x() <= dialog->width(),
+              "font controls stay within the preferences content width");
+    }
+    dialog->accept();
+  });
+  preferencesAction->trigger();
+  LanguageManager::instance().setLanguage(language);
+  const auto sizeMatches = [](qreal points, int expected) { return qAbs(points / .75 - expected) < .05; };
+  require(sizeMatches(active->renderView->theme().paragraphFont().pointSizeF(), 22) &&
+              sizeMatches(second.current()->renderView->theme().paragraphFont().pointSizeF(), 22),
+          "font changes reach active tabs in every existing window");
+  first.tabs->setCurrentWidget(hidden);
+  require(sizeMatches(hidden->renderView->theme().headingFont(1).pointSizeF(), 29),
+          "activating a background tab applies its pending typography");
+  auto* fresh = first.open(first.file("new-fonts.md", "New body\n"));
+  require(sizeMatches(fresh->renderView->theme().paragraphFont().pointSizeF(), 22),
+          "new tabs inherit typography preferences");
+  auto* sourceEditor = fresh->editor->findChild<VirtualSourceEdit*>();
+  require(sizeMatches(qvariant_cast<QFont>(sourceEditor->inputMethodQuery(Qt::ImFont)).pointSizeF(), 20),
+          "source editor receives its independent size through the application theme");
+  require(active->session.markdownText().toString() == source && !active->session.document().isModified(),
+          "changing typography preserves document contents and modification state");
+  QSettings().setValue("preferences/lastCategory", "export");
+  QSettings().setValue("export/lastPage", 1);
+  PreferencesDialog exports;
+  auto* check = exports.findChild<QCheckBox*>("ExportEditorTypography");
+  require(check && !check->isChecked(), "exports follow their own defaults until explicitly opted in");
+  check->setChecked(true);
+  require(builtInExportPreset(ExportFormat::Pdf).options.value("useEditorTypography").toBool(),
+          "export font choice is part of the export settings snapshot");
+}
+
 void lockedEditingPreferencesSyncAcrossWindows() {
   SettingsOverride enabled("editor/lockEditingEnabled", true);
   SettingsOverride scope("editor/lockEditingScope", 0);
@@ -5082,6 +5190,10 @@ int main(int argc, char** argv) {
     runTest("blockHandlesFollowPreferencesAndTargetedMenu", blockHandlesFollowPreferencesAndTargetedMenu);
     return 0;
   }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--typography"))) {
+    runTest("typographyPreferencesUpdateViewsAndExports", typographyPreferencesUpdateViewsAndExports);
+    return 0;
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--split-view"))) {
     runSplitViewTests();
     return 0;
@@ -5193,6 +5305,7 @@ int main(int argc, char** argv) {
     return 0;
   runTest("continuousEditingWorkflow", continuousEditingWorkflow);
   runTest("blockHandlesFollowPreferencesAndTargetedMenu", blockHandlesFollowPreferencesAndTargetedMenu);
+  runTest("typographyPreferencesUpdateViewsAndExports", typographyPreferencesUpdateViewsAndExports);
   runLockedEditingTests();
   runTest("configurableShortcuts", configurableShortcuts);
   runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);

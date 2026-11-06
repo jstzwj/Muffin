@@ -6,6 +6,7 @@
 #include "document/TopLevelRangeChange.h"
 #include "render/CodeHighlight.h"
 #include "theme/ThemeDefinition.h"
+#include "theme/TypographyOverrides.h"
 #include "theme/CssComputedStyleEngine.h"
 
 #include <QColor>
@@ -62,6 +63,8 @@ public:
   void setZoomPercent(int percent);
   int fontSizePx() const;
   void setFontSizePx(int px);
+  void setTypographyOverrides(TypographyOverrides overrides);
+  const TypographyOverrides& typographyOverrides() const { return typography_; }
   // User-level page-column override. 0 keeps the active theme's #write
   // max-width, -1 fills the viewport, and a positive value is a CSS-pixel
   // maximum. This is deliberately independent from text size so users can
@@ -73,7 +76,9 @@ public:
   bool updateForViewport(qreal width, qreal height = 768.0);
   bool hasDocumentCss() const { return bool(sourceSheet_); }
   bool pageUsesBorderBox() const { return pageBorderBox_; }
-  std::shared_ptr<const CssThemeSheet> documentStyleSheet() const { return sourceSheet_; }
+  std::shared_ptr<const CssThemeSheet> documentStyleSheet() const {
+    return effectiveSheet_ ? effectiveSheet_ : sourceSheet_;
+  }
   CssEnvironment documentCssEnvironment() const;
   const QHash<QString, QString>& fontAliases() const { return fontAliases_; }
 
@@ -222,6 +227,10 @@ private:
 
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
+  TypographyOverrides typography_;
+  qreal typographyScale_ = 1;
+  std::shared_ptr<CssComputedStyleEngine> baseStyleEngine_;
+  std::shared_ptr<const CssThemeSheet> effectiveSheet_;
   bool serifBody_ = false;
 
   // Math retains its semantic font fallback; document text uses computed styles.

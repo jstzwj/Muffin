@@ -56,6 +56,7 @@ signals:
   void disableTypewriterFocusRequested();
   void lockEditingSettingsChanged();
   void blockHandlesChanged(bool enabled);
+  void typographyChanged();
 
 protected:
   void changeEvent(QEvent* event) override;

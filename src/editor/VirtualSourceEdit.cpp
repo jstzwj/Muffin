@@ -1624,6 +1624,8 @@ void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {
 
 QVariant VirtualSourceEdit::inputMethodQuery(Qt::InputMethodQuery query) const {
   switch (query) {
+  case Qt::ImFont:
+    return sourceFont_;
   case Qt::ImEnabled:
     return !isReadOnly();
   case Qt::ImCursorRectangle:

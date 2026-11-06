@@ -130,6 +130,11 @@ void muffin::MainWindow::runExport(ExportRecord record, bool chooseTarget) {
     record.theme = name == "github" ? RenderTheme::fromDefinition(themeManager_.definition("github"), 100, fontSize)
                                     : themeManager_.currentTheme(100, fontSize);
     record.themeCss = name == "github" ? ThemeManager().currentThemeCss() : themeManager_.currentThemeCss();
+    if ((format == ExportFormat::Pdf || format == ExportFormat::Image) &&
+        values.value("useEditorTypography", false).toBool()) {
+      const auto typography = TypographyOverrides::load();
+      record.theme.setTypographyOverrides(typography);
+    }
   }
   QTemporaryDir staging(QDir(QFileInfo(record.target).absolutePath()).filePath(".muffin-export-XXXXXX"));
   if (!staging.isValid()) {

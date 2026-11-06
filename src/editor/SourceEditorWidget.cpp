@@ -203,6 +203,14 @@ void muffin::SourceEditorWidget::setFontSizePx(int px) {
 }
 
 void muffin::SourceEditorWidget::setTheme(const RenderTheme& theme) {
+  typography_ = theme.typographyOverrides();
+  auto snapshot = theme.detachedPrototype();
+  snapshot.setZoomPercent(100);
+  snapshot.updateForViewport(qMax(1, width()));
+  themeCodeFont_ = snapshot.codeFont();
+  if (themeCodeFont_.pointSizeF() > 0)
+    themeCodeFont_.setPointSizeF(themeCodeFont_.pointSizeF() * 16.0 / snapshot.fontSizePx());
+  applyFontSize();
   const SourceEditorColors colors = SourceEditorColors::fromTheme(theme);
   editor_->setColors(colors);
   setStyleSheet(
@@ -225,8 +233,10 @@ void muffin::SourceEditorWidget::retranslateUi() {
 }
 
 void muffin::SourceEditorWidget::applyFontSize() {
-  QFont font = font_rendering::sourceEditorFont();
+  QFont font = themeCodeFont_.pointSizeF() > 0 ? themeCodeFont_ : font_rendering::sourceEditorFont();
   const qreal scale = static_cast<qreal>(zoomPercent_) / 100.0 * static_cast<qreal>(fontSizePx_) / 16.0;
-  font.setPointSizeF(qMax(8.0, 13.0 * scale));
+  font.setPointSizeF(qMax(.001, font.pointSizeF() * scale));
+  if (typography_.codeSize || typography_.sourceSize)
+    font.setPointSizeF((typography_.sourceSize ? typography_.sourceSize : typography_.codeSize) * .75 * scale);
   editor_->setSourceFont(font);
 }

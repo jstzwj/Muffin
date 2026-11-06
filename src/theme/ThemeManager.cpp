@@ -248,7 +248,7 @@ QString ThemeManager::currentThemeCss() const {
   return flattenCssImports(text, QFileInfo(it.value()).absolutePath(), visited);
 }
 
-RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx) const {
+RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx, TypographyOverrides typography) const {
   // Build the editor theme from the same definition the chrome reads, so a
   // custom (JSON) theme drives the document through the exact same path as a
   // built-in. fromDefinition reproduces the five built-in factories bit-for-bit.
@@ -260,7 +260,9 @@ RenderTheme ThemeManager::currentTheme(int zoomPercent, int fontSizePx) const {
     cached = new PreparedTheme{d.sourceSheet, revision, RenderTheme::fromDefinition(d, zoomPercent, fontSizePx)};
     prepared_.insert(key, cached);
   }
-  return cached->theme.detachedPrototype();
+  auto result = cached->theme.detachedPrototype();
+  result.setTypographyOverrides(std::move(typography));
+  return result;
 }
 
 QStringList ThemeManager::availableThemes() const {

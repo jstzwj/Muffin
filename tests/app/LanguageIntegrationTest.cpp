@@ -125,6 +125,17 @@ int main(int argc, char** argv) {
       require(manager.effectiveLanguageCode() == QStringLiteral("zh_TW"),
               QStringLiteral("Hong Kong must select Traditional Chinese resources"));
     }
+    const auto sample = translated("muffin::PrefsAppearancePage", "ABC 123");
+    const auto effective = manager.effectiveLanguageCode();
+    if (effective == QStringLiteral("en"))
+      require(sample == QStringLiteral("ABC 123"), QStringLiteral("English font samples use the generic fallback"));
+    else if (effective == QStringLiteral("ja"))
+      require(sample.contains(QStringLiteral("日本語")) && !sample.contains(QStringLiteral("中文")),
+              QStringLiteral("Japanese font samples show Japanese instead of Chinese"));
+    else if (effective == QStringLiteral("ko"))
+      require(sample.contains(QStringLiteral("한글")), QStringLiteral("Korean font samples show Korean"));
+    else if (effective.startsWith(QStringLiteral("zh")))
+      require(sample.contains(QStringLiteral("中文")), QStringLiteral("Chinese font samples show Chinese"));
     require(rendered.accessibleName() == translated("muffin::EditorView", "Markdown editor"),
             QStringLiteral("Rendered editor accessible name must follow language changes"));
     require(rendered.accessibleDescription() == translated("muffin::EditorView", "Rendered Markdown document"),

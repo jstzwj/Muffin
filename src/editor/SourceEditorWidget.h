@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QWidget>
+#include <QFont>
+#include "theme/TypographyOverrides.h"
 #include <QStringView>
 
 #include "Export.h"
@@ -98,6 +100,8 @@ private:
   VirtualSourceEdit* editor_ = nullptr;
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
+  TypographyOverrides typography_;
+  QFont themeCodeFont_;
 };
 
 } // namespace muffin

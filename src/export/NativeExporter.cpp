@@ -27,6 +27,7 @@ bool exportNativePdf(const QString& path, const MarkdownDocument& document, Rend
   const QRectF page = printer.pageRect(QPrinter::DevicePixel);
   if (page.isEmpty())
     return false;
+  theme.updateForViewport(page.width(), page.height());
   QString title = QFileInfo(sourcePath).completeBaseName();
   for (const auto& heading : document.outline()) {
     if (heading.level == 1 || title.isEmpty()) {
@@ -175,6 +176,7 @@ bool exportNativePdf(const QString& path, const MarkdownDocument& document, Rend
 bool exportNativeImage(const QString& path, const MarkdownDocument& document, RenderTheme theme,
                        const QString& sourcePath, const ImageExportOptions& options,
                        mermaid::editor::MermaidRenderCache* cache) {
+  theme.updateForViewport(options.width);
   DocumentLayout layout;
   layout.setMermaidRenderCache(cache);
   layout.setMermaidSyncMode(true);

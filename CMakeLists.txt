@@ -1136,6 +1136,7 @@ add_executable(Muffin
   src/app/RenderCommandFacade.h
   src/app/PreferencesPage.cpp
   src/app/PreferencesPage.h
+  src/app/PreferencesComboBox.h
   src/app/MarkdownSettings.cpp
   src/app/MarkdownSettings.h
   src/app/PrefsFilesPage.cpp
@@ -1424,6 +1425,8 @@ set(MUFFIN_UI_SOURCES
   src/theme/FontRendering.cpp
   src/theme/FontRendering.h
   src/theme/RenderTheme.cpp
+  src/theme/TypographyOverrides.cpp
+  src/theme/TypographyOverrides.h
   src/theme/DocumentCounterCache.cpp
   src/theme/RenderTheme.h
   src/theme/ThemeDefinition.cpp

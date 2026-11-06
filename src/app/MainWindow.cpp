@@ -842,8 +842,9 @@ bool muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
     return false;
   }
 
-  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+  RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_, TypographyOverrides::load());
   const QRectF page = printer->pageRect(QPrinter::DevicePixel);
+  theme.updateForViewport(page.width(), page.height());
 
   DocumentLayout layout;
   // Reuse the editor's mermaid render cache in sync mode so diagrams render into
@@ -1063,7 +1064,7 @@ void muffin::MainWindow::applyTheme(QString name) {
   muffin::diag::ScopedPerfProbe perf("theme.apply", themePerf);
   const RenderTheme theme = [&] {
     muffin::diag::ScopedPerfProbe snapshotPerf("theme.snapshot", themePerf);
-    return themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+    return themeManager_.currentTheme(zoomPercent_, fontSizePx_, TypographyOverrides::load());
   }();
   const ThemeDefinition def = themeManager_.definition(name);
   for (DocumentTab* document : documentTabs()) {

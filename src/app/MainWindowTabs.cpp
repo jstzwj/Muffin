@@ -148,7 +148,7 @@ bool muffin::MainWindow::isPathOpen(const QString& path, const DocumentSession* 
 }
 
 void muffin::MainWindow::configureTab(DocumentTab* document) {
-  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
+  const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_, TypographyOverrides::load());
   document->renderView->setTheme(theme);
   document->editor->setTheme(theme);
   document->setSplitTheme(theme);

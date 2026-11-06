@@ -393,6 +393,8 @@ muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperT
 muffin_add_test(NAME MuffinThemeLoadingTest SOURCE tests/theme/ThemeLoadingTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 set_tests_properties(MuffinThemeLoadingTest PROPERTIES TIMEOUT 60)
 muffin_add_test(NAME MuffinThemeAccessibilityTest SOURCE tests/theme/ThemeAccessibilityTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC})
+muffin_add_test(NAME MuffinTypographyOverridesTest SOURCE tests/theme/TypographyOverridesTest.cpp LINK MuffinUi
+  EXTRA_SOURCES ${MUFFIN_THEMES_QRC} src/app/PreferencesPage.cpp src/app/PrefsAppearancePage.cpp RESOURCE_LOCK)
 muffin_add_test(NAME MuffinVlookFancyCompatibilityTest SOURCE tests/theme/VlookFancyCompatibilityTest.cpp LINK MuffinUi
   FIXTURE tests/fixtures/theme/vlook-fancy-dark/vlook-fancy-dark.css RESOURCE_LOCK)
 muffin_add_test(NAME MuffinCssSupportsTest SOURCE tests/theme/CssSupportsTest.cpp LINK MuffinCore)

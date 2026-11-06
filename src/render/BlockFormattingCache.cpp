@@ -50,7 +50,7 @@ const QByteArray& BlockFormattingCache::themeSignature(const RenderTheme& theme)
     if (sheet) {
       sheetStream << quint64(sheet->rules().size());
       for (const auto& rule : sheet->rules()) {
-        sheetStream << rule.selectors << rule.mediaQueries << rule.supportQueries << rule.darkScope
+        sheetStream << rule.selectors << rule.mediaQueries << rule.supportQueries << rule.darkScope << rule.userOverride
                     << quint64(rule.declarations.size());
         for (const auto& declaration : rule.declarations)
           sheetStream << declaration.property << declaration.value << declaration.important;

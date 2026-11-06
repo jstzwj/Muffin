@@ -37,6 +37,7 @@ struct CssRule {
   QStringList mediaQueries;   // Nested media lists are AND; each list is OR.
   QStringList supportQueries; // Nested @supports conditions must all match.
   CssSourceLocation source;
+  bool userOverride = false; // application typography preferences, above author rules
 };
 
 // Unknown at-rule bodies remain skipped. Retain headers and font descriptors

@@ -278,6 +278,8 @@ void muffin::PrefsExportPage::rebuildPage() {
   const auto theme = [&] {
     combo(tr("Theme"), p + "theme", {tr("Current theme"), tr("Default light theme")}, {"current", "github"}, "current",
           "ExportTheme");
+    if (format == ExportFormat::Pdf || format == ExportFormat::Image)
+      check(tr("Use editor font settings"), p + "useEditorTypography", false, "ExportEditorTypography");
   };
   if (format == ExportFormat::Command) {
     file(tr("Executable"), "program", tr("All Files (*)"), false, "ExportCommandProgram");

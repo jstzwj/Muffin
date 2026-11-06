@@ -164,6 +164,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
           &PreferencesDialog::statusBarVisibleRequested);
   connect(appearancePage_, &PrefsAppearancePage::zoomPercentRequested, this, &PreferencesDialog::zoomPercentRequested);
   connect(appearancePage_, &PrefsAppearancePage::fontSizePxRequested, this, &PreferencesDialog::fontSizePxRequested);
+  connect(appearancePage_, &PrefsAppearancePage::typographyChanged, this, &PreferencesDialog::typographyChanged);
   connect(appearancePage_, &PrefsAppearancePage::contentWidthPxRequested, this,
           &PreferencesDialog::contentWidthPxRequested);
 
@@ -184,6 +185,8 @@ void muffin::PreferencesDialog::setCurrentThemeName(const QString& name) {
 
 void muffin::PreferencesDialog::setThemeDefinition(const ThemeDefinition& definition) {
   themeDefinition_ = definition;
+  if (appearancePage_)
+    appearancePage_->setPreviewTheme(definition);
   setPalette(dialogPalette(themeDefinition_));
   setStyleSheet(dialogStyleSheet(themeDefinition_));
 }
