@@ -40,6 +40,8 @@ jobs:
             test-command: ctest --preset conan-release --verbose
           - name: macOS ARM64
             runner: macos-latest
+            conan-profile: profiles/macos
+            cache-platform: macOS-target-13.0
             artifact-suffix: macos-arm64
             conan-arch: armv8
             configure-preset: conan-release
@@ -47,7 +49,9 @@ jobs:
             cmake-args: ''
             test-command: ctest --preset conan-release --verbose
           - name: Linux x64
-            runner: ubuntu-latest
+            # Match the validated CI/ASan compiler and libm baseline.
+            runner: ubuntu-24.04
+            cache-platform: Linux-ubuntu-24.04
             artifact-suffix: linux-x64
             conan-arch: x86_64
             configure-preset: conan-release
@@ -85,6 +89,10 @@ jobs:
           path: .release-tooling
           sparse-checkout: |
             cmake/BuildDMG.cmake
+            cmake/Info.plist.in
+            cmake/QuickLook-Info.plist.in
+            profiles/macos
+            scripts/check_macos_deployment.py
             tests/installer/UpdateHandoffTest.cs
           sparse-checkout-cone-mode: false
 
@@ -93,6 +101,13 @@ jobs:
         shell: bash
         run: |
           cp .release-tooling/cmake/BuildDMG.cmake cmake/BuildDMG.cmake
+          cp .release-tooling/cmake/Info.plist.in cmake/Info.plist.in
+          if [ -f cmake/QuickLook-Info.plist.in ]; then
+            cp .release-tooling/cmake/QuickLook-Info.plist.in cmake/QuickLook-Info.plist.in
+          fi
+          mkdir -p profiles
+          cp .release-tooling/profiles/macos profiles/macos
+          cp .release-tooling/scripts/check_macos_deployment.py scripts/check_macos_deployment.py
           cp .release-tooling/tests/installer/UpdateHandoffTest.cs tests/installer/UpdateHandoffTest.cs
           echo "Application source: $(git rev-parse HEAD)"
           echo "Release tooling: $(git -C .release-tooling rev-parse HEAD)"
@@ -119,9 +134,9 @@ jobs:
           # Include conan-arch in the key: x86_64 and armv8 Windows builds both
           # report runner.os == 'Windows', so without the arch segment they would
           # share one cache and restore the wrong-arch binaries on each other.
-          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
           restore-keys: |
-            conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-
+            conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-
 
       - name: Detect Conan profile
         run: conan profile detect --force
@@ -184,7 +199,7 @@ jobs:
             xvfb
 
       - name: Install dependencies
-        run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
+        run: conan install . -pr:h ${{ matrix.conan-profile || 'default' }} -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
 
       # Persist the package store right after `conan install` populates it: the binaries never
       # change during configure/build/test, so saving here survives a downstream failure. PRs only
@@ -203,7 +218,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.conan2/p
-          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
         continue-on-error: true   # exact-hit restores have nothing new to persist
 
       - name: Install WiX Toolset
@@ -283,6 +298,9 @@ jobs:
       # the deployed Qt frameworks.
       - name: Build DMG disk image
         if: runner.os == 'macOS'
+        env:
+          # Also supplies the target to historical tags' older DMG CMake target.
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
         run: cmake --build --preset conan-release --target dmg
 
       - name: Verify macOS Quick Look extension
@@ -293,6 +311,10 @@ jobs:
           if [ -f scripts/check_macos_quicklook.py ]; then
             python scripts/check_macos_quicklook.py --bundle build/Release/dist/Muffin.app
           fi
+
+      - name: Verify macOS deployment compatibility
+        if: runner.os == 'macOS'
+        run: python scripts/check_macos_deployment.py build/Release/dist --minimum-os 13.0
 
       - name: Smoke test Windows distribution
         if: runner.os == 'Windows'

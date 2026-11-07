@@ -1,10 +1,21 @@
 cmake_minimum_required(VERSION 3.24)
 
+# Set the fallback before project() initializes the Apple compiler. Conan's
+# profiles/macos supplies the same target for every dependency in the graph.
+if(CMAKE_HOST_APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET
+    AND NOT DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version")
+endif()
+
 project(Muffin
   VERSION 0.7.11
   DESCRIPTION "A fast native Markdown WYSIWYG editor built with C++ and Qt 6 Widgets"
   LANGUAGES C CXX
 )
+
+if(APPLE AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "13.0")
+  message(FATAL_ERROR "Muffin and Qt 6.11 require macOS 13.0 or newer")
+endif()
 
 # SHARED by default. Muffin.exe, muffin-mmdc and ~320 test executables all link
 # MuffinCore/MuffinUi; under STATIC every one of them embeds a full copy of the
@@ -1847,6 +1858,8 @@ if(APPLE)
         "-DMUFFIN_VERSION=${MUFFIN_EFFECTIVE_VERSION}"
         "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
         "-DMACDEPLOYQT=${_muffin_macdeployqt}"
+        "-DPYTHON_COMMAND=${Python3_EXECUTABLE}"
+        "-DMACOS_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}"
         -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildDMG.cmake"
       DEPENDS dist
       COMMENT "Build Muffin DMG disk image"

@@ -1,5 +1,7 @@
 from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.cmake import cmake_layout
+from conan.tools.scm import Version
 
 
 class MuffinDependencies(ConanFile):
@@ -17,6 +19,13 @@ class MuffinDependencies(ConanFile):
     }
 
     def configure(self):
+        if self.settings.os == "Macos":
+            target = self.settings.get_safe("os.version")
+            if target is None or Version(str(target)) < "13.0":
+                raise ConanInvalidConfiguration(
+                    "Muffin requires a macOS deployment target >= 13.0. "
+                    "Use -pr:h profiles/macos (or explicitly set -s os.version=13.0)."
+                )
         if self.settings.os != "Windows":
             # CMake deploys ICU's matching official .dat and empty data stub.
             # Keep Conan from exporting ICU_DATA process-wide, which would

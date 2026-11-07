@@ -17,6 +17,7 @@ jobs:
           python-version: '3.13'
       - run: python -m pip install -r requirements-release.txt
       - run: python scripts/test_publish_cnb_release.py
+      - run: python scripts/test_check_macos_deployment.py
 
   test:
     name: Test ${{ matrix.name }}
@@ -39,12 +40,17 @@ jobs:
             test-command: ctest --preset conan-release --verbose
           - name: macOS
             runner: macos-latest
+            conan-profile: profiles/macos
+            cache-platform: macOS-target-13.0
             conan-arch: armv8
             configure-preset: conan-release
             conan-cppstd: 20
             test-command: ctest --preset conan-release --verbose
           - name: Linux
-            runner: ubuntu-latest
+            # Keep the compiler/libm baseline aligned with release and ASan.
+            # ubuntu-latest moving to 26.04 changed Venn oracle coordinates.
+            runner: ubuntu-24.04
+            cache-platform: Linux-ubuntu-24.04
             conan-arch: x86_64
             configure-preset: conan-release
             conan-cppstd: gnu20
@@ -76,9 +82,9 @@ jobs:
           # Include conan-arch in the key: x86_64 and armv8 Windows builds both
           # report runner.os == 'Windows', so without the arch segment they would
           # share one cache and restore the wrong-arch binaries on each other.
-          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
           restore-keys: |
-            conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-
+            conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-
 
       - name: Detect Conan profile
         run: conan profile detect --force
@@ -140,7 +146,7 @@ jobs:
             xvfb
 
       - name: Install dependencies
-        run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
+        run: conan install . -pr:h ${{ matrix.conan-profile || 'default' }} -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
 
       # Persist the package store right after `conan install` populates it: the binaries never
       # change during configure/build/test, so saving here survives a downstream failure. PRs only
@@ -158,7 +164,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.conan2/p
-          key: conan-pkg-${{ runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
         continue-on-error: true   # exact-hit restores have nothing new to persist
 
       - name: Configure
@@ -177,7 +183,9 @@ jobs:
 
       - name: Verify macOS Quick Look bundle
         if: runner.os == 'macOS'
-        run: python scripts/check_macos_quicklook.py --bundle build/Release/Muffin.app
+        run: |
+          python scripts/check_macos_quicklook.py --bundle build/Release/Muffin.app
+          python scripts/check_macos_deployment.py build/Release/Muffin.app --minimum-os 13.0
 
       - name: Verify bundled Math font contract
         run: ctest --preset conan-release --verbose -L math-font-oracle
@@ -220,7 +228,8 @@ jobs:
   #
   linux-asan:
     name: Linux ASan (blocking)
-    runs-on: ubuntu-latest
+    # Use the same compiler/libm baseline as the Linux test and release jobs.
+    runs-on: ubuntu-24.04
     env:
       # detect_leaks=0: Qt/threads trip the leak detector with noise. abort_on_error=1 lets ctest
       # see the fault as a failure; print_stacktrace=1 + symbolize=1 produce the actionable report.
@@ -253,9 +262,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.conan2/p
-          key: conan-pkg-${{ runner.os }}-x86_64-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-Linux-ubuntu-24.04-x86_64-${{ hashFiles('conanfile.py') }}
           restore-keys: |
-            conan-pkg-${{ runner.os }}-x86_64-
+            conan-pkg-Linux-ubuntu-24.04-x86_64-
 
       - name: Detect Conan profile
         run: conan profile detect --force

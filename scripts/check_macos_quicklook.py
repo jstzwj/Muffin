@@ -16,6 +16,7 @@ def read_plist(path):
 
 
 def check(host, extension, entitlements):
+    assert host["LSMinimumSystemVersion"] == extension["LSMinimumSystemVersion"]
     assert extension["CFBundleIdentifier"].startswith(host["CFBundleIdentifier"] + ".")
     assert extension["CFBundleVersion"] == host["CFBundleVersion"]
     assert extension["CFBundlePackageType"] == "XPC!"

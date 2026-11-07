@@ -49,6 +49,21 @@ overridable per-script).
 
 ## Verify reproducibility
 
+The native Linux CI, AddressSanitizer, and release builds use `ubuntu-24.04`.
+Their Conan caches have a separate `Linux-ubuntu-24.04` namespace, including
+fallback keys, so packages built on newer distributions cannot leak into this
+baseline. Windows and macOS retain their existing cache namespaces.
+
+In [CI run 42253773281](https://github.com/jstzwj/Muffin/actions/runs/42253773281),
+`ubuntu-latest` switched from Ubuntu 24.04 / GCC 13.3 to Ubuntu 26.04 / GCC 15.2.
+All builds succeeded, but the unchanged Venn layout, geometry, and edge parity
+tests failed in both Linux jobs. The circle coordinate difference was about
+0.000157 px; a label coordinate also crossed a `floor()` boundary by 1 px.
+[The preceding run](https://github.com/jstzwj/Muffin/actions/runs/42214300794)
+passed on the older baseline. Compiler/libm upgrades therefore need explicit
+parity review before changing this baseline; keep the oracle tolerances and
+reference fixtures intact during that review.
+
 After setup, regenerate a committed fixture and byte-compare — it must match
 exactly (this is how the toolchain itself is proven):
 

@@ -1,0 +1,6 @@
+# Apply the deployment target to the whole dependency graph, not just Muffin.
+include(default)
+
+[settings]
+os=Macos
+os.version=13.0

@@ -23,8 +23,8 @@
   <string>@MUFFIN_EFFECTIVE_VERSION@</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
-  <key>CFBundleMinimumSystemVersion</key>
-  <string>10.15</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>CFBundleDocumentTypes</key>

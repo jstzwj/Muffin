@@ -148,6 +148,8 @@ The curve measures the time from opening the Markdown file until the first viewp
 
 Windows releases also include a complete `.7z` portable package. Extract it and run `Muffin.exe`; fonts, dictionaries, and language support are bundled for offline use.
 
+macOS ARM64 builds target macOS 13.0 and newer. See the [deployment compatibility notes](docs/macos-deployment.zh.md) for the v0.7.13 packaging issue and build checks.
+
 ## Development
 
 Muffin uses [Conan](https://conan.io/) for dependency management and CMake for building. You need a C++20 compiler (MSVC 2022+, GCC 12+, or Clang 15+), Qt 6 (installed via Conan), Conan 2.x, and CMake 3.24+.
@@ -168,6 +170,11 @@ conan install . -s build_type=Release -s compiler.cppstd=20 --build=missing
 cmake --preset conan-default
 cmake --build --preset conan-release
 ```
+
+On macOS, add `-pr:h profiles/macos` to `conan install` and configure with
+`cmake --preset conan-release`. The profile sets the minimum OS for the complete
+dependency graph; changing only an app's `Info.plist` cannot make newer binaries
+compatible with an older OS.
 
 ### Test
 

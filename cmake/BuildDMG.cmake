@@ -5,6 +5,8 @@
 #   MUFFIN_VERSION  - Version string (e.g. "0.1.0")
 #   SOURCE_DIR      - Project source root containing Quick Look signing files
 #   MACDEPLOYQT     - Path to macdeployqt executable
+#   MACOS_DEPLOYMENT_TARGET - Minimum supported macOS (or MACOSX_DEPLOYMENT_TARGET env)
+#   PYTHON_COMMAND  - Python interpreter (autodetected for older release targets)
 
 if(NOT DEFINED DIST_DIR OR DIST_DIR STREQUAL "")
   message(FATAL_ERROR "DIST_DIR is required")
@@ -37,6 +39,29 @@ if(mdqt_result)
     "macdeployqt failed:\n${mdqt_output}\n${mdqt_error}")
 endif()
 message(STATUS "macdeployqt completed successfully")
+
+# Inspect the deployed libraries and plugins too: changing Info.plist cannot
+# lower the Mach-O deployment target of an already-built dependency.
+# The standalone sparse-payload diagnostic has no source tree or executable.
+if(EXISTS "${APP_BUNDLE}/Contents/MacOS/Muffin")
+  if(NOT EXISTS "${SOURCE_DIR}/scripts/check_macos_deployment.py")
+    message(FATAL_ERROR "Missing macOS deployment checker in SOURCE_DIR: ${SOURCE_DIR}")
+  endif()
+  if(NOT PYTHON_COMMAND)
+    find_program(PYTHON_COMMAND NAMES python3 REQUIRED)
+  endif()
+  if(NOT MACOS_DEPLOYMENT_TARGET)
+    set(MACOS_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}")
+  endif()
+  if(NOT MACOS_DEPLOYMENT_TARGET)
+    message(FATAL_ERROR "MACOS_DEPLOYMENT_TARGET is required for compatibility verification")
+  endif()
+  execute_process(
+    COMMAND "${PYTHON_COMMAND}" "${SOURCE_DIR}/scripts/check_macos_deployment.py"
+      "${DIST_DIR}" --minimum-os "${MACOS_DEPLOYMENT_TARGET}"
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+endif()
 
 # Reapply the sandbox entitlement after deployment, then seal the host last.
 if(EXISTS "${APP_BUNDLE}/Contents/PlugIns/MuffinQuickLook.appex")

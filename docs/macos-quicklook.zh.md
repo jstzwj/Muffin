@@ -26,10 +26,15 @@ HTML 显示为源码，图片显示替代文字。扩展没有网络权限，也
 macOS 上使用正常的 Conan Release 构建即可：
 
 ```sh
+conan install . -pr:h profiles/macos -s build_type=Release -s compiler.cppstd=20 --build=missing
+cmake --preset conan-release
 cmake --build --preset conan-release
 ctest --preset conan-release -R 'MuffinQuickLook.*Test' --output-on-failure
 cmake --build --preset conan-release --target dmg
 ```
+
+主程序、扩展和依赖统一以 macOS 13.0 为部署目标，打包时检查实际二进制。
+详见[最低系统版本与发布检查](macos-deployment.zh.md)。
 
 扩展嵌入 `Muffin.app/Contents/PlugIns/MuffinQuickLook.appex`，只静态链接 Markdown 解析器，
 不复制整套编辑器依赖。扩展带 App Sandbox 和用户所选文件只读权限。

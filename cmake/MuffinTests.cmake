@@ -660,6 +660,8 @@ endif()
 add_test(NAME MuffinQuickLookRegistrationTest
   COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_macos_quicklook.py"
     --source "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME MuffinMacOSDeploymentCheckTest
+  COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_check_macos_deployment.py")
 
 if(APPLE)
   muffin_add_quicklook_tests()

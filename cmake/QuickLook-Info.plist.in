@@ -11,7 +11,7 @@
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleShortVersionString</key><string>@MUFFIN_EFFECTIVE_VERSION@</string>
   <key>CFBundleVersion</key><string>@MUFFIN_EFFECTIVE_VERSION@</string>
-  <key>LSMinimumSystemVersion</key><string>10.15</string>
+  <key>LSMinimumSystemVersion</key><string>@CMAKE_OSX_DEPLOYMENT_TARGET@</string>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key><string>com.apple.quicklook.preview</string>
