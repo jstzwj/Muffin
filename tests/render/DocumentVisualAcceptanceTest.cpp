@@ -61,27 +61,38 @@ void checkBlock(const BlockLayout& block, DocumentLayout& layout, const RenderTh
 void documents() {
   const QString folder = QStringLiteral(MUFFIN_VISUAL_FIXTURES);
   const auto images = QJsonDocument::fromJson(readFixture(folder + "/images.json").toUtf8()).object();
-  for (auto it = images.begin(); it != images.end(); ++it)
+  for (auto it = images.begin(); it != images.end(); ++it) {
+    std::fprintf(stderr, "VISUAL preload %s\n", qPrintable(it.value().toString()));
+    std::fflush(stderr);
     ImageLoader::instance().store(it.key(), image_decoder::decodeFileFallback(folder + '/' + it.value().toString()));
+  }
   const qreal dpr = qApp->devicePixelRatio();
   const auto output = qEnvironmentVariable("MUFFIN_VISUAL_OUTPUT");
   if (!output.isEmpty())
     QDir().mkpath(output);
   QJsonArray report;
   for (const QString name : {"readme.zh", "chinese", "table", "code"}) {
+    std::fprintf(stderr, "VISUAL parse %s\n", qPrintable(name));
+    std::fflush(stderr);
     const auto path = folder + '/' + name + ".md";
     const auto source = readFixture(path);
     DocumentSession session;
     session.setMarkdownText(source, false);
     for (int zoom : {100, 125, 150}) {
+      std::fprintf(stderr, "VISUAL layout %s zoom=%d\n", qPrintable(name), zoom);
+      std::fflush(stderr);
       RenderTheme theme = RenderTheme::github(zoom);
       theme.updateForViewport(1920, 1080);
       DocumentLayout layout;
       layout.rebuild(session.document(), theme, 1600, {}, path, DocumentLayout::BuildPolicy::Eager);
       require(layout.totalHeight() > 0 && layout.pageWidth() <= 1600, "page fits available editor width");
+      std::fprintf(stderr, "VISUAL hit testing %s zoom=%d\n", qPrintable(name), zoom);
+      std::fflush(stderr);
       QJsonArray lineMetrics;
       for (const auto* block : layout.promotedBlocks())
         checkBlock(*block, layout, theme, lineMetrics);
+      std::fprintf(stderr, "VISUAL painting %s zoom=%d\n", qPrintable(name), zoom);
+      std::fflush(stderr);
       const QString id = name + '-' + QString::number(zoom) + '-' + QString::number(qRound(dpr * 100));
       QImage image(QSize(qCeil(1600 * dpr), qCeil(1000 * dpr)), QImage::Format_ARGB32_Premultiplied);
       image.setDevicePixelRatio(dpr);
@@ -133,6 +144,7 @@ void viewportContract() {
 }
 }
 int main(int argc, char** argv) {
+  installMuffinTestCrashHandler();
   qputenv("QT_QPA_PLATFORM", "offscreen");
   QApplication app(argc, argv);
   prepareDocumentVisualFonts();

@@ -168,7 +168,20 @@ jobs:
         continue-on-error: true   # exact-hit restores have nothing new to persist
 
       - name: Configure
+        if: runner.os != 'Windows'
         run: cmake --preset ${{ matrix.configure-preset }}
+
+      - name: Configure Windows with crash address maps
+        if: runner.os == 'Windows'
+        run: cmake --preset ${{ matrix.configure-preset }} -DCMAKE_SHARED_LINKER_FLAGS_RELEASE=/MAP -DCMAKE_EXE_LINKER_FLAGS_RELEASE=/MAP
+
+      - name: Build Windows document visual tests
+        if: runner.os == 'Windows'
+        run: cmake --build --preset conan-release --target MuffinDocumentVisualAcceptanceTest
+
+      - name: Test Windows document visuals
+        if: runner.os == 'Windows'
+        run: ctest --preset conan-release --verbose -R '^MuffinDocumentVisualAcceptance'
 
       - name: Build macOS integration and font raster tests
         if: runner.os == 'macOS'
@@ -209,6 +222,14 @@ jobs:
         with:
           name: pixel-diagnostics-${{ matrix.name }}
           path: build/**/resource-pixels-*.png
+          if-no-files-found: ignore
+
+      - name: Upload Windows crash address maps
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-address-maps-${{ matrix.name }}
+          path: build/Release/*.map
           if-no-files-found: ignore
 
       - name: Upload document visual acceptance
