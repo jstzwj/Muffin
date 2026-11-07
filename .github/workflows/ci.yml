@@ -216,6 +216,42 @@ jobs:
           done
           find "$HOME/Library/Logs/DiagnosticReports" -name 'Muffin*' -type f -exec cat {} + || true
 
+      - name: Capture Windows document visual crash
+        if: failure() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $diagnostics = Join-Path $PWD 'build/crash-diagnostics'
+          New-Item -ItemType Directory -Force $diagnostics | Out-Null
+          Invoke-WebRequest https://download.sysinternals.com/files/Procdump.zip -OutFile "$diagnostics/procdump.zip"
+          Expand-Archive -LiteralPath "$diagnostics/procdump.zip" -DestinationPath "$diagnostics/tools"
+          $tool = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'procdump64a.exe' } else { 'procdump64.exe' }
+          $ctest = ctest --preset conan-release --show-only=json-v1 | ConvertFrom-Json
+          $test = $ctest.tests | Where-Object name -eq 'MuffinDocumentVisualAcceptanceTest'
+          foreach ($property in $test.properties) {
+            if ($property.name -eq 'ENVIRONMENT_MODIFICATION') {
+              foreach ($modification in $property.value) {
+                $name, $action, $value = $modification -split ':', 3
+                if ($action -eq 'set') {
+                  [Environment]::SetEnvironmentVariable($name, $value)
+                } elseif ($action -eq 'path_list_prepend') {
+                  [Environment]::SetEnvironmentVariable($name, "$value;$([Environment]::GetEnvironmentVariable($name))")
+                } else {
+                  throw "Unsupported CTest environment modification: $modification"
+                }
+              }
+            }
+          }
+          $command = $test.command
+          & "$diagnostics/tools/$tool" -accepteula -ma -e -x $diagnostics @command
+
+      - name: Upload Windows crash dumps
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-dumps-${{ matrix.name }}
+          path: build/crash-diagnostics/*.dmp
+          if-no-files-found: ignore
+
       - name: Upload pixel mismatch diagnostics
         if: failure()
         uses: actions/upload-artifact@v4

@@ -102,7 +102,11 @@ void documents() {
         if (block->rect().top() < 1000)
           block->paint(painter, theme, 0);
       painter.end();
+      std::fprintf(stderr, "VISUAL verify pixels %s\n", qPrintable(id));
+      std::fflush(stderr);
       require(changedPixelCount(image, theme.backgroundColor()) > 200, "document paints visible content");
+      std::fprintf(stderr, "VISUAL save %s\n", qPrintable(id));
+      std::fflush(stderr);
       if (!output.isEmpty())
         require(image.save(output + '/' + id + ".png"), "write visual acceptance artifact");
       report.append(QJsonObject{{"id", id},
@@ -112,6 +116,8 @@ void documents() {
                                 {"dpiScale", dpr},
                                 {"zoom", zoom},
                                 {"wrapping", lineMetrics}});
+      std::fprintf(stderr, "VISUAL complete %s\n", qPrintable(id));
+      std::fflush(stderr);
     }
   }
   if (!output.isEmpty()) {
