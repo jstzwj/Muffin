@@ -8,13 +8,13 @@
 
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QLocale>
 #include "render/TextLayout.h"
 #include <QRawFont>
 #include <QRegularExpression>
 #include <QStringList>
 
 #include <algorithm>
-#include <charconv>
 #include <cmath>
 #include <limits>
 #include <string>
@@ -281,11 +281,11 @@ QString jsNumberToString(double value) {
   if (std::isinf(value))
     return value < 0.0 ? QStringLiteral("-Infinity") : QStringLiteral("Infinity");
 
-  char buffer[64];
-  const auto result = std::to_chars(std::begin(buffer), std::end(buffer), value, std::chars_format::general);
-  if (result.ec != std::errc())
-    return QString::number(value, 'g', std::numeric_limits<double>::max_digits10);
-  std::string raw(buffer, result.ptr);
+  // Qt's shortest conversion is locale-independent and works on macOS 13.0;
+  // libc++'s floating-point to_chars requires 13.3. Start with an exponent so
+  // the fixed/scientific choice below follows ECMAScript even when both
+  // representations have the same length.
+  const std::string raw = QString::number(value, 'e', QLocale::FloatingPointShortest).toStdString();
   const size_t exponentAt = raw.find_first_of("eE");
   if (exponentAt == std::string::npos)
     return QString::fromStdString(raw);

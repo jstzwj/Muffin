@@ -11,7 +11,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <charconv>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -38,20 +37,6 @@ bool inlineWhitespace(QChar ch) {
          ch.unicode() != 0x2029;
 }
 
-QString jsNumberString(double value) {
-  if (std::isnan(value))
-    return QStringLiteral("NaN");
-  if (std::isinf(value))
-    return value < 0 ? QStringLiteral("-Infinity") : QStringLiteral("Infinity");
-  if (value == 0.0)
-    return QStringLiteral("0");
-  char buffer[64];
-  const auto converted = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::general);
-  if (converted.ec == std::errc())
-    return QString::fromLatin1(buffer, qsizetype(converted.ptr - buffer));
-  return QString::number(value, 'g', std::numeric_limits<double>::max_digits10);
-}
-
 QString jsToString(const QJsonValue& value);
 
 QString jsArrayToString(const QJsonArray& array) {
@@ -70,7 +55,7 @@ QString jsToString(const QJsonValue& value) {
   if (value.isBool())
     return value.toBool() ? QStringLiteral("true") : QStringLiteral("false");
   if (value.isDouble())
-    return jsNumberString(value.toDouble());
+    return editor::jsNumberToString(value.toDouble());
   if (value.isArray())
     return jsArrayToString(value.toArray());
   return QStringLiteral("[object Object]");

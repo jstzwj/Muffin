@@ -1,15 +1,14 @@
 #include "mermaid/packet/PacketDiagram.h"
 
 #include "blocks/html/HtmlSanitizer.h"
+#include "mermaid/editor/MermaidRenderSupport.h"
 
 #include <QRegularExpression>
 #include <QStringList>
 
-#include <charconv>
 #include <cmath>
 #include <limits>
 #include <optional>
-#include <string>
 #include <utility>
 
 namespace muffin::mermaid::packet {
@@ -60,57 +59,6 @@ QString normalizedBlock(QString value) {
 
 QString sanitizedMetadata(QString value) {
   return HtmlSanitizer().sanitizedMermaidText(value);
-}
-
-QString jsNumberString(qreal value) {
-  if (std::isnan(value))
-    return QStringLiteral("NaN");
-  if (std::isinf(value))
-    return value < 0 ? QStringLiteral("-Infinity") : QStringLiteral("Infinity");
-  if (value == 0.0)
-    return QStringLiteral("0");
-
-  char buffer[64];
-  const auto converted = std::to_chars(buffer, buffer + sizeof(buffer), double(value), std::chars_format::general);
-  if (converted.ec != std::errc())
-    return QString::number(value, 'g', std::numeric_limits<double>::max_digits10);
-  std::string raw(buffer, converted.ptr);
-  const size_t exponentAt = raw.find_first_of("eE");
-  if (exponentAt == std::string::npos)
-    return QString::fromStdString(raw);
-
-  const std::string mantissa = raw.substr(0, exponentAt);
-  const int exponent = std::stoi(raw.substr(exponentAt + 1));
-  if (exponent >= -6 && exponent < 21) {
-    const bool negative = !mantissa.empty() && mantissa.front() == '-';
-    const size_t start = negative ? 1 : 0;
-    const size_t dot = mantissa.find('.', start);
-    std::string digits = mantissa.substr(start);
-    const int beforeDot = dot == std::string::npos ? static_cast<int>(digits.size()) : static_cast<int>(dot - start);
-    if (dot != std::string::npos)
-      digits.erase(dot - start, 1);
-    const int decimalPos = beforeDot + exponent;
-    std::string fixed = negative ? "-" : "";
-    if (decimalPos <= 0) {
-      fixed += "0.";
-      fixed.append(static_cast<size_t>(-decimalPos), '0');
-      fixed += digits;
-    } else if (decimalPos >= static_cast<int>(digits.size())) {
-      fixed += digits;
-      fixed.append(static_cast<size_t>(decimalPos - static_cast<int>(digits.size())), '0');
-    } else {
-      fixed += digits.substr(0, static_cast<size_t>(decimalPos));
-      fixed += '.';
-      fixed += digits.substr(static_cast<size_t>(decimalPos));
-    }
-    return QString::fromStdString(fixed);
-  }
-
-  std::string normalized = mantissa;
-  normalized += 'e';
-  normalized += exponent >= 0 ? '+' : '-';
-  normalized += std::to_string(std::abs(exponent));
-  return QString::fromStdString(normalized);
 }
 
 double jsRadixNumber(const QString& digits, int base) {
@@ -446,9 +394,9 @@ std::pair<PacketBlock, std::optional<AstBlock>> nextFittingBlock(const AstBlock&
   const qreal start = *block.start;
   const qreal end = *block.end;
   if (start > end)
-    throw PacketParseError(
-        QStringLiteral("Block start %1 is greater than block end %2.").arg(jsNumberString(start), jsNumberString(end)),
-        block.line, block.column, PacketErrorKind::Runtime);
+    throw PacketParseError(QStringLiteral("Block start %1 is greater than block end %2.")
+                               .arg(editor::jsNumberToString(start), editor::jsNumberToString(end)),
+                           block.line, block.column, PacketErrorKind::Runtime);
   const qreal rowProduct = row * bitsPerRow.numeric;
   if (end + 1.0 <= rowProduct)
     return {PacketBlock{start, end, *block.bits, block.label}, std::nullopt};
@@ -474,21 +422,22 @@ void populate(const QVector<AstBlock>& ast, const BitsPerRow& bitsPerRow, Packet
   for (AstBlock block : ast) {
     if (block.start && block.end && *block.end < *block.start) {
       throw PacketParseError(QStringLiteral("Packet block %1 - %2 is invalid. End must be greater than start.")
-                                 .arg(jsNumberString(*block.start), jsNumberString(*block.end)),
+                                 .arg(editor::jsNumberToString(*block.start), editor::jsNumberToString(*block.end)),
                              block.line, block.column, PacketErrorKind::Runtime);
     }
     if (!block.start)
       block.start = lastBit + 1.0;
     if (*block.start != lastBit + 1.0) {
       throw PacketParseError(QStringLiteral("Packet block %1 - %2 is not contiguous. It should start from %3.")
-                                 .arg(jsNumberString(*block.start), jsNumberString(block.end.value_or(*block.start)),
-                                      jsNumberString(lastBit + 1.0)),
+                                 .arg(editor::jsNumberToString(*block.start),
+                                      editor::jsNumberToString(block.end.value_or(*block.start)),
+                                      editor::jsNumberToString(lastBit + 1.0)),
                              block.line, block.column, PacketErrorKind::Runtime);
     }
     if (block.bits && *block.bits == 0.0) {
-      throw PacketParseError(
-          QStringLiteral("Packet block %1 is invalid. Cannot have a zero bit field.").arg(jsNumberString(*block.start)),
-          block.line, block.column, PacketErrorKind::Runtime);
+      throw PacketParseError(QStringLiteral("Packet block %1 is invalid. Cannot have a zero bit field.")
+                                 .arg(editor::jsNumberToString(*block.start)),
+                             block.line, block.column, PacketErrorKind::Runtime);
     }
     if (!block.end)
       block.end = *block.start + block.bits.value_or(1.0) - 1.0;

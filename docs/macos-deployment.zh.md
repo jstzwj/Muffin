@@ -47,6 +47,10 @@ CMake 在编译器初始化前提供 13.0 的默认值，保留显式部署目�
 Quick Look plist 都使用实际的 `CMAKE_OSX_DEPLOYMENT_TARGET`。CI 与发布使用
 同一 profile 和独立的 `macOS-target-13.0` 缓存空间。
 
+Mermaid 的浮点数转文本统一使用 Qt 的最短表示，再按 ECMAScript 规则选择
+定点或科学计数法。Apple libc++ 的浮点 `std::to_chars` 要求 macOS 13.3，
+不能用于声明支持 13.0 的代码；共享转换避免各图表单独维护兼容分支。
+
 ## 检查实际产物
 
 ```sh

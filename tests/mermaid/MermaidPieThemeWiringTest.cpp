@@ -24,6 +24,7 @@
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonValue>
+#include <QLocale>
 #include <QString>
 #include <QStringList>
 
@@ -31,6 +32,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 
 using namespace muffin::mermaid;
 
@@ -769,6 +771,36 @@ int main(int argc, char** argv) {
     require(editor::jsNumberToString(1e21) == QStringLiteral("1e+21"), "JS uses scientific notation at 1e21");
     require(editor::jsNumberToString(1e-6) == QStringLiteral("0.000001"), "JS uses fixed notation at 1e-6");
     require(editor::jsNumberToString(1e-7) == QStringLiteral("1e-7"), "JS uses scientific notation below 1e-6");
+    // Expected spellings come from ECMAScript Number#toString. Exercise the
+    // shortest conversion at both precision and exponent boundaries, including
+    // values for which a fixed and scientific spelling have equal length.
+    const struct {
+      double value;
+      const char* expected;
+    } numberCases[] = {
+        {0.1, "0.1"},
+        {1.0000000000000002, "1.0000000000000002"},
+        {1000000000000000100.0, "1000000000000000100"},
+        {1.0000000000000001e21, "1.0000000000000001e+21"},
+        {-1.2345678901234567e-7, "-1.2345678901234566e-7"},
+        {std::numeric_limits<double>::denorm_min(), "5e-324"},
+        {std::numeric_limits<double>::min(), "2.2250738585072014e-308"},
+        {std::numeric_limits<double>::max(), "1.7976931348623157e+308"},
+    };
+    const QLocale originalLocale;
+    QLocale::setDefault(QLocale(QLocale::German, QLocale::Germany));
+    for (const auto& number : numberCases) {
+      const QString text = editor::jsNumberToString(number.value);
+      require(text == QLatin1String(number.expected), QStringLiteral("JS numeric spelling: %1").arg(text));
+      require(text.toDouble() == number.value, QStringLiteral("JS numeric round-trip: %1").arg(text));
+    }
+    QLocale::setDefault(originalLocale);
+    require(editor::jsNumberToString(std::numeric_limits<double>::quiet_NaN()) == QStringLiteral("NaN"),
+            "JS NaN spelling");
+    require(editor::jsNumberToString(std::numeric_limits<double>::infinity()) == QStringLiteral("Infinity"),
+            "JS positive infinity spelling");
+    require(editor::jsNumberToString(-std::numeric_limits<double>::infinity()) == QStringLiteral("-Infinity"),
+            "JS negative infinity spelling");
     require(approx(editor::cssFontSizePx(QStringLiteral("0"), ctx), 0.0), "unitless zero font-size is valid");
     require(approx(editor::cssFontSizePx(QStringLiteral("medium"), ctx14), 16.0), "medium keyword is absolute 16px");
     require(approx(editor::cssFontSizePx(QStringLiteral("larger"), ctx), 19.2), "larger keyword scales parent");
