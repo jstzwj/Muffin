@@ -11,7 +11,7 @@ Muffin-dist/
 
 # ======================== Conan ========================
 .conan/
-conan.lock
+# conan.lock is committed: dependency recipes must match across clean/cached CI.
 graph_info
 CMakeUserPresets.json
 

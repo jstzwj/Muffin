@@ -88,6 +88,7 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: .release-tooling
           sparse-checkout: |
+            conan.lock
             cmake/BuildDMG.cmake
             cmake/Info.plist.in
             cmake/QuickLook-Info.plist.in
@@ -108,6 +109,11 @@ jobs:
           mkdir -p profiles
           cp .release-tooling/profiles/macos profiles/macos
           cp .release-tooling/scripts/check_macos_deployment.py scripts/check_macos_deployment.py
+          # Preserve a tag's own dependency snapshot. Older tags use the
+          # reviewed compatibility snapshot and fail if it cannot resolve.
+          if [ ! -f conan.lock ]; then
+            cp .release-tooling/conan.lock conan.lock
+          fi
           cp .release-tooling/tests/installer/UpdateHandoffTest.cs tests/installer/UpdateHandoffTest.cs
           echo "Application source: $(git rev-parse HEAD)"
           echo "Release tooling: $(git -C .release-tooling rev-parse HEAD)"
@@ -134,7 +140,7 @@ jobs:
           # Include conan-arch in the key: x86_64 and armv8 Windows builds both
           # report runner.os == 'Windows', so without the arch segment they would
           # share one cache and restore the wrong-arch binaries on each other.
-          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py', 'conan.lock', 'profiles/*') }}
           restore-keys: |
             conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-
 
@@ -199,7 +205,7 @@ jobs:
             xvfb
 
       - name: Install dependencies
-        run: conan install . -pr:h ${{ matrix.conan-profile || 'default' }} -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
+        run: conan install . --lockfile=conan.lock -pr:h ${{ matrix.conan-profile || 'default' }} -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
 
       # Persist the package store right after `conan install` populates it: the binaries never
       # change during configure/build/test, so saving here survives a downstream failure. PRs only
@@ -218,7 +224,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.conan2/p
-          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py') }}
+          key: conan-pkg-${{ matrix.cache-platform || runner.os }}-${{ matrix.conan-arch }}-${{ hashFiles('conanfile.py', 'conan.lock', 'profiles/*') }}
         continue-on-error: true   # exact-hit restores have nothing new to persist
 
       - name: Install WiX Toolset
