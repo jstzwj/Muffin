@@ -207,6 +207,12 @@ internal static class IntegrationOptionsTest
                     "Explorer document type uses localized resources");
                 Require(Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Muffin.md\shell\open' AND `Name`='MUIVerb'") == "@[INSTALLFOLDER]Muffin.exe,-1003",
                     "Explorer open action uses localized resources");
+                Require(Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Muffin.md\Application' AND `Name`='ApplicationName'") == "Muffin" &&
+                        Scalar(database, @"SELECT `Value` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Applications\Muffin.exe' AND `Name`='FriendlyAppName'") == "Muffin",
+                    "Open with uses the application name for both ProgID and executable entries");
+                var appComponent = Scalar(database, @"SELECT `Component_` FROM `Registry` WHERE `Key`='SOFTWARE\Classes\Applications\Muffin.exe' AND `Name`='FriendlyAppName'");
+                Require(Scalar(database, "SELECT `Feature_` FROM `FeatureComponents` WHERE `Component_`='" + appComponent + "'") == "FileAssociations",
+                    "application registration follows the optional Open with feature and MSI uninstall");
                 Require(Scalar(database, "SELECT `Feature_Parent` FROM `Feature` WHERE `Feature`='ShellContextMenu'") == "MainFeature",
                     "integration features remain optional children of the required application");
                 var settingsComponent = Scalar(database, "SELECT `Component_` FROM `Registry` WHERE `Name`='contextMenu'");

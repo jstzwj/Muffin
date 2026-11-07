@@ -314,10 +314,21 @@
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Type="string" Value="Muffin Markdown Document" KeyPath="yes" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Name="FriendlyTypeName" Type="string" Value="@[INSTALLFOLDER]Muffin.exe,-1002" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Name="FriendlyAppName" Type="string" Value="Muffin" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\Application" Name="ApplicationName" Type="string" Value="Muffin" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\DefaultIcon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\shell\open" Type="string" Value="Open" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\shell\open" Name="MUIVerb" Type="string" Value="@[INSTALLFOLDER]Muffin.exe,-1003" />
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="MuffinOpenWithApplication" Guid="2c68480e-4176-4fca-ad5f-50744ea3dfd2">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe" Name="FriendlyAppName" Type="string" Value="Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\DefaultIcon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\SupportedTypes" Name=".md" Type="string" Value="" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\SupportedTypes" Name=".markdown" Type="string" Value="" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\SupportedTypes" Name=".mdx" Type="string" Value="" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\SupportedTypes" Name=".mkd" Type="string" Value="" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Applications\Muffin.exe\SupportedTypes" Name=".mdown" Type="string" Value="" />
       </Component>
       <Component Id="Assoc_md" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5009">
         <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.md\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />

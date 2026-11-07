@@ -6,3 +6,35 @@
 // directory. An absolute path makes the embedded icon independent of the
 // build working directory.
 IDI_ICON1 ICON "@MUFFIN_APP_ICON_ICO@"
+
+// Explorer also obtains application names from the executable when the user
+// browses for it in Open with, independently of the registered ProgID.
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @MUFFIN_WINDOWS_VERSION@
+ PRODUCTVERSION @MUFFIN_WINDOWS_VERSION@
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+ FILEFLAGS 0
+ FILEOS VOS_NT_WINDOWS32
+ FILETYPE VFT_APP
+ FILESUBTYPE 0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Muffin\0"
+            VALUE "FileDescription", "Muffin\0"
+            VALUE "FileVersion", "@MUFFIN_EFFECTIVE_VERSION@\0"
+            VALUE "InternalName", "Muffin\0"
+            VALUE "OriginalFilename", "Muffin.exe\0"
+            VALUE "ProductName", "Muffin\0"
+            VALUE "ProductVersion", "@MUFFIN_EFFECTIVE_VERSION@\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END

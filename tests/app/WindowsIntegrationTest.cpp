@@ -89,6 +89,28 @@ QString registryText(const std::wstring& path, const wchar_t* name = nullptr) {
   return QString::fromWCharArray(text.c_str());
 }
 
+void testOpenWithApplicationIdentity() {
+  const std::wstring application = L"SOFTWARE\\Classes\\Applications\\Muffin.exe";
+  WindowsIntegration::applyIntegration(false, true);
+  require(registryText(application, L"FriendlyAppName") == QStringLiteral("Muffin") &&
+              registryText(L"SOFTWARE\\Classes\\Muffin.md\\Application", L"ApplicationName") ==
+                  QStringLiteral("Muffin"),
+          "both executable and ProgID Open with entries use the application display name");
+  require(registryText(application + L"\\shell\\open\\command") ==
+              registryText(L"SOFTWARE\\Classes\\Muffin.md\\shell\\open\\command"),
+          "both Open with paths launch the same quoted application and file argument");
+  for (const auto& extension : WindowsIntegration::markdownExtensions())
+    require(registryText(application + L"\\SupportedTypes", extension.toStdWString().c_str()).isEmpty(),
+            "executable registration declares every supported Markdown extension");
+  WindowsIntegration::applyIntegration(true, false);
+  HKEY key = nullptr;
+  const auto result = RegOpenKeyExW(HKEY_CURRENT_USER, application.c_str(), 0, KEY_READ, &key);
+  if (key)
+    RegCloseKey(key);
+  require(result == ERROR_FILE_NOT_FOUND && WindowsIntegration::isContextMenuEnabled(),
+          "disabling Open with removes its application registration independently of context menus");
+}
+
 QString nativeString(UINT id, WORD language) {
   const HMODULE module = GetModuleHandleW(nullptr);
   const auto resource = FindResourceExW(module, RT_STRING, MAKEINTRESOURCEW(id / 16 + 1), language);
@@ -172,6 +194,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName("Muffin");
   QCoreApplication::setApplicationName("Muffin");
   runTest("testChoicesMatchAppliedIntegration", testChoicesMatchAppliedIntegration);
+  runTest("testOpenWithApplicationIdentity", testOpenWithApplicationIdentity);
   runTest("testLocalizedLabelsKeepChoicesAndCommands", testLocalizedLabelsKeepChoicesAndCommands);
   // Portable mode must not alter an installed copy's Explorer registrations.
   WindowsIntegration::applyIntegration(true, true);

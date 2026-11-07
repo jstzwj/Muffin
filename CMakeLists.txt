@@ -1661,6 +1661,7 @@ if(WIN32)
   # taskbar, and Start Menu shortcuts. Use forward slashes in the RC file
   # because backslashes collide with C escapes (e.g. \r in \resources).
   set(MUFFIN_APP_ICON_ICO "${MUFFIN_APP_ICONS_DIR}/muffin.ico")
+  string(REPLACE "." "," MUFFIN_WINDOWS_VERSION "${MUFFIN_EFFECTIVE_VERSION}.0")
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/muffin.rc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/muffin.rc"

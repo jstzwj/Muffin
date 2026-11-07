@@ -184,20 +184,29 @@ void WindowsIntegration::applyIntegration(bool contextMenu, bool associate) {
 
   // --- File association (ProgID + OpenWithProgids candidate) ---
   const std::wstring progIdKey = classesKey(kProgId);
+  const std::wstring applicationKey = classesKey(L"Applications\\Muffin.exe");
   if (associate) {
     const auto description = documentTypeLabel().toStdWString();
     writeStringValue(HKEY_CURRENT_USER, progIdKey, nullptr, description);
     writeStringValue(HKEY_CURRENT_USER, progIdKey, L"FriendlyTypeName", description);
     writeStringValue(HKEY_CURRENT_USER, progIdKey, L"FriendlyAppName", kAppName);
+    writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\Application", L"ApplicationName", kAppName);
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\DefaultIcon", nullptr, iconValue);
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open", nullptr, openLabel().toStdWString());
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open", L"MUIVerb", openLabel().toStdWString());
     writeStringValue(HKEY_CURRENT_USER, progIdKey + L"\\shell\\open\\command", nullptr, exe + L" \"%1\"");
+    // Explorer's executable-based Open with entry has its own display name;
+    // the ProgID's FriendlyTypeName describes documents, not the application.
+    writeStringValue(HKEY_CURRENT_USER, applicationKey, L"FriendlyAppName", kAppName);
+    writeStringValue(HKEY_CURRENT_USER, applicationKey + L"\\DefaultIcon", nullptr, iconValue);
+    writeStringValue(HKEY_CURRENT_USER, applicationKey + L"\\shell\\open\\command", nullptr, exe + L" \"%1\"");
     for (const QString& ext : markdownExtensions()) {
       writeNoneValue(HKEY_CURRENT_USER, classesKey(ext.toStdWString() + L"\\OpenWithProgids"), kProgId);
+      writeStringValue(HKEY_CURRENT_USER, applicationKey + L"\\SupportedTypes", ext.toStdWString().c_str(), L"");
     }
   } else {
     deleteKeyTree(HKEY_CURRENT_USER, progIdKey);
+    deleteKeyTree(HKEY_CURRENT_USER, applicationKey);
     for (const QString& ext : markdownExtensions()) {
       deleteValue(HKEY_CURRENT_USER, classesKey(ext.toStdWString() + L"\\OpenWithProgids"), kProgId);
     }
