@@ -225,27 +225,12 @@ jobs:
           Invoke-WebRequest https://download.sysinternals.com/files/Procdump.zip -OutFile "$diagnostics/procdump.zip"
           Expand-Archive -LiteralPath "$diagnostics/procdump.zip" -DestinationPath "$diagnostics/tools"
           $tool = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'procdump64a.exe' } else { 'procdump64.exe' }
-          $ctest = ctest --preset conan-release --show-only=json-v1 | ConvertFrom-Json
-          $test = $ctest.tests | Where-Object name -eq 'MuffinDocumentVisualAcceptanceTest'
-          foreach ($property in $test.properties) {
-            if ($property.name -eq 'ENVIRONMENT_MODIFICATION') {
-              foreach ($modification in $property.value) {
-                if ($modification -notmatch '^([^=]+)=(set|path_list_prepend):(.*)$') {
-                  throw "Unsupported CTest environment modification: $modification"
-                }
-                $name, $action, $value = $Matches[1], $Matches[2], $Matches[3]
-                if ($action -eq 'set') {
-                  [Environment]::SetEnvironmentVariable($name, $value)
-                } elseif ($action -eq 'path_list_prepend') {
-                  [Environment]::SetEnvironmentVariable($name, "$value;$([Environment]::GetEnvironmentVariable($name))")
-                } else {
-                  throw "Unsupported CTest environment modification: $modification"
-                }
-              }
-            }
-          }
-          $command = $test.command
-          & "$diagnostics/tools/$tool" -accepteula -ma -e -x $diagnostics @command
+          # Let CTest preserve the Conan preset's DLL paths, working directory
+          # and per-test environment; extracting test properties omits preset env.
+          $launcher = "$diagnostics/tools/$tool;-accepteula;-ma;-e;-x;$diagnostics"
+          cmake --preset conan-default "-DCMAKE_TEST_LAUNCHER=$launcher"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --preset conan-release --verbose -R '^MuffinDocumentVisualAcceptanceTest$'
 
       - name: Upload Windows crash dumps
         if: failure() && runner.os == 'Windows'
