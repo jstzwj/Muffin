@@ -25,18 +25,27 @@ function(muffin_externalize_icu_data target)
 
   if(CMAKE_CXX_BYTE_ORDER STREQUAL "BIG_ENDIAN")
     set(order b)
+    set(asset_id 140163214)
     set(archive_sha256 "42a12ebfb1a82f80bb0005d9b6e018382ccaa2462f0d086a8c69ae736fdded3e")
     set(data_sha256 "8da022abc2cf7817a79cc046eaa7547b73ade60418f1e93c518e7c4614d186df")
   else()
     set(order l)
+    set(asset_id 140163216)
     set(archive_sha256 "2acdb1b982228040963d183b2dd9d321252c613e0f4db213d4bbc10417cde569")
     set(data_sha256 "dc778b9ffe18ed319ad3fb70754f80e51cf7b6dbfff38fc0c0a5f27bb5463dad")
   endif()
   include(FetchContent)
   FetchContent_Declare(muffin_icu_data
+    # Both URLs serve the same official archive. The browser download route
+    # can return 504 while the asset endpoint remains available. The API is
+    # only a build-time fallback; clients do not use it for update discovery.
     URL "https://github.com/unicode-org/icu/releases/download/release-74-2/icu4c-74_2-data-bin-${order}.zip"
+      "https://api.github.com/repos/unicode-org/icu/releases/assets/${asset_id}"
     URL_HASH "SHA256=${archive_sha256}"
+    HTTP_HEADER "Accept: application/octet-stream"
     TLS_VERIFY TRUE
+    TIMEOUT 120
+    INACTIVITY_TIMEOUT 30
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
   FetchContent_MakeAvailable(muffin_icu_data)
 

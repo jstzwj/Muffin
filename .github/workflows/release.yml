@@ -93,6 +93,7 @@ jobs:
             cmake/BuildDMG.cmake
             cmake/Info.plist.in
             cmake/QuickLook-Info.plist.in
+            cmake/MuffinIcuData.cmake
             profiles/macos
             profiles/windows-arm64
             scripts/check_macos_deployment.py
@@ -111,6 +112,9 @@ jobs:
           mkdir -p profiles
           cp .release-tooling/profiles/macos profiles/macos
           cp .release-tooling/profiles/windows-arm64 profiles/windows-arm64
+          if [ -f cmake/MuffinIcuData.cmake ]; then
+            cp .release-tooling/cmake/MuffinIcuData.cmake cmake/MuffinIcuData.cmake
+          fi
           cp .release-tooling/scripts/check_macos_deployment.py scripts/check_macos_deployment.py
           # Preserve a tag's own dependency snapshot. Older tags use the
           # reviewed compatibility snapshot and fail if it cannot resolve.
