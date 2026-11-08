@@ -34,6 +34,7 @@ jobs:
             test-command: ctest --preset conan-release --verbose
           - name: Windows ARM64
             runner: windows-11-arm
+            conan-profile: profiles/windows-arm64
             conan-arch: armv8
             configure-preset: conan-default
             conan-cppstd: 20
@@ -175,13 +176,13 @@ jobs:
         if: runner.os == 'Windows'
         run: cmake --preset ${{ matrix.configure-preset }} -DCMAKE_SHARED_LINKER_FLAGS_RELEASE=/MAP -DCMAKE_EXE_LINKER_FLAGS_RELEASE=/MAP
 
-      - name: Build Windows document visual tests
+      - name: Build Windows document visual and TLS tests
         if: runner.os == 'Windows'
-        run: cmake --build --preset conan-release --target MuffinDocumentVisualAcceptanceTest
+        run: cmake --build --preset conan-release --target MuffinDocumentVisualAcceptanceTest MuffinWindowsTlsTest
 
-      - name: Test Windows document visuals
+      - name: Test Windows document visuals and TLS
         if: runner.os == 'Windows'
-        run: ctest --preset conan-release --verbose -R '^MuffinDocumentVisualAcceptance'
+        run: ctest --preset conan-release --verbose -R '^Muffin(DocumentVisualAcceptance|WindowsTls)'
 
       - name: Build macOS integration and font raster tests
         if: runner.os == 'macOS'

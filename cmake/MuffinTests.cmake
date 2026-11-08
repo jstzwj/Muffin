@@ -646,6 +646,12 @@ target_compile_definitions(MuffinGuiPerformanceProbe PRIVATE
 muffin_add_test(NAME MuffinSidebarInteractionTest SOURCE tests/app/SidebarInteractionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 if(WIN32)
   muffin_add_test(NAME MuffinWindowsTlsTest SOURCE tests/app/WindowsTlsTest.cpp LINK Qt6::Network)
+  target_compile_definitions(MuffinWindowsTlsTest PRIVATE MUFFIN_TLS_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/tls")
+  foreach(backend IN ITEMS openssl schannel)
+    add_test(NAME MuffinWindowsTls-${backend} COMMAND MuffinWindowsTlsTest --backend ${backend})
+    set_tests_properties(MuffinWindowsTls-${backend} PROPERTIES
+      ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+  endforeach()
   muffin_add_test(NAME MuffinWindowsIntegrationTest SOURCE tests/app/WindowsIntegrationTest.cpp LINK MuffinCore EXTRA_SOURCES src/app/WindowsIntegration.cpp src/translations.qrc "${MUFFIN_SHELL_TRANSLATIONS_RC}" EXTRA_LINK Qt6::Gui advapi32 shell32)
   target_include_directories(MuffinWindowsIntegrationTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
   add_dependencies(MuffinWindowsIntegrationTest muffin-shell-translations)

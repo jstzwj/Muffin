@@ -32,6 +32,7 @@ jobs:
             test-command: ctest --preset conan-release --verbose
           - name: Windows ARM64
             runner: windows-11-arm
+            conan-profile: profiles/windows-arm64
             artifact-suffix: windows-arm64
             conan-arch: armv8
             configure-preset: conan-default
@@ -93,6 +94,7 @@ jobs:
             cmake/Info.plist.in
             cmake/QuickLook-Info.plist.in
             profiles/macos
+            profiles/windows-arm64
             scripts/check_macos_deployment.py
             tests/installer/UpdateHandoffTest.cs
           sparse-checkout-cone-mode: false
@@ -108,6 +110,7 @@ jobs:
           fi
           mkdir -p profiles
           cp .release-tooling/profiles/macos profiles/macos
+          cp .release-tooling/profiles/windows-arm64 profiles/windows-arm64
           cp .release-tooling/scripts/check_macos_deployment.py scripts/check_macos_deployment.py
           # Preserve a tag's own dependency snapshot. Older tags use the
           # reviewed compatibility snapshot and fail if it cannot resolve.

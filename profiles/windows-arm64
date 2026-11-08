@@ -1,0 +1,13 @@
+# OpenSSL inherits /Gs0. MSVC ARM64 /O2 /Gs0 can overwrite LR before saving
+# it (fixed in MSVC 14.52). Use the normal 4 KiB stack-probe threshold while
+# retaining /GS, optimization, assembly and both Qt TLS backends.
+include(default)
+
+[settings]
+os=Windows
+arch=armv8
+
+[conf]
+openssl/*:tools.build:cflags=["/Gs4096"]
+# Conf flags alone do not change Conan package IDs: never reuse the old binary.
+openssl/*:tools.info.package_id:confs=["tools.build:cflags"]
