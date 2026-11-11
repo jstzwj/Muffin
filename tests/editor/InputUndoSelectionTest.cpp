@@ -11,6 +11,7 @@
 #include "EditorTestUtils.h"
 
 #include <QApplication>
+#include <QInputMethodEvent>
 #include <QTemporaryFile>
 
 #include <iostream>
@@ -336,6 +337,112 @@ void testUndoRedoAfterBackingCompaction() {
   require(session.markdownText().toString() == QStringLiteral("alpha"), "redo restores the compacted text");
 }
 
+void testNonTextInputPreservesSelection() {
+  const QString documents[] = {
+      QStringLiteral("alpha beta"),
+      QStringLiteral("alpha\n\nbeta\n\ngamma"),
+      QStringLiteral("```text\nalpha beta\n```\n"),
+      QStringLiteral("| key | value |\n| --- | --- |\n| alpha | beta |\n"),
+      QStringLiteral("<div>alpha beta</div>\n"),
+  };
+  struct Key {
+    int code;
+    Qt::KeyboardModifiers modifiers;
+    QString text;
+  };
+  const Key keys[] = {
+      {Qt::Key_Shift, Qt::ShiftModifier, {}},
+      {Qt::Key_Control, Qt::ControlModifier, {}},
+      {Qt::Key_Alt, Qt::AltModifier, {}},
+      {Qt::Key_Meta, Qt::MetaModifier, {}},
+      {Qt::Key_AltGr, Qt::GroupSwitchModifier, {}},
+      {Qt::Key_CapsLock, Qt::NoModifier, {}},
+      {Qt::Key_NumLock, Qt::NoModifier, {}},
+      {Qt::Key_ScrollLock, Qt::NoModifier, {}},
+      {Qt::Key_Insert, Qt::NoModifier, {}},
+      {Qt::Key_F6, Qt::NoModifier, {}},
+      {Qt::Key_Dead_Grave, Qt::NoModifier, QStringLiteral("`")},
+      {Qt::Key_unknown, Qt::NoModifier, QString(QChar(0x1b))},
+  };
+  for (const QString& original : documents) {
+    for (bool reversed : {false, true}) {
+      DocumentSession session;
+      EditorView view;
+      EditorController controller;
+      controller.attach(&session, &view);
+      session.setMarkdownText(original, false);
+      view.setDocument(session.document());
+      const qsizetype start = original.indexOf(QStringLiteral("alpha")) + 1;
+      const qsizetype end = original.indexOf(QStringLiteral("beta")) + 3;
+      require(controller.inputController().selectSourceRange(reversed ? end : start, reversed ? start : end),
+              "non-text input fixture should select source across editable blocks");
+      const SelectionRange before = controller.selection().selection();
+      const quint64 revision = session.document().revision();
+      const quint64 history = controller.undoStack().stateId();
+      const auto requireUnchanged = [&] {
+        require(session.markdownText().toString() == original, "non-text input must not delete selected text");
+        const auto& after = controller.selection().selection();
+        require(!after.isCollapsed() && after.anchor.blockId == before.anchor.blockId &&
+                    after.focus.blockId == before.focus.blockId &&
+                    after.anchor.text.sourceOffset == before.anchor.text.sourceOffset &&
+                    after.focus.text.sourceOffset == before.focus.text.sourceOffset,
+                "non-text input must preserve selection endpoints and direction");
+        require(session.document().revision() == revision && !session.document().isModified() &&
+                    controller.undoStack().stateId() == history && !controller.undoStack().canUndo(),
+                "non-text input must not reparse, mark modified or create undo history");
+      };
+      for (const Key& key : keys) {
+        QKeyEvent press(QEvent::KeyPress, key.code, key.modifiers, key.text);
+        QApplication::sendEvent(&view, &press);
+        requireUnchanged();
+        QKeyEvent release(QEvent::KeyRelease, key.code, key.modifiers, key.text);
+        QApplication::sendEvent(&view, &release);
+        requireUnchanged();
+      }
+      require(!controller.inputController().insertText(QString()), "empty insertion should be rejected");
+      requireUnchanged();
+      QInputMethodEvent cancelledComposition;
+      QApplication::sendEvent(&view, &cancelledComposition);
+      requireUnchanged();
+    }
+  }
+}
+
+void testSelectionReplacementAfterShift() {
+  for (const QString& original : {QStringLiteral("alpha beta"), QStringLiteral("alpha\n\nbeta\n\ngamma")}) {
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+    session.setMarkdownText(original, false);
+    view.setDocument(session.document());
+    const qsizetype start = 1, end = original.size() - 1;
+    require(controller.inputController().selectSourceRange(start, end), "select text to replace after Shift");
+    QKeyEvent shift(QEvent::KeyPress, Qt::Key_Shift, Qt::ShiftModifier);
+    QApplication::sendEvent(&view, &shift);
+    QKeyEvent uppercase(QEvent::KeyPress, Qt::Key_X, Qt::ShiftModifier, QStringLiteral("X"));
+    QApplication::sendEvent(&view, &uppercase);
+    require(session.markdownText().toString() == original.left(start) + QStringLiteral("X") + original.mid(end),
+            "Shift plus a printable key must still replace the selection");
+    controller.undo();
+    require(session.markdownText().toString() == original && !controller.undoStack().canUndo() &&
+                !session.document().isModified(),
+            "one undo must restore the original text and saved state after Shift typing");
+
+    require(controller.inputController().selectSourceRange(end, start), "reselect text for an IME commit");
+    QInputMethodEvent commit;
+    const QString committed = QString::fromUtf8("中文");
+    commit.setCommitString(committed);
+    QApplication::sendEvent(&view, &commit);
+    require(session.markdownText().toString() == original.left(start) + committed + original.mid(end),
+            "an actual IME commit must still replace the selection");
+    controller.undo();
+    require(session.markdownText().toString() == original && !controller.undoStack().canUndo() &&
+                !session.document().isModified(),
+            "one undo must restore the original text and saved state after IME replacement");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -344,6 +451,8 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInputUndoRedoSnapshots);
   RUN_TEST(testUndoRedoAfterBackingCompaction);
+  RUN_TEST(testNonTextInputPreservesSelection);
+  RUN_TEST(testSelectionReplacementAfterShift);
   RUN_TEST(testCoalescedBackspaceUndoRedo);
   RUN_TEST(testExternalReloadResetsHistoryAndSelection);
   RUN_TEST(testControllerUndoRedoRemapsCursorAfterReparse);

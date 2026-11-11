@@ -194,6 +194,11 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
 }
 
 bool InputController::insertText(QString text) {
+  // Empty key/IME input is not an edit. In particular, modifier-only keypresses
+  // must never reach selection replacement or activate a literal editor.
+  if (text.isEmpty()) {
+    return false;
+  }
   clearVerticalNavigationX();
   if ((ctx_.session && !ctx_.session->isEditingAllowed()) || (ctx_.view && ctx_.view->editingLocked())) {
     return false;
@@ -254,8 +259,7 @@ bool InputController::insertText(QString text) {
     hideEmojiPopup();
     return true;
   }
-  const bool inserted =
-      text.isEmpty() ? false : editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
+  const bool inserted = editParagraph(TextBlockCommandBuilder::Operation::InsertText, std::move(text));
   if (inserted) {
     maybeUpdateEmojiPopup();
   }
