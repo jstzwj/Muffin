@@ -123,7 +123,7 @@ else()
     find_program(PATCHELF_EXECUTABLE NAMES patchelf REQUIRED)
     set(exe_search_dirs "")
     execute_process(
-      COMMAND "${PATCHELF_EXECUTABLE}" --print-rpath "${DIST_DIR}/${APP_FILE_NAME}"
+      COMMAND "${PATCHELF_EXECUTABLE}" --print-rpath "${APP_FILE}"
       OUTPUT_VARIABLE exe_rpath_raw
       RESULT_VARIABLE exe_rpath_result
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -159,10 +159,11 @@ else()
       list(REMOVE_DUPLICATES exe_search_dirs)
     endif()
     file(GET_RUNTIME_DEPENDENCIES
-      EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
+      EXECUTABLES "${APP_FILE}"
       DIRECTORIES ${exe_search_dirs}
       RESOLVED_DEPENDENCIES_VAR exe_resolved_dependencies
       UNRESOLVED_DEPENDENCIES_VAR exe_unresolved_dependencies
+      POST_INCLUDE_REGEXES "/libQt6[^/]*\\.so"
       POST_EXCLUDE_REGEXES "^/lib/" "^/lib64/" "^/usr/lib/" "^/usr/lib64/"
     )
     if(exe_unresolved_dependencies)
@@ -170,6 +171,10 @@ else()
     endif()
     foreach(dependency IN LISTS exe_resolved_dependencies)
       get_filename_component(dependency_name "${dependency}" NAME)
+      if(dependency_name MATCHES "^libQt6Core\\.so")
+        file(REAL_PATH "${dependency}" qt_core_real_path)
+        get_filename_component(qt_runtime_dir "${qt_core_real_path}" DIRECTORY)
+      endif()
       if(dependency_name MATCHES "^libQt6.*\\.so")
         get_filename_component(qt_lib_dir "${dependency}" DIRECTORY)
         get_filename_component(qt_root_dir "${qt_lib_dir}" DIRECTORY)
@@ -180,12 +185,16 @@ else()
         endforeach()
       endif()
     endforeach()
+    if(NOT qt_runtime_dir)
+      message(FATAL_ERROR "Could not determine the executable's Qt runtime directory")
+    endif()
   endif()
 
   if(plugin_dirs)
     list(REMOVE_DUPLICATES plugin_dirs)
   endif()
 
+  set(source_plugins "")
   foreach(plugin_dir IN LISTS plugin_dirs)
     if(EXISTS "${plugin_dir}")
       get_filename_component(plugin_name "${plugin_dir}" NAME)
@@ -193,6 +202,7 @@ else()
       # dist bundle actually carries the platform plugins it needs at runtime.
       file(GLOB plugin_files "${plugin_dir}/*.dll" "${plugin_dir}/*.so")
       if(plugin_files)
+        list(APPEND source_plugins ${plugin_files})
         file(MAKE_DIRECTORY "${DIST_DIR}/${plugin_name}")
         file(COPY ${plugin_files} DESTINATION "${DIST_DIR}/${plugin_name}")
       endif()
@@ -213,21 +223,26 @@ else()
       "The official input context plugin is built from the unmodified source.\n"
       "See README.md for upstream's licensing statement and LICENSES for license texts.\n")
 
-    # TARGET_RUNTIME_DLLS is empty on ELF platforms. Resolve the executable and
-    # plugin dependency graph directly, copy only non-system libraries, then
-    # make every binary find the flat bundle without Conan's cache paths.
+    # Resolve from the ORIGINAL files: Qt plugins' $ORIGIN/../../lib RUNPATH
+    # points into their Qt package only before relocation. Resolving copies
+    # silently picks system Qt via ldconfig before trying DIRECTORIES (for
+    # example libQt6XcbQpa), then the system-library exclusion hides the miss.
+    # Copy the complete graph first; only then rewrite the bundle's RPATHs.
     file(GLOB_RECURSE bundled_plugins "${DIST_DIR}/*.so")
-    set(dist_executables "${DIST_DIR}/${APP_FILE_NAME}")
-    if(EXISTS "${DIST_DIR}/muffin-mmdc")
-      list(APPEND dist_executables "${DIST_DIR}/muffin-mmdc")
+    list(APPEND source_plugins "${FCITX_PLUGIN}")
+    list(REMOVE_DUPLICATES source_plugins)
+    set(source_executables "${APP_FILE}")
+    if(DEFINED MMDC_FILE AND NOT MMDC_FILE STREQUAL "")
+      list(APPEND source_executables "${MMDC_FILE}")
     endif()
     file(GET_RUNTIME_DEPENDENCIES
-      EXECUTABLES ${dist_executables}
-      LIBRARIES ${bundled_plugins}
+      EXECUTABLES ${source_executables}
+      MODULES ${source_plugins}
       DIRECTORIES ${exe_search_dirs}
       RESOLVED_DEPENDENCIES_VAR resolved_dependencies
       UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
       CONFLICTING_DEPENDENCIES_PREFIX conflicting_dependencies
+      POST_INCLUDE_REGEXES "/libQt6[^/]*\\.so"
       POST_EXCLUDE_REGEXES "^/lib/" "^/lib64/" "^/usr/lib/" "^/usr/lib64/"
     )
     if(unresolved_dependencies)
@@ -238,10 +253,18 @@ else()
         "Conflicting Linux runtime dependencies: ${conflicting_dependencies_FILENAMES}")
     endif()
     foreach(dependency IN LISTS resolved_dependencies)
+      get_filename_component(dependency_name "${dependency}" NAME)
+      if(dependency_name MATCHES "^libQt6.*\\.so")
+        file(REAL_PATH "${dependency}" qt_dependency_real_path)
+        get_filename_component(qt_dependency_dir "${qt_dependency_real_path}" DIRECTORY)
+        if(NOT qt_dependency_dir STREQUAL qt_runtime_dir)
+          message(FATAL_ERROR
+            "Qt dependency escaped the selected runtime: ${dependency} (expected ${qt_runtime_dir})")
+        endif()
+      endif()
       # Runtime dependency resolution commonly returns a versioned symlink.
       # Copy the complete relative link chain so the DT_NEEDED name resolves.
       file(COPY "${dependency}" DESTINATION "${DIST_DIR}" FOLLOW_SYMLINK_CHAIN)
-      get_filename_component(dependency_name "${dependency}" NAME)
       list(APPEND bundled_dependencies "${DIST_DIR}/${dependency_name}")
     endforeach()
     list(REMOVE_DUPLICATES bundled_dependencies)

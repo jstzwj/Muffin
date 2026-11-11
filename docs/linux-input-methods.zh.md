@@ -7,6 +7,7 @@ Muffin 的 Linux 通用包携带自己的 Qt。Fcitx 的 Qt 输入法插件使�
 - `conanfile.py` 在 Linux 开启 Qt 的 DBus 支持，让 Qt 自带的 IBus 插件和 Fcitx 插件可以连接桌面的会话总线。
 - `cmake/MuffinLinuxInputMethods.cmake` 下载官方 fcitx5-qt **5.1.16** 源码，固定 SHA-256，用 Muffin 已选中的 Qt 公共和私有目标构建官方 `BUILD_ONLY_PLUGIN` 目标。不会重新寻找系统 Qt，不会改写 Conan 缓存，也不构建输入法服务或词库。
 - `cmake/MuffinDeploy.cmake` 收集 Qt 的 `platforminputcontexts`，加入刚构建的 Fcitx 插件、许可证和动态依赖，修正相对 RPATH。Fcitx 插件或许可证缺失时拒绝生成发布包。
+- 依赖必须从可执行文件和插件的原始位置解析，再复制到发布目录并重写 RPATH。Qt 插件原有的 `$ORIGIN/../../lib` 在复制后会失效，不能先搬动再解析；否则 CMake 会优先选中系统的同名 Qt 库。打包时也检查所有 Qt 依赖来自应用所使用的同一个库目录，拒绝混用系统 Qt。
 - `src/app/BundledQtPlugins.h` 在构造 QApplication 之前读取 `qt.conf` 中的 `Muffin/SelfContainedPlugins` 标记，将该进程的 Qt 插件搜索范围设为包目录，避免桌面 `QT_PLUGIN_PATH` 注入另一版本的 Qt 插件。即使插件缺失，也不回退加载系统插件。开发构建保持原有路径。
 
 额外的 Linux 构建依赖为 `extra-cmake-modules`、`libxkbcommon-dev`，部署需要 `patchelf`。其余 X11 开发依赖沿用工作流。插件源码的地址和校验值在 CMake 文件中；两个上游许可证随包放入 `licenses/fcitx5-qt/`。
