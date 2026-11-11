@@ -46,7 +46,8 @@ public:
     const MarkdownNode* styleNode = nullptr;
     QString documentPath; // resource base belongs to this layout/document, never global CWD
     QHash<QString, std::shared_ptr<void>>* imageResources = nullptr;
-    qsizetype sourceBase = -1;
+    // Same signed source-to-inline coordinate transform as InlineProjection (0 = identity).
+    qsizetype sourceBase = 0;
     qsizetype pendingPrefixLength = 0;
     QVector<InlineSourceReplacement> sourceReplacements;
     // When set, misspelled prose words within Text spans receive a SpellCheck underline.

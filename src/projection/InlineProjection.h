@@ -120,8 +120,12 @@ struct InlineSourceReplacement {
 class InlineProjection {
 public:
   InlineProjection() = default;
+  // sourceBase is the signed position of sourceText[0] in the inline nodes' coordinate frame:
+  // local = inline - sourceBase; inline = local + sourceBase. Zero is the identity transform.
+  // It can be negative when editable CommonMark indentation precedes the AST block start.
+  // Missing parser ranges are represented by an invalid InlineRange, never by sourceBase.
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {},
-                   qsizetype sourceBase = -1, qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
+                   qsizetype sourceBase = 0, qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
                    SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false,
                    TextTransform textTransform = TextTransform::None, bool renderEmoji = true,
                    html::HtmlColorPalette htmlPalette = html::HtmlColorPalette::defaultLight(),
@@ -155,7 +159,7 @@ public:
   static QString plainTextForInlines(const QVector<InlineNode>& inlines, bool breakOnSingleNewline = false);
   static QString markdownForInlines(const QVector<InlineNode>& inlines);
   static bool isPlainInlineSource(const QVector<InlineNode>& inlines, const QString& sourceText,
-                                  qsizetype sourceBase = -1);
+                                  qsizetype sourceBase = 0);
 
 private:
   struct RevealCheck {
@@ -165,7 +169,7 @@ private:
   struct BuildState {
     QVector<InlineSourceReplacement> replacements;
     const QString* sourceText = nullptr;
-    qsizetype sourceBase = -1;
+    qsizetype sourceBase = 0;
     InlineProjectionState projectionState;
     QVector<RevealCheck>* revealChecks = nullptr;
     bool shouldReveal(qsizetype sourceStart, qsizetype sourceEnd, qsizetype visibleStart, qsizetype visibleEnd);

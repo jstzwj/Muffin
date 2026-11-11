@@ -213,7 +213,7 @@ void InlineLayout::build(const QVector<InlineNode>& inlines, QString sourceText,
   if (options.styleNode) {
     htmlPalette.documentParent = theme.cssElementForNode(*options.styleNode);
     htmlPalette.documentParentForOffset = [&theme, owner = options.styleNode,
-                                           base = qMax<qsizetype>(0, options.sourceBase)](qsizetype offset) {
+                                           base = options.sourceBase](qsizetype offset) {
       return theme.cssParentForInlineHtml(*owner, offset + base);
     };
   }
@@ -234,7 +234,7 @@ void InlineLayout::build(const QVector<InlineNode>& inlines, QString sourceText,
     plainText_ = projection_.visibleText();
   spanStyles_.clear();
   elementRuns_.clear();
-  styleSourceBase_ = qMax<qsizetype>(0, options.sourceBase);
+  styleSourceBase_ = options.sourceBase;
   if (options.styleNode) {
     QHash<const CssElement*, int> runs;
     diag::ScopedPerfProbe perf("inline.semanticStyles", inlineBuildPerf());
@@ -242,8 +242,7 @@ void InlineLayout::build(const QVector<InlineNode>& inlines, QString sourceText,
     for (const auto& span : projection_.spans()) {
       if (span.kind != InlineSpanKind::Text && span.type != InlineType::Image)
         continue;
-      const auto style = theme.inlineStyleForNode(*options.styleNode,
-                                                  span.contentSourceStart + qMax<qsizetype>(0, options.sourceBase));
+      const auto style = theme.inlineStyleForNode(*options.styleNode, span.contentSourceStart + styleSourceBase_);
       const QFont fallback = span.type == InlineType::Code ? codeStyle_->font : baseFont;
       spanStyles_.insert(span.displayStart, sharedSnapshot(style, theme.fontForStyle(style, fallback)));
       if (span.kind != InlineSpanKind::Text || span.displayEnd <= span.displayStart)

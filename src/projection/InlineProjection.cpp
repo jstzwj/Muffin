@@ -233,9 +233,6 @@ InlineRange localRange(InlineRange range, qsizetype sourceBase) {
   if (!range.isValid()) {
     return {};
   }
-  if (sourceBase < 0) {
-    return range;
-  }
   range.start -= sourceBase;
   range.end -= sourceBase;
   return range;

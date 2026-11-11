@@ -1,6 +1,7 @@
 #include "projection/SelectionSerializer.h"
 
 #include "document/InlineNode.h"
+#include "document/BlockPredicates.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "document/ListItemSource.h"
@@ -271,6 +272,8 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
     if (sourceStart < sourceEnd && markdown.at(sourceStart).isSpace()) {
       ++sourceStart;
     }
+  } else if (editable->type() == BlockType::Paragraph) {
+    sourceStart = paragraphContentStartIncludingCommonMarkIndent(markdown, sourceStart);
   }
 
   context.node = &displayNode;

@@ -20,6 +20,34 @@ QString normalizedDisplay(QString text) {
   text.remove(QChar(0xe001));
   return text;
 }
+void testIndentedSemanticStyles() {
+  for (const QString& newline : {QStringLiteral("\n"), QStringLiteral("\r\n")}) {
+    for (int indent = 0; indent <= 3; ++indent) {
+      const QString spaces(indent, QLatin1Char(' '));
+      DocumentSession session;
+      session.setMarkdownText("prefix" + newline + newline + spaces + "**A *B***x **C**" + newline, false);
+      auto theme =
+          RenderTheme::fromDefinition(CssThemeMapper::fromCss("#write{padding:0}p{margin:0}strong{color:red}"
+                                                              "strong::before{content:'['}strong::after{content:']'}"
+                                                              "em::before{content:'{'}em::after{content:'}'}",
+                                                              "indented-semantic-styles", {}));
+      DocumentLayout layout;
+      layout.rebuild(session.document(), theme, 700);
+      const auto& node = *session.document().root().children()[1];
+      const auto* text = layout.block(node.id())->inlineLayout();
+      require(normalizedDisplay(text->displayText()).remove('\r') == spaces + "[A {B}]x [C]",
+              QStringLiteral("indent %1: nested CSS styles use the same signed coordinates as projection: %2")
+                  .arg(indent)
+                  .arg(normalizedDisplay(text->displayText())));
+      require(QString(text->visibleText()).remove('\r') == spaces + "A Bx C",
+              "generated CSS content is excluded from editable text");
+      require(text->stylesMatch(theme, node), "style invalidation uses the same origin as initial style lookup");
+      const auto caret = text->cursorRect(indent + 2);
+      require(text->hitTestTextOffset({caret.left(), caret.center().y()}) == indent + 2,
+              "nested styled text retains hit-test coordinates with indentation");
+    }
+  }
+}
 void testBrowserSemantics() {
   const auto reference =
       QJsonDocument::fromJson(
@@ -262,6 +290,7 @@ void testTextPseudoState() {
 }
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
+  runTest("indented semantic styles", testIndentedSemanticStyles);
   runTest("browser inline semantics", testBrowserSemantics);
   runTest("element state and invalidation", testElementStateAndInvalidation);
   runTest("alert SVG painting", testAlertSvgPainting);

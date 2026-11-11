@@ -1,7 +1,133 @@
 #include "EditorViewTestUtils.h"
 #include "math/MathRenderer.h"
+#include "document/BlockPredicates.h"
+#include "editor/BlockEditContext.h"
+#include "render/BlockLayout.h"
+
+#include <QElapsedTimer>
 
 using namespace muffin;
+
+void testIndentedParagraphProjectionCoordinates() {
+  const QVector<QPair<QString, QString>> cases = {
+      {QStringLiteral("**标题**\n正文。"), QStringLiteral("标题\n正文。")},
+      {QStringLiteral("重复 **重复**，**粗 *斜***与[重复](https://example.com)。"),
+       QStringLiteral("重复 重复，粗 斜与重复。")},
+      {QStringLiteral("** 3. 自定义位置放入设置：**"), QStringLiteral("** 3. 自定义位置放入设置：**")},
+      {QStringLiteral("一个**“功能菜单”**。"), QStringLiteral("一个**“功能菜单”**。")},
+      {QStringLiteral("一个“**快捷键**”，而不是“**功能菜单**”。"), QStringLiteral("一个“快捷键”，而不是“功能菜单”。")},
+  };
+  for (const QString& newline : {QStringLiteral("\n"), QStringLiteral("\r\n")}) {
+    for (int indent = 0; indent <= 3; ++indent) {
+      const QString spaces(indent, QLatin1Char(' '));
+      for (const auto& entry : cases) {
+        const QString source = spaces + QString(entry.first).replace("\n", newline + spaces);
+        const QString expected = spaces + QString(entry.second).replace("\n", "\n" + spaces);
+        const QString prefix = QStringLiteral("前言。") + newline + newline;
+        DocumentSession session;
+        session.setMarkdownText(prefix + source + newline, false);
+        const auto* node = blockAt(session, 1);
+        require(paragraphContentStartIncludingCommonMarkIndent(session.markdownText(), node->sourceRange().byteStart) ==
+                    prefix.size(),
+                "editable content includes the paragraph's original indentation");
+        const qsizetype base = prefix.size() - node->sourceRange().byteStart;
+        require(base == -indent, "paragraph indentation precedes its block-relative AST origin");
+        InlineProjection projection(node->inlines(), source, {}, base, 16, 0, {}, true);
+        require(QString(projection.displayText()).remove('\r') == expected,
+                QStringLiteral("indent %1 (%2): display [%3], expected [%4]")
+                    .arg(indent)
+                    .arg(newline.size())
+                    .arg(projection.displayText(), expected));
+        require(QString(projection.visibleText()).remove('\r') == expected,
+                "visible and display text share the same signed mapping");
+        for (const auto& span : projection.spans()) {
+          if (span.kind != InlineSpanKind::Text ||
+              span.contentSourceEnd - span.contentSourceStart != span.displayEnd - span.displayStart)
+            continue;
+          // Collapsed delimiter boundaries intentionally admit multiple source positions.
+          for (qsizetype i = 1; i < span.displayEnd - span.displayStart; ++i) {
+            qsizetype sourceOffset = -1, displayOffset = -1;
+            require(projection.sourceOffsetForDisplayOffset(span.displayStart + i, sourceOffset) &&
+                        sourceOffset == span.contentSourceStart + i,
+                    "each displayed character maps to its original source, including repeated Chinese text");
+            require(projection.displayOffsetForSourceOffset(sourceOffset, displayOffset) &&
+                        displayOffset == span.displayStart + i,
+                    "source/display offsets round-trip without indentation drift");
+          }
+        }
+      }
+    }
+  }
+}
+
+void testIndentedParagraphPreviewAndEditing() {
+  for (const QString& newline : {QStringLiteral("\n"), QStringLiteral("\r\n")}) {
+    for (int indent = 0; indent <= 3; ++indent) {
+      const QString spaces(indent, QLatin1Char(' '));
+      const QString prefix = QStringLiteral("前言。") + newline + newline;
+      const QString content =
+          spaces + QStringLiteral("**标题**") + newline + spaces + QStringLiteral("正文 **重复词**，重复词。");
+      const QString source = prefix + content + newline;
+      const QString visible = spaces + QStringLiteral("标题\n") + spaces + QStringLiteral("正文 重复词，重复词。");
+      DocumentSession session;
+      session.setMarkdownText(source, false);
+      EditorView view;
+      view.resize(900, 600);
+      view.setLivePreview(true);
+      view.setEditingLocked(true);
+      view.setDocument(session.document());
+      view.show();
+      QElapsedTimer ready;
+      ready.start();
+      while (view.isLayoutPending() && ready.elapsed() < 5000)
+        QApplication::processEvents();
+      require(!view.isLayoutPending(), "cooperative split-preview layout completes");
+      const auto* node = blockAt(session, 1);
+      const auto* block = view.blockLayoutForNode(node->id());
+      require(block && block->inlineLayout(), "split preview builds the indented paragraph");
+      const auto* layout = block->inlineLayout();
+      require(QString(layout->displayText()).remove('\r') == visible,
+              "read-only preview has no extra markers or repeated punctuation");
+      const qsizetype localSource = content.indexOf(QStringLiteral("重复"));
+      const qsizetype textOffset = layout->visibleText().indexOf(QStringLiteral("重复"));
+      const auto caret = layout->cursorRectForSourceOffset(localSource + 1);
+      require(layout->hitTestSourceOffset({caret.left(), caret.center().y()}) == localSource + 1,
+              "clicking preview text retains exact source coordinates");
+      require(!layout->selectionRectsForSourceOffsets(localSource, localSource + 2).isEmpty(),
+              "the bold word has selectable geometry");
+
+      EditorController controller;
+      view.setLivePreview(false);
+      view.setEditingLocked(false);
+      controller.attach(&session, &view);
+      auto* editable = blockAt(session, 1);
+      setSourceCursor(controller.selection(), editable, textOffset + 1, prefix.size() + localSource + 1);
+      BlockEditContext context;
+      require(BlockEditContextResolver(&session, &controller.selection()).current(context), "resolve editing source");
+      require(QString(context.visibleText).remove('\r').replace('\n', ' ') == QString(visible).replace('\n', ' '),
+              "editing and preview share offsets regardless of the soft-break display policy");
+      require(context.cursorSourceOffset == prefix.size() + localSource + 1, "caret stays inside the selected word");
+      // Exercise visible-only selection as well as source-anchored selections used by the view.
+      setSourceSelection(controller.selection(), editable, editable, textOffset + 1, prefix.size() + localSource + 1,
+                         textOffset + 2, prefix.size() + localSource + 2);
+      require(selectedPlainText(session, controller.selection()) == QStringLiteral("复"),
+              "source-anchored copy keeps exactly the selected character");
+      setSelection(controller.selection(), editable, textOffset + 1, textOffset + 2);
+      require(selectedPlainText(session, controller.selection()) == QStringLiteral("复"),
+              QStringLiteral("indent %1: copy uses the same paragraph origin as rendering and editing: %2")
+                  .arg(indent)
+                  .arg(selectedPlainText(session, controller.selection())));
+      require(controller.inputController().insertText(QStringLiteral("改")), "replace bold text");
+      QString expected = source;
+      expected.replace(prefix.size() + localSource + 1, 1, QStringLiteral("改"));
+      require(session.markdownText().toString() == expected, "replacement touches only the intended occurrence");
+      controller.undo();
+      require(session.markdownText().toString() == source, "undo restores exact Markdown and indentation");
+      controller.redo();
+      require(session.markdownText().toString() == expected, "redo preserves delimiters and repeated text");
+    }
+  }
+}
 
 void testInlineProjectionEntityDisplayAfterEdit() {
   DocumentSession session;
@@ -384,6 +510,8 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testIndentedParagraphProjectionCoordinates);
+  RUN_TEST(testIndentedParagraphPreviewAndEditing);
   RUN_TEST(testInlineProjectionEntityDisplayAfterEdit);
   RUN_TEST(testInlineProjectionEntityRevealsRawSyntaxWhenActive);
   RUN_TEST(testInlineProjectionKeepsValidEntitiesDecodedAfterBrokenEntityEdit);

@@ -942,7 +942,7 @@ void testSmartPunctFoldedTokenDecomposesIntoSpans() {
   SmartPunctRenderOptions sp;
   sp.convertDashes = true;
 
-  InlineProjection proj(inlines, QStringLiteral("a--b"), InlineProjectionState{}, -1, 16.0, 0, sp);
+  InlineProjection proj(inlines, QStringLiteral("a--b"), InlineProjectionState{}, 0, 16.0, 0, sp);
   require(proj.displayText() == QString::fromUtf8("a\xe2\x80\x93"
                                                   "b"),
           QStringLiteral("Convert on Rendering: -- should render as a single en-dash"));
