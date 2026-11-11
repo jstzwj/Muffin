@@ -31,6 +31,9 @@ class DependencyGateTest(unittest.TestCase):
     def test_accepts_relocated_qt(self):
         self.check(f"libQt6Core.so.6 => {self.bundle.as_posix()}/libQt6Core.so.6 (0x1234)")
 
+    def test_accepts_relocated_qt_with_spaces(self):
+        self.check(f"libQt6Core.so.6 => {self.bundle.as_posix()}/a portable folder/libQt6Core.so.6 (0x1234)")
+
     def test_rejects_private_abi_error(self):
         with self.assertRaisesRegex(RuntimeError, "Unresolved symbols"):
             self.check("undefined symbol: _ZN14QObjectPrivateC2E16QtPrivate_6_10_2")
@@ -42,6 +45,10 @@ class DependencyGateTest(unittest.TestCase):
     def test_rejects_system_qt(self):
         with self.assertRaisesRegex(RuntimeError, "Qt escaped"):
             self.check("libQt6Core.so.6 => /usr/lib/libQt6Core.so.6 (0x1234)")
+
+    def test_rejects_external_qt_with_spaces(self):
+        with self.assertRaisesRegex(RuntimeError, "Qt escaped"):
+            self.check("libQt6Core.so.6 => /usr/a different Qt/libQt6Core.so.6 (0x1234)")
 
     def test_rejects_build_rpath(self):
         with self.assertRaisesRegex(RuntimeError, "Non-relocatable"):

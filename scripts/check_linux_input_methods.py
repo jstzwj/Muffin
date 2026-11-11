@@ -36,7 +36,10 @@ def check_libraries(bundle, env):
         output = run(["ldd", "-r", str(binary)], env)
         if "not found" in output or "undefined symbol:" in output:
             raise RuntimeError(f"Unresolved symbols in {binary.name}:\n{output}")
-        for library in re.findall(r"libQt6\S+ => (\S+)", output):
+        # ldd does not quote paths. Match the trailing load address rather
+        # than splitting on whitespace: portable directories may have spaces.
+        for library in re.findall(r"^\s*libQt6\S+\s+=>\s+(.+?)\s+\(0x[0-9a-fA-F]+\)\s*$",
+                                  output, re.MULTILINE):
             if not Path(library).resolve().is_relative_to(bundle.resolve()):
                 raise RuntimeError(f"Qt escaped the bundle: {library}")
         rpath = run(["patchelf", "--print-rpath", str(binary)], env).strip()
