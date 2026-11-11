@@ -130,6 +130,7 @@ signals:
   void mathCommandRejected(QString reason);
 
 private:
+  void initializeEmptyDocumentCursor();
   void finishHistoryReplay(const EditTransaction& transaction, bool undo);
   void remapCurrentSelection();
   bool activateHtmlSource(CursorPosition initialPosition);

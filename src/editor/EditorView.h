@@ -150,6 +150,9 @@ signals:
   void linkActivated(QString href);
   void historyNavigationRequested(bool forward);
   void blockClicked(HitTestResult result);
+  // The controller resolves the initial model position; focus alone must not
+  // invent a display-only caret disconnected from keyboard/IME editing.
+  void initialCursorRequested();
   void selectionChanged(SelectionRange selection, HitTestResult focusHit);
   void textCommitted(QString text);
   void folderDropped(QString path);
@@ -290,6 +293,7 @@ private:
   // Restart the caret blink phase (visible + timer armed when focused, not flashing-disabled,
   // and no active composition). Called from every caret-moving entry point.
   void resetCaretBlink();
+  void requestInitialCursor();
   // Manual multi-click counter (Qt has no triple-click event): press→1, dblclick→2, press→3
   // within doubleClickInterval() and ~4px of the last click. Count 3 selects the block's text.
   int registerClick(QPointF viewportPos);

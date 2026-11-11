@@ -301,6 +301,7 @@ void EditorView::setDocument(const MarkdownDocument& document, QString documentP
   }
   rebuildLayout();
   updateTableToolbar();
+  requestInitialCursor();
 }
 
 void EditorView::setLivePreview(bool enabled) {
@@ -433,6 +434,7 @@ void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
   updateTableToolbar();
   viewport()->update();
   emit layoutBusyChanged(false);
+  requestInitialCursor();
   emit layoutReady();
 }
 
@@ -773,8 +775,16 @@ void EditorView::setEditingLocked(bool locked) {
     }
   } else {
     updateCursorHitFromPosition();
+    requestInitialCursor();
+    resetCaretBlink();
   }
   viewport()->update();
+}
+
+void EditorView::requestInitialCursor() {
+  if (hasFocus() && !editingLocked_ && !layoutBuild_ && !cursorPosition_.isValid() && document_ &&
+      document_->markdownText().isEmpty())
+    emit initialCursorRequested();
 }
 
 void EditorView::resetCaretBlink() {
@@ -1300,6 +1310,7 @@ void EditorView::focusInEvent(QFocusEvent* event) {
   if (!preedit_.isEmpty()) {
     resetComposition();
   }
+  requestInitialCursor();
   resetCaretBlink();
   diag::updateViewport(viewport());
 }

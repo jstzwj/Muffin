@@ -6,10 +6,12 @@
 #include <QApplication>
 #include <QFontMetricsF>
 #include <QClipboard>
+#include <QElapsedTimer>
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QPainter>
 #include <QScrollBar>
+#include <QTimer>
 
 #include <algorithm>
 #include <vector>
@@ -611,6 +613,152 @@ void testKeyboardUpDownDescendsIntoAndOutOfNestedSublist() {
 // across captures (a viewport()->render() approach let a layout-driven scrollbar flip the size).
 QImage captureView(EditorView& view) {
   return view.grab().toImage();
+}
+
+void requirePaintedCaret(EditorView& view) {
+  require(view.cursorHit().isValid() && !view.effectiveCursorRect().isEmpty(),
+          "the input position should resolve to caret geometry");
+  const auto position = view.cursorPosition();
+  const QRectF caret = view.effectiveCursorRect();
+  const QImage visible = captureView(view);
+  view.clearCursor();
+  const QImage hidden = captureView(view);
+  const qreal dpr = visible.devicePixelRatio();
+  const QRectF bounds =
+      caret.translated(view.viewport()->pos() - QPointF(0, view.verticalScrollBar()->value())).adjusted(-1, -1, 2, 1);
+  const QRect pixels = QRectF(bounds.topLeft() * dpr, bounds.size() * dpr).toAlignedRect();
+  int changed = 0;
+  for (int y = pixels.top(); y <= pixels.bottom(); ++y)
+    for (int x = pixels.left(); x <= pixels.right(); ++x)
+      if (visible.rect().contains(x, y) && visible.pixel(x, y) != hidden.pixel(x, y))
+        ++changed;
+  require(changed >= 14, "the caret should paint visible pixels immediately");
+  view.setCursorPosition(position);
+}
+
+void testEmptyDocumentFocusShowsCaretAndAcceptsInput() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 400);
+  view.setDocument(session.document());
+  view.show();
+  view.setFocus();
+  QApplication::processEvents();
+  require(view.hasFocus(), "the empty editor should receive keyboard focus");
+  require(controller.selection().hasCursor(), "focusing an empty document should establish its initial model caret");
+  require(controller.selection().cursorPosition().text.sourceOffset == 0,
+          "the initial caret should point to the empty source's start");
+  require(!session.document().isModified() && !controller.canUndo(), "focusing must not edit the document");
+  const qreal startX = view.effectiveCursorRect().left();
+  requirePaintedCaret(view);
+
+  auto* blink = view.findChild<QTimer*>(QStringLiteral("caretBlink"));
+  require(blink && (QApplication::cursorFlashTime() <= 0 || blink->isActive()),
+          "a focused caret should blink unless disabled by system settings");
+  QKeyEvent key(QEvent::KeyPress, Qt::Key_A, Qt::NoModifier, QStringLiteral("a"));
+  QApplication::sendEvent(&view, &key);
+  controller.brushQueue().flush();
+  require(session.markdownText().toString() == QStringLiteral("a"), "first input should insert at the visible caret");
+  require(controller.selection().cursorPosition().text.sourceOffset == 1 && view.effectiveCursorRect().left() > startX,
+          "first input should advance the model and painted caret together");
+  controller.undo();
+  controller.brushQueue().flush();
+  require(session.markdownText().isEmpty() && !session.document().isModified(),
+          "undoing the first input should restore the clean empty document");
+  requirePaintedCaret(view);
+
+  QInputMethodEvent composition(QStringLiteral("ni"), {});
+  QApplication::sendEvent(&view, &composition);
+  QInputMethodEvent commit;
+  commit.setCommitString(QString::fromUtf8("你"));
+  QApplication::sendEvent(&view, &commit);
+  controller.brushQueue().flush();
+  require(session.markdownText().toString() == QString::fromUtf8("你"), "IME should commit at the initial caret");
+  requirePaintedCaret(view);
+}
+
+void testEmptyDocumentClickShowsCaret() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 400);
+  view.setDocument(session.document());
+  view.show();
+  QApplication::processEvents();
+  // Exercise the click independently of initialization on keyboard focus.
+  controller.selection().clear();
+  const auto* paragraph = blockAt(session, 0);
+  const auto* block = view.blockLayoutForNode(paragraph->id());
+  require(block && !block->placeholderText().isEmpty(), "an empty document should show its writing prompt");
+  const QPointF point = block->inlineTextOrigin() + QPointF(50, block->height() / 2);
+  QMouseEvent press(QEvent::MouseButtonPress, point, point, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  QMouseEvent release(QEvent::MouseButtonRelease, point, point, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  require(controller.selection().hasCursor(), "clicking the writing prompt should establish a model caret");
+  require(controller.selection().cursorPosition().text.sourceOffset == 0,
+          "the writing prompt must not contribute selectable text or source offsets");
+  requirePaintedCaret(view);
+}
+
+void testEmptyDocumentCaretSurvivesLayoutAndLockChanges() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(800, 400);
+  view.show();
+  view.setFocus();
+  QApplication::processEvents();
+  require(!controller.selection().hasCursor(), "focus without a document layout must not invent a caret");
+  view.setDocument(session.document());
+  requirePaintedCaret(view);
+
+  for (const bool cooperative : {false, true}) {
+    session.newDocument();
+    view.setDocument(session.document(), {}, cooperative);
+    QElapsedTimer timeout;
+    timeout.start();
+    while (view.isLayoutPending() && timeout.elapsed() < 5000)
+      QApplication::processEvents();
+    require(!view.isLayoutPending(), "empty-document layout should finish");
+    require(controller.selection().hasCursor(), "a focused editor should initialize after its layout is ready");
+    requirePaintedCaret(view);
+
+    view.setEditingLocked(true);
+    view.setEditingLocked(false);
+    requirePaintedCaret(view);
+
+    view.setEditingLocked(true);
+    controller.selection().clear();
+    view.clearFocus();
+    view.setFocus();
+    require(!controller.selection().hasCursor(), "a read-only preview must not initialize an editing caret");
+    view.setEditingLocked(false);
+    require(controller.selection().hasCursor(), "unlocking a focused blank editor should establish a model caret");
+    requirePaintedCaret(view);
+    auto* blink = view.findChild<QTimer*>(QStringLiteral("caretBlink"));
+    require(blink && (QApplication::cursorFlashTime() <= 0 || blink->isActive()),
+            "unlocking should resume the caret's blink cycle");
+  }
+
+  session.setMarkdownText(QStringLiteral("existing text"), false);
+  view.setDocument(session.document());
+  controller.selection().clear();
+  view.clearFocus();
+  view.setFocus();
+  require(!controller.selection().hasCursor(), "focusing a nonempty document must not reposition it");
+  controller.selectSourceRange(2, 7);
+  const auto selectedBlock = controller.selection().cursorPosition().blockId;
+  view.clearFocus();
+  view.setFocus();
+  const auto selected = controller.selection().selection();
+  require(selected.anchor.blockId == selectedBlock && selected.focus.blockId == selectedBlock &&
+              selected.anchor.text.sourceOffset == 2 && selected.focus.text.sourceOffset == 7,
+          "focus changes should preserve existing selections");
 }
 
 // An in-progress IME composition (preedit) must paint at the caret with an underline, instead of
@@ -1782,6 +1930,9 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testEmptyDocumentFocusShowsCaretAndAcceptsInput);
+  RUN_TEST(testEmptyDocumentClickShowsCaret);
+  RUN_TEST(testEmptyDocumentCaretSurvivesLayoutAndLockChanges);
   RUN_TEST(testEditorViewHitTestActivatesInlineSourceEditing);
   RUN_TEST(testEditorViewInlineProjectionStateChanges);
   RUN_TEST(testEditorViewInlineMarkerSourceSelection);

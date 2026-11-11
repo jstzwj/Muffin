@@ -262,6 +262,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 
   if (view_) {
     connect(view_, &EditorView::blockClicked, this, &EditorController::activateHit);
+    connect(view_, &EditorView::initialCursorRequested, this, &EditorController::initializeEmptyDocumentCursor);
     connect(view_, &EditorView::blockMoveRequested, this,
             [this](BlockTarget source, BlockTarget destination, bool after) { moveBlock(source, destination, after); });
     connect(
@@ -429,6 +430,14 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
         QAccessible::updateAccessibility(&event);
       }
     });
+  }
+  initializeEmptyDocumentCursor();
+}
+
+void EditorController::initializeEmptyDocumentCursor() {
+  if (session_ && view_ && view_->hasFocus() && !view_->editingLocked() && session_->isEditingAllowed() &&
+      !selection_.hasCursor() && session_->markdownText().isEmpty()) {
+    setCursorForSourceOffset(0);
   }
 }
 
