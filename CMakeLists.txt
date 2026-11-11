@@ -57,6 +57,7 @@ if(MSVC)
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg PrintSupport Network Concurrent)
+include(cmake/MuffinLinuxInputMethods.cmake)
 find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(PCRE2 10.49 REQUIRED CONFIG)
 find_package(WebP REQUIRED)
@@ -1707,7 +1708,7 @@ endif()
 if(MUFFIN_QT_CORE_LOCATION_RELEASE)
   get_filename_component(MUFFIN_QT_LIB_OR_BIN_DIR "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
   get_filename_component(MUFFIN_QT_PACKAGE_DIR "${MUFFIN_QT_LIB_OR_BIN_DIR}" DIRECTORY)
-  foreach(MUFFIN_QT_PLUGIN_SUBDIR platforms styles imageformats tls networkinformation)
+  foreach(MUFFIN_QT_PLUGIN_SUBDIR platforms styles imageformats tls networkinformation platforminputcontexts)
     if(EXISTS "${MUFFIN_QT_PACKAGE_DIR}/plugins/${MUFFIN_QT_PLUGIN_SUBDIR}")
       list(APPEND MUFFIN_QT_PLUGIN_DIRS "${MUFFIN_QT_PACKAGE_DIR}/plugins/${MUFFIN_QT_PLUGIN_SUBDIR}")
     endif()
@@ -1723,6 +1724,9 @@ add_custom_target(dist
       "-DDIST_DIR=${MUFFIN_DIST_DIR}"
       "-DRUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:Muffin>,|>"
       "-DQT_PLUGIN_DIRS=${MUFFIN_QT_PLUGIN_DIRS_ARG}"
+      "-DFCITX_PLUGIN=${MUFFIN_FCITX_PLUGIN}"
+      "-DFCITX_LICENSE_DIR=${MUFFIN_FCITX_LICENSE_DIR}"
+      "-DFCITX_README=${MUFFIN_FCITX_README}"
       "-DMMDC_FILE=$<TARGET_FILE:muffin-mmdc>"
       "-DMMDC_RUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:muffin-mmdc>,|>"
       "-DICU_DATA_DIR=$<TARGET_FILE_DIR:MuffinUi>/resources/icu"
@@ -1734,6 +1738,9 @@ add_custom_target(dist
 
 if(APPLE)
   add_dependencies(dist muffin-quicklook-embed)
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_dependencies(dist fcitx5platforminputcontextplugin-qt6)
 endif()
 
 # --- Windows MSI installer target ---

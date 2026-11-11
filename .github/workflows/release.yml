@@ -159,6 +159,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            extra-cmake-modules \
+            libxkbcommon-dev \
+            dbus-x11 \
+            fcitx5 \
+            fcitx5-chinese-addons \
+            xdotool \
             libgl-dev \
             libx11-dev \
             libx11-xcb-dev \
@@ -342,9 +348,8 @@ jobs:
           # plugin/dependency resolution again, the tree is the first thing
           # needed and the failed job would otherwise never upload it.
           find build/Release/dist -maxdepth 2 | sort | head -80
-          # Linux dist is a bare exe that locates Qt via the Conan Qt's
-          # compiled-in plugin path (no display → drive it headless with the
-          # offscreen plugin). macOS dist is a macdeployqt bundle whose
+          # Linux dist carries its Qt libraries and plugins (no display →
+          # drive it headless with offscreen). macOS uses macdeployqt and its
           # PlugIns/platforms ships ONLY cocoa — offscreen is never bundled —
           # and macos-latest runs a real window server, so launch it under the
           # default cocoa platform. --version exits inside QCommandLineParser
@@ -360,6 +365,16 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: tar -czf "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.tar.gz" -C build/Release/dist .
+
+      - name: Test packaged Linux input methods
+        # Older immutable tags do not contain this build target or the probe.
+        if: runner.os == 'Linux' && hashFiles('cmake/MuffinLinuxInputMethods.cmake') != ''
+        shell: bash
+        run: |
+          cmake --build --preset conan-release --target MuffinLinuxInputMethodProbe
+          dbus-run-session -- xvfb-run -a python scripts/check_linux_input_methods.py \
+            --archive "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.tar.gz" \
+            --probe build/Release/MuffinLinuxInputMethodProbe
 
       - name: Upload distribution artifact
         if: runner.os != 'Windows'

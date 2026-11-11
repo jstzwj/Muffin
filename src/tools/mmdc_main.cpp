@@ -16,6 +16,7 @@
 //   page), print the structured diagnostic to stderr, and exit 1.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "app/BundledQtPlugins.h"
 #include "io/ApplicationPaths.h"
 
 #include <QBuffer>
@@ -99,6 +100,7 @@ void reportDiagnostic(const QJsonObject& diagnostic) {
 } // namespace
 
 int main(int argc, char** argv) {
+  muffin::initializeBundledQtPlugins();
   // The renderer needs QGuiApplication (fonts, raster surfaces) but never a
   // window; offscreen keeps the binary usable over ssh/CI unless the caller
   // has explicitly chosen a platform.

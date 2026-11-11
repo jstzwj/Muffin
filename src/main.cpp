@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "app/ApplicationInstance.h"
+#include "app/BundledQtPlugins.h"
 #include "app/DwmPopupBorderFilter.h"
 #include "app/FileOpenDispatcher.h"
 #include "app/LanguageManager.h"
@@ -76,6 +77,7 @@ void installPerfFileLogger() {
 } // namespace
 
 int main(int argc, char* argv[]) {
+  muffin::initializeBundledQtPlugins();
   // Qt 6 defaults to PassThrough (fractional) scaling and Per-Monitor V2 DPI
   // awareness. Set it explicitly so a stray env var or qt.conf can't silently
   // change it and reintroduce blurry chrome.

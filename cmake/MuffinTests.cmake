@@ -3,6 +3,13 @@
 # CMakeLists.txt after MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS is assembled.
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTestFunctions.cmake)
+# Deliberately not a normal CTest: the relocated Linux dist, a fresh D-Bus
+# session and a real Fcitx service are required. Keep it explicitly buildable
+# on other platforms so its use of the shared editor APIs can be verified.
+add_executable(MuffinLinuxInputMethodProbe EXCLUDE_FROM_ALL tests/platform/LinuxInputMethodProbe.cpp)
+target_link_libraries(MuffinLinuxInputMethodProbe PRIVATE MuffinUi)
+add_test(NAME MuffinLinuxInputMethodPackagingTest
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_check_linux_input_methods.py")
 muffin_add_test(NAME MuffinBatchEditTest SOURCE tests/editor/BatchEditTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMarkdownFlowTest SOURCE tests/render/MarkdownFlowTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 muffin_add_test(NAME MuffinDocumentVisualAcceptanceTest SOURCE tests/render/DocumentVisualAcceptanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)

@@ -18,6 +18,7 @@ jobs:
       - run: python -m pip install -r requirements-release.txt
       - run: python scripts/test_publish_cnb_release.py
       - run: python scripts/test_check_macos_deployment.py
+      - run: python scripts/test_check_linux_input_methods.py
 
   test:
     name: Test ${{ matrix.name }}
@@ -95,6 +96,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            extra-cmake-modules \
+            libxkbcommon-dev \
+            patchelf \
+            dbus-x11 \
+            fcitx5 \
+            fcitx5-chinese-addons \
+            xdotool \
             libgl-dev \
             libx11-dev \
             libx11-xcb-dev \
@@ -208,6 +216,13 @@ jobs:
       - name: Test
         run: ${{ matrix.test-command }}
 
+      - name: Test packaged Linux input methods
+        if: runner.os == 'Linux'
+        run: |
+          cmake --build --preset conan-release --target dist MuffinLinuxInputMethodProbe
+          dbus-run-session -- xvfb-run -a python scripts/check_linux_input_methods.py \
+            --dist build/Release/dist --probe build/Release/MuffinLinuxInputMethodProbe
+
       - name: Diagnose macOS file-tree integration failures
         if: failure() && runner.os == 'macOS'
         shell: bash
@@ -319,6 +334,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            extra-cmake-modules \
+            libxkbcommon-dev \
             libgl-dev \
             libx11-dev \
             libx11-xcb-dev \

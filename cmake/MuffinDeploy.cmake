@@ -99,7 +99,7 @@ else()
     if(dll_name MATCHES "^Qt6.*\\.(dll|so)$")
       get_filename_component(qt_bin_dir "${dll}" DIRECTORY)
       get_filename_component(qt_root_dir "${qt_bin_dir}" DIRECTORY)
-      foreach(plugin_subdir platforms styles imageformats tls networkinformation)
+      foreach(plugin_subdir platforms styles imageformats tls networkinformation platforminputcontexts)
         if(EXISTS "${qt_root_dir}/plugins/${plugin_subdir}")
           list(APPEND plugin_dirs "${qt_root_dir}/plugins/${plugin_subdir}")
         endif()
@@ -173,7 +173,7 @@ else()
       if(dependency_name MATCHES "^libQt6.*\\.so")
         get_filename_component(qt_lib_dir "${dependency}" DIRECTORY)
         get_filename_component(qt_root_dir "${qt_lib_dir}" DIRECTORY)
-        foreach(plugin_subdir platforms styles imageformats tls networkinformation)
+        foreach(plugin_subdir platforms styles imageformats tls networkinformation platforminputcontexts)
           if(EXISTS "${qt_root_dir}/plugins/${plugin_subdir}")
             list(APPEND plugin_dirs "${qt_root_dir}/plugins/${plugin_subdir}")
           endif()
@@ -200,6 +200,19 @@ else()
   endforeach()
 
   if(UNIX AND NOT APPLE)
+    if(NOT EXISTS "${FCITX_PLUGIN}" OR NOT IS_DIRECTORY "${FCITX_LICENSE_DIR}" OR NOT EXISTS "${FCITX_README}")
+      message(FATAL_ERROR "Linux dist requires the Fcitx plugin built with Muffin's Qt and its licenses")
+    endif()
+    file(MAKE_DIRECTORY "${DIST_DIR}/platforminputcontexts")
+    file(COPY "${FCITX_PLUGIN}" DESTINATION "${DIST_DIR}/platforminputcontexts")
+    file(COPY "${FCITX_LICENSE_DIR}/" DESTINATION "${DIST_DIR}/licenses/fcitx5-qt")
+    file(COPY "${FCITX_README}" DESTINATION "${DIST_DIR}/licenses/fcitx5-qt")
+    file(WRITE "${DIST_DIR}/licenses/fcitx5-qt/NOTICE.txt"
+      "fcitx5-qt 5.1.16\nhttps://github.com/fcitx/fcitx5-qt/tree/5.1.16\n"
+      "Copyright (c) 2011-2023 CSSlayer <wengxt@gmail.com>\n"
+      "The official input context plugin is built from the unmodified source.\n"
+      "See README.md for upstream's licensing statement and LICENSES for license texts.\n")
+
     # TARGET_RUNTIME_DLLS is empty on ELF platforms. Resolve the executable and
     # plugin dependency graph directly, copy only non-system libraries, then
     # make every binary find the flat bundle without Conan's cache paths.
@@ -273,5 +286,8 @@ else()
   endif()
 
   file(WRITE "${DIST_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
+  if(UNIX AND NOT APPLE)
+    file(APPEND "${DIST_DIR}/qt.conf" "\n[Muffin]\nSelfContainedPlugins = true\n")
+  endif()
   message(STATUS "Muffin dist written to ${DIST_DIR}")
 endif()

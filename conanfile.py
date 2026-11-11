@@ -19,6 +19,10 @@ class MuffinDependencies(ConanFile):
     }
 
     def configure(self):
+        if self.settings.os == "Linux":
+            # Both Qt's IBus plugin and the bundled Fcitx plugin use the session
+            # bus. A GUI-only Qt build silently drops Linux input methods.
+            self.options["qt/*"].with_dbus = True
         if self.settings.os == "Macos":
             target = self.settings.get_safe("os.version")
             if target is None or Version(str(target)) < "13.0":
