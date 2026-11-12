@@ -261,6 +261,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   clipboardController_.setInputController(&inputController_);
 
   if (view_) {
+    connect(view_, &EditorView::hitTestAboutToStart, this, [this] { brushQueue_.flush(); });
     connect(view_, &EditorView::blockClicked, this, &EditorController::activateHit);
     connect(view_, &EditorView::initialCursorRequested, this, &EditorController::initializeEmptyDocumentCursor);
     connect(view_, &EditorView::blockMoveRequested, this,

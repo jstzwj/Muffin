@@ -963,16 +963,6 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
   painter.fillRect(event->rect(), colors_.background);
   painter.fillRect(QRect(0, event->rect().top(), kGutterWidth, event->rect().height()), colors_.gutterBackground);
 
-  if (source().isEmpty() && !placeholder_.isEmpty()) {
-    painter.setFont(sourceFont_);
-    painter.setPen(colors_.lineNumber);
-    drawDocumentText(painter, QPointF(kGutterWidth + kTextInset, baseLineHeight() - verticalScrollBar()->value()),
-                     placeholder_);
-    if (dropPosition_ >= 0)
-      painter.fillRect(cursorRectForOffset(dropPosition_), colors_.text);
-    return;
-  }
-
   const qint64 scrollY = verticalScrollBar()->value();
   int line = static_cast<int>(heights_.lineAtY(scrollY));
   qreal y = static_cast<qreal>(heights_.yForLine(line) - scrollY);
@@ -1077,6 +1067,15 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
     horizontalScrollBar()->setRange(0, boundedScrollRange(widest - textAreaWidth()));
   }
   updateScrollBars();
+
+  // The prompt decorates the empty logical line; it must not bypass the shared
+  // caret, composition or drop-indicator painting below.
+  if (source().isEmpty() && !placeholder_.isEmpty() && preedit_.isEmpty()) {
+    painter.setFont(sourceFont_);
+    painter.setPen(colors_.lineNumber);
+    const auto caret = cursorRectForOffset(0);
+    drawDocumentText(painter, QPointF(caret.left(), caret.top() + TextFontMetrics(sourceFont_).ascent()), placeholder_);
+  }
 
   if (hasFocus() && !preedit_.isEmpty()) {
     // Composition rendering: the preedit replaces the plain caret (never blink-gated — a
@@ -1592,6 +1591,7 @@ void VirtualSourceEdit::resetCursorBlink() {
     cursorTimer_->start();
   else
     cursorTimer_->stop();
+  viewport()->update();
 }
 
 void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {

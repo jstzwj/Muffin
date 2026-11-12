@@ -108,6 +108,78 @@ void testCrossBlockClickPreservesScreenPosition() {
           "cached caret geometry should match the final layout after a cross-block click");
 }
 
+void testFirstClickInFormattedParagraphsAndLists() {
+  const QStringList targets = {
+      QStringLiteral("中文 **TARGET 加粗文字** 和 [链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("中文 **加粗文字** 和 [TARGET 链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("中文 **加粗文字** 和 [链接](https://example.com/long/path) TARGET 后文。"),
+      QStringLiteral("- 中文 **TARGET 加粗文字** 和 [链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("12. 中文 **加粗文字** 和 [TARGET 链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("- 外层列表\n  - 中文 **TARGET 加粗文字** 和 [链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("12. 外层列表\n    1. 中文 **加粗文字** 和 [TARGET 链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("> - 中文 **TARGET 加粗文字** 和 [链接](https://example.com/long/path) 后文。"),
+      QStringLiteral("- 多行列表的第一行\n  第二行 **加粗文字** [TARGET 链接](https://example.com/long/path)。"),
+  };
+  for (const QString& prefix : {QStringLiteral("previous **formatted** paragraph\n\n"),
+                                QStringLiteral("- previous **formatted** paragraph\n\n"),
+                                QStringLiteral("1. previous **formatted** paragraph\n\n")}) {
+    for (const bool flushRefresh : {false, true}) {
+      for (const QString& target : targets) {
+        DocumentSession session;
+        EditorController controller;
+        EditorView view;
+        controller.attach(&session, &view);
+        view.resize(520, 600);
+        view.show();
+        session.setMarkdownText(prefix + target + QStringLiteral("\n\n") + QStringLiteral("tail\n\n").repeated(30),
+                                false);
+        view.setDocument(session.document());
+        QApplication::processEvents();
+        const auto targetCursor =
+            controller.cursorForSourceOffset(session.markdownText().toString().indexOf(QStringLiteral("TARGET")) + 3);
+        const auto* block = view.blockLayoutForNode(targetCursor.blockId);
+        require(block && block->inlineLayout(), "formatted click target has an inline layout");
+        const auto* text = block->inlineLayout();
+        const qsizetype visibleOffset = text->visibleText().indexOf(QStringLiteral("TARGET")) + 3;
+        require(visibleOffset >= 3, "click target is visible");
+        const QPointF click =
+            view.mapDocumentToViewport(text->cursorRect(visibleOffset).translated(block->inlineTextOrigin()).center());
+        controller.selection().setCursorPosition(
+            controller.cursorForSourceOffset(prefix.indexOf(QStringLiteral("formatted")) + 3));
+        require(controller.inputController().insertText(QStringLiteral("中文X")), "edit preceding formatted block");
+        if (flushRefresh)
+          QApplication::processEvents();
+        const QString beforeText = session.markdownText().toString();
+        const qsizetype expectedSource = beforeText.indexOf(QStringLiteral("TARGET")) + 3;
+        const auto hit = view.hitTest(click);
+        require(hit.sourceOffset == expectedSource,
+                QStringLiteral("initial hit prefix=%1 flush=%2 target=%3 source=%4 expected=%5")
+                    .arg(prefix)
+                    .arg(flushRefresh)
+                    .arg(target)
+                    .arg(hit.sourceOffset)
+                    .arg(expectedSource));
+        QMouseEvent press(QEvent::MouseButtonPress, click, click, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(view.viewport(), &press);
+        QMouseEvent release(QEvent::MouseButtonRelease, click, click, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+        QApplication::sendEvent(view.viewport(), &release);
+        QApplication::processEvents();
+        require(controller.selection().cursorPosition().text.sourceOffset == expectedSource,
+                QStringLiteral("first click keeps source in %1").arg(target));
+        require(controller.inputController().insertText(QStringLiteral("!")), "typing after first click succeeds");
+        QString expectedText = beforeText;
+        expectedText.insert(expectedSource, QStringLiteral("!"));
+        require(session.markdownText().toString() == expectedText,
+                QStringLiteral("first click inserts at clicked character in %1").arg(target));
+        controller.undo();
+        require(session.markdownText().toString() == beforeText, "undo restores text after first-click insertion");
+        controller.redo();
+        require(session.markdownText().toString() == expectedText, "redo restores first-click insertion");
+      }
+    }
+  }
+}
+
 void testDefinitionPlaceholderHitKeepsCursorInSlot() {
   DocumentSession session;
   EditorController controller;
@@ -1278,6 +1350,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testClickAfterTextStopsBeforeLineBreak);
   RUN_TEST(testCssContentOriginSharedByHitCursorAndSelection);
   RUN_TEST(testCrossBlockClickPreservesScreenPosition);
+  RUN_TEST(testFirstClickInFormattedParagraphsAndLists);
   RUN_TEST(testGapClickBelowNonLastBlockIsNotTrailingBlockAfter);
   RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
   RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);

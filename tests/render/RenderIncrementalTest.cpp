@@ -133,6 +133,92 @@ void testIncrementalTopLevelRangeRebuildContract() {
                   QStringLiteral("\n\ninserted"), QStringLiteral("table suffix shift"));
 }
 
+void testRetainedSuffixKeepsCurrentSourceCoordinates() {
+  const QString initial =
+      QStringLiteral("alpha\n\n中文 **bold** [link](https://example.com)\n\n"
+                     "- outer **bold**\n  - nested [link](https://example.com)\n\n"
+                     "12. ordered\n    1. nested **bold**\n\n"
+                     "| A | B |\n| --- | --- |\n| 中文 **bold** | [link](https://example.com) |\n\n"
+                     "[ref]: https://example.com \"title\"\n\n[^note]: footnote **body**\n\n> quoted **text**");
+  for (const auto policy : {DocumentLayout::BuildPolicy::Eager, DocumentLayout::BuildPolicy::Lazy}) {
+    DocumentSession session;
+    session.setMarkdownText(initial, false);
+    RenderTheme theme = RenderTheme::github();
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800, {}, {}, policy);
+    layout.buildAll(theme);
+    const auto suffixId = mutableBlockAt(session.document(), 1)->id();
+    const auto* retained = layout.block(suffixId);
+    const auto* retainedText = retained->inlineLayout();
+
+    const auto verify = [&] {
+      RenderTheme freshTheme = RenderTheme::github();
+      DocumentLayout full;
+      full.rebuild(session.document(), freshTheme, 800);
+      // Exercise hit testing before asking for any retained block by id.
+      const std::function<void(const BlockLayout&)> compare = [&](const BlockLayout& expected) {
+        const auto* text = expected.inlineLayout();
+        if (text && !text->visibleText().isEmpty()) {
+          const auto point = text->cursorRect(1).translated(expected.inlineTextOrigin()).center();
+          const auto hit = layout.hitTest(point, theme);
+          const auto freshHit = full.hitTest(point, freshTheme);
+          require(hit.blockId == freshHit.blockId && hit.sourceOffset == freshHit.sourceOffset,
+                  QStringLiteral("retained suffix hit matches fresh source after edits"));
+        }
+        const auto* actual = layout.block(expected.nodeId());
+        require(actual && actual->contentSourceStart() == expected.contentSourceStart(),
+                QStringLiteral("retained text source origin matches fresh layout"));
+        require(actual->tableRows().size() == expected.tableRows().size(), "table shape is retained");
+        for (size_t row = 0; row < expected.tableRows().size(); ++row) {
+          for (size_t col = 0; col < expected.tableRows()[row].cells.size(); ++col) {
+            const auto& cell = expected.tableRows()[row].cells[col];
+            require(actual->tableRows()[row].cells[col].contentSourceStart == cell.contentSourceStart,
+                    "table cell source follows preceding edits");
+            const auto point = cell.text.cursorRect(0).translated(cell.textOrigin()).center();
+            require(layout.hitTest(point, theme).sourceOffset == full.hitTest(point, freshTheme).sourceOffset,
+                    "table cell hit uses the current document source");
+          }
+        }
+        require(actual->definitionSlots().size() == expected.definitionSlots().size(), "definition shape is retained");
+        for (qsizetype i = 0; i < expected.definitionSlots().size(); ++i) {
+          const auto& slot = expected.definitionSlots()[i];
+          const auto& actualSlot = actual->definitionSlots()[i];
+          require(actualSlot.sourceStart == slot.sourceStart && actualSlot.sourceEnd == slot.sourceEnd,
+                  "definition source follows preceding edits");
+        }
+        for (const auto& child : expected.children())
+          compare(*child);
+      };
+      for (const auto* block : full.promotedBlocks())
+        compare(*block);
+      require(layout.block(suffixId) == retained && retained->inlineLayout() == retainedText,
+              "source synchronization retains unchanged shaped text");
+    };
+
+    // Both growth and shrinkage accumulate while unrelated blocks retain their
+    // layouts. UTF-16 surrogate pairs must count in the document's coordinate unit.
+    const auto firstId = mutableBlockAt(session.document(), 0)->id();
+    for (const auto& edit :
+         {QPair<qsizetype, QString>{0, QStringLiteral("中文🙂")}, QPair<qsizetype, QString>{1, QString()},
+          QPair<qsizetype, QString>{3, QStringLiteral("X")}}) {
+      require(session.applyTextDelta(0, edit.first, edit.second, true,
+                                     {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}),
+              "edit preceding paragraph without changing suffix content");
+      require(layout.rebuildBlock(firstId, session.document(), theme, {}).rebuilt, "rebuild edited paragraph");
+      verify();
+    }
+    const QString prefix = QStringLiteral("inserted paragraph\n\n");
+    for (const bool insert : {true, false}) {
+      require(session.applyTextDelta(0, insert ? 0 : prefix.size(), insert ? prefix : QString(), true),
+              "insert or remove a preceding block");
+      require(
+          layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
+          "rebuild structural edit before retained suffix");
+      verify();
+    }
+  }
+}
+
 void testLayoutPositionIndexPreservesLazySuffixAcrossSplice() {
   LayoutPositionIndex index;
   const QVector<LayoutPositionToken*> original = index.reset(5);
@@ -500,6 +586,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testIncrementalBlockRebuildContract);
   RUN_TEST(testIncrementalTopLevelRangeRebuildContract);
+  RUN_TEST(testRetainedSuffixKeepsCurrentSourceCoordinates);
   RUN_TEST(testLayoutPositionIndexPreservesLazySuffixAcrossSplice);
   RUN_TEST(testExactCompactCssSemanticSignatures);
   RUN_TEST(testThemeRebuildReusesNavigationWithoutStaleGeometry);

@@ -146,13 +146,13 @@ void testCrossLevelCutUndoRedo() {
     setCrossSelection(h.controller.selection(), backward ? next : inner, 2, backward ? inner : next, 2);
     require(h.controller.clipboardController().cut(), "cross-level selection must support cut in both directions");
     const auto* mime = QApplication::clipboard()->mimeData();
-    require(mime && mime->data("text/markdown") == QStringLiteral("4. 正文\n4. 后续").toUtf8(),
-            "copy should use the inner marker, without adding an unselected ancestor");
+    require(mime && mime->data("text/markdown") == QStringLiteral("正文\n后续").toUtf8(),
+            "partial list edges must not acquire item or ancestor markers");
     h.expect(QStringLiteral("3. 4. 中文正文"));
     h.controller.undo();
     h.expect(original);
     require(!h.controller.selection().selection().isCollapsed(), "undo cut must restore the cross-level selection");
-    require(selectedMarkdown(h.session, h.controller.selection()) == QStringLiteral("4. 正文\n4. 后续"),
+    require(selectedMarkdown(h.session, h.controller.selection()) == QStringLiteral("正文\n后续"),
             "undo must restore both selection endpoints, including their list levels");
     h.controller.redo();
     h.expect(QStringLiteral("3. 4. 中文正文"));
@@ -160,7 +160,7 @@ void testCrossLevelCutUndoRedo() {
     Harness target(QStringLiteral("目的"));
     setCursor(target.controller.selection(), blockAt(target.session, 0), 0);
     require(target.controller.clipboardController().paste(), "cut Markdown must paste through the actual clipboard");
-    target.expect(QStringLiteral("4. 正文\n4. 后续目的"));
+    target.expect(QStringLiteral("正文\n后续目的"));
     target.controller.undo();
     target.expect(QStringLiteral("目的"));
   }
@@ -177,8 +177,8 @@ void testEmptyParentSelectionAndTaskClipboard() {
   Harness task(QStringLiteral("3. - [x] 中文正文\n4. last"));
   setSelection(task.controller.selection(), task.inner(), 0, 2);
   require(task.controller.clipboardController().copy(), "nested task text should copy");
-  require(QApplication::clipboard()->mimeData()->data("text/markdown") == QStringLiteral("- [x] 中文").toUtf8(),
-          "nested task clipboard must share the checkbox and text boundaries");
+  require(QApplication::clipboard()->mimeData()->data("text/markdown") == QStringLiteral("中文").toUtf8(),
+          "partial task text must not copy the unselected checkbox");
 }
 
 void testFormattedNestedClipboard() {
@@ -187,8 +187,8 @@ void testFormattedNestedClipboard() {
   auto* paragraph = primaryParagraph(*item);
   const auto source = listItemSource(h.session.markdownText(), *item);
   setSourceSelection(h.controller.selection(), item, paragraph, 0, source.content.start, 2, source.content.start + 6);
-  require(selectedMarkdown(h.session, h.controller.selection()) == QStringLiteral("4. **中文**"),
-          "formatted selections with a paragraph text-node ID must use their list owner's marker and inline base");
+  require(selectedMarkdown(h.session, h.controller.selection()) == QStringLiteral("**中文**"),
+          "partial formatted list text keeps inline syntax without adding the list owner's marker");
   require(h.controller.clipboardController().cut(), "formatted nested selection must cut");
   h.expect(QStringLiteral("前言\n\n3. 4. 后续\n4. last"));
   h.controller.undo();
@@ -418,8 +418,8 @@ void testComplexContinuousEditing() {
                       backward ? 2 : 1);
     const QString selected = selectedMarkdown(h.session, h.controller.selection());
     require(selected.contains(QStringLiteral("```text\n")) && selected.contains(QStringLiteral("2. literal")) &&
-                selected.contains(QStringLiteral("- [x] 子")),
-            "cross-level selection must carry the fence and task marker");
+                selected.endsWith(QStringLiteral("子")) && !selected.contains(QStringLiteral("- [x]")),
+            "cross-level selection keeps complete code blocks without styling the partial task edge");
     require(h.controller.clipboardController().cut(), "cut across paragraphs, code and nested task");
     h.expect(cut);
     requireFreshTree(h);

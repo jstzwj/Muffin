@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QDir>
 #include <QFocusEvent>
 #include <QFontDatabase>
 #include <QImage>
@@ -593,6 +594,142 @@ QImage captureEdit(VirtualSourceEdit& edit) {
   return edit.grab().toImage();
 }
 
+void saveSourceVisual(const QImage& image, const QString& name) {
+  const auto output = qEnvironmentVariable("MUFFIN_VISUAL_OUTPUT");
+  if (output.isEmpty())
+    return;
+  const QDir directory(output);
+  require(directory.mkpath(QStringLiteral(".")) && image.save(directory.filePath(name)),
+          "write source visual artifact");
+}
+
+int sourceCaretInk(VirtualSourceEdit& edit, QColor ink) {
+  const auto image = edit.viewport()->grab().toImage();
+  const auto caret = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+  const auto scale = image.devicePixelRatio();
+  const auto pixels =
+      QRectF(QPointF(caret.topLeft()) * scale, QSizeF(caret.size()) * scale).toAlignedRect().intersected(image.rect());
+  int count = 0;
+  for (int y = pixels.top(); y <= pixels.bottom(); ++y)
+    for (int x = pixels.left(); x <= pixels.right(); ++x)
+      if (image.pixelColor(x, y) == ink)
+        ++count;
+  return count;
+}
+
+void testEmptySourceCaretSurvivesFocusInputUndoAndLock() {
+  const int flashTime = QApplication::cursorFlashTime();
+  QApplication::setCursorFlashTime(0);
+  for (bool bound : {false, true})
+    for (bool placeholder : {false, true}) {
+      DocumentSession session;
+      VirtualSourceEdit edit;
+      edit.setSourceFont(fixtureSourceFont);
+      const auto colors = SourceEditorColors::fromTheme(RenderTheme::github());
+      edit.setColors(colors);
+      if (bound)
+        edit.bindSession(&session);
+      if (placeholder)
+        edit.setPlaceholderText(QStringLiteral("Start writing..."));
+      edit.resize(600, 300);
+      edit.show();
+      edit.setFocus();
+      QApplication::processEvents();
+      require(edit.hasFocus() && sourceCaretInk(edit, colors.text) > 14,
+              "keyboard focus paints a visible caret in the empty source, including its writing prompt");
+      require(edit.text().isEmpty() && edit.cursorPosition() == 0 && !edit.canUndo() &&
+                  !session.document().isModified(),
+              "focusing an empty source does not insert the prompt or change history");
+      if (bound && placeholder)
+        saveSourceVisual(edit.viewport()->grab().toImage(), QStringLiteral("source-empty-caret.png"));
+
+      edit.clearFocus();
+      QApplication::processEvents();
+      require(sourceCaretInk(edit, colors.text) == 0, "an unfocused empty source hides its caret");
+      const auto caret = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+      QTest::mouseClick(edit.viewport(), Qt::LeftButton, Qt::NoModifier, caret.center() + QPoint(50, 0));
+      require(edit.hasFocus() && edit.cursorPosition() == 0 && sourceCaretInk(edit, colors.text) > 14,
+              "clicking the writing prompt immediately paints the source caret at offset zero");
+
+      QTest::keyClicks(&edit, "a");
+      finishSourceBatch(session);
+      require(edit.text() == QStringLiteral("a") && edit.cursorPosition() == 1,
+              "the first source input inserts at and advances the visible caret");
+      edit.undo();
+      finishSourceBatch(session);
+      require(edit.text().isEmpty() && !edit.canUndo() && !session.document().isModified() &&
+                  sourceCaretInk(edit, colors.text) > 14,
+              "undoing the first source input restores a clean empty document with a visible caret");
+      edit.setReadOnly(true);
+      require(sourceCaretInk(edit, colors.text) == 0, "a read-only empty source hides its editing caret");
+      edit.setReadOnly(false);
+      require(sourceCaretInk(edit, colors.text) > 14, "unlocking the focused empty source restores its caret");
+    }
+  QApplication::setCursorFlashTime(flashTime);
+}
+
+void testEmptySourcePreeditReplacesPlaceholder() {
+  const int flashTime = QApplication::cursorFlashTime();
+  QApplication::setCursorFlashTime(0);
+  DocumentSession session;
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.bindSession(&session);
+  edit.resize(600, 300);
+  edit.show();
+  edit.setFocus();
+  QApplication::processEvents();
+  const auto empty = captureEdit(edit);
+  edit.setPlaceholderText(QStringLiteral("Start writing..."));
+  QInputMethodEvent composing(QStringLiteral("ni"), {});
+  QApplication::sendEvent(&edit, &composing);
+  const auto withPrompt = captureEdit(edit);
+  saveSourceVisual(withPrompt, QStringLiteral("source-empty-preedit.png"));
+  edit.setPlaceholderText({});
+  const auto withoutPrompt = captureEdit(edit);
+  require(withPrompt == withoutPrompt && withoutPrompt != empty,
+          "preedit in an empty source is visible and replaces the writing prompt");
+  require(session.markdownText().isEmpty() && !session.document().isModified() && !edit.canUndo(),
+          "preedit does not enter the source text or undo history");
+  edit.setPlaceholderText(QStringLiteral("Start writing..."));
+  QInputMethodEvent commit;
+  commit.setCommitString(QString::fromUtf8("你"));
+  QApplication::sendEvent(&edit, &commit);
+  finishSourceBatch(session);
+  require(edit.text() == QString::fromUtf8("你") && session.document().isModified() && edit.cursorPosition() == 1,
+          "the first Chinese source commit replaces the placeholder and updates the document");
+  edit.undo();
+  finishSourceBatch(session);
+  const auto colors = SourceEditorColors::fromTheme(RenderTheme::github());
+  require(session.markdownText().isEmpty() && !session.document().isModified() &&
+              sourceCaretInk(edit, colors.text) > 14,
+          "undoing the first Chinese commit restores the prompt and visible empty-source caret");
+  QApplication::setCursorFlashTime(flashTime);
+}
+
+void testEmptySourceCaretBlinksWithPlaceholder() {
+  const int flashTime = QApplication::cursorFlashTime();
+  QApplication::setCursorFlashTime(100);
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.setPlaceholderText(QStringLiteral("Start writing..."));
+  edit.resize(600, 300);
+  edit.show();
+  edit.setFocus();
+  QApplication::processEvents();
+  const auto colors = SourceEditorColors::fromTheme(RenderTheme::github());
+  require(sourceCaretInk(edit, colors.text) > 14, "the empty-source caret starts in its visible blink phase");
+  QElapsedTimer timeout;
+  timeout.start();
+  while (sourceCaretInk(edit, colors.text) > 0 && timeout.elapsed() < 1000)
+    QTest::qWait(5);
+  require(sourceCaretInk(edit, colors.text) == 0, "the empty-source caret actually blinks behind the writing prompt");
+  edit.clearFocus();
+  edit.setFocus();
+  require(sourceCaretInk(edit, colors.text) > 14, "refocusing immediately restores the visible blink phase");
+  QApplication::setCursorFlashTime(flashTime);
+}
+
 void testSelectedSourceInkOverridesSyntaxWithoutMovingText() {
   for (bool longLine : {false, true}) {
     for (bool wrap : {false, true}) {
@@ -824,6 +961,9 @@ int main(int argc, char** argv) {
   fixtureSourceFont.setPointSizeF(13);
 
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testEmptySourceCaretSurvivesFocusInputUndoAndLock);
+  RUN_TEST(testEmptySourcePreeditReplacesPlaceholder);
+  RUN_TEST(testEmptySourceCaretBlinksWithPlaceholder);
   RUN_TEST(testSharedHistoryAcrossViewsAndSavePoints);
   RUN_TEST(testSaveNormalizationPreservesRenderedCaretAndHistory);
   RUN_TEST(testReplacementRetiresSourceHistory);

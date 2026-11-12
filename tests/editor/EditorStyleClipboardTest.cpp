@@ -223,7 +223,7 @@ void testClipboardPlainText() {
   require(clipboard.paste(), "paste should insert clipboard text");
   require(session.markdownText().toString() == QStringLiteral("aXYZa"), "clipboard paste document mismatch");
 }
-void testClipboardMarkdownPreservesLinePrefix() {
+void testClipboardMarkdownPartialBlocks() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -236,22 +236,22 @@ void testClipboardMarkdownPreservesLinePrefix() {
   session.setMarkdownText(QStringLiteral("## 技术栈\n\n> quoted text\n\n- list item"), false);
   setSelection(selection, blockAt(session, 0), 1, 3);
   require(clipboard.copy(), "heading markdown copy should work");
-  require(QApplication::clipboard()->text() == QStringLiteral("## 术栈"),
-          "heading markdown copy should preserve heading marker");
+  require(QApplication::clipboard()->text() == QStringLiteral("术栈"),
+          "partial heading copy must not add its heading marker");
 
   MarkdownNode* quoteParagraph = childAt(blockAt(session, 1), 0);
   setSelection(selection, quoteParagraph, 0, 6);
   require(clipboard.copy(), "blockquote markdown copy should work");
-  require(QApplication::clipboard()->text() == QStringLiteral("> quoted"),
-          "blockquote markdown copy should preserve quote marker");
+  require(QApplication::clipboard()->text() == QStringLiteral("quoted"),
+          "partial quote copy must not add its quote marker");
 
   MarkdownNode* listItem = listItemAt(session, 2, 0);
   setSelection(selection, listItem, 0, 4);
   require(clipboard.copy(), "list markdown copy should work");
-  require(QApplication::clipboard()->text() == QStringLiteral("- list"),
-          "list markdown copy should preserve list marker");
+  require(QApplication::clipboard()->text() == QStringLiteral("list"),
+          "partial list copy must not add its list marker");
 }
-void testClipboardCrossMarkdownPreservesStartPrefix() {
+void testClipboardCrossMarkdownPartialEdges() {
   DocumentSession session;
   SelectionController selection;
   UndoStack undoStack;
@@ -268,14 +268,14 @@ void testClipboardCrossMarkdownPreservesStartPrefix() {
   setCrossSelection(selection, blockAt(session, 0), 1, secondQuoteParagraph, 10);
   require(clipboard.copy(), "cross heading quote markdown copy should work");
   require(QApplication::clipboard()->text() ==
-              QStringLiteral("## lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\n> The editor"),
-          "cross heading quote markdown copy should preserve heading marker");
+              QStringLiteral("lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\nThe editor"),
+          "cross-block copy preserves interior structure without adding syntax to partial edges");
 
   setCrossSelection(selection, secondQuoteParagraph, 10, blockAt(session, 0), 1);
   require(clipboard.copy(), "reverse cross heading quote markdown copy should work");
   require(QApplication::clipboard()->text() ==
-              QStringLiteral("## lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\n> The editor"),
-          "reverse cross heading quote markdown copy should preserve heading marker");
+              QStringLiteral("lock Quote\n\n> Muffin treats Markdown as the source of truth.\n>\nThe editor"),
+          "reverse cross-block copy uses the same partial-edge rules");
 }
 void testSelectionSerializerFormats() {
   DocumentSession session;
@@ -288,8 +288,8 @@ void testSelectionSerializerFormats() {
   SelectionExportResult markdown = serializer.exportSelection(
       SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::Markdown});
   require(markdown.mimeType == QStringLiteral("text/markdown"), "markdown export mime mismatch");
-  require(markdown.text == QStringLiteral("## eadings\n\nal"),
-          "markdown export should preserve only structural prefix");
+  require(markdown.text == QStringLiteral("eadings\n\nal"),
+          "markdown export should not add an unselected structural prefix");
 
   SelectionExportResult plainText = serializer.exportSelection(
       SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::PlainText});
@@ -299,7 +299,162 @@ void testSelectionSerializerFormats() {
   SelectionExportResult html = serializer.exportSelection(
       SelectionExportRequest{&session.document(), selection.selection(), SelectionExportFormat::Html});
   require(html.mimeType == QStringLiteral("text/html"), "html export mime mismatch");
-  require(html.text.contains(QStringLiteral("<h2>eadings</h2>")), "html export should render markdown to HTML");
+  require(html.text.contains(QStringLiteral("<p>eadings</p>")) && !html.text.contains(QStringLiteral("<h2>")),
+          "HTML must not turn a heading fragment into a whole heading");
+}
+void testClipboardBlockCoverageAcrossFormats() {
+  const QString body = QStringLiteral("你好世界");
+  for (const QString& markdown :
+       {QStringLiteral("### 你好世界"), QStringLiteral("   ### 你好世界"), QStringLiteral("你好世界\n---"),
+        QStringLiteral("> 你好世界"), QStringLiteral("- 你好世界"), QStringLiteral("12. 你好世界"),
+        QStringLiteral("- [x] 你好世界")}) {
+    for (const auto offsets : {QPair<qsizetype, qsizetype>{2, 4}, {0, 2}, {1, 3}, {0, 4}}) {
+      for (const bool reverse : {false, true}) {
+        for (const bool preferMarkdown : {false, true}) {
+          SettingsOverride preference("editor/copyAsMarkdown", preferMarkdown);
+          DocumentSession session;
+          SelectionController selection;
+          UndoStack undo;
+          BrushQueue brush;
+          InputController input;
+          ClipboardController clipboard;
+          wireInput(input, session, selection, undo, brush);
+          wireClipboard(clipboard, session, selection, input);
+          session.setMarkdownText(markdown + QStringLiteral("\n\nuntouched"), false);
+          auto* node = blockAt(session, 0);
+          while (node->type() == BlockType::List || node->type() == BlockType::BlockQuote)
+            node = childAt(node, 0);
+          setSelection(selection, node, reverse ? offsets.second : offsets.first,
+                       reverse ? offsets.first : offsets.second);
+          const QString plain = body.mid(offsets.first, offsets.second - offsets.first);
+          const bool whole = offsets.first == 0 && offsets.second == body.size();
+          const QString expected = whole ? markdown : plain;
+          const QString detail = QStringLiteral("block=%1 range=%2..%3 reverse=%4 preferMarkdown=%5")
+                                     .arg(markdown)
+                                     .arg(offsets.first)
+                                     .arg(offsets.second)
+                                     .arg(reverse)
+                                     .arg(preferMarkdown);
+          require(clipboard.copy(), detail + QStringLiteral(" copy"));
+          const auto* mime = QApplication::clipboard()->mimeData();
+          require(mime->data("text/markdown") == expected.toUtf8(),
+                  detail + QStringLiteral(" Markdown coverage actual=[%1] expected=[%2]")
+                               .arg(QString::fromUtf8(mime->data("text/markdown")), expected));
+          require(mime->text() == (preferMarkdown ? expected : plain), detail + QStringLiteral(" plain target"));
+          require(mime->html().contains(plain), detail + QStringLiteral(" HTML keeps selected content"));
+          if (!whole)
+            require(!mime->html().contains(QStringLiteral("<h3>")) && !mime->html().contains(QStringLiteral("<h2>")) &&
+                        !mime->html().contains(QStringLiteral("<li>")) &&
+                        !mime->html().contains(QStringLiteral("<blockquote>")),
+                    detail + QStringLiteral(" HTML must remain an inline text fragment"));
+          require(clipboard.copyAsMarkdown() && QApplication::clipboard()->text() == expected,
+                  detail + QStringLiteral(" explicit Markdown copy"));
+          require(clipboard.copyAsPlainText() && QApplication::clipboard()->text() == plain,
+                  detail + QStringLiteral(" explicit plain-text copy"));
+          require(clipboard.copyAsHtml() && QApplication::clipboard()->mimeData()->html().contains(plain),
+                  detail + QStringLiteral(" explicit HTML copy"));
+        }
+      }
+    }
+  }
+}
+void testClipboardPartialEdgeStructures() {
+  for (const QString& first : {QStringLiteral("### 你好世界"), QStringLiteral("你好世界\n---"),
+                               QStringLiteral("- 你好世界"), QStringLiteral("> 你好世界")}) {
+    for (const bool wholeFirst : {false, true}) {
+      for (const bool wholeLast : {false, true}) {
+        for (const bool reverse : {false, true}) {
+          DocumentSession session;
+          SelectionController selection;
+          session.setMarkdownText(first + QStringLiteral("\n\n## 中间块\n\n### 再见朋友\n\n尾段"), false);
+          auto* firstBlock = blockAt(session, 0);
+          while (firstBlock->type() == BlockType::List || firstBlock->type() == BlockType::BlockQuote)
+            firstBlock = childAt(firstBlock, 0);
+          auto* lastBlock = blockAt(session, 2);
+          const qsizetype firstOffset = wholeFirst ? 0 : 2;
+          const qsizetype lastOffset = wholeLast ? 4 : 2;
+          setCrossSelection(selection, reverse ? lastBlock : firstBlock, reverse ? lastOffset : firstOffset,
+                            reverse ? firstBlock : lastBlock, reverse ? firstOffset : lastOffset);
+          const QString expected = (wholeFirst ? first : QStringLiteral("世界")) + QStringLiteral("\n\n## 中间块\n\n") +
+                                   (wholeLast ? QStringLiteral("### 再见朋友") : QStringLiteral("再见"));
+          require(selectedMarkdown(session, selection) == expected,
+                  QStringLiteral("partial edge structure in %1 wholeFirst=%2 wholeLast=%3 reverse=%4")
+                      .arg(first)
+                      .arg(wholeFirst)
+                      .arg(wholeLast)
+                      .arg(reverse));
+        }
+      }
+    }
+  }
+  for (const QString& markdown :
+       {QStringLiteral("> 你好世界\n> 第二行结束"), QStringLiteral("> 你好世界  \n> \\> 正文")}) {
+    DocumentSession session;
+    SelectionController selection;
+    session.setMarkdownText(markdown, false);
+    auto* paragraph = childAt(blockAt(session, 0), 0);
+    // Source endpoints come from the same mapping used by real mouse selection.
+    setSourceSelection(selection, paragraph, paragraph, 2, 4, 4, markdown.size());
+    const QString expected = markdown.contains(QStringLiteral("第二行")) ? QStringLiteral("世界\n第二行结束")
+                                                                         : QStringLiteral("世界  \n\\> 正文");
+    require(selectedMarkdown(session, selection) == expected,
+            "partial multiline quote omits container prefixes but retains literal greater-than text");
+  }
+  for (const QString& markdown : {QStringLiteral("开头\n\n- 父项\n  - 你好世界"),
+                                  QStringLiteral("开头\n\n| 左列 | 右列 |\n| --- | --- |\n| 甲乙 | 丙丁 |\n\n尾段")}) {
+    DocumentSession session;
+    EditorController controller;
+    controller.attach(&session, nullptr);
+    session.setMarkdownText(markdown, false);
+    const bool table = markdown.contains(QLatin1Char('|'));
+    const auto end = table ? markdown.indexOf(QStringLiteral("丙")) + 1 : markdown.indexOf(QStringLiteral("你好")) + 2;
+    controller.selectSourceRange(1, end);
+    const QString expected = table ? markdown.mid(1, end - 1) : QStringLiteral("头\n\n- 父项\n你好");
+    require(selectedMarkdown(session, controller.selection()) == expected,
+            "partial trailing list removes ancestor indentation while a table retains preceding selected cells");
+    const auto range = controller.selection().selection();
+    controller.selection().setSelection({range.focus, range.anchor});
+    require(selectedMarkdown(session, controller.selection()) == expected,
+            "nested and table edge coverage is independent of selection direction");
+  }
+}
+
+void testClipboardHeadingFragmentCutPasteUndo() {
+  SettingsOverride preference("editor/copyAsMarkdown", true);
+  for (const QString& heading : {QStringLiteral("### 你好世界"), QStringLiteral("### 你好**世界**")}) {
+    DocumentSession session;
+    EditorController controller;
+    controller.attach(&session, nullptr);
+    const QString original = QStringLiteral("前言🙂\n\n") + heading + QStringLiteral("\n\n落点");
+    session.setMarkdownText(original, false);
+    const auto start = original.indexOf(QStringLiteral("世界"));
+    controller.selectSourceRange(start, start + 2);
+    require(controller.clipboardController().copy(), "copy a heading fragment through actual controller selection");
+    require(QApplication::clipboard()->mimeData()->data("text/markdown") == QStringLiteral("世界").toUtf8(),
+            "copying only 世界 must not copy heading or unselected emphasis markers");
+    const auto destination = original.indexOf(QStringLiteral("落点")) + 1;
+    controller.selectSourceRange(destination, destination);
+    require(controller.clipboardController().paste(), "paste heading text into an ordinary paragraph");
+    QString expected = original;
+    expected.insert(destination, QStringLiteral("世界"));
+    require(session.markdownText().toString() == expected, "pasting a heading fragment must not create a heading");
+    controller.undo();
+    require(session.markdownText().toString() == original, "undo heading-fragment paste");
+    controller.redo();
+    require(session.markdownText().toString() == expected, "redo heading-fragment paste");
+    controller.undo();
+    controller.selectSourceRange(start, start + 2);
+    require(controller.clipboardController().cut(), "cut a heading fragment");
+    expected = original;
+    expected.remove(start, 2);
+    require(session.markdownText().toString() == expected &&
+                QApplication::clipboard()->text() == QStringLiteral("世界"),
+            "cut removes only the selected text and preserves the heading structure");
+    controller.undo();
+    require(session.markdownText().toString() == original &&
+                selectedMarkdown(session, controller.selection()) == QStringLiteral("世界"),
+            "undo cut restores both text and the exact partial selection");
+  }
 }
 void testSelectionSerializerCrossComplexInlineEdges() {
   DocumentSession session;
@@ -643,8 +798,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testBrowserHeadingClipboard);
   RUN_TEST(testRichClipboardInterop);
   RUN_TEST(testHtmlImportStructure);
-  RUN_TEST(testClipboardMarkdownPreservesLinePrefix);
-  RUN_TEST(testClipboardCrossMarkdownPreservesStartPrefix);
+  RUN_TEST(testClipboardMarkdownPartialBlocks);
+  RUN_TEST(testClipboardCrossMarkdownPartialEdges);
+  RUN_TEST(testClipboardBlockCoverageAcrossFormats);
+  RUN_TEST(testClipboardPartialEdgeStructures);
+  RUN_TEST(testClipboardHeadingFragmentCutPasteUndo);
   RUN_TEST(testSelectionSerializerFormats);
   RUN_TEST(testSelectionSerializerCrossComplexInlineEdges);
 #undef RUN_TEST

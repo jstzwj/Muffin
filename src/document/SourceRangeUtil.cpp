@@ -36,6 +36,40 @@ const MarkdownNode* primaryParagraph(const MarkdownNode& node) {
              : nullptr;
 }
 
+QVector<InlineRange> blockquoteContinuationPrefixes(const MarkdownNode& node, QStringView content,
+                                                    qsizetype inlineSourceBase) {
+  bool insideQuote = false;
+  for (const auto* parent = node.parent(); parent; parent = parent->parent())
+    insideQuote |= parent->type() == BlockType::BlockQuote;
+  QVector<InlineRange> result;
+  if (!insideQuote)
+    return result;
+  qsizetype candidate = 0;
+  for (qsizetype line = content.indexOf('\n'); line >= 0; line = content.indexOf('\n', line + 1)) {
+    qsizetype end = line + 1;
+    while (end < content.size() && (content[end] == ' ' || content[end] == '\t'))
+      ++end;
+    bool quote = false;
+    while (end < content.size() && content[end] == '>') {
+      quote = true;
+      ++end;
+      if (end < content.size() && content[end] == ' ')
+        ++end;
+    }
+    if (!quote)
+      continue;
+    while (candidate < node.inlines().size() && (node.inlines()[candidate].sourceEnd() <= inlineSourceBase + line + 1 ||
+                                                 node.inlines()[candidate].type() == InlineType::SoftBreak ||
+                                                 node.inlines()[candidate].type() == InlineType::LineBreak))
+      ++candidate;
+    const bool parsedText =
+        candidate < node.inlines().size() && node.inlines()[candidate].sourceStart() < inlineSourceBase + end;
+    if (!parsedText)
+      result.push_back({line + 1, end});
+  }
+  return result;
+}
+
 QString listMarkerFor(const QString& line) {
   return listLineInfoFor(line).marker;
 }

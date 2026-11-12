@@ -10,6 +10,7 @@
 #include "projection/MarkdownHtmlSerializer.h"
 
 #include <QStringList>
+#include <algorithm>
 
 namespace muffin {
 namespace {
@@ -18,6 +19,7 @@ QString plainTextForNode(const MarkdownNode& node) {
   QString text;
   switch (node.type()) {
   case BlockType::Document:
+  case BlockType::BlockQuote:
   case BlockType::List:
   case BlockType::ListItem:
   case BlockType::Table:
@@ -79,22 +81,6 @@ SelectionExportResult SelectionSerializer::exportSelection(const SelectionExport
 QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, const SelectionRange& selection) const {
   if (selection.coversDocument(document.markdownText().size()))
     return document.markdownText().toString();
-  EditableContext context;
-  qsizetype start = 0;
-  qsizetype end = 0;
-  if (selectionContext(document, selection, context, start, end)) {
-    const PieceTable& markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(document, context.node->id(), context.sourceStart);
-    const qsizetype selectedStart = context.sourceStart + qBound<qsizetype>(0, start, context.sourceText.size());
-    const qsizetype selectedEnd = context.sourceStart + qBound<qsizetype>(0, end, context.sourceText.size());
-    if (selectedEnd <= selectedStart) {
-      return {};
-    }
-    const bool includeStructuredPrefix = context.editableNode && context.editableNode->type() != BlockType::TableCell;
-    return (includeStructuredPrefix ? markdown.mid(prefixStart, context.sourceStart - prefixStart) : QString()) +
-           markdown.mid(selectedStart, selectedEnd - selectedStart);
-  }
-
   qsizetype literalAnchorOffset = -1;
   qsizetype literalFocusOffset = -1;
   if (literalCursorSourceOffset(document, selection.anchor, literalAnchorOffset) &&
@@ -124,23 +110,75 @@ QString SelectionSerializer::exportMarkdown(const MarkdownDocument& document, co
   qsizetype anchorContextStart = -1;
   qsizetype focusOffset = -1;
   qsizetype focusContextStart = -1;
-  if (editableCursorSourceOffset(document, selection.anchor, anchorOffset, anchorContextStart) &&
-      editableCursorSourceOffset(document, selection.focus, focusOffset, focusContextStart) &&
+  EditableContext firstContext, lastContext;
+  if (editableCursorSourceOffset(document, selection.anchor, anchorOffset, anchorContextStart, &firstContext) &&
+      editableCursorSourceOffset(document, selection.focus, focusOffset, focusContextStart, &lastContext) &&
       anchorOffset != focusOffset) {
     qsizetype sourceStart = anchorOffset;
     qsizetype sourceEnd = focusOffset;
-    qsizetype startContext = anchorContextStart;
-    NodeId startBlock = selection.anchor.blockId;
     if (sourceStart > sourceEnd) {
       qSwap(sourceStart, sourceEnd);
-      startContext = focusContextStart;
-      startBlock = selection.focus.blockId;
+      qSwap(firstContext, lastContext);
     }
     const PieceTable& markdown = document.markdownText();
-    const qsizetype prefixStart = structuredLineStart(document, startBlock, startContext);
-    const QString prefix =
-        prefixStart < startContext ? markdown.mid(prefixStart, startContext - prefixStart) : QString();
-    return prefix + markdown.mid(sourceStart, sourceEnd - sourceStart);
+    // Block syntax belongs to a complete editable block, not to every text
+    // fragment inside it. Apply the same coverage rule to both selection edges,
+    // regardless of direction or whether the selection crosses blocks.
+    const auto complete = [&](const EditableContext& context) {
+      return context.editableNode && context.editableNode->type() != BlockType::TableCell &&
+             sourceStart <= context.sourceStart && sourceEnd >= context.sourceEnd;
+    };
+    const bool wholeFirst = complete(firstContext);
+    const bool wholeLast = complete(lastContext);
+    const qsizetype exportStart =
+        wholeFirst ? structuredLineStart(document, firstContext.node->id(), firstContext.sourceStart) : sourceStart;
+    const auto constructEnd = [&](const EditableContext& context) {
+      qsizetype end = context.sourceEnd;
+      if (context.editableNode && context.editableNode->type() == BlockType::Heading &&
+          context.editableNode->setext()) {
+        end = blockLineSpan(*context.editableNode, markdown).byteEnd;
+        // cmark's Setext construct may include the following blank-line separator.
+        while (end > context.sourceEnd && (markdown.at(end - 1) == '\n' || markdown.at(end - 1) == '\r'))
+          --end;
+      }
+      return end;
+    };
+    const qsizetype exportEnd = wholeLast ? qMax(sourceEnd, constructEnd(lastContext)) : sourceEnd;
+    // Only the two edge blocks may be partial. Interior blocks and their exact
+    // Markdown remain untouched; remove structural syntax from partial edges.
+    QVector<InlineRange> omitted;
+    if (!wholeFirst && firstContext.editableNode && firstContext.editableNode->type() == BlockType::Heading &&
+        firstContext.editableNode->setext() && sourceEnd > firstContext.sourceEnd)
+      omitted.push_back({firstContext.sourceEnd, constructEnd(firstContext)});
+    if (!wholeLast && firstContext.node != lastContext.node && lastContext.editableNode &&
+        lastContext.editableNode->type() != BlockType::TableCell) {
+      const auto prefix = qMax(exportStart, lineStartOffset(markdown, lastContext.sourceStart));
+      if (prefix < lastContext.sourceStart)
+        omitted.push_back({prefix, lastContext.sourceStart});
+    }
+    const auto omitContinuationPrefixes = [&](const EditableContext& context) {
+      if (!context.editableNode)
+        return;
+      const auto base = context.sourceStart - context.editableNode->topLevelBlock()->sourceRange().byteStart;
+      for (const auto range : blockquoteContinuationPrefixes(*context.editableNode, context.sourceText, base)) {
+        const InlineRange clipped{qMax(exportStart, context.sourceStart + range.start),
+                                  qMin(exportEnd, context.sourceStart + range.end)};
+        if (clipped.start < clipped.end)
+          omitted.push_back(clipped);
+      }
+    };
+    if (!wholeFirst)
+      omitContinuationPrefixes(firstContext);
+    if (!wholeLast && firstContext.node != lastContext.node)
+      omitContinuationPrefixes(lastContext);
+    std::sort(omitted.begin(), omitted.end(), [](const auto& a, const auto& b) { return a.start < b.start; });
+    QString result;
+    qsizetype position = exportStart;
+    for (const auto& range : omitted) {
+      result += markdown.mid(position, qMax<qsizetype>(0, range.start - position));
+      position = qMax(position, qMin(exportEnd, range.end));
+    }
+    return result + markdown.mid(position, exportEnd - position);
   }
 
   qsizetype sourceStart = 0;
@@ -165,13 +203,8 @@ QString SelectionSerializer::exportPlainText(const MarkdownDocument& document, c
     return document.markdownText().mid(sourceStart, sourceEnd - sourceStart);
   }
 
-  qsizetype sourceStart = 0;
-  qsizetype sourceEnd = 0;
-  if (selectionSourceRange(document, selection, sourceStart, sourceEnd) ||
-      blockSelectionSourceRange(document, selection, sourceStart, sourceEnd)) {
-    return plainTextForMarkdownRange(document.markdownText().toString(), sourceStart, sourceEnd);
-  }
-  return {};
+  const QString markdown = exportMarkdown(document, selection);
+  return plainTextForMarkdownRange(markdown, 0, markdown.size());
 }
 
 QString SelectionSerializer::exportHtml(const MarkdownDocument& document, const SelectionRange& selection) const {
@@ -188,33 +221,6 @@ QString SelectionSerializer::renderMarkdownToHtml(const QString& markdown) {
   // structural property of the editor's parse tree rather than a second cmark instance to keep in
   // sync — highlight / subscript / superscript / GitHub Alerts / emoji now survive export.
   return MarkdownHtmlSerializer::serializeSource(markdown);
-}
-
-bool SelectionSerializer::selectionContext(const MarkdownDocument& document, const SelectionRange& selection,
-                                           EditableContext& context, qsizetype& start, qsizetype& end) const {
-  if (!selection.isSingleBlock() || selection.isCollapsed()) {
-    return false;
-  }
-
-  const MarkdownNode* node =
-      document.node(selection.focus.text.nodeId.isValid() ? selection.focus.text.nodeId : selection.focus.blockId);
-  if (!node || !editableContextFor(document, *node, context)) {
-    return false;
-  }
-
-  qsizetype anchorOffset = -1;
-  qsizetype anchorContextStart = -1;
-  qsizetype focusOffset = -1;
-  qsizetype focusContextStart = -1;
-  if (!editableCursorSourceOffset(document, selection.anchor, anchorOffset, anchorContextStart) ||
-      !editableCursorSourceOffset(document, selection.focus, focusOffset, focusContextStart) ||
-      anchorContextStart != context.sourceStart || focusContextStart != context.sourceStart) {
-    return false;
-  }
-
-  start = qBound<qsizetype>(0, qMin(anchorOffset, focusOffset) - context.sourceStart, context.sourceText.size());
-  end = qBound<qsizetype>(0, qMax(anchorOffset, focusOffset) - context.sourceStart, context.sourceText.size());
-  return start < end;
 }
 
 bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, const MarkdownNode& displayNode,
@@ -255,7 +261,8 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
   qsizetype sourceStart = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
                               ? range.byteStart
                               : sourceOffsetForLineColumn(markdown, range.lineStart, qMax(1, range.columnStart));
-  qsizetype sourceEnd = editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
+  qsizetype sourceEnd = editable->type() == BlockType::Heading ? headingContentEndOffset(*editable, markdown)
+                        : editable->type() == BlockType::TableCell && range.byteEnd >= range.byteStart
                             ? range.byteEnd
                             : sourceOffsetForLineEnd(markdown, range.lineEnd);
   if (sourceStart < 0 || sourceEnd < sourceStart) {
@@ -289,7 +296,8 @@ bool SelectionSerializer::editableContextFor(const MarkdownDocument& document, c
 }
 
 bool SelectionSerializer::editableCursorSourceOffset(const MarkdownDocument& document, const CursorPosition& cursor,
-                                                     qsizetype& sourceOffset, qsizetype& contextSourceStart) const {
+                                                     qsizetype& sourceOffset, qsizetype& contextSourceStart,
+                                                     EditableContext* resolvedContext) const {
   if (!cursor.isValid()) {
     return false;
   }
@@ -316,6 +324,8 @@ bool SelectionSerializer::editableCursorSourceOffset(const MarkdownDocument& doc
   }
   sourceOffset = context.sourceStart + localSourceOffset;
   contextSourceStart = context.sourceStart;
+  if (resolvedContext)
+    *resolvedContext = std::move(context);
   return true;
 }
 

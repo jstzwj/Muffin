@@ -46,12 +46,11 @@ private:
     QString sourceText;
   };
 
-  bool selectionContext(const MarkdownDocument& document, const SelectionRange& selection, EditableContext& context,
-                        qsizetype& start, qsizetype& end) const;
   bool editableContextFor(const MarkdownDocument& document, const MarkdownNode& displayNode,
                           EditableContext& context) const;
   bool editableCursorSourceOffset(const MarkdownDocument& document, const CursorPosition& cursor,
-                                  qsizetype& sourceOffset, qsizetype& contextSourceStart) const;
+                                  qsizetype& sourceOffset, qsizetype& contextSourceStart,
+                                  EditableContext* resolvedContext = nullptr) const;
   bool selectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start,
                             qsizetype& end) const;
   bool blockSelectionSourceRange(const MarkdownDocument& document, const SelectionRange& selection, qsizetype& start,

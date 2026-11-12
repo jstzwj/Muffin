@@ -161,6 +161,10 @@ MarkdownNode* primaryParagraph(MarkdownNode& node);
 const MarkdownNode* primaryParagraph(const MarkdownNode& node);
 
 QString listMarkerFor(const QString& line);
+// Content-relative quote prefixes outside parser-owned inline ranges. inlineSourceBase
+// is content[0]'s position in the inline nodes' top-level-relative coordinate frame.
+QVector<InlineRange> blockquoteContinuationPrefixes(const MarkdownNode& node, QStringView content,
+                                                    qsizetype inlineSourceBase);
 // All returned offsets remain relative to the physical line, including when an AST node's
 // marker begins after another container's prefix (e.g. the inner item in "3. 4. text").
 ListLineInfo listLineInfoFor(const QString& line, qsizetype start = 0);

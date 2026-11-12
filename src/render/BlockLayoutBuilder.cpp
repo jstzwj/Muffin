@@ -466,6 +466,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& 
 }
 
 void BlockLayoutBuilder::finishBuild(BlockLayout& layout, const MarkdownNode& node, const RenderTheme& theme) {
+  layout.reuse.sourceStart = node.sourceRange().byteStart;
   layout.setLayoutSelection(selection_);
   if (layout.rect().width() > 0) {
     diag::ScopedPerfProbe generatedPerf("block.generatedContent", blockBuildDetailPerf());
@@ -549,31 +550,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(const Markdo
   // projectionBase (setContentSourceStart / forSelection) stays ABSOLUTE — cursor math is absolute.
   options.sourceBase = projectionBase - node.topLevelBlock()->sourceRange().byteStart;
   if (isInsideBlockquote(node)) {
-    // Only hide continuation prefixes outside parser-provided inline ranges.
-    qsizetype candidate = 0;
-    for (qsizetype line = editableSource.indexOf('\n'); line >= 0; line = editableSource.indexOf('\n', line + 1)) {
-      qsizetype end = line + 1;
-      while (end < editableSource.size() && (editableSource[end] == ' ' || editableSource[end] == '\t'))
-        ++end;
-      bool quote = false;
-      while (end < editableSource.size() && editableSource[end] == '>') {
-        quote = true;
-        ++end;
-        if (end < editableSource.size() && editableSource[end] == ' ')
-          ++end;
-      }
-      if (!quote)
-        continue;
-      while (candidate < node.inlines().size() &&
-             (node.inlines()[candidate].sourceEnd() <= options.sourceBase + line + 1 ||
-              node.inlines()[candidate].type() == InlineType::SoftBreak ||
-              node.inlines()[candidate].type() == InlineType::LineBreak))
-        ++candidate;
-      const bool parsedText =
-          candidate < node.inlines().size() && node.inlines()[candidate].sourceStart() < options.sourceBase + end;
-      if (!parsedText)
-        options.sourceReplacements.push_back({{line + 1, end}, {}});
-    }
+    for (const auto range : blockquoteContinuationPrefixes(node, editableSource, options.sourceBase))
+      options.sourceReplacements.push_back({range, {}});
     const auto* parent = node.parent();
     if (parent && parent->alertKind() != AlertKind::None && !parent->children().empty() &&
         parent->children().front().get() == &node && !node.inlines().isEmpty()) {

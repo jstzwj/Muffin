@@ -339,6 +339,7 @@ HitTestResult EditorView::hitForCursorPosition(CursorPosition position) const {
 
 HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   PerfTimer perf("view.hitTest");
+  emit hitTestAboutToStart();
   if (!layout_ || isLayoutPending()) {
     return {};
   }

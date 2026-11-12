@@ -1485,10 +1485,13 @@ NodeId DocumentLayout::topLevelBlockIdFor(NodeId id) const {
 const BlockLayout* DocumentLayout::blockAt(QPointF documentPos, const RenderTheme& theme) {
   if (formattingRoot_) {
     const BlockLayout* topmost = nullptr;
-    for (const auto& slot : slots_)
+    for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i) {
+      ensureSlotDetailPosition(i);
+      const auto& slot = slots_[size_t(i)];
       if (slot.detail && slot.detail->rect().contains(documentPos) &&
           (!topmost || slot.detail->formattingOrder() >= topmost->formattingOrder()))
         topmost = slot.detail.get();
+    }
     return topmost;
   }
   if (slots_.empty()) {
@@ -1695,6 +1698,16 @@ void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
   BlockSlot& slot = const_cast<BlockSlot&>(slots_.at(static_cast<size_t>(index)));
   if (!slot.detail) {
     return;
+  }
+  // Local edits shift source positions of otherwise unchanged suffix blocks.
+  // Their shaped text stays valid, but its absolute source origin must be
+  // synchronized before paint, hit testing, selection or cursor lookup.
+  // Resolve lazily from the document, just like the vertical suffix shift;
+  // rebuilding or walking every following block on each keystroke is unnecessary.
+  if (const auto* node = document_->node(slot.nodeId)) {
+    const qsizetype sourceDelta = node->sourceRange().byteStart - slot.detail->reuse.sourceStart;
+    if (sourceDelta != 0)
+      slot.detail->shiftSourceOffsets(sourceDelta);
   }
   const qreal shift = slotShift(index);
   const qreal delta = shift - slot.detailShift;

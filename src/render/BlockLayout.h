@@ -131,6 +131,8 @@ public:
   struct ReuseData {
     QByteArray signature, constraints;
     LayoutResourceDependencies resources;
+    // Absolute source origin for rebasing retained subtrees, including
+    // cooperative layouts without a reuse signature.
     qsizetype sourceStart = 0;
     QPointF origin;
   } reuse;

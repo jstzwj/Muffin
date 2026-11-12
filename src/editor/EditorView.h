@@ -143,6 +143,9 @@ public:
   QRectF effectiveCursorRect() const;
 
 signals:
+  // Finish queued model changes before resolving a pointer against layout IDs
+  // and source ranges. Painting may be deferred; editing targets may not.
+  void hitTestAboutToStart() const;
   void layoutBusyChanged(bool busy);
   void layoutReady();
   // Geometry changes inside a layout transaction do not represent user scrolling.

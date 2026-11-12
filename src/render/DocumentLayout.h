@@ -202,6 +202,7 @@ private:
   // storing the result keyed by NodeId. No-op for themes without heading counters.
   void recomputeHeadingCounters(const MarkdownDocument& document, const RenderTheme& theme);
   qreal slotShift(qsizetype index) const;
+  // Synchronize retained geometry and its absolute source coordinate frame.
   void ensureSlotDetailPosition(qsizetype index) const;
 
   void configureBuilder(SelectionRange selection, bool reuseFormatting = false);
