@@ -70,6 +70,49 @@ def stop(process):
             process.wait(timeout=5)
 
 
+def wait_for_fcitx(daemon, env, daemon_log, timeout=10):
+    # State 0 means no focused input context, not a failed daemon. Check the
+    # service owner and configured group instead. --check also prevents the
+    # readiness query from D-Bus-activating a second daemon during startup.
+    deadline = time.monotonic() + timeout
+    last_reply = ""
+    while daemon.poll() is None:
+        group = subprocess.run(["fcitx5-remote", "--check", "-q"], env=env,
+                               capture_output=True, text=True, timeout=5)
+        if group.returncode == 0 and group.stdout.strip() == "Default":
+            return
+        last_reply = group.stdout + group.stderr
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(0.1)
+    daemon_log.seek(0)
+    raise RuntimeError(f"Fcitx service did not become ready (exit={daemon.poll()}):\n"
+                       + last_reply + daemon_log.read())
+
+
+def wait_for_input_context(process, env, timeout=10):
+    deadline = time.monotonic() + timeout
+    state_text = ""
+    engine = ""
+    while process.poll() is None:
+        state = subprocess.run(["fcitx5-remote", "--check"], env=env,
+                               capture_output=True, text=True, timeout=5)
+        state_text = state.stdout.strip()
+        # Wait for Qt's asynchronous FocusIn/CreateInputContext to finish
+        # before activating Pinyin; a controller call with no context is a no-op.
+        if state.returncode == 0 and state_text in {"1", "2"}:
+            run(["fcitx5-remote", "--check", "-o"], env)
+            run(["fcitx5-remote", "--check", "-s", "pinyin"], env)
+            engine = run(["fcitx5-remote", "--check", "-n"], env).strip()
+            if engine == "pinyin" and run(["fcitx5-remote", "--check"], env).strip() == "2":
+                return
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(0.1)
+    raise RuntimeError(f"Fcitx input context did not become active "
+                       f"(probe exit={process.poll()}, state={state_text!r}, engine={engine!r})")
+
+
 def check_input(bundle, env, work):
     profile = Path(env["XDG_CONFIG_HOME"]) / "fcitx5/profile"
     profile.parent.mkdir(parents=True)
@@ -93,16 +136,8 @@ Layout=
         daemon = subprocess.Popen(["fcitx5", "--replace"], env=env,
                                   stdout=daemon_log, stderr=subprocess.STDOUT)
         try:
-            deadline = time.monotonic() + 10
-            while True:
-                state = subprocess.run(["fcitx5-remote"], env=env, capture_output=True,
-                                       text=True, timeout=5)
-                if state.returncode == 0 and state.stdout.strip() in {"1", "2"}:
-                    break
-                if daemon.poll() is not None or time.monotonic() > deadline:
-                    daemon_log.seek(0)
-                    raise RuntimeError("Fcitx did not start:\n" + daemon_log.read())
-                time.sleep(0.1)
+            wait_for_fcitx(daemon, env, daemon_log)
+            print("Fcitx service ready; no focused editor is required yet", flush=True)
             for mode in ("source", "rendered"):
                 report = work / f"{mode}.json"
                 with (work / f"{mode}.log").open("w+") as log:
@@ -113,14 +148,7 @@ Layout=
                     try:
                         window = wait_for_window(process, env)
                         run(["xdotool", "windowfocus", "--sync", window], env)
-                        # Let the asynchronous input-context creation complete
-                        # before activating the engine and sending native keys.
-                        time.sleep(1)
-                        run(["fcitx5-remote", "-o"], env)
-                        run(["fcitx5-remote", "-s", "pinyin"], env)
-                        time.sleep(0.3)
-                        if run(["fcitx5-remote", "-n"], env).strip() != "pinyin":
-                            raise RuntimeError("Fcitx did not select the Pinyin engine")
+                        wait_for_input_context(process, env)
                         run(["xdotool", "type", "--clearmodifiers", "--delay", "150", "nihao"], env)
                         run(["xdotool", "key", "space"], env)
                         if process.wait(timeout=25) != 0:
@@ -128,7 +156,8 @@ Layout=
                         result = json.loads(report.read_text(encoding="utf-8"))
                         if not result["passed"] or not result["preedit"] or result["text"] != "prefix你好":
                             raise RuntimeError(f"{mode} input check failed: {result}")
-                        print(f"{mode}: preedit + Chinese commit passed (Qt {result['qt']}, {result['platform']})")
+                        print(f"{mode}: preedit + Chinese commit passed (Qt {result['qt']}, {result['platform']})",
+                              flush=True)
                     except Exception:
                         log.seek(0)
                         print(log.read()[-20000:])
@@ -173,11 +202,13 @@ def main():
         if "XAUTHORITY" in os.environ:
             env["XAUTHORITY"] = os.environ["XAUTHORITY"]
         check_libraries(bundle, env)
+        print("Relocated binaries: dependencies and RPATH passed", flush=True)
         # Deliberately inject the incompatible desktop plugin path. Startup
         # must isolate it without overwriting the desktop's IM selection.
         env["QT_PLUGIN_PATH"] = "/usr/lib/x86_64-linux-gnu/qt6/plugins"
         for module in ("fcitx", "ibus"):
-            print(run([str(bundle / "ime-probe"), "--load-only"], dict(env, QT_IM_MODULE=module)))
+            run([str(bundle / "ime-probe"), "--load-only"], dict(env, QT_IM_MODULE=module))
+            print(f"{module}: bundled input context load passed", flush=True)
         # A missing/broken bundled plugin must not reopen system search paths.
         plugin = bundle / "platforminputcontexts/libfcitx5platforminputcontextplugin.so"
         disabled = plugin.with_suffix(".disabled")

@@ -1,13 +1,14 @@
 """Offline tests of the Linux release dependency gate (also run on Windows)."""
 
 from pathlib import Path
+import io
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import check_linux_input_methods as deployment
 
@@ -53,6 +54,97 @@ class DependencyGateTest(unittest.TestCase):
     def test_rejects_build_rpath(self):
         with self.assertRaisesRegex(RuntimeError, "Non-relocatable"):
             self.check("", "$ORIGIN:/home/runner/.conan2/p/qt/lib")
+
+
+class FcitxReadinessTest(unittest.TestCase):
+    def test_service_readiness_does_not_require_an_active_editor(self):
+        daemon = Mock()
+        daemon.poll.return_value = None
+        replies = [subprocess.CompletedProcess([], 1, "", "not registered"),
+                   subprocess.CompletedProcess([], 0, "Default\n", "")]
+        with patch.object(deployment.subprocess, "run", side_effect=replies) as remote, \
+                patch.object(deployment.time, "sleep"):
+            deployment.wait_for_fcitx(daemon, {}, io.StringIO())
+        for query in remote.call_args_list:
+            self.assertEqual(query.args[0], ["fcitx5-remote", "--check", "-q"])
+
+    def test_service_exit_keeps_diagnostics(self):
+        daemon = Mock()
+        daemon.poll.return_value = 1
+        with self.assertRaisesRegex(RuntimeError, "exit=1.*\n.*daemon startup failure"):
+            deployment.wait_for_fcitx(daemon, {}, io.StringIO("daemon startup failure"))
+
+    def test_unresponsive_service_times_out(self):
+        daemon = Mock()
+        daemon.poll.return_value = None
+        with patch.object(deployment.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 1, "", "no owner")), \
+                patch.object(deployment.time, "monotonic", side_effect=[0, 11]):
+            with self.assertRaisesRegex(RuntimeError, "no owner"):
+                deployment.wait_for_fcitx(daemon, {}, io.StringIO())
+
+    def test_activation_waits_for_the_editors_input_context(self):
+        process = Mock()
+        process.poll.return_value = None
+        states = [subprocess.CompletedProcess([], 0, "0\n", ""),
+                  subprocess.CompletedProcess([], 0, "1\n", "")]
+
+        def query(command, **kwargs):
+            return states.pop(0)
+
+        def activate_ready(command, env):
+            # A successful State reply with value 0 must not cause a premature
+            # Activate call. Both state queries must happen before activation.
+            self.assertFalse(states)
+            return {"-n": "pinyin\n", "--check": "2\n"}.get(command[-1], "")
+
+        with patch.object(deployment.subprocess, "run", side_effect=query), \
+                patch.object(deployment, "run", side_effect=activate_ready) as controller, \
+                patch.object(deployment.time, "sleep"):
+            deployment.wait_for_input_context(process, {})
+            controller.assert_any_call(["fcitx5-remote", "--check", "-o"], {})
+
+    def test_closed_input_context_is_not_ready_to_type(self):
+        process = Mock()
+        process.poll.return_value = None
+        with patch.object(deployment.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0, "0\n", "")), \
+                patch.object(deployment.time, "monotonic", side_effect=[0, 11]), \
+                patch.object(deployment, "run") as controller:
+            with self.assertRaisesRegex(RuntimeError, "state='0'"):
+                deployment.wait_for_input_context(process, {})
+        controller.assert_not_called()
+
+
+@unittest.skipUnless(sys.platform.startswith("linux") and os.environ.get("MUFFIN_TEST_FCITX_SERVICE") == "1",
+                     "requires an isolated D-Bus/Xvfb session")
+class FcitxServiceIntegrationTest(unittest.TestCase):
+    def test_daemon_becomes_ready_before_any_editor_is_opened(self):
+        with tempfile.TemporaryDirectory(prefix="muffin-fcitx-startup-") as temporary:
+            home = Path(temporary)
+            runtime = home / "runtime"
+            runtime.mkdir(mode=0o700)
+            env = {"PATH": "/usr/bin:/bin", "HOME": str(home), "LANG": "C.UTF-8",
+                   "DISPLAY": os.environ["DISPLAY"],
+                   "DBUS_SESSION_BUS_ADDRESS": os.environ["DBUS_SESSION_BUS_ADDRESS"],
+                   "XDG_RUNTIME_DIR": str(runtime), "XDG_CONFIG_HOME": str(home / ".config"),
+                   "XDG_DATA_HOME": str(home / ".local/share")}
+            if "XAUTHORITY" in os.environ:
+                env["XAUTHORITY"] = os.environ["XAUTHORITY"]
+            profile = home / ".config/fcitx5/profile"
+            profile.parent.mkdir(parents=True)
+            profile.write_text("[Groups/0]\nName=Default\nDefault Layout=us\nDefaultIM=keyboard-us\n\n"
+                               "[Groups/0/Items/0]\nName=keyboard-us\nLayout=\n\n"
+                               "[GroupOrder]\n0=Default\n", encoding="utf-8")
+            with (home / "fcitx.log").open("w+") as log:
+                daemon = subprocess.Popen(["fcitx5", "--replace"], env=env,
+                                          stdout=log, stderr=subprocess.STDOUT)
+                try:
+                    deployment.wait_for_fcitx(daemon, env, log)
+                    self.assertEqual(deployment.run(["fcitx5-remote", "--check"], env).strip(), "0")
+                    self.assertIsNone(daemon.poll())
+                finally:
+                    deployment.stop(daemon)
 
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "requires ELF build tools")

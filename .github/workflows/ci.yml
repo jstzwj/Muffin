@@ -16,11 +16,13 @@ jobs:
         with:
           python-version: '3.13'
       - run: python -m pip install -r requirements-release.txt
-      - name: Install ELF deployment test tools
-        run: sudo apt-get update && sudo apt-get install -y patchelf
+      - name: Install Linux deployment test tools
+        run: sudo apt-get update && sudo apt-get install -y patchelf fcitx5 dbus-x11 xvfb xauth
       - run: python scripts/test_publish_cnb_release.py
       - run: python scripts/test_check_macos_deployment.py
       - run: python scripts/test_check_linux_input_methods.py
+      - name: Test headless input method startup
+        run: MUFFIN_TEST_FCITX_SERVICE=1 dbus-run-session -- xvfb-run -a python scripts/test_check_linux_input_methods.py FcitxServiceIntegrationTest
 
   test:
     name: Test ${{ matrix.name }}
@@ -186,6 +188,15 @@ jobs:
         if: runner.os == 'Windows'
         run: cmake --preset ${{ matrix.configure-preset }} -DCMAKE_SHARED_LINKER_FLAGS_RELEASE=/MAP -DCMAKE_EXE_LINKER_FLAGS_RELEASE=/MAP
 
+      # Exercise the relocated app before compiling hundreds of test targets,
+      # so deployment/input-context failures surface early in the Linux job.
+      - name: Test packaged Linux input methods
+        if: runner.os == 'Linux'
+        run: |
+          cmake --build --preset conan-release --target dist MuffinLinuxInputMethodProbe
+          dbus-run-session -- xvfb-run -a python scripts/check_linux_input_methods.py \
+            --dist build/Release/dist --probe build/Release/MuffinLinuxInputMethodProbe
+
       - name: Build Windows document visual and TLS tests
         if: runner.os == 'Windows'
         run: cmake --build --preset conan-release --target MuffinDocumentVisualAcceptanceTest MuffinWindowsTlsTest
@@ -217,13 +228,6 @@ jobs:
       # Stream flushed RUN markers while each process is alive, including before a hang.
       - name: Test
         run: ${{ matrix.test-command }}
-
-      - name: Test packaged Linux input methods
-        if: runner.os == 'Linux'
-        run: |
-          cmake --build --preset conan-release --target dist MuffinLinuxInputMethodProbe
-          dbus-run-session -- xvfb-run -a python scripts/check_linux_input_methods.py \
-            --dist build/Release/dist --probe build/Release/MuffinLinuxInputMethodProbe
 
       - name: Diagnose macOS file-tree integration failures
         if: failure() && runner.os == 'macOS'
