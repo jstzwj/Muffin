@@ -1,5 +1,7 @@
 #pragma once
 
+#include "editor/InputMethodState.h"
+
 #include "document/PieceTable.h"
 #include "editor/SourceLineHeightIndex.h"
 #include "editor/ViewportPosition.h"
@@ -35,6 +37,8 @@ class QTimer;
 class QVariant;
 
 namespace muffin {
+
+class TextLayout;
 
 class DocumentSession;
 class EditorController;
@@ -164,6 +168,7 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  InputMethodState inputMethodState_{this};
   void retranslateAccessibility();
   struct EditRecord {
     qsizetype start = 0;
@@ -177,6 +182,8 @@ private:
   };
 
   struct LineLayout;
+  std::unique_ptr<TextLayout> buildPreeditLayout() const;
+  QRectF inputMethodCursorRect() const;
 
   const PieceTable& source() const;
   PieceTable& standaloneSource();

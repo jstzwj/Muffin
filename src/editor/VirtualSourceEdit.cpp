@@ -926,6 +926,7 @@ int VirtualSourceEdit::measuredLineHeight(int zeroBasedLine) const {
 }
 
 void VirtualSourceEdit::resetGeometryIndex(bool preserveScroll) {
+  inputMethodState_.schedule();
   const int oldValue = verticalScrollBar()->value();
   invalidateLayoutCache();
   heights_.reset(source().lineCount(), baseLineHeight());
@@ -1088,23 +1089,13 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
                             qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left()), rowHeight),
                      colors_.background);
 
-    TextLayout preeditLayout(preedit_, sourceFont_);
-    preeditLayout.setFormats(preeditFormats_);
+    const auto preeditLayout = buildPreeditLayout();
     const qreal preeditWidth = qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left() - 4.0);
-    preeditLayout.beginLayout();
-    {
-      TextLine line = preeditLayout.createLine();
-      if (line.isValid()) {
-        line.setLineWidth(preeditWidth);
-        line.setPosition(QPointF(0, 0));
-      }
-    }
-    preeditLayout.endLayout();
     const QPointF preeditOrigin(cursorRect.left(), cursorRect.top());
     painter.setPen(colors_.text);
-    preeditLayout.draw(&painter, preeditOrigin);
+    preeditLayout->draw(&painter, preeditOrigin);
     if (preeditCursor_ >= 0 && preeditCursor_ <= preedit_.length()) {
-      preeditLayout.drawCursor(&painter, preeditOrigin, preeditCursor_);
+      preeditLayout->drawCursor(&painter, preeditOrigin, preeditCursor_);
     }
 
     // The rest of the caret row, shifted right by the preedit's advance.
@@ -1112,7 +1103,7 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
     const qsizetype lineStartOffset = lineStart(line);
     const QString rest = lineText(line).mid(qBound<qsizetype>(0, cursor_ - lineStartOffset, source().size()));
     if (!rest.isEmpty()) {
-      const qreal preeditAdvance = preeditLayout.lineAt(0).naturalTextWidth();
+      const qreal preeditAdvance = preeditLayout->lineAt(0).naturalTextWidth();
       TextLayout restLayout(rest, sourceFont_);
       restLayout.beginLayout();
       {
@@ -1586,6 +1577,7 @@ void VirtualSourceEdit::focusOutEvent(QFocusEvent* event) {
 }
 
 void VirtualSourceEdit::resetCursorBlink() {
+  inputMethodState_.schedule();
   cursorVisible_ = !isReadOnly();
   if (!isReadOnly() && hasFocus() && QApplication::cursorFlashTime() > 0)
     cursorTimer_->start();
@@ -1622,6 +1614,29 @@ void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {
   event->accept();
 }
 
+std::unique_ptr<TextLayout> VirtualSourceEdit::buildPreeditLayout() const {
+  auto layout = std::make_unique<TextLayout>(preedit_, sourceFont_);
+  layout->setFormats(preeditFormats_);
+  layout->beginLayout();
+  auto line = layout->createLine();
+  if (line.isValid()) {
+    line.setLineWidth(qMax<qreal>(1.0, viewport()->width() - cursorRectForOffset(cursor_).left() - 4.0));
+    line.setPosition({0, 0});
+  }
+  layout->endLayout();
+  return layout;
+}
+
+QRectF VirtualSourceEdit::inputMethodCursorRect() const {
+  const auto insertion = cursorRectForOffset(cursor_);
+  if (!preedit_.isEmpty() && preeditCursor_ >= 0) {
+    auto cursor = buildPreeditLayout()->cursorRect(preeditCursor_);
+    cursor.translate(insertion.topLeft());
+    return cursor;
+  }
+  return insertion;
+}
+
 QVariant VirtualSourceEdit::inputMethodQuery(Qt::InputMethodQuery query) const {
   switch (query) {
   case Qt::ImFont:
@@ -1629,11 +1644,15 @@ QVariant VirtualSourceEdit::inputMethodQuery(Qt::InputMethodQuery query) const {
   case Qt::ImEnabled:
     return !isReadOnly();
   case Qt::ImCursorRectangle:
-    return cursorRectForOffset(cursor_);
+    return inputMethodCursorRect().translated(viewport()->pos());
+  case Qt::ImInputItemClipRectangle:
+    return QRectF(viewport()->geometry());
   case Qt::ImCursorPosition:
-    return static_cast<int>(cursor_);
-  case Qt::ImAnchorPosition:
-    return static_cast<int>(anchor_);
+    return static_cast<int>(cursor_ - lineStart(lineForOffset(cursor_)));
+  case Qt::ImAnchorPosition: {
+    const int line = lineForOffset(cursor_);
+    return static_cast<int>(qBound(lineStart(line), anchor_, lineEnd(line)) - lineStart(line));
+  }
   case Qt::ImAbsolutePosition:
     return static_cast<int>(cursor_);
   case Qt::ImCurrentSelection:
@@ -1897,6 +1916,7 @@ void VirtualSourceEdit::dropEvent(QDropEvent* event) {
 }
 
 void VirtualSourceEdit::emitCursorPosition() {
+  inputMethodState_.schedule();
   emit cursorPositionChanged(cursorLine(), cursorColumn());
   if (QAccessible::isActive()) {
     QAccessibleTextCursorEvent event(this, static_cast<int>(boundedOffset(cursor_)));

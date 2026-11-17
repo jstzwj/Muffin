@@ -1,5 +1,7 @@
 #pragma once
 
+#include "editor/InputMethodState.h"
+
 #include "document/TopLevelRangeChange.h"
 #include "document/BlockStructure.h"
 #include "editor/HtmlBlockHoverController.h"
@@ -198,6 +200,7 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  InputMethodState inputMethodState_{this};
   bool blockHandlesAvailable() const;
   void updateBlockHandleHover(QPointF point);
   BlockTarget blockTargetAt(QPointF point) const;

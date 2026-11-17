@@ -380,12 +380,8 @@ void EditorView::paintPreedit(QPainter& painter) const {
   if (layout_) {
     const BlockLayout* block = layout_->blockIfPromoted(cursorHit_.blockId);
     const InlineLayout* inlineLayout = nullptr;
-    QPointF origin;
     if (block && cursorHit_.zone == HitTestResult::Zone::Text) {
       inlineLayout = block->inlineLayout();
-      if (inlineLayout) {
-        origin = block->inlineTextOrigin();
-      }
     } else if (block && cursorHit_.zone == HitTestResult::Zone::TableCell && cursorHit_.tableRow >= 0 &&
                cursorHit_.tableColumn >= 0) {
       const auto& rows = block->tableRows();
@@ -394,12 +390,11 @@ void EditorView::paintPreedit(QPainter& painter) const {
         if (cursorHit_.tableColumn < static_cast<int>(cells.size())) {
           const auto& cell = cells.at(static_cast<size_t>(cursorHit_.tableColumn));
           inlineLayout = &cell.text;
-          origin = cell.textOrigin();
         }
       }
     }
     if (inlineLayout && inlineLayout->hasPreedit()) {
-      const QRectF cr = inlineLayout->preeditCursorRect(origin); // document space
+      const QRectF cr = preeditCursor_ >= 0 ? caretDoc : QRectF(); // Same geometry as the IME query.
       if (!cr.isEmpty()) {
         painter.save();
         painter.setPen(Qt::NoPen);

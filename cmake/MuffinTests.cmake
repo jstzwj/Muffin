@@ -477,6 +477,7 @@ muffin_add_test(NAME MuffinInputWordNavTest            SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/InputPageNavTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinFocusEscapeTest             SOURCE tests/editor/FocusEscapeTest.cpp             LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputMethodGeometryTest SOURCE tests/editor/InputMethodGeometryTest.cpp LINK MuffinUi EXTRA_LINK Qt6::Test RESOURCE_LOCK)
 muffin_add_test(NAME MuffinVirtualSourceEditTest       SOURCE tests/editor/VirtualSourceEditTest.cpp       LINK MuffinUi RESOURCE_LOCK)
 target_link_libraries(MuffinVirtualSourceEditTest PRIVATE Qt6::Test)
 # Offscreen's QPlatformDrag always returns IgnoreAction. Minimal runs Qt's

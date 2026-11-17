@@ -159,6 +159,27 @@ QRectF EditorView::effectiveCursorRect() const {
       if (!compositionCursor.isEmpty())
         cursor = compositionCursor;
     }
+  } else if (!preedit_.isEmpty() && layout_) {
+    const auto* block = layout_->blockIfPromoted(cursorHit_.blockId);
+    const InlineLayout* text = nullptr;
+    QPointF origin;
+    if (block && cursorHit_.zone == HitTestResult::Zone::Text) {
+      text = block->inlineLayout();
+      origin = block->inlineTextOrigin();
+    } else if (block && cursorHit_.zone == HitTestResult::Zone::TableCell && cursorHit_.tableRow >= 0 &&
+               cursorHit_.tableRow < static_cast<int>(block->tableRows().size())) {
+      const auto& cells = block->tableRows()[size_t(cursorHit_.tableRow)].cells;
+      if (cursorHit_.tableColumn >= 0 && cursorHit_.tableColumn < static_cast<int>(cells.size())) {
+        const auto& cell = cells[size_t(cursorHit_.tableColumn)];
+        text = &cell.text;
+        origin = cell.textOrigin();
+      }
+    }
+    if (text && text->hasPreedit()) {
+      const auto compositionCursor = text->preeditCursorRect(origin);
+      if (!compositionCursor.isEmpty())
+        cursor = compositionCursor;
+    }
   }
   if (cursor.isEmpty()) {
     cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());

@@ -435,6 +435,7 @@ void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
   viewport()->update();
   emit layoutBusyChanged(false);
   requestInitialCursor();
+  inputMethodState_.schedule();
   emit layoutReady();
 }
 
@@ -788,6 +789,7 @@ void EditorView::requestInitialCursor() {
 }
 
 void EditorView::resetCaretBlink() {
+  inputMethodState_.schedule();
   caretBlinkOn_ = true;
   if (editingLocked_) {
     cursorTimer_->stop(); // 锁定编辑: the caret stays hidden even when the view has focus
@@ -803,6 +805,7 @@ void EditorView::resetCaretBlink() {
 }
 
 void EditorView::clearCursor() {
+  inputMethodState_.schedule();
   cursorPosition_ = {};
   selection_ = {};
   preDragSelection_ = {};
@@ -1468,10 +1471,14 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
   case Qt::ImCursorRectangle: {
     // effectiveCursorRect matches where the caret is painted (offset-adjusted for a scrolled code
     // fence); without it the IME panel anchored at the natural advance, far from the visible caret.
+    if (isLayoutPending())
+      return QRectF();
     QRectF cursor = effectiveCursorRect();
-    cursor.translate(0, -scrollY());
-    return cursor.toRect();
+    cursor.translate(QPointF(viewport()->pos()) - QPointF(0, scrollY()));
+    return cursor;
   }
+  case Qt::ImInputItemClipRectangle:
+    return QRectF(viewport()->geometry());
   case Qt::ImEnabled:
     return !editingLocked_;
   case Qt::ImFont:
@@ -1500,6 +1507,14 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
     const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
     return static_cast<int>(qBound<qsizetype>(0, cursorPosition_.text.textOffset, surrounding.size()));
   }
+  case Qt::ImAnchorPosition: {
+    const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
+    const auto offset =
+        selection_.isSingleTextNode() ? selection_.anchor.text.textOffset : cursorPosition_.text.textOffset;
+    return static_cast<int>(qBound<qsizetype>(0, offset, surrounding.size()));
+  }
+  case Qt::ImAbsolutePosition:
+    return cursorPosition_.text.sourceOffset;
   case Qt::ImCurrentSelection: {
     // Only a same-text-node selection maps into the surrounding text; cross-block/cross-cell
     // selections have no single surrounding string.
@@ -1578,6 +1593,7 @@ void EditorView::rebuildLayout(bool preserveViewport) {
   if (cursorPosition_.isValid() && !preserveViewport) {
     ensureCursorVisible();
   }
+  inputMethodState_.schedule();
   diag::updateViewport(viewport());
 }
 
@@ -1613,6 +1629,7 @@ void EditorView::updateTableToolbar() {
 }
 
 void EditorView::updateCursorHitFromPosition() {
+  inputMethodState_.schedule();
   cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
   cursorVisible_ = cursorHit_.isValid();
   updateCodeLanguageEditor();
