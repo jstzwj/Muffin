@@ -37,4 +37,6 @@ dbus-run-session -- xvfb-run -a python scripts/check_linux_input_methods.py \
 
 服务就绪与输入框激活分开等待：`fcitx5-remote --check -q` 确认服务已注册且配置组加载完毕；编辑器窗口获得焦点后，再等待输入上下文、激活拼音并检查状态。没有聚焦的输入框时，Fcitx 返回状态 `0` 是正常情况，不能据此判定服务启动失败。所有控制查询使用 `--check`，避免轮询意外通过 D-Bus 启动第二个服务。发布工具检查另在独立会话中验收“尚未打开任何编辑器”的真实服务启动。
 
+普通 CTest 中直接注入 `QInputMethodEvent` 的测试使用 `muffin_add_test(... SYNTHETIC_IME)`，额外注册的测试变体使用 `muffin_isolate_synthetic_ime(...)`。它们在自己的子进程中将 `QT_IM_MODULES` 和 `QT_IM_MODULE` 都设为一个不存在的测试插件名，防止桌面输入法的异步回复取消测试构造的预编辑状态。仅设置 `offscreen` 不足以隔离输入法；Qt 仍会加载环境变量请求的 IBus/Fcitx 插件。真实输入法探针与发布检查继续连接真实服务，应用的输入法环境不受影响。
+
 不会将探针、输入法服务、测试配置或测试词库放入发布包。Wayland 原生候选框、多显示器缩放及不同发行版桌面仍需在相应环境实测。

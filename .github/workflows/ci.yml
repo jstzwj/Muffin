@@ -7,6 +7,19 @@ on:
   pull_request:
 
 jobs:
+  browser-golden-contracts:
+    name: Browser golden capture
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:golden-capture
+
   release-tooling:
     name: Release publication contracts
     runs-on: ubuntu-latest

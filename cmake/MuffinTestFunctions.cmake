@@ -7,7 +7,7 @@
 #
 #   muffin_add_test(NAME <target> SOURCE <cpp> LINK <lib>
 #                   [EXTRA_SOURCES <src>...] [EXTRA_LINK <lib>...] [FIXTURE <rel-path>]
-#                   [RESOURCE_LOCK] [DISABLED_ON APPLE ...])
+#                   [RESOURCE_LOCK] [SYNTHETIC_IME] [DISABLED_ON APPLE ...])
 #
 # ENVIRONMENT_MODIFICATION is always applied from MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS (built in
 # the top-level CMakeLists.txt). RESOURCE_LOCK is an explicit opt-in flag rather than something
@@ -57,8 +57,18 @@ function(muffin_freshness_link_closure out_var)
   set(${out_var} "${accumulator}" PARENT_SCOPE)
 endfunction()
 
+function(muffin_isolate_synthetic_ime)
+  # These tests inject QInputMethodEvent themselves. Even Qt's offscreen
+  # platform loads the desktop's requested IBus/Fcitx plugin, whose delayed
+  # replies can cancel a synthetic composition. Scope isolation to these
+  # tests; the native input-method probe must still use the real service.
+  set_property(TEST ${ARGN} APPEND PROPERTY ENVIRONMENT_MODIFICATION
+    "QT_IM_MODULES=set:muffin-test-no-platform-ime"
+    "QT_IM_MODULE=set:muffin-test-no-platform-ime")
+endfunction()
+
 function(muffin_add_test)
-  set(options RESOURCE_LOCK)
+  set(options RESOURCE_LOCK SYNTHETIC_IME)
   set(oneValueArgs NAME SOURCE LINK FIXTURE)
   set(multiValueArgs EXTRA_SOURCES EXTRA_LINK DISABLED_ON)
   cmake_parse_arguments(MUFFIN_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -90,6 +100,10 @@ function(muffin_add_test)
   else()
     set_tests_properties(${MUFFIN_TEST_NAME} PROPERTIES
         ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS}")
+  endif()
+
+  if(MUFFIN_TEST_SYNTHETIC_IME)
+    muffin_isolate_synthetic_ime(${MUFFIN_TEST_NAME})
   endif()
 
   if(APPLE AND "APPLE" IN_LIST MUFFIN_TEST_DISABLED_ON)

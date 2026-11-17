@@ -3,11 +3,18 @@ import path from "node:path";
 import os from "node:os";
 import {createRequire} from "node:module";
 import {fileURLToPath, pathToFileURL} from "node:url";
+import {captureElementInk, scanInkBBox} from "./browser_ink_capture.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
-const fixturePath = process.argv[2] ? path.resolve(process.argv[2]) : path.join(repoRoot, "tests", "fixtures", "math", "core.json");
-const outputDir = process.argv[3] ? path.resolve(process.argv[3]) : path.join(repoRoot, "tests", "golden", "katex");
+const args = process.argv.slice(2);
+const bboxOnly = args.includes("--bbox-only");
+const positional = args.filter(arg => arg !== "--bbox-only");
+if (positional.length > 2 || positional.some(arg => arg.startsWith("--"))) {
+  throw new Error("Usage: node scripts/generate_katex_golden.mjs [fixtures.json] [output-dir] [--bbox-only]");
+}
+const fixturePath = positional[0] ? path.resolve(positional[0]) : path.join(repoRoot, "tests", "fixtures", "math", "core.json");
+const outputDir = positional[1] ? path.resolve(positional[1]) : path.join(repoRoot, "tests", "golden", "katex");
 const vendorKatexRoot = path.join(repoRoot, "tests", "vendor", "katex");
 const katexRoot = process.env.KATEX_ROOT || "D:\\github\\KaTeX";
 
@@ -37,40 +44,6 @@ const round = value => {
     return undefined;
   }
   return Number(value.toFixed(6));
-};
-
-const scanInkBBox = async buffer => {
-  const {PNG} = await import("pngjs");
-  const png = PNG.sync.read(buffer);
-  let left = png.width;
-  let top = png.height;
-  let right = -1;
-  let bottom = -1;
-  for (let y = 0; y < png.height; ++y) {
-    for (let x = 0; x < png.width; ++x) {
-      const i = (png.width * y + x) << 2;
-      const alpha = png.data[i + 3];
-      const r = png.data[i];
-      const g = png.data[i + 1];
-      const b = png.data[i + 2];
-      if (alpha === 0 || (r > 248 && g > 248 && b > 248)) {
-        continue;
-      }
-      left = Math.min(left, x);
-      top = Math.min(top, y);
-      right = Math.max(right, x);
-      bottom = Math.max(bottom, y);
-    }
-  }
-  if (right < left || bottom < top) {
-    return null;
-  }
-  return {
-    x: left,
-    y: top,
-    width: right - left + 1,
-    height: bottom - top + 1
-  };
 };
 
 const parseEm = value => {
@@ -342,7 +315,19 @@ const writeScreenshots = async () => {
   const htmlPath = path.join(os.tmpdir(), `muffin-katex-bbox-${process.pid}.html`);
   await fs.writeFile(htmlPath, html, "utf8");
 
-  const browser = await chromium.launch();
+  let browser;
+  try {
+    // Linux's default hinting snaps glyph advances and changes layout widths.
+    // Keep browser measurements in the same unhinted space as KaTeX metrics.
+    browser = await chromium.launch({args: ["--font-render-hinting=none"]});
+    return await writeBrowserMeasurements(browser, {htmlPath, katexJs, screenshotDist});
+  } finally {
+    await browser?.close();
+    await fs.rm(htmlPath, {force: true});
+  }
+};
+
+const writeBrowserMeasurements = async (browser, {htmlPath, katexJs, screenshotDist}) => {
   const page = await browser.newPage({viewport: {width: 1200, height: 800}, deviceScaleFactor: 1});
   await page.goto(pathToFileURL(htmlPath).href, {waitUntil: "load"});
   await page.addScriptTag({path: katexJs});
@@ -353,6 +338,7 @@ const writeScreenshots = async () => {
   for (const fixture of fixtures) {
     await page.evaluate(({tex, display, throwOnError, macros, errorColor}) => {
       const math = document.getElementById("math");
+      document.querySelector(".wrap").style.transform = "";
       math.innerHTML = "";
       katex.render(tex, math, {
         displayMode: display,
@@ -427,15 +413,11 @@ const writeScreenshots = async () => {
     if (browserMetrics.failedFonts.length > 0) {
       throw new Error(`KaTeX browser bbox font load failed for ${fixture.id}: ${JSON.stringify(browserMetrics.failedFonts)}`);
     }
-    const captureBox = {
-      x: Math.max(0, Math.floor(browserMetrics.bbox.x - 4)),
-      y: Math.max(0, Math.floor(browserMetrics.bbox.y - 4)),
-      width: Math.ceil(browserMetrics.bbox.width + 8),
-      height: Math.ceil(browserMetrics.bbox.height + 8)
-    };
-    const screenshotBuffer = await page.screenshot({clip: captureBox});
-    const inkBBox = await scanInkBBox(screenshotBuffer);
-    const glyphMetrics = await page.evaluate(() => {
+    const {inkBBox} = await captureElementInk(page, {
+      target: ".katex-html, .katex-error",
+      stage: ".wrap"
+    });
+    const glyphMetrics = bboxOnly ? null : await page.evaluate(() => {
       const round = value => Number(value.toFixed(4));
       const math = document.getElementById("math");
       const katexRoot = math.querySelector(".katex");
@@ -512,7 +494,7 @@ const writeScreenshots = async () => {
       };
     });
     const glyphItems = [];
-    for (const item of glyphMetrics.items) {
+    for (const item of glyphMetrics?.items || []) {
       const resultItem = {
         kind: item.kind,
         text: item.text,
@@ -527,7 +509,12 @@ const writeScreenshots = async () => {
           width: Math.ceil(item.pageRect.width + padding * 2),
           height: Math.ceil(item.pageRect.height + padding * 2)
         };
-        const glyphScreenshot = await page.screenshot({clip});
+        let glyphScreenshot;
+        try {
+          glyphScreenshot = await page.screenshot({clip});
+        } catch (error) {
+          throw new Error(`Could not capture ${fixture.id} glyph ${JSON.stringify(item)} with clip ${JSON.stringify(clip)}`, {cause: error});
+        }
         const glyphInk = await scanInkBBox(glyphScreenshot);
         if (glyphInk) {
           resultItem.inkRect = {
@@ -544,7 +531,7 @@ const writeScreenshots = async () => {
       id: fixture.id,
       tex: fixture.tex,
       display: !!fixture.display,
-      source: screenshotDist,
+      source: path.relative(repoRoot, screenshotDist).split(path.sep).join("/"),
       rootFontPx: Number(browserMetrics.rootFontPx.toFixed(4)),
       error: !!browserMetrics.error,
       fontStatus: browserMetrics.fontStatus,
@@ -553,7 +540,7 @@ const writeScreenshots = async () => {
       katexBBox: browserMetrics.katexBBox,
       displayBBox: browserMetrics.displayBBox
     });
-    glyphs.push({
+    if (!bboxOnly) glyphs.push({
       id: fixture.id,
       tex: fixture.tex,
       display: !!fixture.display,
@@ -564,16 +551,19 @@ const writeScreenshots = async () => {
   }
 
   await fs.writeFile(path.join(outputDir, "bbox.json"), `${JSON.stringify(bboxes, null, 2)}\n`, "utf8");
-  await fs.writeFile(path.join(outputDir, "glyphs.json"), `${JSON.stringify(glyphs, null, 2)}\n`, "utf8");
-  await browser.close();
+  if (!bboxOnly) {
+    await fs.writeFile(path.join(outputDir, "glyphs.json"), `${JSON.stringify(glyphs, null, 2)}\n`, "utf8");
+  }
   return bboxes.length;
 };
 
-const metricsCount = await writeInternalMetrics();
+const metricsCount = bboxOnly ? 0 : await writeInternalMetrics();
 const screenshotCount = await writeScreenshots();
 
-console.log(`Wrote ${metricsCount} KaTeX internal builder metrics to ${path.join(outputDir, "metrics.json")}`);
+if (!bboxOnly) console.log(`Wrote ${metricsCount} KaTeX internal builder metrics to ${path.join(outputDir, "metrics.json")}`);
 if (screenshotCount > 0) {
   console.log(`Wrote ${screenshotCount} KaTeX browser bboxes to ${path.join(outputDir, "bbox.json")}`);
-  console.log(`Wrote ${screenshotCount} KaTeX browser glyph boxes to ${path.join(outputDir, "glyphs.json")}`);
+  if (!bboxOnly) console.log(`Wrote ${screenshotCount} KaTeX browser glyph boxes to ${path.join(outputDir, "glyphs.json")}`);
+} else if (bboxOnly) {
+  throw new Error("No browser bboxes were generated; install Playwright and its Chromium browser.");
 }

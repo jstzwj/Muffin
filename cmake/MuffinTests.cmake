@@ -425,14 +425,14 @@ muffin_add_test(NAME MuffinImageDecoderTest          SOURCE tests/image/ImageDec
 muffin_add_test(NAME MuffinEditorViewProjectionSourceTest SOURCE tests/render/EditorViewProjectionSourceTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewProjectionMappingTest SOURCE tests/render/EditorViewProjectionMappingTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorViewHitTestTest    SOURCE tests/render/EditorViewHitTestTest.cpp    LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinLiteralEditingGeometryTest SOURCE tests/render/LiteralEditingGeometryTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+muffin_add_test(NAME MuffinLiteralEditingGeometryTest SOURCE tests/render/LiteralEditingGeometryTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK SYNTHETIC_IME)
 set_property(TEST MuffinLiteralEditingGeometryTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "MUFFIN_TEXT_LAYOUT_BACKEND=set:native")
 add_test(NAME MuffinFractionalLiteralEditingGeometryTest COMMAND $<TARGET_FILE:MuffinLiteralEditingGeometryTest>)
 set_tests_properties(MuffinFractionalLiteralEditingGeometryTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional"
   RESOURCE_LOCK MuffinQtGui)
 muffin_add_test(NAME MuffinEditorViewTaskCheckboxTest SOURCE tests/render/EditorViewTaskCheckboxTest.cpp LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinEditorViewSelectionTest  SOURCE tests/render/EditorViewSelectionTest.cpp  LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinEditorViewSelectionTest  SOURCE tests/render/EditorViewSelectionTest.cpp  LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 muffin_add_test(NAME MuffinEditorViewLayoutTest     SOURCE tests/render/EditorViewLayoutTest.cpp     LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinViewportResizeTest SOURCE tests/render/ViewportResizeTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinCssPaintInteractionTest SOURCE tests/render/CssPaintInteractionTest.cpp LINK MuffinUi RESOURCE_LOCK)
@@ -452,11 +452,11 @@ muffin_add_test(NAME MuffinSourceLineHeightIndexTest   SOURCE tests/editor/Sourc
 muffin_add_test(NAME MuffinImageResizeTest             SOURCE tests/editor/ImageResizeTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorStyleClipboardTest    SOURCE tests/editor/EditorStyleClipboardTest.cpp    LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorCodeFenceSelectionTest SOURCE tests/editor/EditorCodeFenceSelectionTest.cpp LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinInputTextEditingTest        SOURCE tests/editor/InputTextEditingTest.cpp        LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputTextEditingTest        SOURCE tests/editor/InputTextEditingTest.cpp        LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 muffin_add_test(NAME MuffinInputParagraphTest          SOURCE tests/editor/InputParagraphTest.cpp          LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinInputUndoSelectionTest      SOURCE tests/editor/InputUndoSelectionTest.cpp      LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputUndoSelectionTest      SOURCE tests/editor/InputUndoSelectionTest.cpp      LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 muffin_add_test(NAME MuffinInputListTabTest            SOURCE tests/editor/InputListTabTest.cpp            LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinListEditingSequenceTest SOURCE tests/editor/ListEditingSequenceTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinListEditingSequenceTest SOURCE tests/editor/ListEditingSequenceTest.cpp LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 muffin_add_test(NAME MuffinInputIndentSizeTest         SOURCE tests/editor/InputIndentSizeTest.cpp         LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputMarkdownDefaultsTest   SOURCE tests/editor/InputMarkdownDefaultsTest.cpp   LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputShiftTabDedentTest     SOURCE tests/editor/InputShiftTabDedentTest.cpp     LINK MuffinUi RESOURCE_LOCK)
@@ -477,8 +477,8 @@ muffin_add_test(NAME MuffinInputWordNavTest            SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/InputPageNavTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinFocusEscapeTest             SOURCE tests/editor/FocusEscapeTest.cpp             LINK MuffinUi RESOURCE_LOCK)
-muffin_add_test(NAME MuffinInputMethodGeometryTest SOURCE tests/editor/InputMethodGeometryTest.cpp LINK MuffinUi EXTRA_LINK Qt6::Test RESOURCE_LOCK)
-muffin_add_test(NAME MuffinVirtualSourceEditTest       SOURCE tests/editor/VirtualSourceEditTest.cpp       LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinInputMethodGeometryTest SOURCE tests/editor/InputMethodGeometryTest.cpp LINK MuffinUi EXTRA_LINK Qt6::Test RESOURCE_LOCK SYNTHETIC_IME)
+muffin_add_test(NAME MuffinVirtualSourceEditTest       SOURCE tests/editor/VirtualSourceEditTest.cpp       LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 target_link_libraries(MuffinVirtualSourceEditTest PRIVATE Qt6::Test)
 # Offscreen's QPlatformDrag always returns IgnoreAction. Minimal runs Qt's
 # real drag loop so selection gestures and drop/cancel events can be exercised.
@@ -520,7 +520,7 @@ muffin_add_test(NAME MuffinCodeFenceScrollControllerTest SOURCE tests/blocks/Cod
 muffin_add_test(NAME MuffinMathBlockControllerTest SOURCE tests/blocks/MathBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinHtmlBlockControllerTest SOURCE tests/blocks/HtmlBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinBlockStructureTest SOURCE tests/document/BlockStructureTest.cpp LINK MuffinCore)
-muffin_add_test(NAME MuffinBlockHandleTest SOURCE tests/editor/BlockHandleTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+muffin_add_test(NAME MuffinBlockHandleTest SOURCE tests/editor/BlockHandleTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK SYNTHETIC_IME)
 foreach(_block_scale 1.25 1.5)
   add_test(NAME MuffinBlockHandleDpi${_block_scale} COMMAND $<TARGET_FILE:MuffinBlockHandleTest>)
   set_tests_properties(MuffinBlockHandleDpi${_block_scale} PROPERTIES
@@ -549,7 +549,7 @@ list(FILTER _tab_test_app_sources INCLUDE REGEX "^src/app/.*\\.(cpp|h)$")
 muffin_add_test(NAME MuffinDocumentTabsTest SOURCE tests/app/DocumentTabsTest.cpp LINK MuffinUi
   EXTRA_LINK Qt6::Test Qt6::Svg Qt6::PrintSupport Qt6::Concurrent
   EXTRA_SOURCES ${_tab_test_app_sources} tests/app/WindowsUpdateTest.cpp tests/app/SplitViewTest.cpp src/icons.qrc src/translations.qrc ${MUFFIN_THEMES_QRC} ${MUFFIN_HELP_QRC} ${MUFFIN_EMOJI_QRC}
-  RESOURCE_LOCK)
+  RESOURCE_LOCK SYNTHETIC_IME)
 if(WIN32)
   target_link_libraries(MuffinDocumentTabsTest PRIVATE bcrypt msi.lib)
 endif()
@@ -572,6 +572,11 @@ set_tests_properties(MuffinSplitViewTest PROPERTIES
 set_tests_properties(MuffinLazySessionViewTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal;MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional"
   RESOURCE_LOCK MuffinQtGui)
+
+muffin_isolate_synthetic_ime(
+  MuffinFractionalLiteralEditingGeometryTest MuffinSourceSelectionDragTest
+  MuffinBlockHandleDpi1.25 MuffinBlockHandleDpi1.5 MuffinLazyBlockHandleTest
+  MuffinLazySessionViewTest MuffinSplitViewTest)
 
 # Manual native-window benchmark. It exercises the actual app bindings but is
 # excluded from normal builds/CTest: desktop exposure and latency are diagnostic.

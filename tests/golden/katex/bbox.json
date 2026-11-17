@@ -3,7 +3,7 @@
     "id": "inline-energy",
     "tex": "E=mc^2",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -15,9 +15,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 4,
+      "y": 8,
       "width": 74,
-      "height": 18
+      "height": 17
     },
     "katexBBox": {
       "x": 24,
@@ -31,7 +31,7 @@
     "id": "inline-scripts-spacing",
     "tex": "a_1+b_1=c_1",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -59,7 +59,7 @@
     "id": "text-fraction",
     "tex": "\\frac{1}{3}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -71,9 +71,9 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 3,
-      "width": 7,
-      "height": 26
+      "y": 7,
+      "width": 8,
+      "height": 25
     },
     "katexBBox": {
       "x": 24,
@@ -87,7 +87,7 @@
     "id": "display-integral-fraction",
     "tex": "\\int_0^1 x^2\\,dx=\\frac{1}{3}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -99,9 +99,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
-      "width": 111,
-      "height": 50
+      "y": 8,
+      "width": 112,
+      "height": 49
     },
     "katexBBox": {
       "x": 24,
@@ -120,7 +120,7 @@
     "id": "top-level-cr",
     "tex": "a^2+b^2=c^2\\\\e^{i\\pi}+1=0",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -132,9 +132,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
+      "y": 7,
       "width": 99,
-      "height": 44
+      "height": 43
     },
     "katexBBox": {
       "x": 24,
@@ -153,7 +153,7 @@
     "id": "aligned-basic",
     "tex": "\\begin{aligned}a&=b\\\\c&=d\\end{aligned}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -165,7 +165,7 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 6,
+      "y": 7,
       "width": 47,
       "height": 44
     },
@@ -186,7 +186,7 @@
     "id": "gathered-basic",
     "tex": "\\begin{gathered}x+y\\\\z\\end{gathered}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -200,7 +200,7 @@
       "x": 4,
       "y": 9,
       "width": 45,
-      "height": 41
+      "height": 42
     },
     "katexBBox": {
       "x": 24,
@@ -219,7 +219,7 @@
     "id": "cases-basic",
     "tex": "\\begin{cases}x^2,&x>0\\\\0,&x=0\\end{cases}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -231,9 +231,9 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 4,
-      "width": 103,
-      "height": 58
+      "y": 5,
+      "width": 104,
+      "height": 59
     },
     "katexBBox": {
       "x": 24,
@@ -252,7 +252,7 @@
     "id": "pmatrix-basic",
     "tex": "\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -264,9 +264,9 @@
     },
     "inkBBox": {
       "x": 7,
-      "y": 4,
+      "y": 5,
       "width": 62,
-      "height": 46
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -285,21 +285,21 @@
     "id": "array-hline",
     "tex": "\\begin{array}{|c:rl@{}c|}\\hline\\hdashline a&b&c&d\\cr e&f&g&h\\\\[0.4em]\\hline\\end{array}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 16,
     "error": true,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 24,
-      "width": 685.7344,
-      "height": 21
+      "width": 600.1719,
+      "height": 18
     },
     "inkBBox": {
       "x": 3,
-      "y": 8,
-      "width": 687,
-      "height": 17
+      "y": 6,
+      "width": 600,
+      "height": 16
     },
     "katexBBox": null,
     "displayBBox": null
@@ -308,7 +308,7 @@
     "id": "sqrt-simple",
     "tex": "\\sqrt{x}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -336,7 +336,7 @@
     "id": "sqrt-indexed",
     "tex": "\\sqrt[3]{\\frac{a}{b}}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -347,8 +347,8 @@
       "height": 47.2344
     },
     "inkBBox": {
-      "x": 5,
-      "y": 4,
+      "x": 6,
+      "y": 5,
       "width": 33,
       "height": 45
     },
@@ -369,7 +369,7 @@
     "id": "sum-limits",
     "tex": "\\sum_{i=1}^{n} i",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -381,9 +381,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 5,
+      "y": 11,
       "width": 38,
-      "height": 55
+      "height": 54
     },
     "katexBBox": {
       "x": 24,
@@ -402,32 +402,32 @@
     "id": "lim-limits",
     "tex": "\\lim_{x\\to0}\\frac{\\sin x}{x}=1",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 40,
-      "width": 109.5469,
+      "width": 109.5313,
       "height": 39.9063
     },
     "inkBBox": {
-      "x": 4,
-      "y": 4,
-      "width": 109,
+      "x": 3,
+      "y": 9,
+      "width": 110,
       "height": 40
     },
     "katexBBox": {
       "x": 24,
       "y": 40,
-      "width": 109.5469,
+      "width": 109.5313,
       "height": 39.9063
     },
     "displayBBox": {
       "x": 24,
       "y": 40,
-      "width": 109.5469,
+      "width": 109.5313,
       "height": 39.9063
     }
   },
@@ -435,7 +435,7 @@
     "id": "left-right-tall",
     "tex": "\\left(\\frac{\\frac{a}{b}}{\\frac{c}{d}}\\right)",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -447,9 +447,9 @@
     },
     "inkBBox": {
       "x": 7,
-      "y": 3,
+      "y": 10,
       "width": 39,
-      "height": 50
+      "height": 49
     },
     "katexBBox": {
       "x": 24,
@@ -468,7 +468,7 @@
     "id": "wide-accent",
     "tex": "\\widehat{abcdef}+\\widetilde{abcdef}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -501,7 +501,7 @@
     "id": "horiz-brace",
     "tex": "\\underbrace{x+y}_{n}+\\overbrace{a+b}^{m}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -513,9 +513,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
-      "width": 111,
-      "height": 64
+      "y": 11,
+      "width": 112,
+      "height": 63
     },
     "katexBBox": {
       "x": 24,
@@ -534,7 +534,7 @@
     "id": "genfrac-binom",
     "tex": "\\binom{n}{k}+{x\\atop y}+{p\\brace q}+{r\\brack s}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -546,9 +546,9 @@
     },
     "inkBBox": {
       "x": 7,
-      "y": 4,
-      "width": 188,
-      "height": 46
+      "y": 7,
+      "width": 189,
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -567,7 +567,7 @@
     "id": "mclass-spacing",
     "tex": "\\mathrel{=}+\\mathbin{+}+\\mathinner{\\left(x\\right)}y",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -595,7 +595,7 @@
     "id": "color-text-font",
     "tex": "\\textcolor{red}{\\frac{1}{2}}+\\mathbf{B}+\\mathit{x}+\\text{hello}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -607,9 +607,9 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 3,
+      "y": 7,
       "width": 145,
-      "height": 25
+      "height": 24
     },
     "katexBBox": {
       "x": 24,
@@ -623,7 +623,7 @@
     "id": "supsub-both",
     "tex": "x_i^2+y_{n+1}^{m-1}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -635,9 +635,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
+      "y": 7,
       "width": 82,
-      "height": 25
+      "height": 23
     },
     "katexBBox": {
       "x": 24,
@@ -651,7 +651,7 @@
     "id": "nested-scripts",
     "tex": "a_{b_c}^{d^e}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -663,9 +663,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
+      "y": 7,
       "width": 22,
-      "height": 26
+      "height": 25
     },
     "katexBBox": {
       "x": 24,
@@ -679,7 +679,7 @@
     "id": "nested-fraction",
     "tex": "\\frac{\\frac{a}{b}}{c+\\frac{d}{e}}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -691,9 +691,9 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 3,
+      "y": 11,
       "width": 44,
-      "height": 51
+      "height": 50
     },
     "katexBBox": {
       "x": 24,
@@ -712,7 +712,7 @@
     "id": "sqrt-nested",
     "tex": "\\sqrt{1+\\sqrt{x}}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -724,7 +724,7 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 3,
+      "y": 5,
       "width": 78,
       "height": 24
     },
@@ -740,32 +740,32 @@
     "id": "integral-gaussian",
     "tex": "\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 40,
-      "width": 97.5156,
+      "width": 97.5,
       "height": 46.1563
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
-      "width": 97,
-      "height": 47
+      "y": 11,
+      "width": 98,
+      "height": 46
     },
     "katexBBox": {
       "x": 24,
       "y": 40,
-      "width": 97.5156,
+      "width": 97.5,
       "height": 46.1563
     },
     "displayBBox": {
       "x": 24,
       "y": 40,
-      "width": 97.5156,
+      "width": 97.5,
       "height": 46.1563
     }
   },
@@ -773,7 +773,7 @@
     "id": "prod-limits",
     "tex": "\\prod_{k=1}^{n} k",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -785,9 +785,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 5,
-      "width": 38,
-      "height": 55
+      "y": 11,
+      "width": 39,
+      "height": 54
     },
     "katexBBox": {
       "x": 24,
@@ -806,32 +806,32 @@
     "id": "operatorname-rank",
     "tex": "\\operatorname{rank}_A B+\\lim_{x\\to0}x",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 40,
-      "width": 134.3438,
+      "width": 134.3281,
       "height": 30.875
     },
     "inkBBox": {
-      "x": 4,
+      "x": 3,
       "y": 7,
-      "width": 134,
+      "width": 135,
       "height": 27
     },
     "katexBBox": {
       "x": 24,
       "y": 40,
-      "width": 134.3438,
+      "width": 134.3281,
       "height": 30.875
     },
     "displayBBox": {
       "x": 24,
       "y": 40,
-      "width": 134.3438,
+      "width": 134.3281,
       "height": 30.875
     }
   },
@@ -839,7 +839,7 @@
     "id": "norm-delimiters",
     "tex": "\\left\\lVert \\frac{x}{y}\\right\\rVert",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -851,7 +851,7 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 4,
+      "y": 7,
       "width": 32,
       "height": 46
     },
@@ -872,7 +872,7 @@
     "id": "big-delimiters",
     "tex": "\\Bigl(\\frac{a}{b}\\Bigr)+\\biggl[\\frac{c}{d}\\biggr]",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -883,10 +883,10 @@
       "height": 46.4531
     },
     "inkBBox": {
-      "x": 7,
-      "y": 4,
-      "width": 90,
-      "height": 46
+      "x": 6,
+      "y": 7,
+      "width": 91,
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -905,7 +905,7 @@
     "id": "array-simple",
     "tex": "\\begin{array}{cc}a&b\\\\c&d\\end{array}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -916,9 +916,9 @@
       "height": 46.4531
     },
     "inkBBox": {
-      "x": 14,
-      "y": 6,
-      "width": 40,
+      "x": 13,
+      "y": 7,
+      "width": 41,
       "height": 38
     },
     "katexBBox": {
@@ -938,7 +938,7 @@
     "id": "array-lines",
     "tex": "\\begin{array}{|c|r|}\\hline a&b\\\\\\hline c&d\\\\\\hline\\end{array}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -949,8 +949,8 @@
       "height": 47.2344
     },
     "inkBBox": {
-      "x": 4,
-      "y": 4,
+      "x": 5,
+      "y": 6,
       "width": 63,
       "height": 47
     },
@@ -971,7 +971,7 @@
     "id": "smallmatrix-basic",
     "tex": "\\begin{smallmatrix}1&2\\\\3&4\\end{smallmatrix}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -982,10 +982,10 @@
       "height": 22
     },
     "inkBBox": {
-      "x": 4,
-      "y": 3,
-      "width": 22,
-      "height": 23
+      "x": 3,
+      "y": 8,
+      "width": 23,
+      "height": 22
     },
     "katexBBox": {
       "x": 24,
@@ -999,26 +999,26 @@
     "id": "text-fraction-words",
     "tex": "\\text{rate}=\\frac{\\text{distance}}{\\text{time}}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 24.0313,
-      "width": 112.1094,
+      "width": 112.0938,
       "height": 22
     },
     "inkBBox": {
-      "x": 4,
-      "y": 3,
-      "width": 110,
+      "x": 3,
+      "y": 6,
+      "width": 111,
       "height": 26
     },
     "katexBBox": {
       "x": 24,
       "y": 24.0313,
-      "width": 112.1094,
+      "width": 112.0938,
       "height": 22
     },
     "displayBBox": null
@@ -1027,7 +1027,7 @@
     "id": "font-classes",
     "tex": "\\mathbb{R}+\\mathcal{F}+\\mathfrak{g}+\\mathtt{x}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1038,10 +1038,10 @@
       "height": 22
     },
     "inkBBox": {
-      "x": 4,
-      "y": 8,
-      "width": 121,
-      "height": 17
+      "x": 3,
+      "y": 9,
+      "width": 122,
+      "height": 18
     },
     "katexBBox": {
       "x": 24,
@@ -1055,7 +1055,7 @@
     "id": "accent-basic",
     "tex": "\\hat{x}+\\bar{y}+\\vec{z}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1083,7 +1083,7 @@
     "id": "wide-accent-long",
     "tex": "\\widehat{xyzuvw}+\\widetilde{abcdef}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1116,7 +1116,7 @@
     "id": "line-accent",
     "tex": "\\overline{x+y}+\\underline{a+b}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1129,7 +1129,7 @@
     "inkBBox": {
       "x": 4,
       "y": 6,
-      "width": 111,
+      "width": 112,
       "height": 20
     },
     "katexBBox": {
@@ -1149,7 +1149,7 @@
     "id": "brace-long",
     "tex": "\\underbrace{x+\\cdots+x}_{n}+\\overbrace{1+\\cdots+1}^{m}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1161,9 +1161,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
+      "y": 11,
       "width": 205,
-      "height": 61
+      "height": 60
     },
     "katexBBox": {
       "x": 24,
@@ -1182,7 +1182,7 @@
     "id": "binom-choose",
     "tex": "\\binom{n}{k}={n\\choose k}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1194,9 +1194,9 @@
     },
     "inkBBox": {
       "x": 7,
-      "y": 4,
+      "y": 7,
       "width": 100,
-      "height": 46
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -1215,7 +1215,7 @@
     "id": "genfrac-brackets",
     "tex": "\\genfrac{[}{]}{0.08em}{0}{a}{b}+\\genfrac{\\{}{}{0pt}{}{x}{y}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1227,9 +1227,9 @@
     },
     "inkBBox": {
       "x": 8,
-      "y": 4,
+      "y": 7,
       "width": 76,
-      "height": 46
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -1248,7 +1248,7 @@
     "id": "spacing-commands",
     "tex": "a\\,b\\;c\\quad d\\!e",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1276,7 +1276,7 @@
     "id": "phantom-family",
     "tex": "a+\\phantom{bbb}+c+\\hphantom{xx}+\\vphantom{\\frac{1}{2}}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1288,9 +1288,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 10,
-      "width": 155,
-      "height": 13
+      "y": 12,
+      "width": 156,
+      "height": 14
     },
     "katexBBox": {
       "x": 24,
@@ -1304,7 +1304,7 @@
     "id": "lap-family",
     "tex": "\\mathllap{a}b+\\mathrlap{c}d+\\mathclap{e}f",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1315,9 +1315,9 @@
       "height": 22
     },
     "inkBBox": {
-      "x": 0,
+      "x": 4,
       "y": 7,
-      "width": 81,
+      "width": 88,
       "height": 18
     },
     "katexBBox": {
@@ -1332,7 +1332,7 @@
     "id": "raisebox-vcenter",
     "tex": "\\raisebox{0.2em}{x}+\\vcenter{\\frac{a}{b}}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1344,9 +1344,9 @@
     },
     "inkBBox": {
       "x": 3,
-      "y": 5,
+      "y": 11,
       "width": 36,
-      "height": 22
+      "height": 21
     },
     "katexBBox": {
       "x": 24,
@@ -1360,7 +1360,7 @@
     "id": "enclose-family",
     "tex": "\\cancel{x}+\\bcancel{y}+\\boxed{z}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1388,7 +1388,7 @@
     "id": "macro-high-frequency",
     "tex": "\\pmod{n}+\\bmod x+\\iff+\\implies+\\impliedby+\\And+\\alef",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1399,9 +1399,9 @@
       "height": 22
     },
     "inkBBox": {
-      "x": 14,
+      "x": 13,
       "y": 6,
-      "width": 415,
+      "width": 417,
       "height": 20
     },
     "katexBBox": {
@@ -1416,7 +1416,7 @@
     "id": "style-switches",
     "tex": "\\scriptstyle \\frac{a}{b}+\\displaystyle \\sum_{i=1}^{n}i",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1427,10 +1427,10 @@
       "height": 56.7031
     },
     "inkBBox": {
-      "x": 6,
-      "y": 5,
-      "width": 61,
-      "height": 55
+      "x": 5,
+      "y": 11,
+      "width": 63,
+      "height": 54
     },
     "katexBBox": {
       "x": 24,
@@ -1449,7 +1449,7 @@
     "id": "left-right-braces",
     "tex": "\\left\\{\\begin{array}{cc}a&b\\\\c&d\\end{array}\\right\\}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1461,9 +1461,9 @@
     },
     "inkBBox": {
       "x": 6,
-      "y": 4,
+      "y": 5,
       "width": 84,
-      "height": 46
+      "height": 47
     },
     "katexBBox": {
       "x": 24,
@@ -1482,26 +1482,26 @@
     "id": "greek-relations",
     "tex": "\\alpha+\\beta=\\gamma,\\quad x\\le y\\ne z\\to w",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 24,
-      "width": 240.2344,
+      "width": 240.2188,
       "height": 22
     },
     "inkBBox": {
       "x": 4,
       "y": 7,
       "width": 240,
-      "height": 18
+      "height": 19
     },
     "katexBBox": {
       "x": 24,
       "y": 24,
-      "width": 240.2344,
+      "width": 240.2188,
       "height": 22
     },
     "displayBBox": null
@@ -1510,26 +1510,26 @@
     "id": "script-fraction-mix",
     "tex": "A_{i,j}^{k+1}+\\frac{x_i^2+y_i^2}{z_i}",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 28.9531,
-      "width": 105.6094,
+      "width": 105.5938,
       "height": 22
     },
     "inkBBox": {
       "x": 4,
-      "y": 0,
+      "y": 6,
       "width": 103,
-      "height": 30
+      "height": 32
     },
     "katexBBox": {
       "x": 24,
       "y": 28.9531,
-      "width": 105.6094,
+      "width": 105.5938,
       "height": 22
     },
     "displayBBox": null
@@ -1538,32 +1538,32 @@
     "id": "display-bigops-chain",
     "tex": "\\sum_{i=1}^{n} i^2+\\prod_{j=1}^{m} j+\\lim_{x\\to0}\\frac{\\sin x}{x}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 40,
-      "width": 204.0156,
+      "width": 204,
       "height": 59.3281
     },
     "inkBBox": {
       "x": 4,
-      "y": 5,
+      "y": 11,
       "width": 202,
-      "height": 57
+      "height": 56
     },
     "katexBBox": {
       "x": 24,
       "y": 40,
-      "width": 204.0156,
+      "width": 204,
       "height": 59.3281
     },
     "displayBBox": {
       "x": 24,
       "y": 40,
-      "width": 204.0156,
+      "width": 204,
       "height": 59.3281
     }
   },
@@ -1571,7 +1571,7 @@
     "id": "matrix-delimiter-fraction",
     "tex": "\\left[\\begin{matrix}\\frac{a}{b}&c^2\\\\d&e_f\\end{matrix}\\right]",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1583,7 +1583,7 @@
     },
     "inkBBox": {
       "x": 8,
-      "y": 3,
+      "y": 8,
       "width": 62,
       "height": 47
     },
@@ -1604,32 +1604,32 @@
     "id": "cases-text-complex",
     "tex": "f(x)=\\begin{cases}\\frac{x^2-1}{x-1},&x\\ne1\\\\2,&x=1\\end{cases}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
     "bbox": {
       "x": 24,
       "y": 40,
-      "width": 188.2969,
+      "width": 188.2813,
       "height": 58.0781
     },
     "inkBBox": {
       "x": 4,
-      "y": 4,
-      "width": 185,
-      "height": 58
+      "y": 6,
+      "width": 186,
+      "height": 59
     },
     "katexBBox": {
       "x": 24,
       "y": 40,
-      "width": 188.2969,
+      "width": 188.2813,
       "height": 58.0781
     },
     "displayBBox": {
       "x": 24,
       "y": 40,
-      "width": 188.2969,
+      "width": 188.2813,
       "height": 58.0781
     }
   },
@@ -1637,7 +1637,7 @@
     "id": "accent-sqrt-delim",
     "tex": "\\left|\\widehat{xy}+\\sqrt{a_b^2+c_d^2}\\right|",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1670,7 +1670,7 @@
     "id": "font-text-operators",
     "tex": "\\mathbf{F}_{\\text{net}}=m\\mathbf{a},\\quad \\operatorname{tr}(A^TB)",
     "display": false,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1682,8 +1682,8 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 4,
-      "width": 185,
+      "y": 7,
+      "width": 186,
       "height": 22
     },
     "katexBBox": {
@@ -1698,7 +1698,7 @@
     "id": "display-nested-integral-product-fraction",
     "tex": "\\int_0^1 x^2\\,dx = \\frac{1}{3}\\cdot\\frac{1}{\\frac{123}{\\sum_1^123}123}",
     "display": true,
-    "source": "C:\\Users\\jstzw\\Documents\\github\\Muffin\\tests\\vendor\\katex\\dist",
+    "source": "tests/vendor/katex/dist",
     "rootFontPx": 19.36,
     "error": false,
     "fontStatus": "loaded",
@@ -1710,9 +1710,9 @@
     },
     "inkBBox": {
       "x": 4,
-      "y": 3,
+      "y": 8,
       "width": 200,
-      "height": 58
+      "height": 57
     },
     "katexBBox": {
       "x": 24,
