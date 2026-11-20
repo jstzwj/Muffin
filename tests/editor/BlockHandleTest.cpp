@@ -22,16 +22,17 @@ static void require(bool condition, const char* message) {
     std::exit(1);
   }
 }
-static void waitFor(DocumentSession& session, const EditorView* view = nullptr) {
+static void waitFor(const DocumentSession& session, const EditorView& view) {
   QElapsedTimer timer;
   timer.start();
-  while ((session.isBatchPending() || (view && view->isLayoutPending())) && timer.elapsed() < 10000) {
+  do {
     QApplication::processEvents();
+    if (!session.isBatchPending() && !view.isLayoutPending())
+      return;
     QThread::msleep(1);
-  }
-  QApplication::processEvents();
+  } while (timer.elapsed() < 10000);
   require(!session.isBatchPending(), "block operation must finish");
-  require(!view || !view->isLayoutPending(), "block layout must finish");
+  require(!view.isLayoutPending(), "block layout must finish");
 }
 static void mouse(EditorView& view, QEvent::Type type, QPointF point, Qt::MouseButton button,
                   Qt::MouseButtons buttons) {
@@ -87,15 +88,15 @@ static void interactionAndHistory() {
   require(session.markdownText().toString() == original && !controller.canUndo(),
           "drag preview must not modify source or history");
   mouse(view, QEvent::MouseButtonRelease, drop, Qt::LeftButton, Qt::NoButton);
-  waitFor(session);
+  waitFor(session, view);
   const auto moved = session.markdownText().toString();
   require(moved == "Bravo\n\nCharlie\n\nAlpha\n\n", "dragging must move the selected complete block");
   controller.undo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == original && !controller.canUndo(),
           "one undo must restore exact source and history");
   controller.redo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == moved, "one redo must restore the moved block");
   require(!controller.performBlockAction(first, EditorController::BlockAction::Delete),
           "a stale menu target must not delete a new-generation block");
@@ -149,11 +150,11 @@ static void targetedActionsAndInsert() {
   controller.setCursorForSourceOffset(1);
   require(controller.performBlockAction(target, EditorController::BlockAction::Heading2),
           "targeted conversion must start");
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == "Keep\n\n## Target **bold**",
           "conversion must preserve inline Markdown and leave the other paragraph alone");
   controller.undo();
-  waitFor(session);
+  waitFor(session, view);
   target = controller.blockTarget(session.document().root().children().back()->id());
   require(controller.performBlockAction(target, EditorController::BlockAction::InsertAfter),
           "insert below must create an editable paragraph");
@@ -186,11 +187,11 @@ static void nestedContainersAndAutoScroll() {
   require(view.blockHandleTarget().id == container.id,
           "hover inside nested HTML must target its complete outer container");
   require(controller.moveBlock(container, list, true), "moving a nested HTML container must start");
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString().startsWith("- Parent\n  - Child\n\n" + html),
           "moving containers must preserve lists and complete paired HTML");
   controller.undo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == original, "undo must restore complex container source exactly");
   const auto fresh = controller.blockTarget(session.document().root().children().front()->id());
   const auto top = view.mapDocumentToViewport(view.blockLayoutForNode(fresh.id)->rect().topLeft() + QPointF(30, 8));
@@ -255,7 +256,7 @@ static void headingGutterOwnership() {
       const QString source = QString(level, u'#') + QStringLiteral(" A heading\n\nBody");
       session.setMarkdownText(source, false);
       view.setDocument(session.document());
-      waitFor(session, &view);
+      waitFor(session, view);
       const auto id = session.document().root().children().front()->id();
       const auto* block = view.blockLayoutForNode(id);
       require(block, "heading gutter fixture must have a live layout");
@@ -377,7 +378,7 @@ static void nestedListDragAndContinuousHistory() {
     mouse(view, QEvent::MouseButtonPress, handle, Qt::LeftButton, Qt::LeftButton);
     mouse(view, QEvent::MouseMove, drop, Qt::NoButton, Qt::LeftButton);
     mouse(view, QEvent::MouseButtonRelease, drop, Qt::LeftButton, Qt::NoButton);
-    waitFor(session, &view);
+    waitFor(session, view);
   };
   drag(findItem("Child B"), findItem("Child A"), false);
   const auto childrenMoved = session.markdownText().toString();
@@ -390,20 +391,20 @@ static void nestedListDragAndContinuousHistory() {
               parentMoved.indexOf("code") < parentMoved.indexOf("Child B"),
           "moving a parent must carry paragraphs, code and its reordered child list together");
   controller.undo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == childrenMoved, "one undo restores the complete parent move");
   controller.undo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == before,
           "second undo restores only the child move, retaining Chinese input");
   controller.redo();
-  waitFor(session);
+  waitFor(session, view);
   controller.redo();
-  waitFor(session);
+  waitFor(session, view);
   require(session.markdownText().toString() == parentMoved, "two redo operations restore nested reorder exactly");
   auto target = findItem("Bravo");
   require(controller.performBlockAction(target, EditorController::BlockAction::InsertAfter), "insert sibling starts");
-  waitFor(session);
+  waitFor(session, view);
   require(controller.inputController().insertText(QStringLiteral("新项目")), "typing into a new sibling must succeed");
   require(session.markdownText().toString().startsWith(QStringLiteral("- Bravo\n- 新项目\n- Charlie")),
           "inserting through the handle must retain list structure and target the new item");
@@ -420,29 +421,29 @@ static void eofLiteralContinuousHistory() {
   auto& document = session.document();
   require(controller.performBlockAction(document.blockStructure().targetAt(2), EditorController::BlockAction::MoveUp),
           "EOF code move must start");
-  waitFor(session, &view);
+  waitFor(session, view);
   const auto moved = session.markdownText().toString();
   require(moved == "Alpha\n\n```cpp\nint value;\n```\n\nBeta\n\n",
           "moving EOF code must close it before its new following block");
   require(
       controller.performBlockAction(document.blockStructure().targetAt(1), EditorController::BlockAction::Duplicate),
       "duplicating moved code must start");
-  waitFor(session, &view);
+  waitFor(session, view);
   const auto duplicated = session.markdownText().toString();
   int codeBlocks = 0;
   for (const auto& node : document.root().children())
     codeBlocks += node->type() == BlockType::CodeFence;
   require(codeBlocks == 2 && duplicated.count("int value;") == 2, "code copies must remain independent literal blocks");
   controller.undo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == moved, "undo duplication must retain the first move");
   controller.undo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == original, "undo move must remove its implicit closure too");
   controller.redo();
-  waitFor(session, &view);
+  waitFor(session, view);
   controller.redo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == duplicated, "redo sequence must restore both independent code blocks");
 
   session.setMarkdownText(original, false);
@@ -468,7 +469,7 @@ static void conversionContinuousHistory() {
   auto target = session.document().blockStructure().targetAt(1);
   require(controller.performBlockAction(target, EditorController::BlockAction::Paragraph),
           "heading demotion must start");
-  waitFor(session, &view);
+  waitFor(session, view);
   const auto paragraph = session.markdownText().toString();
   require(paragraph == "Before\n\n\\> **quoted**\n\nAfter" &&
               session.document().root().children()[1]->type() == BlockType::Paragraph,
@@ -476,19 +477,19 @@ static void conversionContinuousHistory() {
   target = session.document().blockStructure().targetAt(1);
   require(controller.performBlockAction(target, EditorController::BlockAction::BulletList),
           "paragraph to list must start");
-  waitFor(session, &view);
+  waitFor(session, view);
   const auto list = session.markdownText().toString();
   require(list == "Before\n\n- \\> **quoted**\n\nAfter", "list conversion must share the protected inline source");
   controller.undo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == paragraph, "undo list must return to a paragraph");
   controller.undo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == original, "undo demotion must restore original closing ATX hashes");
   controller.redo();
-  waitFor(session, &view);
+  waitFor(session, view);
   controller.redo();
-  waitFor(session, &view);
+  waitFor(session, view);
   require(session.markdownText().toString() == list, "redo conversions must reproduce exact protected source");
 }
 int main(int argc, char** argv) {
