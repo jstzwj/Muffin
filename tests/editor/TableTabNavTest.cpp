@@ -56,6 +56,26 @@ MarkdownNode* cellOfRow(MarkdownNode* table, int rowFromEnd, int column) {
   return row->children().at(static_cast<size_t>(column)).get();
 }
 
+void testEnterMovesDownWithoutRewritingTable() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  const QString source = QStringLiteral("one|two\n---|---\na\\|b|**value**\nc|d\n\nAfter");
+  setupTableDoc(session, controller, view, source);
+  auto* table = blockAt(session, 0);
+  activateCell(controller, view, table, cellOfRow(table, 1, 1), 1, 1);
+  require(pressKey(controller.inputController(), &view, Qt::Key_Return), "Enter in a body cell is handled");
+  require(controller.selection().cursorPosition().text.nodeId == cellOfRow(table, 0, 1)->id(),
+          "Enter moves to the same column on the next row");
+  require(!controller.undoStack().canUndo() && session.markdownText().toString() == source,
+          "moving through a table preserves raw Markdown and undo history");
+  require(pressKey(controller.inputController(), &view, Qt::Key_Return), "Enter on the last row is handled");
+  require(controller.inputController().insertText(QStringLiteral("new")), "type after the table");
+  QString expected = source;
+  expected.replace(QStringLiteral("\n\nAfter"), QStringLiteral("\n\nnew\n\nAfter"));
+  require(session.markdownText().toString() == expected, "typing below the table preserves its original formatting");
+}
+
 void testTabMovesToNextCell() {
   DocumentSession session;
   EditorController controller;
@@ -134,6 +154,7 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testEnterMovesDownWithoutRewritingTable);
   RUN_TEST(testTabMovesToNextCell);
   RUN_TEST(testBacktabMovesToPreviousCell);
   RUN_TEST(testBacktabAtFirstCellLeavesTable);

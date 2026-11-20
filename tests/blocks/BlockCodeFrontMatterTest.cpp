@@ -74,6 +74,9 @@ void testFrontMatterEnterEditsContentAndBlockAfterCreatesParagraph() {
             "enter after front matter block should create a paragraph boundary");
     require(session.markdownText().toString().startsWith(QStringLiteral("---\ntitle: 123\n213\n\n---\n\n\nBody")),
             "block-after enter should create an empty paragraph after front matter");
+    require(controller.inputController().insertText(QStringLiteral("new")), "type on the first body line");
+    require(session.markdownText().toString().endsWith(QStringLiteral("---\nnew\n\nBody")),
+            "the new body paragraph stays separate from both front matter and existing prose");
   }
 
   {

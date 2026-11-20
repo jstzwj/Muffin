@@ -214,7 +214,7 @@ bool RenderCommandFacade::insertParagraphBefore() {
 
 bool RenderCommandFacade::insertParagraphAfter() {
   return runCommand("insertParagraphAfter",
-                    [&] { return editorController_.paragraphController().insertParagraphAfter(); });
+                    [&] { return editorController_.inputController().insertBlockAfterCurrentBlock(); });
 }
 
 bool RenderCommandFacade::insertLinkReference() {

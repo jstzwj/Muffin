@@ -35,6 +35,8 @@ public:
   Command buildTextEdit(const BlockEditContext& context, Operation operation, QString text = {}) const;
   Command buildInsertBlockBefore(const BlockEditContext& context) const;
   Command buildInsertBlockAfter(const BlockEditContext& context) const;
+  static Command paragraphAfterBlock(const PieceTable& markdown, const MarkdownNode& block, QString text = {},
+                                     bool consumeEmptyCodeLine = false);
   Command buildSplitTextBlock(const BlockEditContext& context, qsizetype contentOffset) const;
   Command buildMergeWithPreviousParagraph(const BlockEditContext& context) const;
   Command buildMergeWithNextParagraph(const BlockEditContext& context) const;

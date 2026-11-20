@@ -886,12 +886,13 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Paragraph,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Insert Paragraph After"),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Return")),
+         .alternateShortcuts = {QKeySequence(QStringLiteral("Ctrl+Enter"))},
          .enabledInitial = false,
          .handler = [](MainWindow& window) { window.tab_->renderCommands.insertParagraphAfter(); },
          .enabled =
              [](const MainWindow& w) {
-               return editableParagraph(w) ||
-                      (!w.tab_->backend->isSourceMode() && w.tab_->renderCommands.canInsertParagraphAround());
+               return !w.tab_->backend->isSourceMode() && cursorPresent(w) && !selectionPresent(w);
              }},
         {.id = QStringLiteral("paragraph.link_ref"),
          .category = CommandCategory::Paragraph,
@@ -1028,8 +1029,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .category = CommandCategory::Table,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Insert Row Below"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Enter")),
-         .alternateShortcuts = {QKeySequence(QStringLiteral("Alt+Shift+Down"))},
+         .shortcut = QKeySequence(QStringLiteral("Alt+Shift+Down")),
          .handler = [](MainWindow& window) { window.tab_->renderCommands.insertRowAfter(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
         {.id = QStringLiteral("table.insert_column_before"),

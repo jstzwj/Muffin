@@ -7,6 +7,7 @@
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
 #include "editor/InlineSplit.h"
+#include "editor/TextBlockCommandBuilder.h"
 #include "editor/SelectionController.h"
 #include "edit/UndoStack.h"
 
@@ -773,17 +774,14 @@ bool ParagraphController::insertParagraphBefore() {
 }
 
 bool ParagraphController::insertParagraphAfter() {
-  BlockContext context;
-  if (!resolveInsertionContext(context)) {
+  if (!hasCollapsedBlockCursor() || !ctx_.session->isEditingAllowed())
     return false;
-  }
-
-  return applyBlockDelta(EditTransaction::Kind::SplitParagraph, QStringLiteral("Insert Paragraph After"),
-                         context.blockEnd, 0, QStringLiteral("\n\n"),
-                         // After inserting "\n\n" at the block end, the new empty paragraph's content
-                         // begins right after the two inserted newlines.
-                         context.blockEnd + 2,
-                         {LocalEditNodeHint{context.blockId, context.blockStart, context.blockType}}, true);
+  const auto* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  if (!node)
+    return false;
+  const auto command = TextBlockCommandBuilder::paragraphAfterBlock(ctx_.session->markdownText(), *node);
+  return command.valid && applyBlockDelta(command.kind, command.label, command.sourceStart, command.removedLength,
+                                          command.insertedText, command.fallbackSourceOffset, command.nodeHints, true);
 }
 
 // ---------------------------------------------------------------------------

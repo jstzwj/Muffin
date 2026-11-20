@@ -2006,6 +2006,67 @@ void configurableShortcuts() {
   }
 }
 
+void enterInStructuredBlocks() {
+  Fixture f;
+  const QString tail = QStringLiteral("\n\nFollowing paragraph\n\nDocument end");
+  int index = 0;
+  const auto check = [&](QString block, int count, Qt::Key key, Qt::KeyboardModifiers modifiers) {
+    const auto offset = block.indexOf(QLatin1Char('^'));
+    block.remove(offset, 1);
+    auto* tab = f.open(f.file(QStringLiteral("enter-%1.md").arg(++index), block + tail));
+    auto& editor = tab->editorController;
+    auto* first = tab->session.document().root().children().front().get();
+    if (first->type() == BlockType::Table) {
+      const auto* layout = tab->renderView->blockLayoutForNode(first->id());
+      require(layout && !layout->tableRows().empty(), "table has a rendered body");
+      const auto& cell = layout->tableRows().back().cells.back();
+      const auto rect = cell.text.cursorRectForSourceOffset(0).translated(cell.textOrigin());
+      QTest::mouseClick(tab->renderView->viewport(), Qt::LeftButton, Qt::NoModifier, rect.center().toPoint());
+      require(editor.tableController().currentCell().isValid(), "clicked inside the final cell");
+    } else {
+      editor.selection().setCursorPosition(editor.cursorForSourceOffset(offset));
+      if (first->type() == BlockType::CodeFence)
+        require(editor.codeFenceController().enterEditMode(), "activate code editor");
+    }
+    tab->renderView->setFocus();
+    QApplication::processEvents();
+    for (int i = 0; i < count; ++i)
+      QTest::keyClick(tab->renderView, key, modifiers);
+    const auto cursor = editor.selection().cursorPosition();
+    const auto* target = tab->session.document().node(cursor.blockId);
+    const auto* originalBlock = tab->session.document().root().children().front().get();
+    require(target && target->type() == BlockType::Paragraph && target == originalBlock->nextSibling() &&
+                cursor.text.textOffset == 0 && !cursor.afterBlock,
+            QStringLiteral("Enter must land in the paragraph immediately after [%1], got [%2]")
+                .arg(block, tab->session.markdownText().toString()));
+    QTest::keyClick(tab->renderView, Qt::Key_Z);
+    const QString typed = tab->session.markdownText().toString();
+    require(typed.endsWith(QStringLiteral("\n\nz") + tail), "typing lands before the following paragraph");
+    int steps = 0;
+    while (editor.undoStack().canUndo()) {
+      editor.undo();
+      ++steps;
+      require(steps <= count + 1, "each gesture should use at most one undo step");
+    }
+    require(tab->session.markdownText().toString() == block + tail, "undo must recover original Markdown");
+    for (int i = 0; i < steps; ++i)
+      editor.redo();
+    require(tab->session.markdownText().toString() == typed, "redo restores the block and the typed paragraph");
+  };
+  const QStringList blocks = {QStringLiteral("a|b\n---|---\nc|d^"),     QStringLiteral("- one\n- two^"),
+                              QStringLiteral("1. one\n2. two^"),        QStringLiteral("> one\n> two^"),
+                              QStringLiteral("```txt\none\ntwo^\n```"), QStringLiteral("    one\n    two^")};
+  for (const QString& block : blocks) {
+    check(block, 2, Qt::Key_Return, Qt::NoModifier);
+    check(block, 1, Qt::Key_Return, Qt::ControlModifier);
+    check(block, 1, Qt::Key_Enter, Qt::ControlModifier | Qt::KeypadModifier);
+  }
+  check(QStringLiteral("| a | b |\n|---|---|\n| c | ^ |"), 1, Qt::Key_Return, Qt::NoModifier);
+  check(QStringLiteral("- one\n\n- ^"), 1, Qt::Key_Return, Qt::NoModifier);
+  check(QStringLiteral("- o^ne\n  - two\n- three"), 1, Qt::Key_Return, Qt::ControlModifier);
+  check(QStringLiteral("> o^ne\n>\n> two"), 1, Qt::Key_Return, Qt::ControlModifier);
+}
+
 void shortcutCompatibilityAndTableRows() {
   Fixture f;
   auto& shortcuts = ShortcutSettings::instance();
@@ -2054,21 +2115,21 @@ void shortcutCompatibilityAndTableRows() {
   require(text() != original, "custom row shortcut executes");
   command("edit.undo")->trigger();
   shortcuts.clearOverride("table.insert_row_after");
-  require(command("table.insert_row_after")->shortcuts().size() == 2, "restoring defaults restores all aliases");
+  require(command("table.insert_row_after")->shortcut() == QKeySequence("Alt+Shift+Down"), "restore insert-row key");
 
   filter->setText("format.bold");
-  sequence->setKeySequence(QKeySequence("Alt+Shift+Down"));
+  sequence->setKeySequence(QKeySequence("Ctrl+Enter"));
   require(apply->text() == "Reassign", "preference conflict detection includes alternate keys");
   apply->click();
-  require(command("table.insert_row_after")->shortcuts().isEmpty(), "reassignment clears all keys of previous owner");
-  filter->setText("table.insert_row_after");
-  sequence->setKeySequence(QKeySequence("Ctrl+Enter"));
+  require(command("paragraph.insert_after")->shortcuts().isEmpty(), "reassignment clears all keys of previous owner");
+  filter->setText("paragraph.insert_after");
+  sequence->setKeySequence(QKeySequence("Ctrl+Return"));
   require(apply->text() == "Reassign", "restoring defaults checks conflicts against all restored aliases");
   apply->click();
-  require(command("format.bold")->shortcuts().isEmpty() && command("table.insert_row_after")->shortcuts().size() == 2,
+  require(command("format.bold")->shortcuts().isEmpty() && command("paragraph.insert_after")->shortcuts().size() == 2,
           "restoring defaults reassigns compatibility keys consistently");
   shortcuts.clearOverride("format.bold");
-  shortcuts.clearOverride("table.insert_row_after");
+  shortcuts.clearOverride("paragraph.insert_after");
 
   caret("two");
   QTest::keyClick(input, Qt::Key_Up, Qt::AltModifier | Qt::ShiftModifier);
@@ -5222,6 +5283,7 @@ int main(int argc, char** argv) {
     runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
     runTest("configurableShortcuts", configurableShortcuts);
     runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);
+    runTest("enterInStructuredBlocks", enterInStructuredBlocks);
     runTest("altShortcutsKeepEditorFocus", altShortcutsKeepEditorFocus);
     return 0;
   }
@@ -5309,6 +5371,7 @@ int main(int argc, char** argv) {
   runLockedEditingTests();
   runTest("configurableShortcuts", configurableShortcuts);
   runTest("shortcutCompatibilityAndTableRows", shortcutCompatibilityAndTableRows);
+  runTest("enterInStructuredBlocks", enterInStructuredBlocks);
   runTest("altShortcutsKeepEditorFocus", altShortcutsKeepEditorFocus);
   runTest("shortcutPreferencesFollowThemeAndConfirmReset", shortcutPreferencesFollowThemeAndConfirmReset);
   runTest("imeSelectionReplacementWorkflow", imeSelectionReplacementWorkflow);

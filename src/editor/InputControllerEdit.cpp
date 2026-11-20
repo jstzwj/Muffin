@@ -224,22 +224,6 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
   }
   if (ctx_.selection) {
     PerfTimer setSelectionTimer("input.applyLocalEdit.setSelection");
-    if (!nextCursor.isValid()) {
-      PerfTimer endOfDocTimer("input.applyLocalEdit.setSelection.endOfDocFallback");
-      nextCursor = cursorForSourceOffset(ctx_.session->markdownText().size());
-    }
-    if (!nextCursor.isValid()) {
-      // Even end-of-document resolution failed: the caret's block became a non-text top-level block
-      // (e.g. paragraph "--" + "-" → thematic break) and no text block resolves the offset. Land
-      // block-after the edited block so the caret stays resolvable and local. Without this the caret
-      // was cleared, which forced this edit onto the O(document) snapshot-undo path
-      // (collectPendingMarkerOffsets walks every paragraph) plus an O(document) selection-clear
-      // chain — ~49s on a 112k-block document. A valid, local caret keeps it on the cheap
-      // TextDeltaCommand path like any ordinary keystroke.
-      if (MarkdownNode* host = ctx_.session->document().topLevelBlockAtOffset(fallbackSourceOffset)) {
-        nextCursor = cursorForBlockAfter(*host, fallbackSourceOffset);
-      }
-    }
     {
       PerfTimer setCursorPosTimer("input.applyLocalEdit.setSelection.setCursorPos");
       ctx_.selection->setCursorPosition(nextCursor);
@@ -350,9 +334,6 @@ void InputController::applyEdit(EditTransaction::Kind kind, const QString& label
   }
   CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
   if (ctx_.selection) {
-    if (!nextCursor.isValid()) {
-      nextCursor = cursorForSourceOffset(ctx_.session->markdownText().size());
-    }
     ctx_.selection->setCursorPosition(nextCursor);
   }
   if (ctx_.undoStack) {

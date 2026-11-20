@@ -5,6 +5,7 @@
 #include <QLoggingCategory>
 #include <QSet>
 #include <algorithm>
+#include <iterator>
 #include <utility>
 
 #include "diagnostics/OpenPerformance.h"
@@ -365,10 +366,8 @@ MarkdownNode* MarkdownDocument::topLevelBlockAtOffset(qsizetype offset) const {
   // Children are in document order with non-decreasing byteEnd. Find the first block whose
   // byteEnd >= offset — the earliest block that could contain offset (earlier blocks end
   // before it). Binary-searching on byteEnd (rather than byteStart) preserves the previous
-  // linear "first containsByte(offset)" semantics exactly, including the shared-boundary
-  // tie (A.byteEnd == B.byteStart == offset resolves to the earlier block A) and the gap
-  // fallback (returns the last block when no block contains offset). O(log n) instead of
-  // O(blocks) — caret resolution hits this on every edit at large sizes (~250k blocks).
+  // linear "first containsByte(offset)" semantics exactly, including shared boundaries
+  // (A.byteEnd == B.byteStart == offset resolves to the earlier block A).
   auto it = std::lower_bound(
       children.begin(), children.end(), offset,
       [](const std::unique_ptr<MarkdownNode>& child, qsizetype off) { return child->sourceRange().byteEnd < off; });
@@ -386,10 +385,9 @@ MarkdownNode* MarkdownDocument::topLevelBlockAtOffset(qsizetype offset) const {
   if (firstContent != children.end() && offset < (*firstContent)->sourceRange().byteStart) {
     return children.front().get();
   }
-  // No block contains offset (gap, or offset past the last block's content) — preserve the
-  // historical fallback to the last top-level block (load-bearing for caret resolution
-  // after non-text blocks like ThematicBreak).
-  return children.back().get();
+  // A separator belongs to the block immediately before it. A caret in an
+  // interior gap must stay there even when more blocks follow it.
+  return it == children.begin() ? children.front().get() : std::prev(it)->get();
 }
 
 void MarkdownDocument::replaceRoot(std::unique_ptr<MarkdownNode> root) {

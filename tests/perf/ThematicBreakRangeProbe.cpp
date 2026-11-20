@@ -76,6 +76,9 @@ int main(int argc, char** argv) {
   require(ruleRange.byteEnd <= afterBlock->sourceRange().byteStart,
           "thematic break byteEnd must not reach into the trailing blank gap");
 
+  require(session.document().topLevelBlockAtOffset(ruleRange.byteEnd + 1) == rule,
+          "the separator before the first empty paragraph must resolve to the preceding rule");
+
   // Leading blank gap: topLevelBlockAtOffset must resolve offsets in the blank region BEFORE all
   // content to the first child, not the historical last-block fallback (a source caret in the
   // leading blanks used to scroll/render the document END). Leading VEPs are zero-width

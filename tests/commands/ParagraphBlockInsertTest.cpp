@@ -319,6 +319,22 @@ void testInsertParagraphAroundIndentedCodeWithPrecedingPara() {
   require(cursorBlock(session, selection) == blockAt(session, 2), "caret must land in the new paragraph after");
 }
 
+void testParagraphAfterUnclosedFence() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  ParagraphController paragraph;
+  wireParagraph(paragraph, session, selection, undoStack, brushQueue);
+  const QString source = QStringLiteral("~~~~lang\na\n~~~");
+  session.setMarkdownText(source, false);
+  setCursor(selection, blockAt(session, 0), 0);
+  require(paragraph.insertParagraphAfter(), "exit a fence which originally ran to EOF");
+  require(session.markdownText().toString() == source + QStringLiteral("\n~~~~\n\n"),
+          "close with the opening delimiter before adding the paragraph");
+  require(cursorBlock(session, selection) == blockAt(session, 1), "place caret outside the completed fence");
+}
+
 void testInsertParagraphAroundMathBlock() {
   DocumentSession session;
   SelectionController selection;
@@ -523,6 +539,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInsertParagraphAroundCodeBlock);
   RUN_TEST(testInsertParagraphAroundIndentedCode);
   RUN_TEST(testInsertParagraphAroundIndentedCodeWithPrecedingPara);
+  RUN_TEST(testParagraphAfterUnclosedFence);
   RUN_TEST(testInsertParagraphAroundMathBlock);
   RUN_TEST(testInsertIntoEmptyDocument);
   RUN_TEST(testToggleQuote);

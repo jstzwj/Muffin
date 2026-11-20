@@ -1,6 +1,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 
 #include "document/MarkdownNode.h"
+#include "document/BlockPredicates.h"
 #include "document/GraphemeDeletion.h"
 #include "document/NodeNavigation.h"
 #include "document/PendingBlockMarker.h"
@@ -446,6 +447,83 @@ TextBlockCommandBuilder::buildInsertBlockBefore(const BlockEditContext& context)
   command.structureEdit = separator != QStringLiteral("\n\n");
   command.valid = true;
   command.handled = true;
+  return command;
+}
+
+// Place a top-level paragraph between the containing block and its next sibling. The
+// caret is anchored to the second line break, exactly where the parser creates the
+// editable empty paragraph. Preserve the existing Markdown on both sides of the edit.
+TextBlockCommandBuilder::Command TextBlockCommandBuilder::paragraphAfterBlock(const PieceTable& markdown,
+                                                                              const MarkdownNode& block, QString text,
+                                                                              bool consumeEmptyCodeLine) {
+  Command command;
+  const auto& host = *block.topLevelBlock();
+  const auto range = host.sourceRange();
+  if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > markdown.size())
+    return command;
+
+  int lastLine = range.lineEnd;
+  const auto lineText = [&](int line) {
+    const auto start = markdown.lineStartOffset(line);
+    return markdown.mid(start, markdown.lineEndOffset(line) - start);
+  };
+  // cmark includes trailing blank lines in the source span of lists and indented code.
+  while (lastLine > range.lineStart && lineText(lastLine).trimmed().isEmpty())
+    --lastLine;
+  qsizetype end = markdown.lineEndOffset(lastLine);
+  if (end < 0)
+    return command;
+  qsizetype start = end;
+  QString prefix;
+  if (host.type() == BlockType::CodeFence && !host.isIndentedCode()) {
+    const auto opener = detectPendingBlockMarker(lineText(range.lineStart));
+    const auto last = detectPendingBlockMarker(lineText(lastLine));
+    const bool closed = lastLine > range.lineStart && !opener.closer.isEmpty() && last.opener == last.closer &&
+                        last.closer.startsWith(opener.closer);
+    if (!closed && !opener.closer.isEmpty()) {
+      // A fence may legally run to EOF. Close it before starting prose.
+      start = end = markdown.size();
+      prefix = (end && markdown.at(end - 1) != QLatin1Char('\n') ? QStringLiteral("\n") : QString()) + opener.closer;
+    } else if (closed && consumeEmptyCodeLine && lastLine > range.lineStart + 1) {
+      start = markdown.lineStartOffset(lastLine - 1);
+      const auto closer = markdown.lineStartOffset(lastLine);
+      prefix = markdown.mid(closer, end - closer);
+    }
+  }
+
+  // Keep the block's existing line ending (including CRLF) before our edit.
+  // The new paragraph then begins on an empty LF line, even in a CRLF gap.
+  const bool hasTerminator = end < markdown.size() && markdown.at(end) == QLatin1Char('\n');
+  if (hasTerminator) {
+    if (start == end)
+      ++start;
+    else
+      prefix += QLatin1Char('\n');
+    ++end;
+  }
+  command.sourceStart = start;
+  command.removedLength = end - start;
+  // The parser starts a fresh Markdown document after front matter. Its first
+  // empty paragraph starts on the first body line, without a leading separator.
+  const bool startsDocumentBody = host.type() == BlockType::FrontMatter;
+  if (!hasTerminator)
+    prefix += QLatin1Char('\n');
+  if (!startsDocumentBody && (text.isEmpty() || !isLiteralBlockType(host.type())))
+    prefix += QLatin1Char('\n');
+  command.insertedText = prefix + text;
+  command.fallbackSourceOffset = start + command.insertedText.size();
+  if (hasTerminator || (startsDocumentBody && text.isEmpty()))
+    command.insertedText += QLatin1Char('\n');
+  // If the next block started immediately after the original, give the new
+  // paragraph a blank separator so typing cannot merge the two.
+  if (const auto* following = host.nextSibling();
+      hasTerminator && following && following->sourceRange().lineStart == lastLine + 1)
+    command.insertedText += QLatin1Char('\n');
+  command.nodeHints.push_back({host.id(), range.byteStart, host.type()});
+  command.kind = EditTransaction::Kind::SplitParagraph;
+  command.label = text.isEmpty() ? QStringLiteral("Insert Paragraph After") : QStringLiteral("Insert Text After Block");
+  command.preferLaterEmptyAtOffset = text.isEmpty();
+  command.valid = command.handled = true;
   return command;
 }
 
@@ -958,14 +1036,26 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
   const PieceTable& markdown = session_->markdownText();
   command.sourceStart = lineStart;
   command.removedLength = lineEnd - lineStart;
-  command.insertedText = QLatin1Char('\n');
-  // Split exits (following content stays) leave TWO blank lines — the removed marker line's
-  // newline plus the inserted one — and the caret must land on the blank line BETWEEN the two
-  // lists: the SECOND blank line, where the parser synthesizes the caret VEP (the every-other-
-  // blank-line rule). lineStart itself points at the FIRST blank line, an offset that resolves
-  // to no block, so the caret would vanish until the user clicks somewhere. +1 lands exactly on
-  // the VEP.
-  const bool splitsList = context.node->nextSibling() != nullptr;
+  // Empty paragraphs occupy every second blank line after content, or the
+  // first, third, ... line at the start of the document. A loose list can
+  // already have separator lines before this marker.
+  qsizetype before = lineStart;
+  int lineBreaks = 0;
+  while (before > 0 && markdown.at(before - 1).isSpace()) {
+    if (markdown.at(--before) == QLatin1Char('\n'))
+      ++lineBreaks;
+  }
+  const int toEmptyParagraph = lineBreaks % 2;
+  // Keep a separator on the other side when the next item or block follows
+  // immediately. Both sides of this paragraph must remain editable independently.
+  const auto nextLine = markdown.lineForOffset(lineEnd) + 1;
+  const auto nextStart = markdown.lineStartOffset(nextLine);
+  const bool nextLineHasContent =
+      nextStart >= 0 && !markdown.mid(nextStart, markdown.lineEndOffset(nextLine) - nextStart).trimmed().isEmpty();
+  if (lineBreaks == 0 || toEmptyParagraph != 0 || nextLineHasContent)
+    command.insertedText = QLatin1Char('\n');
+  command.fallbackSourceOffset = lineStart + toEmptyParagraph;
+  command.preferLaterEmptyAtOffset = true;
   if (info.ordered) {
     // Exiting a MIDDLE empty ordered item splits the list in two (the inserted blank line
     // separates the blocks). The following same-column run becomes a NEW list and must restart
@@ -977,17 +1067,11 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
     if (runEnd > lineEnd) {
       const QString tail = renumberListItems(markdown, {lineEnd, runEnd}, following, 1, orderedListSequential());
       command.removedLength = runEnd - lineStart;
-      command.insertedText = QLatin1Char('\n') + tail;
+      command.insertedText += tail;
     }
-  }
-  if (splitsList) {
-    command.fallbackSourceOffset = lineStart + 1;
   }
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
-  if (!splitsList) {
-    command.fallbackSourceOffset = lineStart;
-  }
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;

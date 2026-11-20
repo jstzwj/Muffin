@@ -210,10 +210,10 @@ bool InputController::insertText(QString text) {
   if (hasActiveLiteralEditor()) {
     return insertTextIntoActiveLiteral(std::move(text));
   }
-  // A caret resting on a non-text block (a thematic break) has no inline text to type into — insert
-  // a fresh paragraph after it carrying the typed text. Routed BEFORE smart-punct / auto-pair so the
-  // character lands verbatim (no prose context to convert, and no pair logic to misfire on the rule).
-  if (caretRestsOnNonTextBlock()) {
+  // A block boundary has no inline text. Start a paragraph before applying
+  // punctuation or pairing rules that would inspect the preceding block.
+  if (caretRestsOnNonTextBlock() || (ctx_.hasCursor() && ctx_.selection->selection().isCollapsed() &&
+                                     ctx_.selection->cursorPosition().afterBlock)) {
     hideEmojiPopup();
     return insertBlockAfterCurrentBlock(std::move(text));
   }
@@ -251,10 +251,6 @@ bool InputController::insertText(QString text) {
     hideEmojiPopup();
     return tableController_->insertText(std::move(text));
   }
-  if (ctx_.selection && ctx_.selection->currentHit().zone == HitTestResult::Zone::BlockAfter) {
-    hideEmojiPopup();
-    return insertBlockAfterCurrentBlock(std::move(text));
-  }
   if (tryInsertOptionalDefinitionTitle(text)) {
     hideEmojiPopup();
     return true;
@@ -271,7 +267,31 @@ bool InputController::insertParagraphBreak() {
     return false;
   clearVerticalNavigationX();
   if (hasActiveLiteralEditor()) {
+    if (codeFenceController_ && codeFenceController_->isEditing() && ctx_.selection->selection().isCollapsed()) {
+      const auto cursor = ctx_.selection->cursorPosition();
+      const auto* code = ctx_.session->document().node(cursor.blockId);
+      if (code && code->type() == BlockType::CodeFence && cursor.text.textOffset == code->literal().size() &&
+          code->literal().endsWith(QLatin1Char('\n'))) {
+        codeFenceController_->clearPendingTrailingNewline();
+        return applyTextCommand(
+            TextBlockCommandBuilder::paragraphAfterBlock(ctx_.session->markdownText(), *code, {}, true));
+      }
+    }
     return insertTextIntoActiveLiteral(QStringLiteral("\n"));
+  }
+  if (tableController_) {
+    const auto cell = tableController_->currentCell();
+    if (auto* table = ctx_.session->document().node(cell.tableId)) {
+      if (cell.row + 1 < TableModelOps::rowCount(*table))
+        return landOnTableCell(table->id(), cell.row + 1, cell.column);
+      // At the bottom of the table, use its existing block-after caret. Enter
+      // or typing there starts prose; Tab remains the gesture for appending a row.
+      const auto* current = TableModelOps::cellAt(*table, cell.row, cell.column);
+      if (current && current->inlines().isEmpty())
+        return insertBlockAfterCurrentBlock();
+      ctx_.selection->setCursorPosition(cursorForBlockAfter(*table, table->sourceRange().byteEnd));
+      return true;
+    }
   }
   // A whole-selected non-text leaf (currently a thematic break) is removed on Enter — Typora-style
   // select-to-delete. Backspace/Forward-Delete already route through deleteSelection →
@@ -298,93 +318,11 @@ bool InputController::insertParagraphBreak() {
 }
 
 bool InputController::insertBlockAfterCurrentBlock(QString text) {
-  if (!ctx_.hasSession() || !ctx_.hasCursor()) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor())
     return false;
-  }
-  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
-  if (!node) {
-    return false;
-  }
-  const SourceRange range = node->sourceRange();
-  if (range.byteEnd < range.byteStart || range.byteEnd > ctx_.session->markdownText().size()) {
-    return false;
-  }
-
-  // Literal blocks (front matter / code fence / math / html) already end on a fence boundary, so a
-  // single newline starts a fresh block. Content blocks (paragraph, heading, list, thematic break…)
-  // need a blank line (\n\n) to form a separate paragraph instead of a soft line break.
-  const bool isLiteralBlock = node->type() == BlockType::FrontMatter || node->type() == BlockType::CodeFence ||
-                              node->type() == BlockType::MathBlock || node->type() == BlockType::HtmlBlock;
-
-  const PieceTable& markdown = ctx_.session->markdownText();
-  qsizetype insertOffset = range.byteEnd;
-  if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\r')) {
-    ++insertOffset;
-  }
-  if (insertOffset < markdown.size() && markdown.at(insertOffset) == QLatin1Char('\n')) {
-    ++insertOffset;
-  }
-
-  // When typing into the afterBlock caret of a block that has a FOLLOWING top-level block, insert
-  // the new paragraph just before that following block (text + separator). The node's own separator
-  // already precedes it, and the trailing separator keeps the typed text from merging into the next
-  // block — without this, "type after a mid-document rule" produced "rule\n\nTbeta". Empty Enter and
-  // the trailing case (no following block) keep the original insert-at-byteEnd behaviour below.
-  MarkdownNode* following = nullptr;
-  if (!text.isEmpty() && node->parent()) {
-    // "the block after this one" is a TOP-LEVEL sibling. A nested caret (list item / quote
-    // paragraph) would otherwise find its sibling INSIDE the same container and insert there,
-    // merging into the wrong block. Climb to the Document child, then look for its following
-    // top-level sibling.
-    MarkdownNode* scope = node;
-    while (scope->parent() != nullptr && scope->parent()->type() != BlockType::Document) {
-      scope = scope->parent();
-    }
-    if (scope->parent() != nullptr) {
-      const auto& siblings = scope->parent()->children();
-      for (size_t i = 0; i < siblings.size(); ++i) {
-        if (siblings.at(i).get() == scope) {
-          if (i + 1 < siblings.size()) {
-            following = siblings.at(i + 1).get();
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  qsizetype caretOffset;
-  QString insertedText;
-  // Only a REAL following block (one with content, not a zero-width virtual empty paragraph)
-  // forces the insert-before-it path. A trailing VEP is just the caret target, not a block to stay
-  // separate from — treating it as `following` merged the typed text into this node's last line.
-  if (following && following->sourceRange().byteEnd > following->sourceRange().byteStart) {
-    insertOffset = following->sourceRange().byteStart;
-    insertedText = text + (isLiteralBlock ? QStringLiteral("\n") : QStringLiteral("\n\n"));
-    caretOffset = insertOffset + text.size(); // inside the new paragraph, before its trailing separator
-  } else {
-    if (text.isEmpty()) {
-      insertedText = QStringLiteral("\n\n");
-      // Empty paragraphs occupy every second blank line. When the block's line
-      // terminator already precedes the insertion, the first inserted newline
-      // reaches that paragraph; otherwise the first newline ends the block.
-      // Use the same source position for every block type and for a full parse.
-      const bool atLineStart = insertOffset > 0 && markdown.at(insertOffset - 1) == QLatin1Char('\n');
-      caretOffset = insertOffset + (atLineStart ? 1 : insertedText.size());
-    } else {
-      insertedText = isLiteralBlock ? QStringLiteral("\n%1").arg(text) : QStringLiteral("\n\n%1").arg(text);
-      caretOffset = insertOffset + insertedText.size();
-    }
-  }
-  applyLocalEdit(EditTransaction::Kind::SplitParagraph,
-                 text.isEmpty() ? QStringLiteral("Insert Paragraph After") : QStringLiteral("Insert Text After Block"),
-                 insertOffset, 0, insertedText, CursorPosition(), caretOffset,
-                 QVector<LocalEditNodeHint>{LocalEditNodeHint{node->id(), range.byteStart, node->type()}}, true,
-                 false); // structureEdit=false: this is a plain "\n\n…" text insert, so a TextDeltaCommand
-                         // undo suffices. structureEdit=true forced the O(document) snapshot-undo path
-                         // (full-doc toString ×3 + collectPendingMarkerOffsets ×2 ≈ 7s on an 18MB doc) on
-                         // every "type after a block" keystroke.
-  return true;
+  const auto* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  return node && applyTextCommand(TextBlockCommandBuilder::paragraphAfterBlock(ctx_.session->markdownText(), *node,
+                                                                               std::move(text)));
 }
 
 bool InputController::isNonTextLeafBlock(MarkdownNode& node) const {
@@ -860,11 +798,7 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       return true;
     case Qt::Key_Return:
     case Qt::Key_Enter:
-      // Indented code cannot hold a second trailing empty line, and Enter-on-empty is the
-      // standard "leave the block" gesture. exitEditMode() clears the phantom as its choke point,
-      // so the cursor stays usable for the paragraph insert below.
-      codeFenceController_->exitEditMode();
-      return insertBlockAfterCurrentBlock();
+      return insertParagraphBreak();
     case Qt::Key_Tab:
     case Qt::Key_Backtab:
       break; // commit: the Tab text lands on the phantom line via the switch below
@@ -1066,6 +1000,18 @@ CursorPosition InputController::cursorForSourceOffset(qsizetype sourceOffset, bo
     candidates.push_back(next);
   }
 
+  if (preferLaterEmptyAtOffset) {
+    for (const auto* candidate : candidates) {
+      const auto range = candidate->sourceRange();
+      if (candidate->type() == BlockType::Paragraph && range.byteStart == sourceOffset &&
+          range.byteEnd == sourceOffset) {
+        cursor = cursorFor(candidate->id(), 0);
+        cursor.text.sourceOffset = sourceOffset;
+        return cursor;
+      }
+    }
+  }
+
   // A source offset that lands inside a literal block (code/math/HTML/front matter) resolves to
   // that block. nodeAtContentSourceOffset only matches inline-editable text, so without this a
   // freshly committed "```"/"$$" block would leave the post-edit caret unresolvable.
@@ -1145,7 +1091,12 @@ CursorPosition InputController::cursorAfterEdit(CursorPosition preferredCursor, 
       return cursorFor(node->id(), preferredCursor.text.textOffset);
     }
   }
-  return cursorForSourceOffset(fallbackSourceOffset, preferLaterEmptyAtOffset);
+  auto cursor = cursorForSourceOffset(fallbackSourceOffset, preferLaterEmptyAtOffset);
+  if (!cursor.isValid() && ctx_.hasSession() && fallbackSourceOffset >= 0) {
+    if (auto* host = ctx_.session->document().topLevelBlockAtOffset(fallbackSourceOffset))
+      return cursorForBlockAfter(*host, fallbackSourceOffset);
+  }
+  return cursor;
 }
 
 CursorPosition InputController::cursorForBlockAfter(const MarkdownNode& host, qsizetype sourceOffset) const {
