@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## GitHub issue 跟进
+
+修复 issue 时，提交信息和 PR 描述用 `Refs #编号` 关联，避免 GitHub 自动关闭。修复推送后，参考维护者在 #8、#11、#15 的回复，在原 issue 里告诉报告者改了什么、如何按原步骤验证。已发布的修复给出版本链接，只进了 `main` 的修复给出提交链接并说明发布状态。保留 issue 开放，等报告者反馈。
+
 ## Build
 
 This project uses Conan-generated CMake presets. Use the Release preset for local verification:
