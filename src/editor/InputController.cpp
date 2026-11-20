@@ -212,8 +212,8 @@ bool InputController::insertText(QString text) {
   }
   // A block boundary has no inline text. Start a paragraph before applying
   // punctuation or pairing rules that would inspect the preceding block.
-  if (caretRestsOnNonTextBlock() || (ctx_.hasCursor() && ctx_.selection->selection().isCollapsed() &&
-                                     ctx_.selection->cursorPosition().afterBlock)) {
+  if (caretRestsOnNonTextBlock() ||
+      (ctx_.hasCursor() && ctx_.selection->selection().isCollapsed() && ctx_.selection->cursorPosition().afterBlock)) {
     hideEmojiPopup();
     return insertBlockAfterCurrentBlock(std::move(text));
   }

@@ -10,8 +10,10 @@
 #include <QInputMethod>
 #include <QInputMethodEvent>
 #include <QScrollBar>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QStackedWidget>
+#include <QTemporaryDir>
 #include <QTest>
 #include <QVBoxLayout>
 
@@ -207,9 +209,9 @@ private slots:
   void horizontalScrollTracksPaintedCursor_data() { caretAndScrollNotifyInputMethod_data(); }
   void horizontalScrollTracksPaintedCursor() {
     QFETCH(bool, sourceMode);
+    SettingsOverride wrap("markdown/codeBlockWrap", false);
     EditorFixture f(sourceMode);
     const QString line(200, QLatin1Char('w'));
-    SettingsOverride wrap("markdown/codeBlockWrap", false);
     f.source.setWordWrapEnabled(false);
     f.setText(sourceMode ? line : QStringLiteral("```cpp\n") + line + QStringLiteral("\n```"));
     f.move(sourceMode ? 90 : 97);
@@ -223,7 +225,11 @@ private slots:
     } else {
       const auto blockId = f.rendered.cursorPosition().blockId;
       auto& scroll = f.controller.codeFenceScroll();
-      scroll.setOffset(blockId, scroll.offsetFor(blockId) + 15);
+      const auto* block = f.rendered.blockLayoutForNode(blockId);
+      QVERIFY(block);
+      const auto nextOffset = scroll.offsetFor(blockId) + 15;
+      QVERIFY(block->codeMaxLineWidth() - block->literalContentRect(f.rendered.theme()).width() >= nextOffset);
+      scroll.setOffset(blockId, nextOffset);
       f.rendered.viewport()->update();
     }
     QTRY_VERIFY(!changes.isEmpty());
@@ -245,6 +251,11 @@ int main(int argc, char** argv) {
   if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM"))
     qputenv("QT_QPA_PLATFORM", "offscreen");
   QApplication app(argc, argv);
+  QTemporaryDir settings;
+  require(settings.isValid(), "temporary input method test settings");
+  QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
+  QSettings::setDefaultFormat(QSettings::IniFormat);
+  QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settings.path());
   InputMethodGeometryTest test;
   return QTest::qExec(&test, argc, argv);
 }

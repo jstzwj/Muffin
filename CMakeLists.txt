@@ -1884,6 +1884,11 @@ enable_testing()
 set(MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS)
 # Browser geometry and raster references use 96 CSS pixels per logical inch.
 list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_FONT_DPI=set:96")
+if(WIN32)
+  # Qt Test otherwise sends assertion details to OutputDebugString when
+  # CTest captures output from a Windows process without an attached console.
+  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_FORCE_STDERR_LOGGING=set:1")
+endif()
 if(MUFFIN_QT_CORE_LOCATION_RELEASE)
   get_filename_component(MUFFIN_QT_RUNTIME_DIR "${MUFFIN_QT_CORE_LOCATION_RELEASE}" DIRECTORY)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "PATH=path_list_prepend:${MUFFIN_QT_RUNTIME_DIR}")
