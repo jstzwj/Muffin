@@ -68,7 +68,31 @@ void paintCssElement(QPainter& painter, QRectF borderBox, QRectF visualBounds, c
   painter.restore();
 }
 
-void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset, const ThemeElementStyle* overrideStyle) {
+void paintBorderSide(QPainter& painter, QRectF area, const QColor& color, const QString& style, bool horizontal) {
+  if (area.width() <= 0 || area.height() <= 0 || !color.isValid())
+    return;
+  const qreal width = horizontal ? area.height() : area.width();
+  if (style == QLatin1String("dashed") || style == QLatin1String("dotted")) {
+    painter.save();
+    painter.setClipRect(area, Qt::IntersectClip);
+    painter.setPen(QPen(color, width, style == QLatin1String("dotted") ? Qt::DotLine : Qt::DashLine, Qt::FlatCap));
+    painter.drawLine(horizontal ? QLineF(area.left(), area.center().y(), area.right(), area.center().y())
+                                : QLineF(area.center().x(), area.top(), area.center().x(), area.bottom()));
+    painter.restore();
+  } else if (style == QLatin1String("double") && width >= 3) {
+    const qreal strip = width / 3;
+    painter.fillRect(horizontal ? QRectF(area.left(), area.top(), area.width(), strip)
+                                : QRectF(area.left(), area.top(), strip, area.height()),
+                     color);
+    painter.fillRect(horizontal ? QRectF(area.left(), area.bottom() - strip, area.width(), strip)
+                                : QRectF(area.right() - strip, area.top(), strip, area.height()),
+                     color);
+  } else
+    painter.fillRect(area, color);
+}
+
+void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset, const ThemeElementStyle* overrideStyle,
+                    BoxBorders borders) {
   ThemePerfScope performance(ThemePerfStage::Paint);
   const auto rect = box.borderBox.translated(offset);
   if (!rect.isValid())
@@ -90,7 +114,7 @@ void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset, con
         [&](QPainter& target, const auto& neutral) {
           auto style = overrideStyle ? *overrideStyle : box.style;
           style.paint = neutral;
-          paintLayoutBox(target, box, offset, &style);
+          paintLayoutBox(target, box, offset, &style, borders);
         },
         &box);
     return;
@@ -127,36 +151,18 @@ void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset, con
   painter.setPen(Qt::NoPen);
   const qreal scale = box.style.text.fontSizePx > 0 ? box.font.pointSizeF() * 96 / 72 / box.style.text.fontSizePx : 1;
   paintCssBackgrounds(painter, box, offset, paint, scale);
-  const auto side = [&](QRectF area, const QColor& color, const QString& style, bool horizontal) {
-    if (area.width() <= 0 || area.height() <= 0 || !color.isValid())
-      return;
-    const qreal width = horizontal ? area.height() : area.width();
-    if (style == QLatin1String("dashed") || style == QLatin1String("dotted")) {
-      painter.save();
-      painter.setClipRect(area, Qt::IntersectClip);
-      painter.setPen(QPen(color, width, style == QLatin1String("dotted") ? Qt::DotLine : Qt::DashLine, Qt::FlatCap));
-      painter.drawLine(horizontal ? QLineF(area.left(), area.center().y(), area.right(), area.center().y())
-                                  : QLineF(area.center().x(), area.top(), area.center().x(), area.bottom()));
-      painter.restore();
-    } else if (style == QLatin1String("double") && width >= 3) {
-      const qreal strip = width / 3;
-      painter.fillRect(horizontal ? QRectF(area.left(), area.top(), area.width(), strip)
-                                  : QRectF(area.left(), area.top(), strip, area.height()),
-                       color);
-      painter.fillRect(horizontal ? QRectF(area.left(), area.bottom() - strip, area.width(), strip)
-                                  : QRectF(area.right() - strip, area.top(), strip, area.height()),
-                       color);
-    } else
-      painter.fillRect(area, color);
-  };
-  side(QRectF(rect.left(), rect.top(), rect.width(), used.borderTopWidth), used.borderTopColor, used.borderTopStyle,
-       true);
-  side(QRectF(rect.left(), rect.bottom() - used.borderBottomWidth, rect.width(), used.borderBottomWidth),
-       used.borderBottomColor, used.borderBottomStyle, true);
-  side(QRectF(rect.left(), rect.top(), used.borderLeftWidth, rect.height()), used.borderLeftColor, used.borderLeftStyle,
-       false);
-  side(QRectF(rect.right() - used.borderRightWidth, rect.top(), used.borderRightWidth, rect.height()),
-       used.borderRightColor, used.borderRightStyle, false);
+  if (borders == BoxBorders::Paint) {
+    paintBorderSide(painter, QRectF(rect.left(), rect.top(), rect.width(), used.borderTopWidth), used.borderTopColor,
+                    used.borderTopStyle, true);
+    paintBorderSide(painter,
+                    QRectF(rect.left(), rect.bottom() - used.borderBottomWidth, rect.width(), used.borderBottomWidth),
+                    used.borderBottomColor, used.borderBottomStyle, true);
+    paintBorderSide(painter, QRectF(rect.left(), rect.top(), used.borderLeftWidth, rect.height()), used.borderLeftColor,
+                    used.borderLeftStyle, false);
+    paintBorderSide(painter,
+                    QRectF(rect.right() - used.borderRightWidth, rect.top(), used.borderRightWidth, rect.height()),
+                    used.borderRightColor, used.borderRightStyle, false);
+  }
   painter.restore();
 }
 

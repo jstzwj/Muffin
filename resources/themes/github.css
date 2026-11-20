@@ -208,6 +208,16 @@ blockquote {
 blockquote blockquote {
     padding-right: 0;
 }
+blockquote.md-alert {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+blockquote.md-alert > :first-child {
+    margin-top: 0;
+}
+blockquote.md-alert > :last-child {
+    margin-bottom: 0;
+}
 table {
     padding: 0;
     word-break: initial;

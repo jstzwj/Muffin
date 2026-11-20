@@ -4,6 +4,7 @@
 #include "render/BlockFormattingCache.h"
 #include "theme/NodeCssElement.h"
 #include "render/LayoutBox.h"
+#include "render/CollapsedTableBorders.h"
 #include "render/RenderMetrics.h"
 #include "diagnostics/ScopedPerfProbe.h"
 
@@ -205,35 +206,21 @@ template <typename Text> bool isEmptyDocumentParagraph(const Text& markdown, con
 }
 
 QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& theme, qreal width,
-                                 bool breakOnSingleNewline) {
-  int columnCount = 0;
-  for (const auto& row : table.children()) {
-    columnCount = qMax(columnCount, static_cast<int>(row->children().size()));
-  }
-  QVector<qreal> widths(columnCount, width / qMax(1, columnCount));
-  if (columnCount == 0) {
-    return widths;
-  }
-
-  qreal preferredTotal = 0.0;
-  for (int column = 0; column < columnCount; ++column) {
-    qreal preferred = 0.0;
-    for (const auto& row : table.children()) {
-      if (column >= static_cast<int>(row->children().size())) {
-        continue;
-      }
-      const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
-      const QFont font =
-          theme.textFontForElement(row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td"), &cell);
-      const auto padding = LayoutBox::insets(
-          theme.elementBoxStyle(row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td"), &cell, width));
-      preferred =
-          qMax(preferred,
-               maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline), font) +
-                   padding.left() + padding.right());
+                                 bool breakOnSingleNewline, int columnCount, const CollapsedTableBorders* borders) {
+  QVector<qreal> widths(columnCount);
+  for (int index = 0; index < static_cast<int>(table.children().size()); ++index) {
+    const auto& row = *table.children()[index];
+    const QString key = row.tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td");
+    for (int column = 0; column < static_cast<int>(row.children().size()); ++column) {
+      const auto& cell = *row.children()[column];
+      const QFont font = theme.textFontForElement(key, &cell);
+      auto usedBox = theme.elementBoxStyle(key, &cell, width);
+      if (borders)
+        borders->applyCellInsets(usedBox, index, column);
+      const auto padding = LayoutBox::insets(usedBox);
+      const auto text = InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline);
+      widths[column] = qMax(widths[column], maxLiteralLineWidth(text, font) + padding.left() + padding.right());
     }
-    widths[column] = preferred;
-    preferredTotal += widths[column];
   }
 
   const qreal minimum = qMax<qreal>(56.0, width * 0.23);
@@ -241,7 +228,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
     columnWidth = qMax(columnWidth, minimum);
   }
 
-  preferredTotal = 0.0;
+  qreal preferredTotal = 0.0;
   for (qreal columnWidth : widths) {
     preferredTotal += columnWidth;
   }
@@ -1440,7 +1427,22 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(const MarkdownNode& 
 
   const QString tableKey = QStringLiteral("table");
   const auto* tableStyle = theme.elementStyleForNode(node, tableKey);
-  const auto tableBox = boxFor(node, theme, tableKey, width);
+  auto tableBox = boxFor(node, theme, tableKey, width);
+  const int rowCount = static_cast<int>(node.children().size());
+  int columnCount = 0;
+  for (const auto& row : node.children())
+    columnCount = qMax(columnCount, static_cast<int>(row->children().size()));
+
+  std::shared_ptr<CollapsedTableBorders> borders;
+  if (rowCount && columnCount &&
+      theme.computedStyleForElement(*theme.cssElementForNode(node))
+              .resolvedValue("border-collapse")
+              .compare(QStringLiteral("collapse"), Qt::CaseInsensitive) == 0) {
+    borders = std::make_shared<CollapsedTableBorders>(node, theme, tableBox, columnCount);
+    // The cells reserve the perimeter border. Collapsed tables have no separate padding area.
+    tableBox.borderTopWidth = tableBox.borderBottomWidth = tableBox.borderLeftWidth = tableBox.borderRightWidth = 0;
+    tableBox.padding = {};
+  }
   const qreal innerTopMargin = qFuzzyIsNull(wrapperInsets.top()) ? 0 : tableBox.margin.top();
   const qreal innerBottomMargin = qFuzzyIsNull(wrapperInsets.bottom()) ? 0 : tableBox.margin.bottom();
   y += innerTopMargin;
@@ -1452,18 +1454,13 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(const MarkdownNode& 
     x += qMax<qreal>(0, availableWidth - width) / (tableBox.marginRightAuto ? 2 : 1);
   const qreal contentWidth = qMax<qreal>(1, width - tableInsets.left() - tableInsets.right());
 
-  const int rowCount = static_cast<int>(node.children().size());
-  int columnCount = 0;
-  for (const auto& row : node.children()) {
-    columnCount = qMax(columnCount, static_cast<int>(row->children().size()));
-  }
-
   if (rowCount == 0 || columnCount == 0) {
     layout->setRect(QRectF(x, y, width, TextFontMetrics(theme.paragraphFont()).height()));
     return layout;
   }
 
-  const QVector<qreal> columnWidths = tableColumnWidths(node, theme, contentWidth, breakOnSingleNewline_);
+  const QVector<qreal> columnWidths =
+      tableColumnWidths(node, theme, contentWidth, breakOnSingleNewline_, columnCount, borders.get());
 
   const QVector<TableAlignment> alignments = node.tableAlignments();
   std::vector<BlockLayout::TableRowLayout> rows;
@@ -1483,7 +1480,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(const MarkdownNode& 
       cell.header = rowNode->tableRowIsHeader();
       cell.alternate = rowIndex % 2 == 1;
       const QString key = cell.header ? QStringLiteral("th") : QStringLiteral("td");
-      const auto usedBox = theme.elementBoxStyle(key, cellNode.get(), columnWidth);
+      auto usedBox = theme.elementBoxStyle(key, cellNode.get(), columnWidth);
+      if (borders)
+        borders->applyCellInsets(usedBox, rowIndex, column);
       const auto padding = LayoutBox::insets(usedBox);
       const auto* cellStyle = theme.elementStyleForNode(*cellNode, key);
       ThemeElementStyle resolved = cellStyle ? *cellStyle : ThemeElementStyle{};
@@ -1528,7 +1527,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(const MarkdownNode& 
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
-      const auto usedBox = theme.elementBoxStyle(QStringLiteral("td"), nullptr, columnWidth);
+      auto usedBox = theme.elementBoxStyle(QStringLiteral("td"), nullptr, columnWidth);
+      if (borders)
+        borders->applyCellInsets(usedBox, rowIndex, column);
       const auto padding = LayoutBox::insets(usedBox);
       const auto* style = theme.elementStyle(QStringLiteral("td"));
       cell.box = LayoutBox::place(QStringLiteral("td"), style ? *style : ThemeElementStyle{}, usedBox, {},
@@ -1563,7 +1564,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(const MarkdownNode& 
   layout->setOuterCssBox(LayoutBox::place(QStringLiteral(".table-figure"),
                                           wrapperStyle ? *wrapperStyle : ThemeElementStyle{}, wrapperBox,
                                           layout->rect(), theme.paragraphFont()));
-  layout->setTableRows(std::move(rows));
+  layout->setTableRows(std::move(rows), std::move(borders));
   return layout;
 }
 

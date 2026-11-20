@@ -58,7 +58,7 @@ const QSet<QString>& inheritedProperties() {
                                       QStringLiteral("word-spacing"),    QStringLiteral("text-transform"),
                                       QStringLiteral("list-style-type"), QStringLiteral("list-style-position"),
                                       QStringLiteral("white-space"),     QStringLiteral("overflow-wrap"),
-                                      QStringLiteral("word-break")};
+                                      QStringLiteral("word-break"),      QStringLiteral("border-collapse")};
   return props;
 }
 
@@ -1409,6 +1409,8 @@ bool validDeclarationValue(const QString& property, const QString& raw, const QH
     const auto weight = value.toDouble(&ok);
     return ok && std::isfinite(weight) && weight >= 1 && weight <= 1000;
   }
+  if (property == "border-collapse")
+    return oneOf({"collapse", "separate"});
   if (property == "font-style")
     return oneOf({"normal", "italic", "oblique"});
   if (property == "display")
@@ -1623,6 +1625,7 @@ bool CssComputedStyleEngine::supportsDeclaration(const QString& property, const 
                                           "line-height",
                                           "letter-spacing",
                                           "word-spacing",
+                                          "border-collapse",
                                           "border-width",
                                           "border-top-width",
                                           "border-right-width",
@@ -2161,6 +2164,7 @@ void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssCom
                                                      {"column-gap", "normal"},
                                                      {"overflow-x", "visible"},
                                                      {"overflow-y", "visible"},
+                                                     {"border-collapse", "separate"},
                                                      {"background-color", "transparent"},
                                                      {"background-image", "none"},
                                                      {"font-family", "serif"},

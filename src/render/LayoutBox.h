@@ -111,8 +111,10 @@ struct LayoutBox {
   }
 };
 
+enum class BoxBorders { Paint, Skip };
 void paintLayoutBox(QPainter& painter, const LayoutBox& box, QPointF offset = {},
-                    const ThemeElementStyle* style = nullptr);
+                    const ThemeElementStyle* style = nullptr, BoxBorders borders = BoxBorders::Paint);
+void paintBorderSide(QPainter& painter, QRectF area, const QColor& color, const QString& style, bool horizontal);
 QTransform elementPaintTransform(const ThemeElementPaintStyle& style, const QRectF& rect, qreal zoom = 1);
 // Wrap the complete painted element so opacity and filters composite its
 // background and glyphs together. The callback receives neutral layer effects.

@@ -1,4 +1,5 @@
 #include "render/BlockLayout.h"
+#include "render/CollapsedTableBorders.h"
 #include "diagnostics/ThemePerformance.h"
 #include "render/CssPaintAnimation.h"
 #include "render/RenderMetrics.h"
@@ -541,6 +542,8 @@ bool BlockLayout::stylesMatch(const RenderTheme& theme, const MarkdownDocument& 
     return style && style->fingerprint == box.style.fingerprint;
   };
   if (!cssBoxGeometry_.hostKey.isEmpty() && !matches(cssBoxGeometry_, *node))
+    return false;
+  if (collapsedTableBorders_ && !collapsedTableBorders_->rowGroupStylesMatch(*node, theme))
     return false;
   if (outerCssBox_ && !matches(*outerCssBox_, *node))
     return false;
@@ -1136,7 +1139,8 @@ const std::vector<std::unique_ptr<BlockLayout>>& BlockLayout::children() const {
   return children_;
 }
 
-void BlockLayout::setTableRows(std::vector<TableRowLayout> rows) {
+void BlockLayout::setTableRows(std::vector<TableRowLayout> rows, std::shared_ptr<const CollapsedTableBorders> borders) {
+  collapsedTableBorders_ = std::move(borders);
   tableRows_ = std::move(rows);
 }
 
@@ -1874,17 +1878,21 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
 
 void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY, BlockPaintState state) const {
   painter.save();
+  const QPointF offset(0, -scrollY);
+  const auto borders = collapsedTableBorders_ ? BoxBorders::Skip : BoxBorders::Paint;
   if (outerCssBox_)
-    paintLayoutBox(painter, *outerCssBox_, QPointF(0, -scrollY));
-  paintLayoutBox(painter, cssBoxGeometry_, QPointF(0, -scrollY), state.hostStyle);
+    paintLayoutBox(painter, *outerCssBox_, offset);
+  paintLayoutBox(painter, cssBoxGeometry_, offset, state.hostStyle, borders);
   for (const TableRowLayout& row : tableRows_) {
-    paintLayoutBox(painter, row.box, QPointF(0, -scrollY));
+    paintLayoutBox(painter, row.box, offset, nullptr, borders);
     for (const TableCellLayout& cell : row.cells) {
-      paintLayoutBox(painter, cell.box, QPointF(0, -scrollY));
-      cell.text.paint(painter, cell.textOrigin() + QPointF(0, -scrollY), 0, 0, state.css, cell.nodeId.toString(),
+      paintLayoutBox(painter, cell.box, offset, nullptr, borders);
+      cell.text.paint(painter, cell.textOrigin() + offset, 0, 0, state.css, cell.nodeId.toString(),
                       state.focusedNode == cell.nodeId ? state.focusSourceOffset - cell.contentSourceStart : -1);
     }
   }
+  if (collapsedTableBorders_)
+    collapsedTableBorders_->paint(painter, tableRows_, offset, state.hostStyle);
   painter.restore();
 }
 

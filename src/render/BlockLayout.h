@@ -30,6 +30,7 @@ namespace muffin {
 class MarkdownDocument;
 
 class CodeFenceScrollController;
+class CollapsedTableBorders;
 
 class BlockLayout {
 public:
@@ -295,7 +296,7 @@ public:
   void setLayoutSelection(const SelectionRange& selection) { layoutSelection_ = selection; }
   bool selectionLayoutMatches(const SelectionRange& selection, const MarkdownDocument& document) const;
 
-  void setTableRows(std::vector<TableRowLayout> rows);
+  void setTableRows(std::vector<TableRowLayout> rows, std::shared_ptr<const CollapsedTableBorders> borders = {});
   std::vector<TableRowLayout>& tableRows();
   const std::vector<TableRowLayout>& tableRows() const;
   QRectF tableCellRect(int row, int column) const;
@@ -437,6 +438,7 @@ private:
   std::vector<std::unique_ptr<BlockLayout>> children_;
   std::vector<size_t> formattingPaintOrder_;
   std::vector<TableRowLayout> tableRows_;
+  std::shared_ptr<const CollapsedTableBorders> collapsedTableBorders_;
 };
 
 } // namespace muffin

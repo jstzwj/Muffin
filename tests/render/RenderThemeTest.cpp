@@ -626,6 +626,28 @@ void testGithubBlockquoteNotPaddedByWriteLeak() {
               .arg(outer->rect().height()));
 }
 
+void testGithubAlertInsets() {
+  DocumentSession session;
+  session.setMarkdownText("> [!TIP]\n> First paragraph.\n>\n> Second paragraph.\n\n> Ordinary quote.\n", false);
+  for (const int zoom : {100, 150}) {
+    const auto theme = RenderTheme::github(zoom);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800);
+    const auto& nodes = session.document().root().children();
+    const auto* alert = layout.block(nodes.at(0)->id());
+    const auto* quote = layout.block(nodes.at(1)->id());
+    require(alert && alert->children().size() == 2 && quote && quote->children().size() == 1, "quote fixtures");
+    const qreal inset = 8.0 * zoom / 100;
+    require(qAbs(alert->children().front()->rect().top() - alert->rect().top() - inset) < .01 &&
+                qAbs(alert->rect().bottom() - alert->children().back()->rect().bottom() - inset) < .01,
+            "GitHub alert leaves one scaled inset above and below its contents");
+    require(alert->children().front()->rect().bottom() < alert->children().back()->rect().top(),
+            "paragraphs inside the alert retain their spacing");
+    require(qAbs(quote->rect().height() - quote->children().front()->rect().height()) < .01,
+            "ordinary GitHub quotes retain their compact layout");
+  }
+}
+
 // Structural selectors resolve against the LIVE document tree, not the load-time
 // prototype. `li:first-child`, `li + li` (adjacent sibling) and `p:has(img)`
 // (descendant probe) each pick out nodes by position/contents — impossible on
@@ -1092,6 +1114,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testBlockquoteCssBoxUsesPerSideBorderAndCompactNestedFlow);
   RUN_TEST(testBlockquoteListFlowStaysCompactUnderLazyPromotion);
   RUN_TEST(testGithubBlockquoteNotPaddedByWriteLeak);
+  RUN_TEST(testGithubAlertInsets);
   RUN_TEST(testStructuralSelectorsResolveAgainstLiveTree);
   RUN_TEST(testStructuralAdapterStaysSparseOnFlatDocuments);
   RUN_TEST(testTopLevelNthSelectorsUseDocumentOrderIndex);

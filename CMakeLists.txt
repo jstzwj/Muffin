@@ -1387,6 +1387,7 @@ set(MUFFIN_UI_SOURCES
   src/render/LiteralTextLayout.cpp
   src/render/LiteralTextLayout.h
   src/render/LayoutBox.h
+  src/render/CollapsedTableBorders.cpp
   src/render/LayoutBox.cpp
   src/render/CssBackgroundPainter.cpp
   src/render/CssBackgroundPainter.h
