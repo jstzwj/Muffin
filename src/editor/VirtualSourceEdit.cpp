@@ -1169,8 +1169,9 @@ QRect VirtualSourceEdit::cursorRectForOffset(qsizetype offset) const {
     const qreal advance = qMax<qreal>(1.0, TextFontMetrics(sourceFont_).horizontalAdvance(QLatin1Char('M')));
     const qsizetype columns = wordWrap_ ? qMax<qsizetype>(1, static_cast<qsizetype>(textAreaWidth() / advance))
                                         : qMax<qsizetype>(1, layout->length + 1);
-    const qsizetype row = wordWrap_ ? local / columns : 0;
-    const qsizetype column = wordWrap_ ? local % columns : local;
+    // At the end of a full final row the caret belongs after its last character.
+    const qsizetype row = qMin(local, layout->length - 1) / columns;
+    const qsizetype column = local - row * columns;
     x += column * advance;
     y += row * baseLineHeight();
   } else if (layout->layout) {
@@ -1201,21 +1202,32 @@ void VirtualSourceEdit::moveCursorTo(qsizetype position, bool keepAnchor) {
 }
 
 void VirtualSourceEdit::ensureCursorVisible() {
-  if (typewriterMode_) {
-    const int line = lineForOffset(cursor_);
+  const int line = lineForOffset(cursor_);
+  if (!wordWrap_) {
+    auto* bar = horizontalScrollBar();
+    const int maximum = boundedScrollRange(qCeil(buildLineLayout(line)->width) - textAreaWidth());
+    bar->setMaximum(qMax(bar->maximum(), maximum));
+    if (bar->maximum() > 0 && !bar->isVisibleTo(this)) {
+      // Qt normally lays out new scrollbars on the next event loop turn.
+      // Use the resulting viewport height for this jump to the bottom row.
+      QEvent layoutRequest(QEvent::LayoutRequest);
+      QCoreApplication::sendEvent(this, &layoutRequest);
+    }
+  }
+  auto rect = cursorRectForOffset(cursor_);
+  if (typewriterMode_ || rect.top() < 0 || rect.bottom() >= viewport()->height()) {
+    // A jump can land in a region whose heights are still estimates. Measure the
+    // destination and the rows that can appear above it before choosing the scroll offset.
     heights_.setHeight(line, measuredLineHeight(line));
-    // Publishing a target based on estimated rows above the caret would move
-    // it again when those rows are painted. Measure only its preceding visible
-    // window, using the same line layouts as painting and hit testing.
-    qint64 before = cursorRectForOffset(cursor_).top() + verticalScrollBar()->value() - heights_.yForLine(line);
+    qint64 before = qint64(rect.top()) + verticalScrollBar()->value() - heights_.yForLine(line);
     for (int previous = line - 1; previous >= 0 && before < viewport()->height(); --previous) {
       const int height = measuredLineHeight(previous);
       heights_.setHeight(previous, height);
       before += height;
     }
     updateScrollBars();
+    rect = cursorRectForOffset(cursor_);
   }
-  const QRect rect = cursorRectForOffset(cursor_);
   // QRect::center() truncates negative half coordinates toward zero. Use a
   // translation-invariant row centre when the old caret is above the viewport.
   const int centerY = rect.top() + rect.height() / 2;
@@ -1228,7 +1240,7 @@ void VirtualSourceEdit::ensureCursorVisible() {
     vertical += centerY - viewport()->height() * 2 / 3;
   else if (rect.top() < 0)
     vertical += rect.top() - baseLineHeight();
-  else if (rect.bottom() > viewport()->height())
+  else if (rect.bottom() >= viewport()->height())
     vertical += rect.bottom() - viewport()->height() + baseLineHeight();
   verticalScrollBar()->setValue(vertical);
   if (!wordWrap_) {
@@ -1236,7 +1248,7 @@ void VirtualSourceEdit::ensureCursorVisible() {
     const int left = kGutterWidth + kTextInset;
     if (rect.left() < left)
       horizontal += rect.left() - left - kTextInset;
-    else if (rect.right() > viewport()->width())
+    else if (rect.right() >= viewport()->width())
       horizontal += rect.right() - viewport()->width() + kTextInset;
     horizontalScrollBar()->setValue(horizontal);
   }
@@ -1424,13 +1436,13 @@ void VirtualSourceEdit::keyPressEvent(QKeyEvent* event) {
   } else if (shortcuts.matches(*event, QStringLiteral("edit.select_all"), QKeySequence::SelectAll)) {
     selectAll();
   } else if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_start"), QKeySequence::MoveToStartOfDocument)) {
-    moveCursorTo(0, false);
+    moveDocumentStart();
   } else if (shortcuts.matches(*event, QStringLiteral("edit.jump_doc_end"), QKeySequence::MoveToEndOfDocument)) {
-    moveCursorTo(source().size(), false);
+    moveDocumentEnd();
   } else if (event->matches(QKeySequence::SelectStartOfDocument)) {
-    moveCursorTo(0, true);
+    setCursorPosition(0, true);
   } else if (event->matches(QKeySequence::SelectEndOfDocument)) {
-    moveCursorTo(source().size(), true);
+    setCursorPosition(source().size(), true);
   } else if (event->matches(QKeySequence::MoveToStartOfDocument) || event->matches(QKeySequence::MoveToEndOfDocument)) {
     event->accept();
     return;

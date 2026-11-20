@@ -465,6 +465,76 @@ void testEmptyReplacementDeletesSelection() {
   require(edit.text() == QStringLiteral("abc") && !edit.canUndo(), "empty insertion without selection must be a no-op");
 }
 
+void testDocumentNavigationRevealsCaret() {
+  const QString text = QStringLiteral("source line\n").repeated(200) + QStringLiteral("end");
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.setStandaloneText(text);
+  edit.resize(460, 240);
+  edit.show();
+  QApplication::processEvents();
+
+  for (const auto key : {QKeySequence::MoveToStartOfDocument, QKeySequence::MoveToEndOfDocument,
+                         QKeySequence::SelectStartOfDocument, QKeySequence::SelectEndOfDocument}) {
+    const bool toStart = key == QKeySequence::MoveToStartOfDocument || key == QKeySequence::SelectStartOfDocument;
+    const bool selecting = key == QKeySequence::SelectStartOfDocument || key == QKeySequence::SelectEndOfDocument;
+    const qsizetype target = toStart ? 0 : text.size();
+    const qsizetype middle = text.size() / 2;
+    edit.setCursorPosition(middle);
+    for (int press = 0; press < 2; ++press) {
+      // Also exercise a repeat after scrolling away without moving the caret.
+      edit.verticalScrollBar()->setValue(edit.verticalScrollBar()->maximum() / 2);
+      QTest::keySequence(&edit, QKeySequence(key));
+      QApplication::processEvents();
+      require(edit.cursorPosition() == target && edit.anchorPosition() == (selecting ? middle : target),
+              "document navigation moves the caret and preserves the selection direction");
+      require(edit.viewport()->geometry().contains(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect()),
+              "document navigation reveals the destination even when the caret was already there");
+    }
+  }
+}
+
+void testJumpToUnmeasuredDocumentEnd() {
+  const QString paragraph = QStringLiteral("wrapped words ").repeated(100);
+  const auto jumpToEnd = [&](bool wrap, const QString& lastLine) {
+    VirtualSourceEdit edit;
+    edit.setSourceFont(fixtureSourceFont);
+    edit.setWordWrapEnabled(wrap);
+    edit.resize(460, 240);
+    const auto text = QStringLiteral("short\n").repeated(200) + paragraph + '\n' + lastLine;
+    edit.setStandaloneText(text);
+    edit.show();
+    QApplication::processEvents();
+    QTest::keySequence(&edit, QKeySequence::MoveToEndOfDocument);
+    QApplication::processEvents();
+    return edit.cursorPosition() == text.size() &&
+           edit.viewport()->geometry().contains(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect());
+  };
+  require(jumpToEnd(true, paragraph), "one jump reveals the last wrapped row");
+  require(jumpToEnd(true, {}), "one jump reveals an empty last line following an unmeasured paragraph");
+  require(jumpToEnd(false, paragraph), "one jump reveals the end of a wide unwrapped line");
+}
+
+void testDocumentEndOnFullFinalRowOfLongLine() {
+  VirtualSourceEdit edit;
+  edit.setSourceFont(fixtureSourceFont);
+  edit.resize(460, 240);
+  edit.setStandaloneText(QString(32768, QLatin1Char('M')));
+  edit.show();
+  QApplication::processEvents();
+  edit.verticalScrollBar()->setValue(edit.verticalScrollBar()->singleStep());
+  const qsizetype columns = edit.viewportPosition().sourceOffset;
+  require(columns > 0, "scrolling one visual row gives the long-line column count");
+  edit.setStandaloneText(QString(columns * (32768 / columns + 1), QLatin1Char('M')));
+  QTest::keySequence(&edit, QKeySequence::MoveToEndOfDocument);
+  QApplication::processEvents();
+  const auto end = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+  require(edit.viewport()->geometry().contains(end), "document end is on the final painted row");
+  QTest::keyClick(&edit, Qt::Key_Left);
+  const auto previous = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+  require(previous.top() == end.top() && previous.left() < end.left(), "caret sits after the last character");
+}
+
 void testWrappedSourceEditingPreservesViewport() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("word ").repeated(2000), false);
@@ -477,10 +547,6 @@ void testWrappedSourceEditingPreservesViewport() {
   edit.show();
   QApplication::processEvents();
   edit.setCursorPosition(5000);
-  edit.ensureCursorVisible();
-  QApplication::processEvents();
-  // Revisit after the initial lazy measurement has expanded the scroll range.
-  edit.ensureCursorVisible();
   QApplication::processEvents();
   const int before = edit.verticalScrollBar()->value();
   require(before > 100, "wrapped paragraph should scroll away from the start");
@@ -973,6 +1039,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testSelectedSourceInkOverridesSyntaxWithoutMovingText);
   RUN_TEST(testSourcePreeditRendersWithoutOverlap);
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
+  RUN_TEST(testDocumentNavigationRevealsCaret);
+  RUN_TEST(testJumpToUnmeasuredDocumentEnd);
+  RUN_TEST(testDocumentEndOnFullFinalRowOfLongLine);
   RUN_TEST(testWrappedSourceEditingPreservesViewport);
   RUN_TEST(testHeightResizePreservesReadingPosition);
   RUN_TEST(testWidthResizePreservesReadingPosition);
