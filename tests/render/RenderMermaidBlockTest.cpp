@@ -558,6 +558,10 @@ int main(int argc, char** argv) {
                 focused->mermaidState() == BlockLayout::MermaidState::Ready &&
                 !focused->mermaidDiagnosticRect(theme).isValid(),
             QStringLiteral("focused valid Mermaid must remain editable source"));
+    const auto& spans = focused->codeHighlightSpans();
+    require(std::any_of(spans.cbegin(), spans.cend(),
+                        [](const CodeHighlightSpan& span) { return span.role == CodeHighlightRole::Operator; }),
+            QStringLiteral("the flowchart arrow is highlighted while editing the diagram"));
 
     layout.rebuild(session.document(), theme, 800.0);
     const BlockLayout* unfocused = layout.block(fenceId);

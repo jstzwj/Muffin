@@ -29,6 +29,7 @@ const TSLanguage* tree_sitter_javascript(void);
 const TSLanguage* tree_sitter_json(void);
 const TSLanguage* tree_sitter_lua(void);
 const TSLanguage* tree_sitter_markdown(void);
+const TSLanguage* tree_sitter_mermaid(void);
 const TSLanguage* tree_sitter_objc(void);
 const TSLanguage* tree_sitter_php_only(void);
 const TSLanguage* tree_sitter_powershell(void);
@@ -118,6 +119,8 @@ const QHash<QString, LanguageSpec>& languageSpecs() {
                 {QStringLiteral(":/tree-sitter/queries/lua/highlights.scm")}, {});
     addLanguage(result, QStringLiteral("markdown"), tree_sitter_markdown,
                 {QStringLiteral(":/tree-sitter/queries/markdown/highlights.scm")}, {"md"});
+    addLanguage(result, QStringLiteral("mermaid"), tree_sitter_mermaid,
+                {QStringLiteral(":/tree-sitter/queries/mermaid/highlights.scm")}, {});
     addLanguage(result, QStringLiteral("objective-c"), tree_sitter_objc,
                 {QStringLiteral(":/tree-sitter/queries/objc/highlights.scm")}, {"objc", "obj-c", "m", "mm"});
     addLanguage(result, QStringLiteral("php"), tree_sitter_php_only,

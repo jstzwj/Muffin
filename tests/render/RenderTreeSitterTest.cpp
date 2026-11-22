@@ -42,6 +42,13 @@ void requireHighlightsFixture(const TreeSitterHighlighter& highlighter, const Hi
 void testTreeSitterCodeHighlighting() {
   TreeSitterHighlighter highlighter;
   const QVector<HighlightFixture> fixtures{
+      {QStringLiteral("mermaid"),
+       QStringLiteral("flowchart LR\n%% entry\nA[\"Start\"] --> B\n"),
+       {CodeHighlightRole::Type, CodeHighlightRole::Comment, CodeHighlightRole::Operator, CodeHighlightRole::String}},
+      {QStringLiteral("mermaid"),
+       QStringLiteral("sequenceDiagram\nparticipant Alice\nAlice->>Bob: Hello\n"),
+       {CodeHighlightRole::Keyword, CodeHighlightRole::Variable, CodeHighlightRole::Operator,
+        CodeHighlightRole::String}},
       {QStringLiteral("python"),
        QStringLiteral("def greet(name):\n    return \"hello \" + name\n"),
        {CodeHighlightRole::Keyword, CodeHighlightRole::Function, CodeHighlightRole::String}},

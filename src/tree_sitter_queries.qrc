@@ -13,6 +13,7 @@
     <file alias="json/highlights.scm">../third_party/tree-sitter-json/queries/highlights.scm</file>
     <file alias="lua/highlights.scm">../third_party/tree-sitter-lua/queries/highlights.scm</file>
     <file alias="markdown/highlights.scm">../third_party/tree-sitter-markdown/tree-sitter-markdown/queries/highlights.scm</file>
+    <file alias="mermaid/highlights.scm">../third_party/tree-sitter-mermaid/queries/highlights.scm</file>
     <file alias="objc/highlights.scm">../third_party/tree-sitter-objc/queries/highlights.scm</file>
     <file alias="php/highlights.scm">../third_party/tree-sitter-php/queries/highlights.scm</file>
     <file alias="powershell/highlights.scm">../third_party/tree-sitter-powershell/queries/highlights.scm</file>

@@ -462,6 +462,8 @@ add_tree_sitter_grammar(third_party/tree-sitter-javascript)
 add_tree_sitter_grammar(third_party/tree-sitter-json)
 add_tree_sitter_grammar(third_party/tree-sitter-lua)
 add_tree_sitter_nested_grammar(third_party/tree-sitter-markdown tree-sitter-markdown)
+# https://github.com/pappasam/tree-sitter-mermaid at 498055b684414dbb49e37cb273363a2a61e31a95
+add_tree_sitter_grammar(third_party/tree-sitter-mermaid)
 add_tree_sitter_grammar(third_party/tree-sitter-objc)
 add_tree_sitter_nested_grammar(third_party/tree-sitter-php php_only)
 add_tree_sitter_grammar(third_party/tree-sitter-powershell)
