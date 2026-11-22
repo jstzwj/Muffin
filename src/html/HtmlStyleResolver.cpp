@@ -19,7 +19,7 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
     const QString defaults =
         QStringLiteral("#write { color:%1; font-size:%2px; } a { color:%3; } pre { background:%4; } "
                        "blockquote { border-left:3px solid %5; } th,td { border:1px solid %6; } "
-                       "th { background:%7; } mark { background:%8; }")
+                       "th { background:%7; } mark { background:%8; } img { max-width:none; }")
             .arg(cssColor(palette.text))
             .arg(baseFontSize * 96.0 / 72.0)
             .arg(cssColor(palette.link))

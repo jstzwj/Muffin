@@ -21,6 +21,7 @@
 #include <QString>
 
 #include <functional>
+#include <cmath>
 
 #include "RenderTestUtils.h"
 
@@ -88,6 +89,58 @@ QRect colorBBox(const QImage& image, const std::function<bool(QRgb)>& pred) {
 RenderTheme plainTheme() {
   return RenderTheme::fromDefinition(
       CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"), QStringLiteral("t"), QString()));
+}
+
+void testDownsamplingPreservesThinStrokes() {
+  QTemporaryDir dir;
+  QImage stripes(128, 64, QImage::Format_RGB32);
+  for (int y = 0; y < stripes.height(); ++y)
+    for (int x = 0; x < stripes.width(); ++x)
+      stripes.setPixel(x, y, qRgb(64, x % 4 == 0 ? 0 : 255, 192));
+  require(stripes.save(dir.filePath("stripes.png")), "write striped screenshot");
+  const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss("img{width:32px}", "stripes", {}));
+  for (const auto& markdown : {QStringLiteral("![strokes](stripes.png)"), QStringLiteral("<img src='stripes.png'>")}) {
+    DocumentSession session;
+    session.setMarkdownText(markdown, false);
+    const auto id = session.document().root().children().front()->id();
+    for (const bool preview : {false, true}) {
+      if (preview && !markdown.startsWith('!'))
+        continue;
+      SelectionRange selection;
+      if (preview)
+        selection.anchor = selection.focus = {id, {id, 1, 2}};
+      DocumentLayout layout;
+      layout.rebuild(session.document(), theme, 400, selection, dir.filePath("doc.md"));
+      const auto* block = layout.block(id);
+      require(block != nullptr, "image block is laid out");
+      for (const qreal dpr : {1.0, 1.25, 1.5, 2.0, 4.0}) {
+        QImage canvas(qCeil(400 * dpr), qCeil((block->height() + 4) * dpr), QImage::Format_RGB32);
+        canvas.setDevicePixelRatio(dpr);
+        canvas.fill(Qt::white);
+        QPainter painter(&canvas);
+        painter.translate(-block->rect().topLeft());
+        block->paint(painter, theme, 0);
+        painter.end();
+        const QRect ink =
+            colorBBox(canvas, [](QRgb p) { return qAbs(qBlue(p) - 192) <= 2 && qAbs(qRed(p) - 64) <= 2; });
+        require(ink.width() == qRound(32 * dpr), "image spans the expected physical pixels");
+        // Each group of four source pixels contains exactly one dark column.
+        const auto darkCoverage = [](qreal x) { return std::floor(x / 4) + qMin(1.0, std::fmod(x, 4.0)); };
+        const qreal step = stripes.width() / qreal(ink.width());
+        for (int x = 0; x < ink.width(); ++x) {
+          const qreal coverage = darkCoverage((x + 1) * step) - darkCoverage(x * step);
+          const qreal expected = 255 * (1 - coverage / step);
+          const int green = qGreen(canvas.pixel(ink.left() + x, ink.center().y()));
+          require(qAbs(green - expected) <= 3, QString("stroke coverage for %1 at DPR %2, column %3: %4 vs %5")
+                                                   .arg(markdown)
+                                                   .arg(dpr)
+                                                   .arg(x)
+                                                   .arg(green)
+                                                   .arg(expected));
+        }
+      }
+    }
+  }
 }
 
 QImage renderDocumentImage(DocumentLayout& layout, DocumentSession& session, const QString& path) {
@@ -249,6 +302,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testDocumentRelativeImagesAndIndependentBases);
+  RUN_TEST(testDownsamplingPreservesThinStrokes);
   RUN_TEST(testImageDoesNotOverflowAboveItsBlock);
   RUN_TEST(testPercentEncodedDataUriRendersImage);
   RUN_TEST(testBase64DataUriRendersImage);

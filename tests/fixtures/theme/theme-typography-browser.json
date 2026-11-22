@@ -2,7 +2,7 @@
   "browser": "148.0.7778.96",
   "sources": {
     "tests/fixtures/theme/text-backend-browser.json": "952a7bd271cf56ff3ceee5e5d969835bbc0b46b94d3728edd3c20ec5252d2ad2",
-    "resources/themes/document-base.css": "80450739f751a79903aeef2f2eb73a1ba68bb38f365b1eb748fa6a82dda3ae50",
+    "resources/themes/document-base.css": "2ac5868e6731a13d6827b41a972f58214440bc9a7487b4fdf5c5bfbb14643c42",
     "tests/fixtures/theme/abyss-typography.css": "5902e041353d24185b5dc92a9c1eb41aa9acc229b2df0790f633befc85fbb17b",
     "tests/fixtures/theme/latex-typography.css": "2031aa262e6288604f6f150358e440638d695c24ec8f5c133131b3dd46ea9765"
   },

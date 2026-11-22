@@ -49,6 +49,7 @@ public:
   void setSize(QSizeF size);
   void setError(QString error);
   void setPalette(HtmlColorPalette palette);
+  void setImageResources(QHash<QString, std::shared_ptr<void>> images) { imageResources_ = std::move(images); }
 
   void paint(QPainter& painter, QPointF origin) const;
   void paintBoxFragment(QPainter& painter, const HtmlBox& box, QPointF origin) const { paintBox(painter, box, origin); }
@@ -69,7 +70,6 @@ private:
   void paintListMarker(QPainter& painter, const HtmlBox& box, const QRectF& contentRect) const;
   void paintHr(QPainter& painter, const HtmlBox& box, const QRectF& contentRect) const;
   void paintImage(QPainter& painter, const HtmlBox& box, QPointF origin) const;
-  const QImage& cachedImage(const QString& src) const;
 
   std::unique_ptr<HtmlBox> root_;
   std::vector<std::unique_ptr<HtmlTextLayout>> textLayouts_;
@@ -77,7 +77,7 @@ private:
   QString error_;
   QString baseDirectory_;
   HtmlColorPalette palette_ = HtmlColorPalette::defaultLight();
-  mutable QHash<QString, QImage> imageCache_;
+  QHash<QString, std::shared_ptr<void>> imageResources_;
 };
 
 } // namespace muffin::html

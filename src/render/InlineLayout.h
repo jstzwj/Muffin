@@ -225,7 +225,7 @@ private:
     QMarginsF margin;
     QVector<qsizetype> sourceOffsets;
   };
-  void buildHtmlAtoms(qreal width, const QFont& font, const QString& documentPath);
+  void buildHtmlAtoms(qreal width, const QFont& font, const BuildOptions& options);
 
   struct GeneratedPseudoAtom {
     enum class Kind { Text, Shape, Icon };

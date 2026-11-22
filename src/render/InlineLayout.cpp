@@ -21,6 +21,7 @@
 #include "render/DecorationPainter.h"
 #include "render/GradientPainter.h"
 #include "render/ImageLoader.h"
+#include "render/DocumentImagePainter.h"
 #include "render/ImagePlaceholder.h"
 #include "html/HtmlRenderer.h"
 #include <QFileInfo>
@@ -280,7 +281,7 @@ void InlineLayout::build(const QVector<InlineNode>& inlines, QString sourceText,
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width, options.documentPath, options.imageResources);
-  buildHtmlAtoms(width, baseFont, options.documentPath);
+  buildHtmlAtoms(width, baseFont, options);
   buildHtmlFormatSpans(theme, width);
   buildInlineBoxSpacing();
   buildGeneratedPseudoAtoms(theme, baseFont, width, options);
@@ -1975,6 +1976,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
       ImageAtom preview;
       preview.srcUrl = srcUrl;
+      preview.resourceUrl = resourceKey;
       preview.displaySize = imageDisplaySize;
       preview.cssBox = imageBox;
       preview.image = image;
@@ -1988,7 +1990,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
   }
 }
 
-void InlineLayout::buildHtmlAtoms(qreal width, const QFont& font, const QString& documentPath) {
+void InlineLayout::buildHtmlAtoms(qreal width, const QFont& font, const BuildOptions& options) {
   html::HtmlRenderer renderer;
   for (auto it = projection_.htmlFormatData().crbegin(); it != projection_.htmlFormatData().crend(); ++it) {
     const auto& data = *it;
@@ -2000,8 +2002,9 @@ void InlineLayout::buildHtmlAtoms(qreal width, const QFont& font, const QString&
       const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
       if (!range.valid || range.end <= range.start)
         continue;
-      auto layout = std::make_shared<html::HtmlLayoutResult>(renderer.render(
-          data.atomicHtml, font.pointSizeF(), width, QFileInfo(documentPath).absolutePath(), data.palette));
+      auto layout = std::make_shared<html::HtmlLayoutResult>(
+          renderer.render(data.atomicHtml, font.pointSizeF(), width, QFileInfo(options.documentPath).absolutePath(),
+                          data.palette, options.imageResources));
       if (!layout->valid() || !layout->root() || layout->root()->children().empty())
         continue;
       const auto& box = *layout->root()->children().front();
@@ -2437,8 +2440,8 @@ void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) 
     const auto targetRect = rect.translated(origin);
     if (atom.cssBox)
       paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
-    painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
-                      QRectF(atom.image.rect()));
+    paintDocumentImage(painter, atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect,
+                       atom.image);
   }
 }
 
@@ -2572,8 +2575,8 @@ void InlineLayout::paintImagePreview(QPainter& painter, QPointF origin) const {
     const QRectF targetRect(origin.x(), y, atom.displaySize.width(), atom.displaySize.height());
     if (atom.cssBox)
       paintLayoutBox(painter, *atom.cssBox, targetRect.topLeft());
-    painter.drawImage(atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect, atom.image,
-                      QRectF(atom.image.rect()));
+    paintDocumentImage(painter, atom.cssBox ? atom.cssBox->contentBox.translated(targetRect.topLeft()) : targetRect,
+                       atom.image);
     y += atom.displaySize.height() + kPreviewSpacing;
   }
 }

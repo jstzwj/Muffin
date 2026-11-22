@@ -4,6 +4,7 @@
 #include "html/HtmlStyleResolver.h"
 #include "html/HtmlLayoutEngine.h"
 #include "html/HtmlLayoutResult.h"
+#include "render/ImageLoader.h"
 
 #include "render/TextLayout.h"
 #include <QDir>
@@ -35,16 +36,17 @@ QString resolvedImageSource(const QString& src, const QString& baseDirectory) {
   return src;
 }
 
-void resolveResourcePaths(HtmlBox& box, const QString& baseDirectory) {
+void resolveResourcePaths(HtmlBox& box, const QString& baseDirectory, QHash<QString, std::shared_ptr<void>>& images) {
   if (box.tag() == HtmlTag::Image && !box.src().isEmpty()) {
     const QString resolved = resolvedImageSource(box.src(), baseDirectory);
     if (resolved != box.src()) {
       box.setSrc(resolved);
     }
+    images.insert(resolved, ImageLoader::instance().retain(resolved));
   }
 
   for (auto& child : box.children()) {
-    resolveResourcePaths(*child, baseDirectory);
+    resolveResourcePaths(*child, baseDirectory, images);
   }
 }
 
@@ -54,7 +56,8 @@ HtmlRenderer::HtmlRenderer() = default;
 HtmlRenderer::~HtmlRenderer() = default;
 
 HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, qreal availableWidth,
-                                      QString baseDirectory, const HtmlColorPalette& palette) {
+                                      QString baseDirectory, const HtmlColorPalette& palette,
+                                      QHash<QString, std::shared_ptr<void>>* documentImages) {
   HtmlLayoutResult result;
   result.setBaseDirectory(std::move(baseDirectory));
 
@@ -77,7 +80,11 @@ HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, q
     result.setError(QStringLiteral("Failed to build box tree"));
     return result;
   }
-  resolveResourcePaths(*root, result.baseDirectory());
+  QHash<QString, std::shared_ptr<void>> images;
+  resolveResourcePaths(*root, result.baseDirectory(), images);
+  if (documentImages)
+    documentImages->insert(images);
+  result.setImageResources(std::move(images));
 
   // 3. Resolve styles
   HtmlStyleResolver styleResolver;

@@ -1389,7 +1389,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(const Markdow
       htmlPalette.tableHeaderBackground = theme.tableHeaderBackgroundColor();
       htmlPalette.highlight = theme.highlightBackgroundColor();
       htmlResult = std::make_shared<html::HtmlLayoutResult>(
-          htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory, htmlPalette));
+          htmlRenderer_.render(sanitizedHtml, fontSize, contentWidth, baseDirectory, htmlPalette, imageResources_));
     }
     if (htmlResult->valid() && htmlResult->hasVisibleContent()) {
       height = std::ceil(htmlResult->size().height() + padding.top() + padding.bottom());

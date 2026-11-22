@@ -21,6 +21,7 @@ div, section, article, header, footer, nav, main, aside, p, blockquote,
 pre, h1, h2, h3, h4, h5, h6, ul, ol, hr, details, summary, figure { display: block; }
 span, a, code, kbd, tt, b, strong, i, em, u, s, del, mark, sub, sup,
 small, big, abbr, ins, label, img, br, input, button, textarea, select, option, q { display: inline; }
+img { max-width: 100%; }
 b, strong, th, summary { font-weight: bold; }
 i, em { font-style: italic; }
 u, a { text-decoration: underline; }

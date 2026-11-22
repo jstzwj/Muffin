@@ -289,7 +289,7 @@ void asyncAndLocalImages() {
   QByteArray png;
   QBuffer buffer(&png);
   buffer.open(QIODevice::WriteOnly);
-  image({75, 45}, Qt::red).save(&buffer, "PNG");
+  image({1144, 400}, Qt::red).save(&buffer, "PNG");
   QObject::connect(&server, &QTcpServer::newConnection, &server, [&] {
     auto* socket = server.nextPendingConnection();
     QObject::connect(socket, &QTcpSocket::readyRead, socket, [socket, png] {
@@ -301,18 +301,47 @@ void asyncAndLocalImages() {
     QObject::connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
   });
   const auto remote = QString("http://127.0.0.1:%1/image.png").arg(server.serverPort());
+  const auto htmlImage = remote + "?html";
   DocumentSession download;
-  download.setMarkdownText("![download](" + remote + ")\n\nneighbor", false);
+  download.setMarkdownText("![download](" + remote + ")\n\n<img width=\"572\" alt=\"Screenshot\" src=\"" + htmlImage +
+                               "\">\n\nneighbor",
+                           false);
+  auto readingTheme = RenderTheme::fromDefinition(CssThemeMapper::fromCss("#write{padding:0;margin:0}", "reading", {}));
   DocumentLayout pending;
-  pending.rebuild(download.document(), theme, 420);
+  pending.rebuild(download.document(), readingTheme, 420);
+  // Simulate a document whose decoded screenshots exceed the warm cache budget.
+  auto& loader = ImageLoader::instance();
+  loader.setCacheLimits(1024, 2);
   timer.restart();
-  while (timer.elapsed() < 3000 && ImageLoader::instance().cached(remote).isNull()) {
+  while (timer.elapsed() < 3000 && (loader.isPending(remote) || loader.isPending(htmlImage))) {
     QCoreApplication::processEvents();
     QThread::msleep(1);
   }
-  require(!ImageLoader::instance().cached(remote).isNull(), "real asynchronous loopback download completes");
-  require(pending.refreshResources(theme).updatedBlocks == 1, "download refreshes the image owner");
-  sameFresh(pending, download, theme, 420);
+  require(!loader.cached(remote).isNull() && !loader.cached(htmlImage).isNull(), "both visible downloads stay loaded");
+  require(pending.refreshResources(readingTheme).updatedBlocks == 2, "downloads refresh both image blocks");
+  for (const int width : {420, 800, 320}) {
+    if (width != 420)
+      pending.rebuild(download.document(), readingTheme, width);
+    for (int i = 0; i < 2; ++i) {
+      const auto* block = pending.block(download.document().root().children()[i]->id());
+      QImage output(1200, 480, QImage::Format_ARGB32_Premultiplied);
+      output.fill(Qt::white);
+      QPainter painter(&output);
+      painter.translate(-block->rect().topLeft());
+      block->paint(painter, readingTheme, 0);
+      painter.end();
+      QRect ink;
+      for (int y = 0; y < output.height(); ++y)
+        for (int x = 0; x < output.width(); ++x)
+          if (output.pixel(x, y) == qRgb(255, 0, 0))
+            ink |= QRect(x, y, 1, 1);
+      const auto expectedWidth = qMin(block->rect().width(), i == 0 ? 1144.0 : 572.0);
+      require(qAbs(ink.width() - expectedWidth) <= 1 && qAbs(ink.height() - expectedWidth * 400 / 1144) <= 1,
+              "downloaded Markdown and standalone HTML images fit the content width at their aspect ratio");
+    }
+  }
+  loader.setCacheLimits(32 * 1024 * 1024, 256);
+  sameFresh(pending, download, readingTheme, 320);
 }
 void editorResources() {
   const QString url = "https://example.invalid/editor-resource.png";

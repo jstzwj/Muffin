@@ -1,4 +1,5 @@
 #include "html/HtmlLayoutResult.h"
+#include "render/DocumentImagePainter.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
 
@@ -470,7 +471,7 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
     return;
   }
 
-  const QImage& image = cachedImage(box.src());
+  const QImage image = ImageLoader::instance().image(box.src());
   if (image.isNull()) {
     // Failed to load — draw broken-image icon inside the box
     const auto& geo = box.geometry();
@@ -499,14 +500,7 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
   // default CSS object fitting fills that content box, including enlargement.
   const QSizeF size =
       box.layoutBox.valid ? box.layoutBox.contentBox.size() : QSizeF(box.geometry().width, box.geometry().height);
-  painter.drawImage(QRectF(origin, size), image);
-}
-
-const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {
-  // The shared loader versions local and remote images; a retained HTML box
-  // must not keep a private null/old image after the resource changes.
-  auto it = imageCache_.insert(src, ImageLoader::instance().image(src));
-  return it.value();
+  paintDocumentImage(painter, QRectF(origin, size), image);
 }
 
 } // namespace muffin::html
