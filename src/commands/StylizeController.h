@@ -68,12 +68,13 @@ private:
     qsizetype localEnd = 0;
   };
 
+  // contentOffset uses the same owning top-level block coordinates as InlineNode ranges.
   QVector<MarkerSpan> collectOverlappingMarkers(const QVector<InlineNode>& inlines, InlineType targetType,
-                                                qsizetype contentBase, qsizetype localSelStart,
+                                                qsizetype contentOffset, qsizetype localSelStart,
                                                 qsizetype localSelEnd) const;
 
   void collectOverlappingMarkersRecursive(const QVector<InlineNode>& inlines, InlineType targetType,
-                                          qsizetype contentBase, qsizetype localSelStart, qsizetype localSelEnd,
+                                          qsizetype contentOffset, qsizetype localSelStart, qsizetype localSelEnd,
                                           QVector<MarkerSpan>& markers) const;
 
   // Collect the delimiter-syntax source spans of every styling node (the source
@@ -103,9 +104,9 @@ private:
                                      qsizetype localSelStart, qsizetype localSelEnd, bool allHasStyle,
                                      const QString& openMarker, const QString& closeMarker) const;
 
-  // --- Delta application (unchanged) ---
+  // Apply a normalized source range, retaining the original selection's direction.
   bool applyStyleDelta(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart, qsizetype removedLength,
-                       QString insertedText, qsizetype nextAnchorSourceOffset, qsizetype nextFocusSourceOffset,
+                       QString insertedText, qsizetype nextSelectionStart, qsizetype nextSelectionEnd,
                        QVector<LocalEditNodeHint> nodeHints = {});
   CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
 };

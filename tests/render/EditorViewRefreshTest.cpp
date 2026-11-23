@@ -2,6 +2,7 @@
 #include "document/MarkdownNode.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
+#include "commands/StylizeController.h"
 
 #include "EditorViewTestUtils.h"
 
@@ -146,6 +147,31 @@ void testRefreshTopLevelRangeDirtiesCaretRects() {
   view.viewport()->removeEventFilter(&spy);
 }
 
+void testBoldDoesNotScrollToOppositeEndOfBackwardSelection() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(600, 400);
+  view.show();
+  const QString paragraph = QStringLiteral("selected words ").repeated(180).trimmed();
+  const QString prefix = QStringLiteral("preface\n\n");
+  session.setMarkdownText(prefix + paragraph + QStringLiteral("\n\nafterwards"), false);
+  view.setDocument(session.document());
+  controller.selectSourceRange(prefix.size() + paragraph.size(), prefix.size());
+  QApplication::processEvents();
+  const int scrollBefore = view.verticalScrollBar()->value();
+  const qreal caretBefore = view.effectiveCursorRect().top() - scrollBefore;
+  require(caretBefore >= 0 && caretBefore < view.viewport()->height(), "the backwards selection focus is visible");
+  require(controller.stylizeController().toggleBold(), "bold formats the long backwards selection");
+  controller.brushQueue().flush();
+  QApplication::processEvents();
+  const int scrollAfter = view.verticalScrollBar()->value();
+  const qreal caretAfter = view.effectiveCursorRect().top() - scrollAfter;
+  require(qAbs(scrollAfter - scrollBefore) <= 1 && qAbs(caretAfter - caretBefore) <= 1,
+          "bold must retain the visible selection focus instead of jumping to its offscreen opposite end");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -160,6 +186,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testRefreshVisibleBlocksRebuildsStampedBlock);
   RUN_TEST(testRefreshBlocksStillHonorsStamp);
   RUN_TEST(testRefreshTopLevelRangeDirtiesCaretRects);
+  RUN_TEST(testBoldDoesNotScrollToOppositeEndOfBackwardSelection);
 #undef RUN_TEST
   qInfo("All refresh tests passed.");
   return 0;

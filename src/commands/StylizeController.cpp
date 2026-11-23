@@ -481,8 +481,9 @@ bool StylizeController::toggleRange(const BlockEditContext& context, qsizetype l
   const bool allHasStyle = hasStyleInRange(context.inlineProjection, type, localSelStart, localSelEnd);
 
   // 2. Collect overlapping markers from InlineNode tree
+  const qsizetype contentOffset = contentBase - context.editableNode->topLevelBlock()->sourceRange().byteStart;
   QVector<MarkerSpan> markers =
-      collectOverlappingMarkers(context.editableNode->inlines(), type, contentBase, localSelStart, localSelEnd);
+      collectOverlappingMarkers(context.editableNode->inlines(), type, contentOffset, localSelStart, localSelEnd);
 
   // 3. Build toggled content
   ToggledContent result = buildToggledContent(context.contentText, markers, localSelStart, localSelEnd, allHasStyle,
@@ -600,21 +601,11 @@ bool StylizeController::toggleMultiBlock(InlineType type, const QString& openMar
   const qsizetype totalEnd = blocks.first().contentEnd;
   QString replacement = markdown.mid(totalStart, totalEnd - totalStart);
 
-  // Track offset shift as we process blocks from end to start
-  qsizetype runningShift = 0;
-  qsizetype nextAnchorSource = -1;
-  qsizetype nextFocusSource = -1;
-
-  const bool anchorFirst = sel.anchor.blockId == sel.focus.blockId
-                               ? true // shouldn't happen in multi-block
-                               : ctx_.session->document().node(sel.anchor.blockId) &&
-                                     ctx_.session->document().node(sel.anchor.blockId)->sourceRange().byteStart <=
-                                         ctx_.session->document().node(sel.focus.blockId)->sourceRange().byteStart;
+  qsizetype nextSelectionStart = -1;
+  qsizetype nextSelectionEnd = -1;
 
   for (const EditBlock& block : blocks) {
     const qsizetype relBase = block.contentBase - totalStart;
-    const qsizetype relSelStart = block.localSelStart + relBase - runningShift;
-    const qsizetype relSelEnd = block.localSelEnd + relBase - runningShift;
 
     // Build context for detection
     BlockEditContext ctx;
@@ -624,7 +615,8 @@ bool StylizeController::toggleMultiBlock(InlineType type, const QString& openMar
 
     const bool allHasStyle = hasStyleInRange(ctx.inlineProjection, type, block.localSelStart, block.localSelEnd);
 
-    QVector<MarkerSpan> markers = collectOverlappingMarkers(block.editableNode->inlines(), type, block.contentBase,
+    const qsizetype contentOffset = block.contentBase - block.editableNode->topLevelBlock()->sourceRange().byteStart;
+    QVector<MarkerSpan> markers = collectOverlappingMarkers(block.editableNode->inlines(), type, contentOffset,
                                                             block.localSelStart, block.localSelEnd);
 
     ToggledContent result = buildToggledContent(ctx.contentText, markers, block.localSelStart, block.localSelEnd,
@@ -634,39 +626,20 @@ bool StylizeController::toggleMultiBlock(InlineType type, const QString& openMar
     const qsizetype oldLen = block.contentEnd - block.contentBase;
     replacement.replace(relBase, oldLen, result.text);
 
-    // Compute cursor offsets for the first and last blocks
-    const qsizetype blockAnchorSource = block.contentBase + result.adjustedSelStart;
-    const qsizetype blockFocusSource = block.contentBase + result.adjustedSelEnd;
-
-    // We only need anchor (first block) and focus (last block)
-    // blocks are sorted in reverse order, so:
-    // first block = the one closest to start = last in the vector
-    // last block = the one closest to end = first in the vector
-    // Since we iterate in reverse, the first iteration is the last block (focus side),
-    // and the last iteration is the first block (anchor side)
+    // Later blocks have already been replaced. Each earlier edit shifts their
+    // source positions, including the far end of the selection.
+    if (nextSelectionEnd >= 0) {
+      nextSelectionEnd += result.text.size() - oldLen;
+    }
     if (block.contentBase == blocks.first().contentBase) {
-      // This is the last block in source order = focus side (if anchorFirst)
-      // or anchor side (if !anchorFirst)
-      if (anchorFirst) {
-        nextFocusSource = blockFocusSource;
-      } else {
-        nextAnchorSource = blockAnchorSource;
-      }
+      nextSelectionEnd = block.contentBase + result.adjustedSelEnd;
     }
     if (block.contentBase == blocks.last().contentBase) {
-      // This is the first block in source order = anchor side (if anchorFirst)
-      // or focus side (if !anchorFirst)
-      if (anchorFirst) {
-        nextAnchorSource = blockAnchorSource;
-      } else {
-        nextFocusSource = blockFocusSource;
-      }
+      nextSelectionStart = block.contentBase + result.adjustedSelStart;
     }
-
-    runningShift += oldLen - result.text.size();
   }
 
-  if (nextAnchorSource < 0 || nextFocusSource < 0) {
+  if (nextSelectionStart < 0 || nextSelectionEnd < 0) {
     return false;
   }
 
@@ -675,8 +648,8 @@ bool StylizeController::toggleMultiBlock(InlineType type, const QString& openMar
     nodeHints.push_back(LocalEditNodeHint{block.editableNode->id(), block.contentBase, block.editableNode->type()});
   }
 
-  return applyStyleDelta(kind, label, totalStart, totalEnd - totalStart, std::move(replacement), nextAnchorSource,
-                         nextFocusSource, std::move(nodeHints));
+  return applyStyleDelta(kind, label, totalStart, totalEnd - totalStart, std::move(replacement), nextSelectionStart,
+                         nextSelectionEnd, std::move(nodeHints));
 }
 
 // ============================================================================
@@ -877,16 +850,16 @@ const InlineNode* StylizeController::findWrappingNode(const QVector<InlineNode>&
 
 QVector<StylizeController::MarkerSpan> StylizeController::collectOverlappingMarkers(const QVector<InlineNode>& inlines,
                                                                                     InlineType targetType,
-                                                                                    qsizetype contentBase,
+                                                                                    qsizetype contentOffset,
                                                                                     qsizetype localSelStart,
                                                                                     qsizetype localSelEnd) const {
   QVector<MarkerSpan> markers;
-  collectOverlappingMarkersRecursive(inlines, targetType, contentBase, localSelStart, localSelEnd, markers);
+  collectOverlappingMarkersRecursive(inlines, targetType, contentOffset, localSelStart, localSelEnd, markers);
   return markers;
 }
 
 void StylizeController::collectOverlappingMarkersRecursive(const QVector<InlineNode>& inlines, InlineType targetType,
-                                                           qsizetype contentBase, qsizetype localSelStart,
+                                                           qsizetype contentOffset, qsizetype localSelStart,
                                                            qsizetype localSelEnd, QVector<MarkerSpan>& markers) const {
   for (const InlineNode& node : inlines) {
     if (node.type() == targetType) {
@@ -895,26 +868,26 @@ void StylizeController::collectOverlappingMarkersRecursive(const QVector<InlineN
       const InlineRange closeRange = node.closeMarkerRange();
 
       if (content.isValid() && openRange.isValid() && closeRange.isValid()) {
-        const qsizetype localContentStart = content.start - contentBase;
-        const qsizetype localContentEnd = content.end - contentBase;
+        const qsizetype localContentStart = content.start - contentOffset;
+        const qsizetype localContentEnd = content.end - contentOffset;
 
         // Does this node's content overlap with the selection?
         if (localContentStart < localSelEnd && localContentEnd > localSelStart) {
-          markers.append({openRange.start - contentBase, openRange.end - contentBase});
-          markers.append({closeRange.start - contentBase, closeRange.end - contentBase});
+          markers.append({openRange.start - contentOffset, openRange.end - contentOffset});
+          markers.append({closeRange.start - contentOffset, closeRange.end - contentOffset});
         }
       }
 
       // Recurse into children of this node to find same-type markers
       // at deeper nesting levels (unlikely but safe to handle)
       if (!node.children().isEmpty()) {
-        collectOverlappingMarkersRecursive(node.children(), targetType, contentBase, localSelStart, localSelEnd,
+        collectOverlappingMarkersRecursive(node.children(), targetType, contentOffset, localSelStart, localSelEnd,
                                            markers);
       }
     } else {
       // Not the target type, recurse into children
       if (!node.children().isEmpty()) {
-        collectOverlappingMarkersRecursive(node.children(), targetType, contentBase, localSelStart, localSelEnd,
+        collectOverlappingMarkersRecursive(node.children(), targetType, contentOffset, localSelStart, localSelEnd,
                                            markers);
       }
     }
@@ -1036,8 +1009,8 @@ StylizeController::ToggledContent StylizeController::buildToggledContent(const Q
 // ============================================================================
 
 bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart,
-                                        qsizetype removedLength, QString insertedText, qsizetype nextAnchorSourceOffset,
-                                        qsizetype nextFocusSourceOffset, QVector<LocalEditNodeHint> nodeHints) {
+                                        qsizetype removedLength, QString insertedText, qsizetype nextSelectionStart,
+                                        qsizetype nextSelectionEnd, QVector<LocalEditNodeHint> nodeHints) {
   if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0 ||
       sourceStart + removedLength > ctx_.session->markdownText().size()) {
     return false;
@@ -1045,6 +1018,16 @@ bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QStrin
 
   const CursorPosition beforeCursor =
       ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
+  // Resolve direction against the old document. Node ids and local offsets may
+  // change when delimiters are inserted, and the focus must stay on the same end.
+  bool backwards = false;
+  if (ctx_.selection && !ctx_.selection->selection().isCollapsed()) {
+    const auto resolver = ctx_.contextResolver();
+    const auto& selection = ctx_.selection->selection();
+    const auto anchor = resolver.sourceAnchoredCursor(selection.anchor);
+    const auto focus = resolver.sourceAnchoredCursor(selection.focus);
+    backwards = anchor.text.sourceOffset > focus.text.sourceOffset;
+  }
   const QString removedText = ctx_.session->markdownText().mid(sourceStart, removedLength);
   QVector<NodeId> affectedNodes;
   for (const LocalEditNodeHint& hint : nodeHints) {
@@ -1057,8 +1040,8 @@ bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QStrin
   }
 
   SelectionRange nextSelection;
-  nextSelection.anchor = cursorForSourceOffset(nextAnchorSourceOffset);
-  nextSelection.focus = cursorForSourceOffset(nextFocusSourceOffset);
+  nextSelection.anchor = cursorForSourceOffset(backwards ? nextSelectionEnd : nextSelectionStart);
+  nextSelection.focus = cursorForSourceOffset(backwards ? nextSelectionStart : nextSelectionEnd);
   if (ctx_.selection && nextSelection.focus.isValid()) {
     ctx_.selection->setSelection(nextSelection);
   }
@@ -1069,10 +1052,9 @@ bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QStrin
     affectedNodes.push_back(nextSelection.focus.blockId);
   }
   if (ctx_.undoStack && beforeCursor.isValid() && nextSelection.focus.isValid()) {
-    ctx_.undoStack->push(
-        EditTransaction(kind, label,
-                        TextDeltaCommand{TextDelta{sourceStart, removedText, insertedText}, beforeCursor,
-                                         nextSelection.focus, std::move(affectedNodes)}));
+    ctx_.undoStack->push(EditTransaction(kind, label,
+                                         TextDeltaCommand{TextDelta{sourceStart, removedText, insertedText},
+                                                          beforeCursor, nextSelection.focus, affectedNodes}));
   }
   if (ctx_.brushQueue) {
     if (!affectedNodes.isEmpty()) {

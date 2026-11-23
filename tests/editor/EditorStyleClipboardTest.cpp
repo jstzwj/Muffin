@@ -200,6 +200,147 @@ void testStylizeCrossParagraphSelectionWrap() {
   require(session.markdownText().toString() == QStringLiteral("al`pha`\n\n`be`ta"),
           "reverse cross paragraph code wrap mismatch");
 }
+void testBoldPreservesBackwardSelectionFocus() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  StylizeController stylize;
+  wireStyle(stylize, session, selection, undoStack, brushQueue);
+  session.setMarkdownText(QStringLiteral("preface\n\nalpha beta gamma"), false);
+  const auto* paragraph = blockAt(session, 1);
+  const auto base = paragraph->sourceRange().byteStart;
+  setSelection(selection, blockAt(session, 1), 16, 0);
+  require(stylize.toggleBold(), "bold should format a backwards selection");
+  require(session.markdownText().toString() == QStringLiteral("preface\n\n**alpha beta gamma**"),
+          "backwards bold preserves the selected content");
+  require(selection.selection().anchor.text.sourceOffset == base + 18 &&
+              selection.selection().focus.text.sourceOffset == base + 2,
+          "formatting must retain the focus at the beginning of a backwards selection");
+}
+void testFormattingRetainsLocalRefreshWithUndoHistory() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  StylizeController stylize;
+  wireStyle(stylize, session, selection, undoStack, brushQueue);
+  session.setMarkdownText(QStringLiteral("preface\n\nalpha beta\n\nafterwards"), false);
+  setSelection(selection, blockAt(session, 1), 6, 10);
+  bool refreshed = false;
+  BrushQueue::RefreshRequest refresh;
+  QObject::connect(&brushQueue, &BrushQueue::refreshRequested, &brushQueue, [&](BrushQueue::RefreshRequest request) {
+    refreshed = true;
+    refresh = std::move(request);
+  });
+  require(stylize.toggleBold(), "formatting with undo history should succeed");
+  brushQueue.flush();
+  require(refreshed && !refresh.fullLayoutDirty &&
+              refresh.layoutDirtyBlocks.contains(selection.cursorPosition().blockId),
+          "recording undo must not consume the block list needed for local layout refresh");
+  const auto transaction = undoStack.takeUndo();
+  require(transaction.isTextDeltaCommand() && transaction.textDeltaCommand().affectedNodes == refresh.layoutDirtyBlocks,
+          "undo history and layout refresh must both retain the affected blocks");
+}
+void testFormattingPreservesSelectionThroughRepeatedToggles() {
+  struct Style {
+    bool (StylizeController::*toggle)();
+    QString open;
+    QString close;
+  };
+  const Style styles[] = {{&StylizeController::toggleBold, QStringLiteral("**"), QStringLiteral("**")},
+                          {&StylizeController::toggleItalic, QStringLiteral("*"), QStringLiteral("*")},
+                          {&StylizeController::toggleCode, QStringLiteral("`"), QStringLiteral("`")},
+                          {&StylizeController::toggleStrikethrough, QStringLiteral("~~"), QStringLiteral("~~")},
+                          {&StylizeController::toggleInlineMath, QStringLiteral("$"), QStringLiteral("$")},
+                          {&StylizeController::toggleUnderline, QStringLiteral("<u>"), QStringLiteral("</u>")}};
+  for (const auto& style : styles) {
+    for (int fixture = 0; fixture < 4; ++fixture) {
+      for (bool backwards : {false, true}) {
+        DocumentSession session;
+        SelectionController selection;
+        UndoStack undoStack;
+        BrushQueue brushQueue;
+        StylizeController stylize;
+        wireStyle(stylize, session, selection, undoStack, brushQueue);
+        const QString prefixes[] = {QStringLiteral("preface\n\n"), QStringLiteral("preface\n\n### "),
+                                    QStringLiteral("preface\n\n- "), QStringLiteral("preface\n\n1. ")};
+        const QString prefix = prefixes[fixture];
+        const QString original = prefix + QStringLiteral("alpha beta gamma");
+        const QString formatted = prefix + QStringLiteral("alpha ") + style.open + QStringLiteral("beta") +
+                                  style.close + QStringLiteral(" gamma");
+        session.setMarkdownText(original, false);
+        auto* block = fixture >= 2 ? listItemAt(session, 1, 0) : blockAt(session, 1);
+        setSelection(selection, block, backwards ? 10 : 6, backwards ? 6 : 10);
+        for (int step = 0; step < 2; ++step) {
+          require((stylize.*style.toggle)(), "formatting toggle should succeed");
+          const QString expected = step == 0 ? formatted : original;
+          require(session.markdownText().toString() == expected,
+                  "formatting twice must restore the original text without stray delimiters");
+          const qsizetype start = expected.indexOf(QStringLiteral("beta"));
+          const qsizetype end = start + 4;
+          require(selection.selection().anchor.text.sourceOffset == (backwards ? end : start) &&
+                      selection.selection().focus.text.sourceOffset == (backwards ? start : end),
+                  "formatting must preserve both selected text and active end in paragraphs, headings and lists");
+        }
+      }
+    }
+  }
+}
+void testLinkAndImagePreserveBackwardSelectionFocus() {
+  for (bool image : {false, true}) {
+    DocumentSession session;
+    SelectionController selection;
+    UndoStack undoStack;
+    BrushQueue brushQueue;
+    StylizeController stylize;
+    wireStyle(stylize, session, selection, undoStack, brushQueue);
+    session.setMarkdownText(QStringLiteral("preface\n\nalpha beta"), false);
+    setSelection(selection, blockAt(session, 1), 10, 6);
+    require(image ? stylize.insertImage() : stylize.insertLink(), "wrap backwards selection as a link or image");
+    const QString expected =
+        image ? QStringLiteral("preface\n\nalpha ![beta](url)") : QStringLiteral("preface\n\nalpha [beta](url)");
+    require(session.markdownText().toString() == expected, "link or image text mismatch");
+    const qsizetype start = expected.indexOf(QStringLiteral("beta"));
+    require(selection.selection().anchor.text.sourceOffset == start + 4 &&
+                selection.selection().focus.text.sourceOffset == start,
+            "wrapping a link or image must retain the original selection focus");
+  }
+}
+void testCrossParagraphFormattingPreservesSourceEndpoints() {
+  for (bool lists : {false, true}) {
+    for (bool backwards : {false, true}) {
+      DocumentSession session;
+      SelectionController selection;
+      UndoStack undoStack;
+      BrushQueue brushQueue;
+      StylizeController stylize;
+      wireStyle(stylize, session, selection, undoStack, brushQueue);
+      const QString original = lists ? QStringLiteral("preface\n\n# alpha\n\n- beta\n- gamma")
+                                     : QStringLiteral("preface\n\nalpha\n\nbeta\n\ngamma");
+      const QString formatted = lists ? QStringLiteral("preface\n\n# al**pha**\n\n- **beta**\n- **gam**ma")
+                                      : QStringLiteral("preface\n\nal**pha**\n\n**beta**\n\n**gam**ma");
+      session.setMarkdownText(original, false);
+      auto* first = blockAt(session, 1);
+      auto* last = lists ? listItemAt(session, 2, 1) : blockAt(session, 3);
+      if (backwards) {
+        setCrossSelection(selection, last, 3, first, 2);
+      } else {
+        setCrossSelection(selection, first, 2, last, 3);
+      }
+      for (int step = 0; step < 2; ++step) {
+        require(stylize.toggleBold(), "cross paragraph bold toggle should succeed");
+        const QString expected = step == 0 ? formatted : original;
+        require(session.markdownText().toString() == expected, "cross paragraph bold roundtrip mismatch");
+        const qsizetype start = expected.indexOf(QStringLiteral("pha"));
+        const qsizetype end = expected.lastIndexOf(QStringLiteral("gam")) + 3;
+        require(selection.selection().anchor.text.sourceOffset == (backwards ? end : start) &&
+                    selection.selection().focus.text.sourceOffset == (backwards ? start : end),
+                "cross paragraph formatting must account for all delimiter shifts and preserve selection direction");
+      }
+    }
+  }
+}
 void testClipboardPlainText() {
   DocumentSession session;
   SelectionController selection;
@@ -794,6 +935,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testStylizeUndoRedoTextDelta);
   RUN_TEST(testHeadingAndListItemStylize);
   RUN_TEST(testStylizeCrossParagraphSelectionWrap);
+  RUN_TEST(testBoldPreservesBackwardSelectionFocus);
+  RUN_TEST(testFormattingRetainsLocalRefreshWithUndoHistory);
+  RUN_TEST(testFormattingPreservesSelectionThroughRepeatedToggles);
+  RUN_TEST(testLinkAndImagePreserveBackwardSelectionFocus);
+  RUN_TEST(testCrossParagraphFormattingPreservesSourceEndpoints);
   RUN_TEST(testClipboardPlainText);
   RUN_TEST(testBrowserHeadingClipboard);
   RUN_TEST(testRichClipboardInterop);
