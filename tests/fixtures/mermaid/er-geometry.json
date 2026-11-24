@@ -2,10 +2,10 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "notes": "Real mermaid 11.16.0 erDiagram geometry captured via headless Chrome. Entity bounds + relationship paths are normalized to the first source-order entity's centre (index 0), matching Muffin's FlowchartLayout origin subtraction. cardA/cardB recovered from crow's-foot markers (marker-end=cardA, marker-start=cardB). Compare against er::ErScene::toJsonObject with entity matching by id."
+    "notes": "Real mermaid 11.16.0 erDiagram geometry captured via headless Chrome with the bundled Noto fonts. Entity bounds + relationship paths are normalized to the first source-order entity's centre (index 0), matching Muffin's FlowchartLayout origin subtraction. cardA/cardB recovered from crow's-foot markers (marker-end=cardA, marker-start=cardB). Compare against er::ErScene::toJsonObject with entity matching by id."
   },
   "mermaidVersion": "11.16.0",
-  "fontMode": "trebuchet-ms",
+  "fontMode": "bundled-noto-2.13b171",
   "oracle": "erDiagram.render entity bounds + relationship paths (first-entity normalized)",
   "cases": [
     {
@@ -26,7 +26,7 @@
             "id": "B",
             "bounds": {
               "x": -50,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -44,7 +44,7 @@
             "id": "D",
             "bounds": {
               "x": 190,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -62,7 +62,7 @@
             "id": "F",
             "bounds": {
               "x": 430,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -80,7 +80,7 @@
             "id": "H",
             "bounds": {
               "x": 670,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -88,7 +88,7 @@
         ],
         "relationships": [
           {
-            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
             "cardA": "ExactlyOne",
             "cardB": "ExactlyOne",
             "identifying": true,
@@ -96,7 +96,7 @@
             "strokeWidth": "1px"
           },
           {
-            "path": "M240,42L240,50.583C240,59.167,240,76.333,240,93.5C240,110.667,240,127.833,240,136.417L240,145",
+            "path": "M240,42L240,50.417C240,58.833,240,75.667,240,92.5C240,109.333,240,126.167,240,134.583L240,143",
             "cardA": "ZeroOrOne",
             "cardB": "ZeroOrOne",
             "identifying": true,
@@ -104,7 +104,7 @@
             "strokeWidth": "1px"
           },
           {
-            "path": "M480,42L480,50.583C480,59.167,480,76.333,480,93.5C480,110.667,480,127.833,480,136.417L480,145",
+            "path": "M480,42L480,50.417C480,58.833,480,75.667,480,92.5C480,109.333,480,126.167,480,134.583L480,143",
             "cardA": "OneOrMore",
             "cardB": "OneOrMore",
             "identifying": true,
@@ -112,32 +112,58 @@
             "strokeWidth": "1px"
           },
           {
-            "path": "M720,42L720,50.583C720,59.167,720,76.333,720,93.5C720,110.667,720,127.833,720,136.417L720,145",
+            "path": "M720,42L720,50.417C720,58.833,720,75.667,720,92.5C720,109.333,720,126.167,720,134.583L720,143",
             "cardA": "ZeroOrMore",
             "cardB": "ZeroOrMore",
             "identifying": true,
             "strokeDasharray": "0px",
             "strokeWidth": "1px"
           }
-        ]
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            836,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "836px",
+          "diagramWidth": 820,
+          "diagramHeight": 269
+        }
       }
     },
     {
       "id": "entity-attributes-keys",
-      "source": "erDiagram\nCUSTOMER {\n  string name PK \"primary name key\"\n  int age\n  bigint account_id FK\n  string email UK \"unique email\"\n}",
+      "source": "erDiagram\nCUSTOMER {\nstring name PK \"primary name key\"\nint age\nbigint account_id FK\nstring email UK \"unique email\"\n}",
       "expected": {
         "entities": [
           {
             "id": "CUSTOMER",
             "bounds": {
-              "x": -184.133,
+              "x": -191.008,
               "y": -106.875,
-              "width": 368.266,
+              "width": 382.016,
               "height": 213.75
             }
           }
         ],
-        "relationships": []
+        "relationships": [],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            398.015625,
+            229.75
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "398.016px",
+          "diagramWidth": 382.016,
+          "diagramHeight": 213.75
+        }
       }
     },
     {
@@ -148,9 +174,9 @@
           {
             "id": "CUSTOMER",
             "bounds": {
-              "x": -58.031,
+              "x": -62.516,
               "y": -42,
-              "width": 116.063,
+              "width": 125.031,
               "height": 84
             }
           },
@@ -158,7 +184,7 @@
             "id": "ORDER",
             "bounds": {
               "x": -50,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -166,59 +192,27 @@
         ],
         "relationships": [
           {
-            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
             "cardA": "ExactlyOne",
             "cardB": "ZeroOrMore",
             "identifying": true,
             "strokeDasharray": "0px",
             "strokeWidth": "1px"
           }
-        ]
-      }
-    },
-    {
-      "id": "entity-alias",
-      "source": "erDiagram\nENTITY \"Display Name\"\nUSER \"Application User\" {\n  string id PK\n}",
-      "expected": {
-        "entities": [
-          {
-            "id": "ENTITY",
-            "bounds": {
-              "x": -50,
-              "y": -42,
-              "width": 100,
-              "height": 84
-            }
-          },
-          {
-            "id": "Display Name",
-            "bounds": {
-              "x": 190,
-              "y": -42,
-              "width": 136.234,
-              "height": 84
-            }
-          },
-          {
-            "id": "USER",
-            "bounds": {
-              "x": 466.234,
-              "y": -42,
-              "width": 100,
-              "height": 84
-            }
-          },
-          {
-            "id": "Application User",
-            "bounds": {
-              "x": 706.234,
-              "y": -42.75,
-              "width": 167.734,
-              "height": 85.5
-            }
-          }
         ],
-        "relationships": []
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            141.03125,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "141.031px",
+          "diagramWidth": 125.031,
+          "diagramHeight": 269
+        }
       }
     },
     {
@@ -239,7 +233,7 @@
             "id": "B",
             "bounds": {
               "x": -50,
-              "y": 145,
+              "y": 143,
               "width": 100,
               "height": 84
             }
@@ -247,14 +241,27 @@
         ],
         "relationships": [
           {
-            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
             "cardA": "ExactlyOne",
             "cardB": "ExactlyOne",
             "identifying": true,
             "strokeDasharray": "0px",
             "strokeWidth": "1px"
           }
-        ]
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            116,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "116px",
+          "diagramWidth": 100,
+          "diagramHeight": 269
+        }
       }
     },
     {
@@ -265,32 +272,45 @@
           {
             "id": "CUSTOMER",
             "bounds": {
-              "x": -58.031,
+              "x": -62.516,
               "y": -42,
-              "width": 116.063,
+              "width": 125.031,
               "height": 84
             }
           },
           {
             "id": "DELIVERY-ADDRESS",
             "bounds": {
-              "x": -86.289,
-              "y": 145,
-              "width": 172.578,
+              "x": -93.523,
+              "y": 143,
+              "width": 187.047,
               "height": 84
             }
           }
         ],
         "relationships": [
           {
-            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
             "cardA": "OneOrMore",
             "cardB": "OneOrMore",
             "identifying": false,
             "strokeDasharray": "8px, 8px",
             "strokeWidth": "1px"
           }
-        ]
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            203.046875,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "203.047px",
+          "diagramWidth": 187.047,
+          "diagramHeight": 269
+        }
       }
     },
     {
@@ -301,15 +321,855 @@
           {
             "id": "ACCOUNT",
             "bounds": {
-              "x": -54.617,
+              "x": -57.375,
               "y": -42,
-              "width": 109.234,
+              "width": 114.75,
               "height": 84
             }
           }
         ],
-        "relationships": []
+        "relationships": [],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            130.75,
+            100
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "130.75px",
+          "diagramWidth": 114.75,
+          "diagramHeight": 84
+        }
+      }
+    },
+    {
+      "id": "chain",
+      "source": "erDiagram\nA ||--o{ B : r1\nB ||--o{ C : r2\nC ||--o{ D : r3",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -50,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "C",
+            "bounds": {
+              "x": -50,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "D",
+            "bounds": {
+              "x": -50,
+              "y": 513,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,227L0,235.417C0,243.833,0,260.667,0,277.5C0,294.333,0,311.167,0,319.583L0,328",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,412L0,420.417C0,428.833,0,445.667,0,462.5C0,479.333,0,496.167,0,504.583L0,513",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            116,
+            655
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "116px",
+          "diagramWidth": 100,
+          "diagramHeight": 639
+        }
+      }
+    },
+    {
+      "id": "fan-out",
+      "source": "erDiagram\nCUSTOMER {\nstring id PK\nstring name\n}\nCUSTOMER ||--o{ ORDER : places\nCUSTOMER ||--o{ INVOICE : receives\nCUSTOMER ||--|| ADDRESS : has",
+      "expected": {
+        "entities": [
+          {
+            "id": "CUSTOMER",
+            "bounds": {
+              "x": -90.68,
+              "y": -64.125,
+              "width": 181.359,
+              "height": 128.25
+            }
+          },
+          {
+            "id": "ORDER",
+            "bounds": {
+              "x": -291.977,
+              "y": 165.125,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "INVOICE",
+            "bounds": {
+              "x": -51.977,
+              "y": 165.125,
+              "width": 103.953,
+              "height": 84
+            }
+          },
+          {
+            "id": "ADDRESS",
+            "bounds": {
+              "x": 191.977,
+              "y": 165.125,
+              "width": 110,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M-90.68,42.955L-115.896,54.9C-141.112,66.845,-191.545,90.735,-216.761,111.097C-241.977,131.458,-241.977,148.292,-241.977,156.708L-241.977,165.125",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,64.125L0,72.542C0,80.958,0,97.792,0,114.625C0,131.458,0,148.292,0,156.708L0,165.125",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M90.679,42.086L116.729,54.176C142.778,66.265,194.877,90.445,220.927,110.952C246.976,131.458,246.976,148.292,246.976,156.708L246.976,165.125",
+            "cardA": "ExactlyOne",
+            "cardB": "ExactlyOne",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            609.953125,
+            329.25
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "609.953px",
+          "diagramWidth": 593.953,
+          "diagramHeight": 313.25
+        }
+      }
+    },
+    {
+      "id": "wide-attributes",
+      "source": "erDiagram\nSHIPMENT {\nstring tracking_number PK \"carrier tracking id\"\ndate shipped_on\ntext notes \"free form remarks\"\n}\nITEM {\nstring sku PK\nint quantity\n}\nSHIPMENT ||--|{ ITEM : contains",
+      "expected": {
+        "entities": [
+          {
+            "id": "SHIPMENT",
+            "bounds": {
+              "x": -214.461,
+              "y": -85.5,
+              "width": 428.922,
+              "height": 171
+            }
+          },
+          {
+            "id": "ITEM",
+            "bounds": {
+              "x": -100.469,
+              "y": 186.5,
+              "width": 200.938,
+              "height": 128.25
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,85.5L0,93.917C0,102.333,0,119.167,0,136C0,152.833,0,169.667,0,178.083L0,186.5",
+            "cardA": "ExactlyOne",
+            "cardB": "OneOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            444.921875,
+            416.25
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "444.922px",
+          "diagramWidth": 428.922,
+          "diagramHeight": 400.25
+        }
+      }
+    },
+    {
+      "id": "self-relationship",
+      "source": "erDiagram\nEMPLOYEE {\nstring id PK\nstring manager_id FK\n}\nEMPLOYEE |o--o{ EMPLOYEE : manages",
+      "expected": {
+        "entities": [
+          {
+            "id": "EMPLOYEE",
+            "bounds": {
+              "x": -113.93,
+              "y": -64.125,
+              "width": 227.859,
+              "height": 128.25
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M-24.65,64.125L-27.212,70.792C-29.775,77.458,-34.9,90.792,-37.463,104.125C-40.025,117.458,-40.025,130.792,-40.025,137.458L-40.025,144.125",
+            "cardA": "ZeroOrOne",
+            "cardB": null,
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M-40.025,144.225L-40.025,152.642C-40.025,161.058,-40.025,177.892,-33.361,194.725C-26.697,211.558,-13.368,228.392,-6.704,236.808L-0.04,245.225",
+            "cardA": null,
+            "cardB": null,
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0.039,245.225L6.704,236.808C13.368,228.392,26.696,211.558,33.36,194.717C40.025,177.875,40.025,161.025,40.025,145.925C40.025,130.825,40.025,117.475,37.462,104.133C34.899,90.792,29.774,77.458,27.212,70.792L24.649,64.125",
+            "cardA": null,
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            243.859375,
+            325.5
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "243.859px",
+          "diagramWidth": 227.859,
+          "diagramHeight": 309.5
+        }
+      }
+    },
+    {
+      "id": "two-relationships-same-pair",
+      "source": "erDiagram\nA ||--o{ B : r1\nB }o--|| A : r2",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -50,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M-7.673,42L-9.21,50.417C-10.748,58.833,-13.823,75.667,-13.823,92.5C-13.823,109.333,-10.748,126.167,-9.21,134.583L-7.673,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M7.673,143L9.21,134.583C10.748,126.167,13.823,109.333,13.823,92.5C13.823,75.667,10.748,58.833,9.21,50.417L7.673,42",
+            "cardA": "ZeroOrMore",
+            "cardB": "ExactlyOne",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            116,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "116px",
+          "diagramWidth": 100,
+          "diagramHeight": 269
+        }
+      }
+    },
+    {
+      "id": "mixed-identifying",
+      "source": "erDiagram\nA ||--o{ B : r1\nB }|..|{ C : r2\nC |o..o| D : r3",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -50,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "C",
+            "bounds": {
+              "x": -50,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "D",
+            "bounds": {
+              "x": -50,
+              "y": 513,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,227L0,235.417C0,243.833,0,260.667,0,277.5C0,294.333,0,311.167,0,319.583L0,328",
+            "cardA": "OneOrMore",
+            "cardB": "OneOrMore",
+            "identifying": false,
+            "strokeDasharray": "8px, 8px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,412L0,420.417C0,428.833,0,445.667,0,462.5C0,479.333,0,496.167,0,504.583L0,513",
+            "cardA": "ZeroOrOne",
+            "cardB": "ZeroOrOne",
+            "identifying": false,
+            "strokeDasharray": "8px, 8px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            116,
+            655
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "116px",
+          "diagramWidth": 100,
+          "diagramHeight": 639
+        }
+      }
+    },
+    {
+      "id": "tree",
+      "source": "erDiagram\nROOT\nROOT ||--o{ LEFT : left\nROOT ||--o{ RIGHT : right\nLEFT ||--|| LEAF-A : a\nRIGHT ||--|| LEAF-B : b\nRIGHT ||--o{ LEAF-C : c",
+      "expected": {
+        "entities": [
+          {
+            "id": "ROOT",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "LEFT",
+            "bounds": {
+              "x": -290,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "RIGHT",
+            "bounds": {
+              "x": 70,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "LEAF-A",
+            "bounds": {
+              "x": -290,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "LEAF-B",
+            "bounds": {
+              "x": -50,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "LEAF-C",
+            "bounds": {
+              "x": 190,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M-50,19.271L-81.667,31.476C-113.333,43.681,-176.667,68.09,-208.333,88.712C-240,109.333,-240,126.167,-240,134.583L-240,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M50,38.542L61.667,47.535C73.333,56.528,96.667,74.514,108.333,91.924C120,109.333,120,126.167,120,134.583L120,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M-240,227L-240,235.417C-240,243.833,-240,260.667,-240,277.5C-240,294.333,-240,311.167,-240,319.583L-240,328",
+            "cardA": "ExactlyOne",
+            "cardB": "ExactlyOne",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M70,223.542L58.333,232.535C46.667,241.528,23.333,259.514,11.667,276.924C0,294.333,0,311.167,0,319.583L0,328",
+            "cardA": "ExactlyOne",
+            "cardB": "ExactlyOne",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M170,223.542L181.667,232.535C193.333,241.528,216.667,259.514,228.333,276.924C240,294.333,240,311.167,240,319.583L240,328",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            596,
+            470
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "596px",
+          "diagramWidth": 580,
+          "diagramHeight": 454
+        }
+      }
+    },
+    {
+      "id": "blocks-without-relationships",
+      "source": "erDiagram\nA {\nstring id PK\n}\nB {\nint age\n}\nC",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -76.234,
+              "y": -42.75,
+              "width": 152.469,
+              "height": 85.5
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": 216.234,
+              "y": -42.75,
+              "width": 97.641,
+              "height": 85.5
+            }
+          },
+          {
+            "id": "C",
+            "bounds": {
+              "x": 453.875,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            646.109375,
+            101.5
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "646.109px",
+          "diagramWidth": 630.109,
+          "diagramHeight": 85.5
+        }
+      }
+    },
+    {
+      "id": "ring",
+      "source": "erDiagram\nA ||--o{ B : ab\nB ||--o{ C : bc\nC ||--o{ D : cd\nD ||--o{ E : de\nE ||--o{ A : ea",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -118.937,
+              "y": 143,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "C",
+            "bounds": {
+              "x": -118.937,
+              "y": 328,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "D",
+            "bounds": {
+              "x": -118.937,
+              "y": 513,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "E",
+            "bounds": {
+              "x": -50,
+              "y": 698,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M-31.302,42L-37.574,50.417C-43.847,58.833,-56.392,75.667,-62.665,92.5C-68.937,109.333,-68.937,126.167,-68.937,134.583L-68.937,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M-68.937,227L-68.937,235.417C-68.937,243.833,-68.937,260.667,-68.937,277.5C-68.937,294.333,-68.937,311.167,-68.937,319.583L-68.937,328",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M-68.937,412L-68.937,420.417C-68.937,428.833,-68.937,445.667,-68.937,462.5C-68.937,479.333,-68.937,496.167,-68.937,504.583L-68.937,513",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M-68.937,597L-68.937,605.417C-68.937,613.833,-68.937,630.667,-62.665,647.5C-56.392,664.333,-43.847,681.167,-37.574,689.583L-31.302,698",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M31.302,698L37.575,689.583C43.846,681.167,56.393,664.333,62.665,640.5C68.938,616.667,68.938,585.833,68.938,555C68.938,524.167,68.938,493.333,68.938,462.5C68.938,431.667,68.938,400.833,68.938,370C68.938,339.167,68.938,308.333,68.938,277.5C68.938,246.667,68.938,215.833,68.938,185C68.938,154.167,68.938,123.333,62.665,99.5C56.393,75.667,43.846,58.833,37.575,50.417L31.302,42",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            211.75,
+            840
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "211.75px",
+          "diagramWidth": 195.75,
+          "diagramHeight": 824
+        }
+      }
+    },
+    {
+      "id": "cjk-labels",
+      "source": "erDiagram\n客户 ||--o{ 订单 : 下单\n订单 ||--|{ 明细 : 包含\n订单 {\nstring 编号 PK\n}",
+      "expected": {
+        "entities": [
+          {
+            "id": "客户",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "订单",
+            "bounds": {
+              "x": -85.25,
+              "y": 143,
+              "width": 170.5,
+              "height": 85.5
+            }
+          },
+          {
+            "id": "明细",
+            "bounds": {
+              "x": -50,
+              "y": 329.5,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M0,228.5L0,236.917C0,245.333,0,262.167,0,279C0,295.833,0,312.667,0,321.083L0,329.5",
+            "cardA": "ExactlyOne",
+            "cardB": "OneOrMore",
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            186.5,
+            471.5
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "186.5px",
+          "diagramWidth": 170.5,
+          "diagramHeight": 455.5
+        }
+      }
+    },
+    {
+      "id": "two-components",
+      "source": "erDiagram\nCUSTOMER }|..|{ DELIVERY-ADDRESS : uses\nORDER }o..o| COUPON : redeemed",
+      "expected": {
+        "entities": [
+          {
+            "id": "CUSTOMER",
+            "bounds": {
+              "x": -62.516,
+              "y": -42,
+              "width": 125.031,
+              "height": 84
+            }
+          },
+          {
+            "id": "DELIVERY-ADDRESS",
+            "bounds": {
+              "x": -93.523,
+              "y": 143,
+              "width": 187.047,
+              "height": 84
+            }
+          },
+          {
+            "id": "ORDER",
+            "bounds": {
+              "x": 237.688,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "COUPON",
+            "bounds": {
+              "x": 233.523,
+              "y": 143,
+              "width": 108.328,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.417C0,58.833,0,75.667,0,92.5C0,109.333,0,126.167,0,134.583L0,143",
+            "cardA": "OneOrMore",
+            "cardB": "OneOrMore",
+            "identifying": false,
+            "strokeDasharray": "8px, 8px",
+            "strokeWidth": "1px"
+          },
+          {
+            "path": "M287.688,42L287.688,50.417C287.688,58.833,287.688,75.667,287.688,92.5C287.688,109.333,287.688,126.167,287.688,134.583L287.688,143",
+            "cardA": "ZeroOrMore",
+            "cardB": "ZeroOrOne",
+            "identifying": false,
+            "strokeDasharray": "8px, 8px",
+            "strokeWidth": "1px"
+          }
+        ],
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            451.375,
+            285
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "451.375px",
+          "diagramWidth": 435.375,
+          "diagramHeight": 269
+        }
       }
     }
-  ]
+  ],
+  "fixtureSha256": "ab302ceaf07ba096bb41406850d274658b95b2dfa13c9a984369759e040d61a6"
 }
