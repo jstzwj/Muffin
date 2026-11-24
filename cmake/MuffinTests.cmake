@@ -222,6 +222,7 @@ muffin_add_test(NAME MuffinMermaidStateGeometryOracleTest SOURCE tests/mermaid/M
 muffin_add_test(NAME MuffinMermaidSequenceGeometryOracleTest SOURCE tests/mermaid/MermaidSequenceGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErSceneRegressionTest SOURCE tests/mermaid/MermaidErSceneRegressionTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-scene.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErGeometryOracleTest SOURCE tests/mermaid/MermaidErGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-geometry.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidErPixelTest SOURCE tests/mermaid/MermaidErPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErStyleTest SOURCE tests/mermaid/MermaidErStyleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidClassPixelTest SOURCE tests/mermaid/MermaidClassPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidClassSvgStructuralTest SOURCE tests/mermaid/MermaidClassSvgStructuralTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-pixel/manifest.json RESOURCE_LOCK)

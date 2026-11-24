@@ -1,0 +1,233 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "default",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-default",
+      "source": "erDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "default.png",
+      "width": 203,
+      "height": 557,
+      "sha256": "18ed52dbf5226bfbc7d11371ea7c875f3714e9fb81e35e8eaf2342baa8ad48fe"
+    },
+    {
+      "id": "base",
+      "dpr": 1,
+      "theme": "base",
+      "renderId": "er-pixel-base",
+      "source": "%%{init: {\"theme\":\"base\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "base.png",
+      "width": 203,
+      "height": 557,
+      "sha256": "912baad91a87d90bf6335e4e1fca45d4f13ae04e35d2074b6254affa01196243"
+    },
+    {
+      "id": "dark",
+      "dpr": 1,
+      "theme": "dark",
+      "renderId": "er-pixel-dark",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "dark.png",
+      "width": 203,
+      "height": 557,
+      "sha256": "fd23be755134d08212a07b9166e3f2efa5c5759b9666af8056db9779e8d057c0"
+    },
+    {
+      "id": "forest",
+      "dpr": 1,
+      "theme": "forest",
+      "renderId": "er-pixel-forest",
+      "source": "%%{init: {\"theme\":\"forest\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "forest.png",
+      "width": 203,
+      "height": 557,
+      "sha256": "cfe8ed73452f73f5d0743021405071a156d9544ba3b2cc68c67f34efcd2037d7"
+    },
+    {
+      "id": "neutral",
+      "dpr": 1,
+      "theme": "neutral",
+      "renderId": "er-pixel-neutral",
+      "source": "%%{init: {\"theme\":\"neutral\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "neutral.png",
+      "width": 203,
+      "height": 557,
+      "sha256": "9a25c6e346522d18d7bbf3f1ff776da13c83a429a7650c42628fa7f3625f4209"
+    },
+    {
+      "id": "neo",
+      "dpr": 1,
+      "theme": "neo",
+      "renderId": "er-pixel-neo",
+      "source": "%%{init: {\"theme\":\"neo\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "neo.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "0a9b8f28a303d6edc54220b5edfca726341249d2c7a1b7d10a616a77da019f59"
+    },
+    {
+      "id": "neo-dark",
+      "dpr": 1,
+      "theme": "neo-dark",
+      "renderId": "er-pixel-neo-dark",
+      "source": "%%{init: {\"theme\":\"neo-dark\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "neo-dark.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "d6c6e134b055686c3db7787e10c5fb8bad928abb40cc3dbae5a0ebef4441a036"
+    },
+    {
+      "id": "redux",
+      "dpr": 1,
+      "theme": "redux",
+      "renderId": "er-pixel-redux",
+      "source": "%%{init: {\"theme\":\"redux\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "redux.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "74ba38363ee8e458ec3c1c3814b5edc62055fafb776906ab3542cb9044ec0de5"
+    },
+    {
+      "id": "redux-dark",
+      "dpr": 1,
+      "theme": "redux-dark",
+      "renderId": "er-pixel-redux-dark",
+      "source": "%%{init: {\"theme\":\"redux-dark\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "redux-dark.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "1296c53200a2ca78b98c8141be4ee760d4cd2be0a5567c2eadb6c784812607be"
+    },
+    {
+      "id": "redux-color",
+      "dpr": 1,
+      "theme": "redux-color",
+      "renderId": "er-pixel-redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "redux-color.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "03cbf4396a283ebd4128019bc1923efc355b8d64151deb43e15ae5fa2f4b7317"
+    },
+    {
+      "id": "redux-dark-color",
+      "dpr": 1,
+      "theme": "redux-dark-color",
+      "renderId": "er-pixel-redux-dark-color",
+      "source": "%%{init: {\"theme\":\"redux-dark-color\"}}%%\nerDiagram\n    CUSTOMER ||--o{ ORDER : places\n    ORDER ||--|{ LINE-ITEM : contains\n    CUSTOMER {\n        string name\n        string custNumber\n        string sector\n    }",
+      "file": "redux-dark-color.png",
+      "width": 186,
+      "height": 539,
+      "sha256": "490f54a5427fdb5523dca31b3ce3d71b4ba7724674c96d76d583c201ed8867a9"
+    },
+    {
+      "id": "structure-attributes-keys-comments",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-attributes-keys-comments",
+      "source": "erDiagram\n    CUSTOMER {\n        string name PK \"primary key\"\n        int age\n        bigint account_id FK\n        string email UK \"unique\"\n    }",
+      "file": "structure-attributes-keys-comments.png",
+      "width": 351,
+      "height": 230,
+      "sha256": "54d19e59cee381112d0505439f7004f1139ef656d55499b4497d4c835fc68368"
+    },
+    {
+      "id": "structure-cardinality-types",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-cardinality-types",
+      "source": "erDiagram\n    A ||--|| B : r1\n    C |o--o| D : r2\n    E }|--|{ F : r3\n    G }o--o{ H : r4",
+      "file": "structure-cardinality-types.png",
+      "width": 836,
+      "height": 285,
+      "sha256": "ae5f9cde1a99acaed6adb625ebba76a697e5c8da918229b1524063e139a57cd6"
+    },
+    {
+      "id": "structure-non-identifying",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-non-identifying",
+      "source": "erDiagram\n    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses\n    ORDER }o..o| COUPON : redeemed",
+      "file": "structure-non-identifying.png",
+      "width": 451,
+      "height": 285,
+      "sha256": "6425682a8e0bc3ef47cdb8a108530cfb43e1b16aa8dadbe9693f674ade950ede"
+    },
+    {
+      "id": "structure-single-entity",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-single-entity",
+      "source": "erDiagram\n    ACCOUNT",
+      "file": "structure-single-entity.png",
+      "width": 131,
+      "height": 100,
+      "sha256": "c0904007502383c1d0a761f0ff076ff03a1ab6f7852847b5f3a51e72dd584eb6"
+    },
+    {
+      "id": "structure-acc-title",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-acc-title",
+      "source": "erDiagram\n    accTitle: Order model\n    A ||--o{ B : rel",
+      "file": "structure-acc-title.png",
+      "width": 116,
+      "height": 285,
+      "sha256": "210de0bc5005a4884c10afff6905987f0969de2084f063b010deeeec9066495c"
+    },
+    {
+      "id": "structure-long-labels",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-long-labels",
+      "source": "erDiagram\n    PURCHASE-ORDER ||--|{ ORDER-LINE-ITEM : contains\n    SUPPLIER ||--o{ PURCHASE-ORDER : fulfils",
+      "file": "structure-long-labels.png",
+      "width": 195,
+      "height": 470,
+      "sha256": "34c2ff0ee87eca322508416005d09047366196006c9073cb3965bfa47a57ebbe"
+    },
+    {
+      "id": "structure-tree",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-tree",
+      "source": "erDiagram\n    ROOT\n    ROOT ||--o{ LEFT : left\n    ROOT ||--o{ RIGHT : right\n    LEFT ||--|| LEAF-A : a\n    RIGHT ||--|| LEAF-B : b\n    RIGHT ||--o{ LEAF-C : c",
+      "file": "structure-tree.png",
+      "width": 596,
+      "height": 470,
+      "sha256": "99a7b001de23e6ff23859ed989346b9736d7936da365dffcd01dde845cace62b"
+    },
+    {
+      "id": "structure-wide-attributes",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-wide-attributes",
+      "source": "erDiagram\n    SHIPMENT {\n        string tracking_number PK \"carrier tracking id\"\n        date shipped_on\n        text notes \"free form remarks\"\n    }\n    ITEM {\n        string sku PK\n        int quantity\n    }\n    SHIPMENT ||--|{ ITEM : contains",
+      "file": "structure-wide-attributes.png",
+      "width": 445,
+      "height": 416,
+      "sha256": "82a90833aaa09787d4e6d374ce9adc0dcda77788831a4ff251aaadc75c4307a1"
+    },
+    {
+      "id": "structure-cjk-labels",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "er-pixel-structure-cjk-labels",
+      "source": "erDiagram\n    客户 ||--o{ 订单 : 下单\n    订单 ||--|{ 明细 : 包含\n    订单 {\n        string 编号 PK\n    }",
+      "file": "structure-cjk-labels.png",
+      "width": 187,
+      "height": 472,
+      "sha256": "66e4bc809fc4cb93f5baeedd079a46e8c40b994dea626da425ce3aa06f1a2b38",
+      "canvasDelta": {
+        "width": -1,
+        "height": 0
+      }
+    }
+  ],
+  "fixtureSha256": "83954956bf3f7616372ee9deb9a25543fd64b2d9a286b76a9cd504d4dd1dc641"
+}
