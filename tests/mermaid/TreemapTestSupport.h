@@ -54,12 +54,31 @@ inline void sameColor(const QString& actual, const QString& expected, const QStr
               computedColor(actual).rgb() == computedColor(expected).rgb(),
           path + QStringLiteral(": ") + actual + QStringLiteral(" != ") + expected);
 }
-inline QRectF expectedGlobalRect(const QJsonObject& object) {
+// A section or leaf rectangle in SVG user space. Upstream positions each one
+// with its own transform inside one container group that sits below the title,
+// so the two transforms compose; the scene holds the composed rectangle.
+inline QRectF expectedGlobalRect(const QJsonObject& object, const QPointF& container) {
   const QVector<double> transform =
       numbers(object.value(QStringLiteral("attrs")).toObject().value(QStringLiteral("transform")).toString());
-  const QJsonObject attrs = object.value(QStringLiteral("rect")).toObject().value(QStringLiteral("attrs")).toObject();
-  return QRectF(transform.value(0), transform.value(1), attrs.value(QStringLiteral("width")).toString().toDouble(),
+  const QJsonObject attrs = object.value("rect").toObject().value(QStringLiteral("attrs")).toObject();
+  return QRectF(transform.value(0) + container.x(), transform.value(1) + container.y(),
+                attrs.value(QStringLiteral("width")).toString().toDouble(),
                 attrs.value(QStringLiteral("height")).toString().toDouble());
+}
+// Where upstream positions a label: its own coordinates are relative to the
+// rectangle it sits in. Returns the label moved into the container's space.
+inline QJsonObject relocateLabel(QJsonObject label, const QRectF& rect) {
+  QJsonObject labelAttrs = label.value(QStringLiteral("attrs")).toObject();
+  labelAttrs.insert(QStringLiteral("x"),
+                    QString::number(rect.x() + labelAttrs.value(QStringLiteral("x")).toString().toDouble()));
+  labelAttrs.insert(QStringLiteral("y"),
+                    QString::number(rect.y() + labelAttrs.value(QStringLiteral("y")).toString().toDouble()));
+  label.insert(QStringLiteral("attrs"), labelAttrs);
+  QJsonObject labelBox = label.value(QStringLiteral("bbox")).toObject();
+  labelBox.insert(QStringLiteral("x"), labelBox.value(QStringLiteral("x")).toDouble() + rect.x());
+  labelBox.insert(QStringLiteral("y"), labelBox.value(QStringLiteral("y")).toDouble() + rect.y());
+  label.insert(QStringLiteral("bbox"), labelBox);
+  return label;
 }
 inline void compareText(const treemap::TreemapTextGeometry& actual, const QJsonObject& expected, const QString& path) {
   require(actual.text == expected.value(QStringLiteral("text")).toString(),
@@ -94,6 +113,12 @@ inline void compareCase(const QJsonObject& fixture) {
   const QJsonObject attrs = root.value(QStringLiteral("attrs")).toObject();
   const QVector<double> viewBox = numbers(attrs.value(QStringLiteral("viewBox")).toString());
   require(viewBox.size() == 4, id + QStringLiteral("/viewBox"));
+  // Upstream groups every section and leaf under one container; a titled diagram
+  // moves that container down by the height of the title.
+  const QVector<double> container =
+      numbers(expected.value(QStringLiteral("container")).toObject().value(QStringLiteral("transform")).toString());
+  require(container.size() == 2, id + QStringLiteral("/container"));
+  const QPointF containerOffset(container.at(0), container.at(1));
   near(scene->bounds.x(), viewBox.at(0), id + QStringLiteral("/vb/x"), .02);
   near(scene->bounds.y(), viewBox.at(1), id + QStringLiteral("/vb/y"), .02);
   near(scene->bounds.width(), viewBox.at(2), id + QStringLiteral("/vb/w"), .03);
@@ -112,10 +137,9 @@ inline void compareCase(const QJsonObject& fixture) {
   for (qsizetype i = 0; i < sections.size(); ++i) {
     const auto& actual = scene->sections.at(i);
     const QJsonObject object = sections.at(i).toObject();
-    const QRectF rect = expectedGlobalRect(object);
+    const QRectF rect = expectedGlobalRect(object, containerOffset);
     near(actual.rect.x(), rect.x(), id + QStringLiteral("/section/%1/x").arg(i));
-    near(actual.rect.y(), rect.y() + (scene->title.text.isEmpty() ? 0.0 : 30.0),
-         id + QStringLiteral("/section/%1/y").arg(i));
+    near(actual.rect.y(), rect.y(), id + QStringLiteral("/section/%1/y").arg(i));
     near(actual.rect.width(), rect.width(), id + QStringLiteral("/section/%1/w").arg(i));
     near(actual.rect.height(), rect.height(), id + QStringLiteral("/section/%1/h").arg(i));
     const QJsonObject rectObject = object.value(QStringLiteral("rect")).toObject();
@@ -123,18 +147,8 @@ inline void compareCase(const QJsonObject& fixture) {
               rectObject.value(QStringLiteral("computed")).toObject().value(QStringLiteral("fill")).toString(),
               id + QStringLiteral("/section/%1/fill").arg(i));
     if (actual.depth > 0) {
-      QJsonObject label = object.value(QStringLiteral("label")).toObject();
-      QJsonObject labelAttrs = label.value(QStringLiteral("attrs")).toObject();
-      labelAttrs.insert(QStringLiteral("x"),
-                        QString::number(actual.rect.x() + labelAttrs.value(QStringLiteral("x")).toString().toDouble()));
-      labelAttrs.insert(QStringLiteral("y"),
-                        QString::number(actual.rect.y() + labelAttrs.value(QStringLiteral("y")).toString().toDouble()));
-      label.insert(QStringLiteral("attrs"), labelAttrs);
-      QJsonObject labelBox = label.value(QStringLiteral("bbox")).toObject();
-      labelBox.insert(QStringLiteral("x"), labelBox.value(QStringLiteral("x")).toDouble() + actual.rect.x());
-      labelBox.insert(QStringLiteral("y"), labelBox.value(QStringLiteral("y")).toDouble() + actual.rect.y());
-      label.insert(QStringLiteral("bbox"), labelBox);
-      compareText(actual.label, label, id + QStringLiteral("/section/%1/label").arg(i));
+      compareText(actual.label, relocateLabel(object.value(QStringLiteral("label")).toObject(), rect),
+                  id + QStringLiteral("/section/%1/label").arg(i));
     }
   }
 
@@ -143,10 +157,9 @@ inline void compareCase(const QJsonObject& fixture) {
   for (qsizetype i = 0; i < leaves.size(); ++i) {
     const auto& actual = scene->leaves.at(i);
     const QJsonObject object = leaves.at(i).toObject();
-    const QRectF rect = expectedGlobalRect(object);
+    const QRectF rect = expectedGlobalRect(object, containerOffset);
     near(actual.rect.x(), rect.x(), id + QStringLiteral("/leaf/%1/x").arg(i));
-    near(actual.rect.y(), rect.y() + (scene->title.text.isEmpty() ? 0.0 : 30.0),
-         id + QStringLiteral("/leaf/%1/y").arg(i));
+    near(actual.rect.y(), rect.y(), id + QStringLiteral("/leaf/%1/y").arg(i));
     near(actual.rect.width(), rect.width(), id + QStringLiteral("/leaf/%1/w").arg(i));
     near(actual.rect.height(), rect.height(), id + QStringLiteral("/leaf/%1/h").arg(i));
     const QJsonObject rectObject = object.value(QStringLiteral("rect")).toObject();
