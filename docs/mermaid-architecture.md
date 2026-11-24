@@ -143,6 +143,8 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 
 **ER geometry oracle 已翻成 fail-on-divergence**（commit 9d26947）。**Phase 2 完成**：`measureErLayoutInput` 重写为 mermaid erBox 模型（空 fast-path + 4 列宽 + 行高 + 重分配，padding diagramPadding=20/entityPadding=15，SVG 模式 ×1.25），entity **高度现精确匹配** mermaid。Oracle 断言 **font 无关 par­ity**（entity 高度 + cardinality + identifying）；宽度/x/y 与 relationship path 是 **Qt-vs-Chrome 字体光栅化耦合**（~5px/文本，与像素 golden 同源），报告不断言；`entity-alias` 跳过（mermaid 按 id 而非 alias 定尺寸，边缘怪癖）。**`config-effect-matrix.scope.families` 已加 `er`**（commit b933d04，13 个 ErDiagramConfig 字段全分类 + ER spacing probe）。
 
+**2026-11-25 更新**：ER 几何基准改用内置 Noto 字体、按上游默认配置重录（17 个结构），实体的宽、高、坐标、每条关系的路径和画布全部断言（容差 0.05 px），不再只报告。导出图像的尺寸统一为对上游小数画布四舍五入（浏览器截图的行为），与原先向上取整的 13 个图族相比，小数部分不足 0.5 的图不再多出 1 像素；Qt 与 Chrome 量文字有零点几像素的残差，落在 .5 两侧时图像会差 1 像素（饼图 0.28–0.39 px，ER 的中日韩文字 0.04 px）。自关联关系（环路压在实体上）和环形关系（画布窄 27 px）仍是已知分歧，列在 `MermaidErGeometryOracleTest` 的 `kKnownDivergences` 里，清单只能缩短。`entity-alias` 样例已移除：`实体 "别名"` 不是上游语法，上游把它读成两个实体。新增 `MermaidErGrammarTest`（`er-grammar.json`，304 例解析基准：162 例与上游一致，142 例列为已知分歧——没有 `a[别名]`、文字基数、`direction`、`classDef`/`class`/`style`、带引号的实体名等，原生解析器只覆盖上游语法的一半左右）和 `MermaidErPixelTest`（20 张像素基准）。class/state/requirement 的几何基准同样改用内置字体（`scripts/mermaid_bundled_fonts.mjs`），宽度由报告改为断言；state 扩到 15 个结构、requirement 扩到 13 个。state 有 4 例仍是已知分歧，列在 `MermaidStateGeometryOracleTest` 里：进出复合状态的转移没有接到复合状态内部的起止伪状态；超过 200 px 折行宽度的单个长单词被从中间折断（上游只在单词之间折行，`FlowLabel.cpp` 的 `wrapFlowLabel`）；带折行描述的状态节点宽度取的是最长一行的宽度，上游是 200 px 的容器宽度。
+
 **已关闭的误判**：后续审计证实 graphlib 的迭代面由 insertion-order
 `OrderedMap` 承载，原先推测的「ER dagre QHash 抖动」并不存在；0.01 是几何
 oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双渲染确定性测试。

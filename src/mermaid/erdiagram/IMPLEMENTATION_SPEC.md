@@ -105,6 +105,12 @@ accDescription:= "accDescr" Colon <rest of line>
 titleDirective:= "title" <rest of line>     # accepted, stored in data_.title (frontmatter title wins)
 
 entityAlias   := Identifier QuotedText      # id=Identifier, name=QuotedText; no body
+               # Not Mermaid's grammar. Mermaid 11.16.0 lexes a quoted word as an
+               # entity name of its own: `ENTITY "Display Name"` is two entities.
+               # Its alias syntax is `a[Alias]` / `a["Alias With Spaces"]`, which
+               # this parser rejects (and which may not appear in a relationship).
+               # Both differences are listed in MermaidErGrammarTest
+               # (entity-quoted-after-name, the alias-* cases).
 
 entityBlock   := Identifier OpenBrace newline
                  ( attributeLine )*

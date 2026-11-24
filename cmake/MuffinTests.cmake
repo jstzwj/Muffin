@@ -87,6 +87,7 @@ muffin_add_test(NAME MuffinMermaidRoughOpsTest SOURCE tests/mermaid/MermaidRough
 muffin_add_test(NAME MuffinMermaidSequenceParserTest SOURCE tests/mermaid/MermaidSequenceParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/sequence-db.json)
 muffin_add_test(NAME MuffinMermaidClassParserTest SOURCE tests/mermaid/MermaidClassParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/class-db.json)
 muffin_add_test(NAME MuffinMermaidErParserTest SOURCE tests/mermaid/MermaidErParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/er-db.json)
+muffin_add_test(NAME MuffinMermaidErGrammarTest SOURCE tests/mermaid/MermaidErGrammarTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-grammar.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidStateUpstreamContractTest SOURCE tests/mermaid/MermaidStateUpstreamContractTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/state-db.json)
 muffin_add_test(NAME MuffinMermaidStateDifferentialFuzzTest SOURCE tests/mermaid/MermaidStateDifferentialFuzzTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/state-differential-fuzz.json)
 muffin_add_test(NAME MuffinMermaidStateSceneTest SOURCE tests/mermaid/MermaidStateSceneTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-db.json RESOURCE_LOCK)
