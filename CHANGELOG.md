@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
 - Place the caret at the nearest visible caret position when clicking in bidirectional text. A click in a right-to-left run used to land at the start of the line.
+- Keep `[TOC]` rows and link or footnote definitions aligned with their block when blocks above them are resized lazily.
 - Fix the import filter spelling so MediaWiki files are offered as `*.mediawiki`.
 - Keep other log output when `MUFFIN_PERF_LOG` is set: only performance messages go to the file.
 

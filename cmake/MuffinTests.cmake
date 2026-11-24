@@ -311,6 +311,7 @@ muffin_add_test(NAME MuffinRenderHeadingPseudoTest SOURCE tests/render/RenderHea
 target_compile_definitions(MuffinRenderHeadingPseudoTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 muffin_add_test(NAME MuffinRenderHeadingCounterTest SOURCE tests/render/HeadingCounterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTableOfContentsTest SOURCE tests/render/TableOfContentsTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinRenderLazyShiftGeometryTest SOURCE tests/render/LazyShiftGeometryTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineHitTestBidiTest SOURCE tests/render/InlineHitTestBidiTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderTableBackgroundTest SOURCE tests/render/TableBackgroundTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderHeadingPillTest SOURCE tests/render/RenderHeadingPillTest.cpp LINK MuffinUi RESOURCE_LOCK)

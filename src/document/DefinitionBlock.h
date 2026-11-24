@@ -13,6 +13,14 @@ struct DefinitionFieldRange {
   bool isValid() const { return start >= 0 && end >= start; }
 
   qsizetype length() const { return isValid() ? end - start : 0; }
+
+  // Both ends address the document source; move them when the text in front moves.
+  void shift(qsizetype delta) {
+    if (!isValid())
+      return;
+    start += delta;
+    end += delta;
+  }
 };
 
 struct DefinitionBlock {
@@ -40,6 +48,16 @@ struct DefinitionBlock {
   bool virtualTemplate = false;
 
   bool isValid() const { return kind != Kind::None && markerRange.isValid(); }
+
+  // An edit in front of the block moves it in the document; every range goes with it.
+  void shiftOffsets(qsizetype delta) {
+    labelRange.shift(delta);
+    destinationRange.shift(delta);
+    titleRange.shift(delta);
+    noteRange.shift(delta);
+    markerRange.shift(delta);
+    sourceRange.shift(delta);
+  }
 };
 
 enum class DefinitionParseClassification { Invalid, ValidMarkdownDefinition, VirtualTemplate };

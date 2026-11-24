@@ -609,6 +609,11 @@ void BlockLayout::translate(qreal dx, qreal dy) {
   for (DefinitionTokenLayout& token : definitionTokens_) {
     token.rect.translate(dx, dy);
   }
+  // [TOC] rows are stored in document coordinates so that paint and hit-test share one
+  // click target; they have to travel with the block that owns them.
+  for (TocEntryLayout& entry : tocEntries_) {
+    entry.rect.translate(dx, dy);
+  }
 }
 
 void BlockLayout::translateY(qreal dy) {
@@ -640,6 +645,15 @@ void BlockLayout::shiftSourceOffsets(qsizetype delta) {
   reuse.sourceStart += delta;
   if (contentSourceStart_ >= 0)
     contentSourceStart_ += delta;
+  // A definition's field ranges are copies of document offsets, read by cursor lookup,
+  // hit testing and selection painting.
+  definition_.shiftOffsets(delta);
+  // The stored selection is compared against the live one by source offset to decide whether
+  // this layout can be reused; an unshifted copy would only ever force a rebuild.
+  if (layoutSelection_.anchor.text.sourceOffset >= 0)
+    layoutSelection_.anchor.text.sourceOffset += delta;
+  if (layoutSelection_.focus.text.sourceOffset >= 0)
+    layoutSelection_.focus.text.sourceOffset += delta;
   for (auto& child : children_)
     child->shiftSourceOffsets(delta);
   for (auto& row : tableRows_)
