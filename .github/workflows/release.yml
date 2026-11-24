@@ -78,6 +78,15 @@ jobs:
           fi
           echo "MUFFIN_RELEASE_TAG=$tag" >> "$GITHUB_ENV"
           echo "MUFFIN_RELEASE_VERSION=${tag#v}" >> "$GITHUB_ENV"
+          # Tags whose CMake reads the version from CHANGELOG.md must carry the matching heading,
+          # or they would ship as a version the notes do not describe. Historical tags keep their
+          # literal version and are rebuilt as before.
+          version="${tag#v}"
+          if grep -q MUFFIN_CHANGELOG_VERSION CMakeLists.txt &&
+             ! grep -q "^## \[$version\] - " CHANGELOG.md; then
+            echo "CHANGELOG.md has no \"## [$version] - <date>\" section for $tag" >&2
+            exit 1
+          fi
 
       # A manual rebuild keeps application sources at the immutable tag, but
       # uses packaging/test repairs from the selected workflow revision.

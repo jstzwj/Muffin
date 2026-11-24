@@ -19,6 +19,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Move the column commands in tables to Ctrl+Alt+Shift+←/→. Their previous shortcuts, Alt+←/→, collided with navigating the edit history. Remove the "Switch Windows" command, which never ran.
+- Read the project version from the newest version heading in this file, so a release builds with the version it documents. The release workflow refuses a tag without a heading here.
+
+## [0.7.16] - 2026-11-20
+
+### Fixed
+
+- Keep input-method candidate windows anchored to the caret in both the rendered and source editors, including after scrolling, layout changes, window moves and composition changes.
+- Keep Enter local to the edited Markdown block: navigate table cells without splitting their source, and leave a list, quote, table or code block into an editable paragraph. Both Ctrl+Enter keys insert a paragraph after the block, and Alt+Shift+Down keeps inserting a table row. ([#25](https://github.com/jstzwj/Muffin/issues/25))
+- Reveal the source caret on the first jump when navigating to the start or end of the document, including wrapped lines and extended selections. ([#24](https://github.com/jstzwj/Muffin/issues/24))
+- Collapse shared Markdown table borders and give GitHub alert cards vertical padding. ([#20](https://github.com/jstzwj/Muffin/issues/20))
+
+## [0.7.15] - 2026-11-13
+
+### Fixed
+
+- Preserve caret and clipboard selection semantics: partial editable selections are exported without the block syntax around them, and copying matches what is rendered for quotes, nested structures and both selection directions. Covers copy formats, paste, cut and undo.
+- Preserve signed inline source coordinates for indented paragraphs across projection, CSS lookup and selection serialization. ([#16](https://github.com/jstzwj/Muffin/issues/16))
+- Preserve selections when pressing non-text keys.
+- Initialize the caret when focusing an empty document.
+- Linux: bundle Qt-compatible input method plugins, resolve plugin dependencies before relocation, and handle spaces in deployment dependency checks.
+
+## [0.7.14] - 2026-11-08
+
+### Added
+
+- Add optional block handles with block menus, drag reordering and nested list actions, with source mappings and undo support.
+- Add theme-aware typography preferences with localized font samples.
+
+### Changed
+
+- Place the new-tab button after the tabs and reserve space for overflow arrows.
+
+### Fixed
+
+- Stabilize HTML source activation and viewport anchors in nested containers.
+- Make Mermaid number formatting compatible with macOS 13.
+- Show Muffin consistently in the Windows "Open with" menu.
+- Avoid a crash in OpenSSL on Windows ARM64.
+
+## [0.7.13] - 2026-11-05
+
+### Added
+
+- Add configurable editing shortcuts with aliases, conflict handling in Preferences, paragraph alignment commands, table row commands, paired-symbol completion and platform-specific defaults.
+- Add configurable source and preview split views with per-tab horizontal and vertical layouts, pane swapping, synchronized scrolling and session restoration.
+- Reopen closed documents and add reusable export presets.
+- Add portable profiles and an optional settings cleanup on uninstall.
+- Add native macOS Quick Look Markdown previews.
+- Support dragging selected text in source mode.
+
+### Changed
+
+- Externalize ICU data into official packages.
+
+### Fixed
+
+- Improve source selection and the theme contrast of export settings.
+- Unify application fonts and chrome alignment.
+- Center the new-tab button and add breathing room around tab close controls.
+
+## [0.7.12] - 2026-11-01
+
+### Changed
+
+- Prepare document generations on worker threads and commit them with revision and history guards, keeping batch edits and history replay responsive on large documents. Preserve view state and active literal editors across replacements.
+
+### Fixed
+
+- Unify document history, and harden draft recovery and folder search and replace.
 
 ## [0.7.11] - 2026-10-31
 

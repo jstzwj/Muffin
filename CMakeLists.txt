@@ -7,8 +7,23 @@ if(CMAKE_HOST_APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET
   set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS version")
 endif()
 
+# The released version is defined in one place: the newest "## [x.y.z] - date" heading of
+# CHANGELOG.md. Reading it here keeps the project version (so `Muffin --version` and the
+# installers built from a plain checkout) from drifting behind the tags; the release
+# workflow refuses a tag that has no such heading.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md" muffin_changelog_headings
+     REGEX "^## \\[[0-9]+\\.[0-9]+\\.[0-9]+\\] - ")
+if(NOT DEFINED muffin_changelog_headings)
+  message(FATAL_ERROR "CHANGELOG.md has no \"## [x.y.z] - date\" heading, so the Muffin version is unknown")
+endif()
+list(GET muffin_changelog_headings 0 muffin_newest_heading)
+string(REGEX REPLACE "^## \\[([0-9]+\\.[0-9]+\\.[0-9]+)\\].*" "\\1" MUFFIN_CHANGELOG_VERSION
+                     "${muffin_newest_heading}")
+unset(muffin_changelog_headings)
+unset(muffin_newest_heading)
+
 project(Muffin
-  VERSION 0.7.11
+  VERSION ${MUFFIN_CHANGELOG_VERSION}
   DESCRIPTION "A fast native Markdown WYSIWYG editor built with C++ and Qt 6 Widgets"
   LANGUAGES C CXX
 )
