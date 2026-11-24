@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restore the selected range and its direction when undoing text replacement or deletion in live editing, and keep those operations separate from neighbouring typing.
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
+- Keep other log output when `MUFFIN_PERF_LOG` is set: only performance messages go to the file.
 
 ### Changed
 

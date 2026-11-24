@@ -7,6 +7,7 @@
 #include "app/LanguageManager.h"
 #include "app/WindowsIntegration.h"
 #include "app/WindowsUpdater.h"
+#include "diagnostics/PerfFileLogger.h"
 #include "io/ApplicationPaths.h"
 #include "editor/EditorAccessibility.h"
 #include "theme/FontRendering.h"
@@ -15,42 +16,22 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QCoreApplication>
-#include <QDateTime>
 #include <QDir>
 #include <QEvent>
-#include <QFile>
 #include <QFileInfo>
 #include <QFont>
 #include <QGuiApplication>
 #include <QIcon>
-#include <QLoggingCategory>
 #include <QLocale>
-#include <QMutex>
-#include <QMutexLocker>
 #include <QMessageBox>
 #include <QTimer>
 #include <QTranslator>
 #include <QStandardPaths>
-#include <QTextStream>
 
 namespace {
 
-QFile perfLogFile;
-QMutex perfLogMutex;
-
-void muffinMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& message) {
-  Q_UNUSED(type);
-
-  if (!perfLogFile.isOpen() || QStringView(QString::fromUtf8(context.category)) != QStringLiteral("muffin.perf")) {
-    return;
-  }
-
-  QMutexLocker locker(&perfLogMutex);
-  QTextStream stream(&perfLogFile);
-  stream << QDateTime::currentDateTime().toString(QStringLiteral("hh:mm:ss.zzz")) << ' ' << message << '\n';
-  stream.flush();
-}
-
+// MUFFIN_PERF_LOG=<path> appends the muffin.perf logging family to that file. Every other
+// message keeps going where it went before (see diag::PerfFileLogger).
 void installPerfFileLogger() {
   const QByteArray logPath = qgetenv("MUFFIN_PERF_LOG");
   if (logPath.isEmpty()) {
@@ -65,13 +46,7 @@ void installPerfFileLogger() {
     path = QDir(muffin::ApplicationPaths::temporaryDirectory()).filePath(QStringLiteral("muffin/%1").arg(path));
     QDir().mkpath(QFileInfo(path).absolutePath());
   }
-
-  perfLogFile.setFileName(path);
-  if (!perfLogFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-    return;
-  }
-
-  qInstallMessageHandler(muffinMessageHandler);
+  muffin::diag::PerfFileLogger::install(path);
 }
 
 } // namespace

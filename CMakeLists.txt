@@ -674,6 +674,8 @@ set(MUFFIN_CORE_SOURCES
   src/theme/FontMetricsPolicy.h
   src/diagnostics/ThemePerformance.cpp
   src/diagnostics/ThemePerformance.h
+  src/diagnostics/PerfFileLogger.cpp
+  src/diagnostics/PerfFileLogger.h
   src/theme/CssComputedStyleEngine.cpp
   src/theme/CssComputedStyleEngine.h
   src/theme/CssContent.cpp

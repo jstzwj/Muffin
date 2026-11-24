@@ -535,6 +535,9 @@ muffin_add_test(NAME MuffinHtmlSanitizerTest       SOURCE tests/blocks/HtmlSanit
 muffin_add_test(NAME MuffinBlockTableUndoTest      SOURCE tests/blocks/BlockTableUndoTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCodeFrontMatterTest.cpp LINK MuffinUi RESOURCE_LOCK)
 
+# --- diagnostics ---
+muffin_add_test(NAME MuffinPerfFileLoggerTest SOURCE tests/diagnostics/PerfFileLoggerTest.cpp LINK MuffinCore)
+
 # --- app ---
 muffin_add_test(NAME MuffinApplicationPathsTest SOURCE tests/app/ApplicationPathsTest.cpp LINK MuffinCore)
 add_test(NAME MuffinPortablePackagingTest COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_portable_packaging.py")
