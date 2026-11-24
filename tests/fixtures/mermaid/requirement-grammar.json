@@ -1,0 +1,4294 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "license": "MIT",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b"
+  },
+  "cases": [
+    {
+      "id": "plain-body",
+      "source": "requirementDiagram\nrequirement a {\nid: 1.1\ntext: the test text.\nrisk: high\nverifyMethod: test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1.1",
+            "text": "the test text.",
+            "risk": "High",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "every-type",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nfunctionalRequirement functional {\nid: 2\n}\ninterfaceRequirement interface {\nid: 3\n}\nperformanceRequirement performance {\nid: 4\n}\nphysicalRequirement physical {\nid: 5\n}\ndesignConstraint constraint {\nid: 6\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "functional",
+            "type": "Functional Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "interface",
+            "type": "Interface Requirement",
+            "requirementId": "3",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "performance",
+            "type": "Performance Requirement",
+            "requirementId": "4",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "physical",
+            "type": "Physical Requirement",
+            "requirementId": "5",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "constraint",
+            "type": "Design Constraint",
+            "requirementId": "6",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "risk-low",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\ntext: t\nrisk: low\nverifyMethod: test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "t",
+            "risk": "Low",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "risk-medium",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\ntext: t\nrisk: medium\nverifyMethod: test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "t",
+            "risk": "Medium",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "risk-high",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\ntext: t\nrisk: high\nverifyMethod: test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "t",
+            "risk": "High",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "risk-capitalised",
+      "source": "requirementDiagram\nrequirement a {\nrisk: Low\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "Low",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "verify-analysis",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: analysis\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "Analysis",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "verify-demonstration",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: demonstration\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "Demonstration",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "verify-inspection",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: inspection\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "Inspection",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "verify-test-capitalised",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: Test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-integer-then-text",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\ntext: t\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "t",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-decimal",
+      "source": "requirementDiagram\nrequirement a {\nid: 1.1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1.1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-two-dots",
+      "source": "requirementDiagram\nrequirement a {\nid: 1.2.3\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1.2.3",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-leading-zero",
+      "source": "requirementDiagram\nrequirement a {\nid: 01\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "01",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-trailing-dot",
+      "source": "requirementDiagram\nrequirement a {\nid: 5.\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "5.",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "id-only",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-only",
+      "source": "requirementDiagram\nrequirement a {\ntext: hello world\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "hello world",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "risk-only",
+      "source": "requirementDiagram\nrequirement a {\nrisk: low\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "Low",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "verify-only",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: test\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "empty-body",
+      "source": "requirementDiagram\nrequirement a {\n\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "body-out-of-order",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: test\nid: 3\nrisk: low\ntext: last\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "3",
+            "text": "last",
+            "risk": "Low",
+            "verifyMethod": "Test",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-double-quoted",
+      "source": "requirementDiagram\nrequirement a {\ntext: \"quoted text\"\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "quoted text",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-trailing-space-dropped",
+      "source": "requirementDiagram\nrequirement a {\ntext: hello  \n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "hello",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-with-hash",
+      "source": "requirementDiagram\nrequirement a {\ntext: a # not a comment\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "a # not a comment",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-with-percent",
+      "source": "requirementDiagram\nrequirement a {\ntext: 50% more\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "50% more",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-unicode-arrow",
+      "source": "requirementDiagram\nrequirement a {\ntext: a → b\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "a → b",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-currency-symbol",
+      "source": "requirementDiagram\nrequirement a {\ntext: costs 5 €\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "costs 5 €",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-emoji",
+      "source": "requirementDiagram\nrequirement a {\ntext: ok ✅\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "ok ✅",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-tab-inside",
+      "source": "requirementDiagram\nrequirement a {\ntext: a\tb\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "a\tb",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-accents",
+      "source": "requirementDiagram\nrequirement a {\ntext: coût déjá\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "coût déjá",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-percent-alone",
+      "source": "requirementDiagram\nrequirement a {\ntext: 100%\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "100%",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "text-hash-inside-quotes",
+      "source": "requirementDiagram\nrequirement a {\ntext: \"a # b\"\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "",
+            "text": "a # b",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-body",
+      "source": "requirementDiagram\nelement sim {\ntype: simulation\ndocref: RFC 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "sim",
+            "type": "simulation",
+            "docRef": "RFC 1",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-type-only",
+      "source": "requirementDiagram\nelement sim {\ntype: simulation\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "sim",
+            "type": "simulation",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-docref-only",
+      "source": "requirementDiagram\nelement sim {\ndocref: RFC 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "sim",
+            "type": "",
+            "docRef": "RFC 1",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-empty-body",
+      "source": "requirementDiagram\nelement sim {\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "sim",
+            "type": "",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "every-relationship",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nrequirement b {\nid: 2\n}\nelement elem_a {\ntype: t\n}\nelement elem_b {\ntype: t\n}\na - contains -> b\na - copies -> b\na - derives -> b\na - satisfies -> b\na - verifies -> b\na - refines -> b\na - traces -> b\nelem_a <- contains - elem_b\nelem_a <- verifies - a",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "elem_a",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "elem_b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "copies",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "derives",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "satisfies",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "verifies",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "refines",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "traces",
+            "src": "a",
+            "dst": "b"
+          },
+          {
+            "type": "contains",
+            "src": "elem_b",
+            "dst": "elem_a"
+          },
+          {
+            "type": "verifies",
+            "src": "a",
+            "dst": "elem_a"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-right-form-src-on-right",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\nb <- contains - a",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-before-nodes",
+      "source": "requirementDiagram\na - traces -> b\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "traces",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-no-spaces",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na -contains-> b",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-asymmetric-spaces",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na - contains ->b",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-type-capitalised",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na - Contains -> b",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-to-self",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\na - refines -> a",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [
+          {
+            "type": "refines",
+            "src": "a",
+            "dst": "a"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "relationship-to-undeclared-name",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\na - traces -> ghost",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [
+          {
+            "type": "traces",
+            "src": "a",
+            "dst": "ghost"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": false,
+      "renderReject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'shape')"
+      }
+    },
+    {
+      "id": "relationship-from-undeclared-name",
+      "source": "requirementDiagram\nelement b {\ntype: t\n}\nghost - traces -> b",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "traces",
+            "src": "ghost",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": false,
+      "renderReject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'shape')"
+      }
+    },
+    {
+      "id": "relationship-undeclared-to-self",
+      "source": "requirementDiagram\nghost - traces -> ghost",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [],
+        "relationships": [
+          {
+            "type": "traces",
+            "src": "ghost",
+            "dst": "ghost"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": false,
+      "renderReject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'parentId')"
+      }
+    },
+    {
+      "id": "relationship-type-mixed-case",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na - ConTaiNs -> b",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "b",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "type": "contains",
+            "src": "a",
+            "dst": "b"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "requirement-type-mixed-case",
+      "source": "requirementDiagram\nFunctionalRequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Functional Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-tb",
+      "source": "requirementDiagram\ndirection TB\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-bt",
+      "source": "requirementDiagram\ndirection BT\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "BT",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-rl",
+      "source": "requirementDiagram\ndirection RL\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "RL",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-lr",
+      "source": "requirementDiagram\ndirection LR\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "LR",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-lower-case-ignored",
+      "source": "requirementDiagram\ndirection tb\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-after-node",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\ndirection BT",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "BT",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-between-nodes",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\ndirection LR\nrequirement b {\nid: 2\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "LR",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-extra-word-ignored",
+      "source": "requirementDiagram\ndirection TB extra\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-last-wins",
+      "source": "requirementDiagram\ndirection TB\ndirection LR\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "LR",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "comments",
+      "source": "requirementDiagram\n# a hash comment\n% a percent comment\nrequirement a {\nid: 1\n}\n# trailing",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "comment-inside-body",
+      "source": "requirementDiagram\nrequirement a {\n# note\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "comment-hash-no-space",
+      "source": "requirementDiagram\n#note\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-title",
+      "source": "requirementDiagram\naccTitle: A title\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "A title",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-title-with-colon",
+      "source": "requirementDiagram\naccTitle: R&D: requirements\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "R&D: requirements",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-title-non-ascii",
+      "source": "requirementDiagram\naccTitle: 标题\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "标题",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-descr-non-ascii",
+      "source": "requirementDiagram\naccDescr: 说明文字\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "说明文字",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "direction-after-acc-title",
+      "source": "requirementDiagram\naccTitle: T\ndirection LR\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "T",
+        "accDescription": "",
+        "direction": "LR",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-descr-line",
+      "source": "requirementDiagram\naccDescr: one line\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "one line",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-descr-block",
+      "source": "requirementDiagram\naccDescr {\nfirst line\nsecond line\n}\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "first line\nsecond line",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-descr-brace-inside",
+      "source": "requirementDiagram\naccDescr {\nfirst { inner\n}\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "first { inner",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "acc-descr-unterminated-swallows-rest",
+      "source": "requirementDiagram\naccDescr {\nfirst line\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "first line\nrequirement a {\nid: 1",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "inline-class-with-body",
+      "source": "requirementDiagram\nrequirement a ::: important {\nid: 1\n}\nclassDef important fill:#f96",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#f96"
+            ],
+            "classes": [
+              "default",
+              "important"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "important",
+            "styles": [
+              "fill:#f96"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "inline-two-classes",
+      "source": "requirementDiagram\nrequirement a ::: x,y {\nid: 1\n}\nclassDef x fill:#111\nclassDef y stroke:#222",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "stroke:#222"
+            ],
+            "classes": [
+              "default",
+              "x",
+              "y"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "x",
+            "styles": [
+              "fill:#111"
+            ]
+          },
+          {
+            "id": "y",
+            "styles": [
+              "stroke:#222"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-inline-class",
+      "source": "requirementDiagram\nelement e ::: important {\ntype: t\n}\nclassDef important fill:#f96",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "e",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [
+              "fill:#f96"
+            ],
+            "classes": [
+              "default",
+              "important"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "important",
+            "styles": [
+              "fill:#f96"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-line",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass a important\nclassDef important fill:#f96",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#f96"
+            ],
+            "classes": [
+              "default",
+              "important"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "important",
+            "styles": [
+              "fill:#f96"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-undefined",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass a nowhere",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default",
+              "nowhere"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-two-nodes",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nrequirement b {\nid: 2\n}\nclassDef marked fill:#f96\nclass a,b marked",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#f96"
+            ],
+            "classes": [
+              "default",
+              "marked"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#f96"
+            ],
+            "classes": [
+              "default",
+              "marked"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "marked",
+            "styles": [
+              "fill:#f96"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-after-class",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass a late\nclassDef late fill:#abc",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#abc"
+            ],
+            "classes": [
+              "default",
+              "late"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "late",
+            "styles": [
+              "fill:#abc"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-duplicate-merged",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef k fill:#111\nclassDef k stroke:#222\nclass a k",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "stroke:#222"
+            ],
+            "classes": [
+              "default",
+              "k"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "k",
+            "styles": [
+              "fill:#111",
+              "stroke:#222"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-redefined-appends",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass a k\nclassDef k fill:#111\nclassDef k fill:#222",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "fill:#222"
+            ],
+            "classes": [
+              "default",
+              "k"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "k",
+            "styles": [
+              "fill:#111",
+              "fill:#222"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-style-split-at-space",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef k fill:#111,stroke-dasharray: 5,5\nclass a k",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "stroke-dasharray:5",
+              "5"
+            ],
+            "classes": [
+              "default",
+              "k"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "k",
+            "styles": [
+              "fill:#111",
+              "stroke-dasharray:5",
+              "5"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-empty-quoted-id",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef \"\" fill:#111",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "fill",
+            "styles": [
+              ":#111"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-empty-quoted-id-then-class",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef \"\" fill:#ff0000\nclass A fill",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "fill",
+            "styles": [
+              ":#ff0000"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-def-empty-quoted-id-then-word",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef \"\" red blue\nclass A red",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "red",
+            "styles": [
+              "blue"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-empty-quoted-id-is-no-op",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle \"\" fill:#ff0000",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-missing-node-ignored",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef k fill:#111\nclass ghost k",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "k",
+            "styles": [
+              "fill:#111"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-missing-node-ignored",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle ghost fill:#111",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-quoted-id",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle \"a\" fill:#111",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111"
+            ],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "class-comma-list",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nrequirement b {\nid: 2\n}\nclassDef x fill:#111\nclassDef y stroke:#222\nclass a,b x,y",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "stroke:#222"
+            ],
+            "classes": [
+              "default",
+              "x",
+              "y"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#111",
+              "stroke:#222"
+            ],
+            "classes": [
+              "default",
+              "x",
+              "y"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "x",
+            "styles": [
+              "fill:#111"
+            ]
+          },
+          {
+            "id": "y",
+            "styles": [
+              "stroke:#222"
+            ]
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-line",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle a fill:#ccc,stroke:#333",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#ccc",
+              "stroke:#333"
+            ],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-two-nodes",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nrequirement b {\nid: 2\n}\nstyle a,b fill:#123",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#123"
+            ],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "2",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [
+              "fill:#123"
+            ],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "name-underscore",
+      "source": "requirementDiagram\nrequirement test_req_2 {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "test_req_2",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "name-dots",
+      "source": "requirementDiagram\nrequirement req.name {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "req.name",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "name-digits",
+      "source": "requirementDiagram\nrequirement 12ab {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "12ab",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "name-capitalised",
+      "source": "requirementDiagram\nrequirement Req_A {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "Req_A",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "type-keyword-capitalised",
+      "source": "requirementDiagram\nRequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "body-line-trailing-spaces",
+      "source": "requirementDiagram\nrequirement a {\nid: 1  \n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "body-line-trailing-tab",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\t\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "close-brace-trailing-spaces",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}  \n",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "indent-tab-body",
+      "source": "requirementDiagram\nrequirement a {\n\tid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "indent-spaces-body",
+      "source": "requirementDiagram\nrequirement a {\n    id: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "indent-keyword-line",
+      "source": "requirementDiagram\n    requirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "space-after-colon",
+      "source": "requirementDiagram\nrequirement a {\nid :1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "extra-space-after-keyword",
+      "source": "requirementDiagram\nrequirement  a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "blank-lines",
+      "source": "requirementDiagram\n\nrequirement a {\nid: 1\n}\n",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "leading-blank-line",
+      "source": "\n\nrequirementDiagram\nrequirement a {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "crlf",
+      "source": "requirementDiagram\r\nrequirement a {\r\nid: 1\r\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "duplicate-requirement-first-wins",
+      "source": "requirementDiagram\nrequirement same {\nid: 1\n}\nrequirement same {\nid: 2\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "same",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "duplicate-element-first-wins",
+      "source": "requirementDiagram\nelement same {\ntype: one\n}\nelement same {\ntype: two\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [
+          {
+            "name": "same",
+            "type": "one",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "duplicate-id-tolerated",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nrequirement b {\nid: 1\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          },
+          {
+            "name": "b",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "element-named-like-requirement",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement a {\ntype: t\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [
+          {
+            "name": "a",
+            "type": "Requirement",
+            "requirementId": "1",
+            "text": "",
+            "risk": "",
+            "verifyMethod": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "elements": [
+          {
+            "name": "a",
+            "type": "t",
+            "docRef": "",
+            "cssStyles": [],
+            "classes": [
+              "default"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "empty-diagram",
+      "source": "requirementDiagram",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "only-comments",
+      "source": "requirementDiagram\n# nothing\n% here",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "requirements": [],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "only-direction",
+      "source": "requirementDiagram\ndirection BT",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "BT",
+        "requirements": [],
+        "elements": [],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reject-header-trailing-space",
+      "source": "requirementDiagram \nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nrequirementDiagram requirement a {id: \n-------------------^\nExpecting 'NEWLINE', got 'REQUIREMENT'",
+        "messageLine": 1,
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-header-trailing-tab",
+      "source": "requirementDiagram\t\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nrequirementDiagram\trequirement a {id: \n-------------------^\nExpecting 'NEWLINE', got 'REQUIREMENT'",
+        "messageLine": 1,
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-node-on-header-line",
+      "source": "requirementDiagram requirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nrequirementDiagram requirement a {id: \n-------------------^\nExpecting 'NEWLINE', got 'REQUIREMENT'",
+        "messageLine": 1,
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "RequirementDiagram\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: RequirementDiagram\nrequirement a {\nid: 1\n}"
+      }
+    },
+    {
+      "id": "reject-prefix",
+      "source": "requirementDiagrams\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nrequirementDiagrams\n^\nExpecting 'RD', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', got 'unqString'",
+        "messageLine": 1,
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-colon-after-header",
+      "source": "requirementDiagram:\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nrequirementDiagram:requirement a {id\n------------------^\nExpecting 'NEWLINE', got 'COLONSEP'",
+        "messageLine": 1,
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-no-body",
+      "source": "requirementDiagram\nrequirement test_req",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...requirement test_req\n-----------------------^\nExpecting 'STRUCT_START', 'STYLE_SEPARATOR', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 13
+      }
+    },
+    {
+      "id": "reject-element-no-body",
+      "source": "requirementDiagram\nelement sim",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...tDiagramelement sim\n----------------------^\nExpecting 'STRUCT_START', 'STYLE_SEPARATOR', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 9
+      }
+    },
+    {
+      "id": "reject-inline-class-no-body",
+      "source": "requirementDiagram\nrequirement a ::: important\nclassDef important fill:#f96",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...ment a ::: importantclassDef important \n-----------------------^\nExpecting 'STRUCT_START', 'COMMA', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 19
+      }
+    },
+    {
+      "id": "reject-no-newline-before-brace",
+      "source": "requirementDiagram\nrequirement a{id: 1}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...agramrequirement a{id: 1}\n----------------------^\nExpecting 'NEWLINE', got 'ID'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 14
+      }
+    },
+    {
+      "id": "reject-newline-before-brace",
+      "source": "requirementDiagram\nrequirement a\n{\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...iagramrequirement a{id: 1}\n----------------------^\nExpecting 'STRUCT_START', 'STYLE_SEPARATOR', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 13
+      }
+    },
+    {
+      "id": "reject-one-line-body",
+      "source": "requirementDiagram\nrequirement a { id: 1 text: t }",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...ramrequirement a { id: 1 text: t }\n----------------------^\nExpecting 'NEWLINE', got 'ID'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 15
+      }
+    },
+    {
+      "id": "reject-two-members-one-line",
+      "source": "requirementDiagram\nrequirement a {\nid: 1 text: t\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...ement a {id: 1 text: t}\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'STRUCT_START', 'STYLE_SEPARATOR', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'END_ARROW_L', 'LINE', 'CLASSDEF', 'CLASS', 'ALPHA', 'COMMA', 'STYLE', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', 'unqString', 'qString', got 'COLONSEP'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 5
+      }
+    },
+    {
+      "id": "reject-unclosed-body",
+      "source": "requirementDiagram\nrequirement a {\nid: 1",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 4:\n...quirement a {id: 1\n---------------------^\nExpecting 'NEWLINE', 'ID', 'TEXT', 'RISK', 'VERIFYMTHD', 'STRUCT_STOP', got 'EOF'",
+        "messageLine": 4,
+        "line": 4,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-stray-closing-brace",
+      "source": "requirementDiagram\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nrequirementDiagram}\n------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'STRUCT_STOP'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 19
+      }
+    },
+    {
+      "id": "reject-double-closing-brace",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 4:\n...uirement a {id: 1}}\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'STRUCT_STOP'",
+        "messageLine": 4,
+        "line": 4,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-keyword-without-name",
+      "source": "requirementDiagram\nrequirement",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...tDiagramrequirement\n----------------------^\nExpecting 'unqString', 'qString', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-element-without-name",
+      "source": "requirementDiagram\nelement",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...ementDiagramelement\n----------------------^\nExpecting 'unqString', 'qString', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-name-with-hyphen",
+      "source": "requirementDiagram\nrequirement req-name {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...gramrequirement req-name {id: 1}\n----------------------^\nExpecting 'STRUCT_START', 'STYLE_SEPARATOR', got 'LINE'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 13
+      }
+    },
+    {
+      "id": "reject-id-negative",
+      "source": "requirementDiagram\nrequirement a {\nid: -3\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...requirement a {id: -3}\n----------------------^\nExpecting 'unqString', 'qString', got 'LINE'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-id-with-letters",
+      "source": "requirementDiagram\nrequirement a {\nid: ABC-1.2\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...uirement a {id: ABC-1.2}\n----------------------^\nExpecting 'NEWLINE', got 'LINE'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 5
+      }
+    },
+    {
+      "id": "reject-id-empty",
+      "source": "requirementDiagram\nrequirement a {\nid:\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...requirement a {id:}\n---------------------^\nExpecting 'unqString', 'qString', got 'NEWLINE'",
+        "messageLine": 3,
+        "line": 4,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-text-empty",
+      "source": "requirementDiagram\nrequirement a {\ntext:\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...equirement a {text:}\n----------------------^\nExpecting 'unqString', 'qString', got 'NEWLINE'",
+        "messageLine": 3,
+        "line": 4,
+        "column": 5
+      }
+    },
+    {
+      "id": "reject-text-single-quoted",
+      "source": "requirementDiagram\nrequirement a {\ntext: 'single quoted'\n}",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Lexical error on line 3. Unrecognized text.\n...quirement a {text: 'single quoted'}\n----------------------^",
+        "messageLine": 3,
+        "line": 3
+      }
+    },
+    {
+      "id": "reject-text-non-ascii",
+      "source": "requirementDiagram\nrequirement a {\ntext: 系统应在 3 秒内响应\n}",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Lexical error on line 3. Unrecognized text.\n...quirement a {text: 系统应在 3 秒内响应}\n----------------------^",
+        "messageLine": 3,
+        "line": 3
+      }
+    },
+    {
+      "id": "reject-text-brackets",
+      "source": "requirementDiagram\nrequirement a {\ntext: [see 1.2] (note) {x}\n}",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Lexical error on line 3. Unrecognized text.\n...quirement a {text: [see 1.2] (note) {x}\n----------------------^",
+        "messageLine": 3,
+        "line": 3
+      }
+    },
+    {
+      "id": "reject-text-with-brace",
+      "source": "requirementDiagram\nrequirement a {\ntext: a { b\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...irement a {text: a { b}\n----------------------^\nExpecting 'NEWLINE', got 'STRUCT_START'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-text-with-relationship",
+      "source": "requirementDiagram\nrequirement a {\ntext: a - contains -> b\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...irement a {text: a - contains -> b}\n----------------------^\nExpecting 'NEWLINE', got 'LINE'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-member-without-colon",
+      "source": "requirementDiagram\nrequirement a {\nid 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...requirement a {id 1}\n---------------------^\nExpecting 'COLONSEP', got 'unqString'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-unknown-member",
+      "source": "requirementDiagram\nrequirement a {\ncolor: red\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...ramrequirement a {color: red}\n---------------------^\nExpecting 'NEWLINE', 'ID', 'TEXT', 'RISK', 'VERIFYMTHD', 'STRUCT_STOP', got 'unqString'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 16
+      }
+    },
+    {
+      "id": "reject-requirement-with-type",
+      "source": "requirementDiagram\nrequirement a {\ntype: x\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...ramrequirement a {type: x}\n---------------------^\nExpecting 'NEWLINE', 'ID', 'TEXT', 'RISK', 'VERIFYMTHD', 'STRUCT_STOP', got 'TYPE'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 16
+      }
+    },
+    {
+      "id": "reject-element-with-id",
+      "source": "requirementDiagram\nelement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...Diagramelement a {id: 1}\n---------------------^\nExpecting 'NEWLINE', 'STRUCT_STOP', 'TYPE', 'DOCREF', got 'ID'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 12
+      }
+    },
+    {
+      "id": "reject-element-with-risk",
+      "source": "requirementDiagram\nelement a {\nrisk: low\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...Diagramelement a {risk: low}\n---------------------^\nExpecting 'NEWLINE', 'STRUCT_STOP', 'TYPE', 'DOCREF', got 'RISK'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 12
+      }
+    },
+    {
+      "id": "reject-unknown-risk",
+      "source": "requirementDiagram\nrequirement a {\nrisk: extreme\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...quirement a {risk: extreme}\n----------------------^\nExpecting 'LOW_RISK', 'MED_RISK', 'HIGH_RISK', got 'unqString'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 5
+      }
+    },
+    {
+      "id": "reject-unknown-verify-method",
+      "source": "requirementDiagram\nrequirement a {\nverifyMethod: guess\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...t a {verifyMethod: guess}\n----------------------^\nExpecting 'VERIFY_ANALYSIS', 'VERIFY_DEMONSTRATION', 'VERIFY_INSPECTION', 'VERIFY_TEST', got 'unqString'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 13
+      }
+    },
+    {
+      "id": "reject-unknown-requirement-type",
+      "source": "requirementDiagram\nconstraint a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...iagramconstraint a {id: 1}\n----------------------^\nExpecting 'STYLE_SEPARATOR', 'END_ARROW_L', 'LINE', got 'STRUCT_START'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-relationship-without-type",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na --> b",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 8:\n...nt b {type: t}a --> b\n--------------------^\nExpecting 'CONTAINS', 'COPIES', 'DERIVES', 'SATISFIES', 'VERIFIES', 'REFINES', 'TRACES', got 'END_ARROW_R'",
+        "messageLine": 8,
+        "line": 8,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-relationship-both-arrows",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na <- contains -> b",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 8:\n...: t}a <- contains -> b\n---------------------^\nExpecting 'LINE', got 'END_ARROW_R'",
+        "messageLine": 8,
+        "line": 8,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-relationship-missing-destination",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\na - contains ->",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n... 1}a - contains ->\n---------------------^\nExpecting 'unqString', 'qString', got 'NEWLINE'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 14
+      }
+    },
+    {
+      "id": "reject-unknown-relationship-type",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nelement b {\ntype: t\n}\na - breaks -> b",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 8:\n...t b {type: t}a - breaks -> b\n--------------------^\nExpecting 'CONTAINS', 'COPIES', 'DERIVES', 'SATISFIES', 'VERIFIES', 'REFINES', 'TRACES', got 'unqString'",
+        "messageLine": 8,
+        "line": 8,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-relationship-without-arrows",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\na contains a",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...id: 1}a contains a\n---------------------^\nExpecting 'STYLE_SEPARATOR', 'END_ARROW_L', 'LINE', got 'NEWLINE'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-style-without-declarations",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle a",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...a {id: 1}style a\n-------------------^\nExpecting 'ALPHA', 'COMMA', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', got 'EOF'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-style-quoted-value",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle a \"fill:#111\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n... {id: 1}style a \"fill:#111\"\n--------------------^\nExpecting 'ALPHA', 'COMMA', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', got 'qString'",
+        "messageLine": 5,
+        "line": 5,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-style-trailing-comma",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nstyle a fill:#111,",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...style a fill:#111,\n---------------------^\nExpecting 'ALPHA', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', got 'EOF'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 18
+      }
+    },
+    {
+      "id": "reject-class-without-class-list",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass a",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...a {id: 1}class a\n-------------------^\nExpecting 'ALPHA', 'COMMA', 'unqString', 'qString', got 'EOF'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-class-def-without-styles",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef k",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...id: 1}classDef k\n-------------------^\nExpecting 'ALPHA', 'COMMA', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', got 'EOF'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 10
+      }
+    },
+    {
+      "id": "reject-class-def-quoted-styles",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef k \"\"\nclass a k",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...: 1}classDef k \"\"class a k\n--------------------^\nExpecting 'ALPHA', 'COMMA', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', got 'CLASS'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 10
+      }
+    },
+    {
+      "id": "reject-class-node-with-empty-quoted-class",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclass A \"\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...id: 1}class A \"\"\n-------------------^\nExpecting 'ALPHA', 'COMMA', 'unqString', 'qString', got 'EOF'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-class-empty-quoted-node",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nclassDef C fill:#f00\nclass \"\" C",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 6:\n...ill:#f00class \"\" C\n---------------------^\nExpecting 'ALPHA', 'COMMA', 'unqString', 'qString', got 'EOF'",
+        "messageLine": 6,
+        "line": 7,
+        "column": 10
+      }
+    },
+    {
+      "id": "reject-acc-title-empty",
+      "source": "requirementDiagram\naccTitle:\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 4:\n...le:requirement a {id: 1}\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'ID'",
+        "messageLine": 4,
+        "line": 4,
+        "column": 16
+      }
+    },
+    {
+      "id": "reject-acc-title-spaces-only",
+      "source": "requirementDiagram\naccTitle:   \nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 4:\n...   requirement a {id: 1}\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'ID'",
+        "messageLine": 4,
+        "line": 4,
+        "column": 16
+      }
+    },
+    {
+      "id": "reject-acc-descr-empty",
+      "source": "requirementDiagram\naccDescr:\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 4:\n...cr:requirement a {id: 1}\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'ID'",
+        "messageLine": 4,
+        "line": 4,
+        "column": 16
+      }
+    },
+    {
+      "id": "reject-two-relationships-one-line",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\na - contains -> b - contains -> c",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...}a - contains -> b - contains -> c\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'LINE'",
+        "messageLine": 5,
+        "line": 5,
+        "column": 17
+      }
+    },
+    {
+      "id": "reject-text-escaped-quotes",
+      "source": "requirementDiagram\nrequirement a {\ntext: \"a \\\"quoted\\\" word\"\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...ment a {text: \"a \\\"quoted\\\" word\"}\n----------------------^\nExpecting 'NEWLINE', got 'unqString'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 8
+      }
+    },
+    {
+      "id": "reject-text-with-hyphen",
+      "source": "requirementDiagram\nrequirement a {\ntext: well-formed\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...ement a {text: well-formed}\n----------------------^\nExpecting 'NEWLINE', got 'LINE'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-name-non-ascii",
+      "source": "requirementDiagram\nrequirement 名称 {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Lexical error on line 2. Unrecognized text.\n...Diagramrequirement 名称 {id: 1}\n----------------------^",
+        "messageLine": 2,
+        "line": 2
+      }
+    },
+    {
+      "id": "reject-inline-title",
+      "source": "requirementDiagram\ntitle: not allowed\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...irementDiagramtitle: not allowedrequir\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'STRUCT_START', 'STYLE_SEPARATOR', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'END_ARROW_L', 'LINE', 'CLASSDEF', 'CLASS', 'ALPHA', 'COMMA', 'STYLE', 'NUM', 'COLON', 'UNIT', 'SPACE', 'BRKT', 'PCT', 'MINUS', 'LABEL', 'SEMICOLON', 'unqString', 'qString', got 'COLONSEP'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-unknown-line",
+      "source": "requirementDiagram\nrequirement a {\nid: 1\n}\nsomething else here",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 5:\n...something else here\n----------------------^\nExpecting 'STYLE_SEPARATOR', 'END_ARROW_L', 'LINE', got 'NEWLINE'",
+        "messageLine": 5,
+        "line": 6,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-id-outside-body",
+      "source": "requirementDiagram\nid: 1",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nrequirementDiagramid: 1\n------------------^\nExpecting 'NEWLINE', 'EOF', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'REQUIREMENT', 'FUNCTIONAL_REQUIREMENT', 'INTERFACE_REQUIREMENT', 'PERFORMANCE_REQUIREMENT', 'PHYSICAL_REQUIREMENT', 'DESIGN_CONSTRAINT', 'ELEMENT', 'CLASSDEF', 'CLASS', 'STYLE', 'unqString', 'qString', got 'ID'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 19
+      }
+    },
+    {
+      "id": "reject-direction-value",
+      "source": "requirementDiagram\ndirection diagonally\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...direction diagonallyrequirement a {id:\n-----------------------^\nExpecting 'STYLE_SEPARATOR', 'END_ARROW_L', 'LINE', got 'NEWLINE'",
+        "messageLine": 2,
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-block-comment",
+      "source": "requirementDiagram\n/* note */\nrequirement a {\nid: 1\n}",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Lexical error on line 2. Unrecognized text.\nrequirementDiagram/* note */requireme\n------------------^",
+        "messageLine": 2,
+        "line": 2
+      }
+    }
+  ],
+  "fixtureSha256": "bfeef636b6a84166c5268c6cb22072ebb8cec0d25202bce9f4d50442e5a1b486"
+}

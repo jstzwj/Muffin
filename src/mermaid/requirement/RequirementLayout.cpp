@@ -13,12 +13,14 @@
 #include "mermaid/flowchart/FlowLabel.h"
 
 #include "render/TextLayout.h"
+#include <QSet>
 #include <QSizeF>
 #include <QString>
 #include <QTextCharFormat>
 
 #include <algorithm>
 #include <limits>
+#include <stdexcept>
 
 namespace {
 
@@ -75,6 +77,7 @@ flowchart::FlowLabelDocument requirementRowDocument(const QString& text, bool bo
 RequirementLayoutInput buildRequirementLayoutInput(const RequirementDiagramData& data) {
   RequirementLayoutInput input;
   input.direction = data.direction.isEmpty() ? QStringLiteral("TB") : data.direction;
+  QSet<QString> declared;
   // Requirements first, then elements — matching RequirementDB.getData() order,
   // which assigns colorIndex by node insertion order.
   for (const RequirementNode& req : data.requirements) {
@@ -104,6 +107,7 @@ RequirementLayoutInput buildRequirementLayoutInput(const RequirementDiagramData&
     if (!req.verifyMethod.isEmpty())
       node.rows.append({QStringLiteral("Verification: ") + req.verifyMethod, false});
     node.hasBody = node.rows.size() > 2;
+    declared.insert(req.name);
     input.nodes.append(std::move(node));
   }
   for (const ElementNode& elem : data.elements) {
@@ -126,10 +130,17 @@ RequirementLayoutInput buildRequirementLayoutInput(const RequirementDiagramData&
     if (!elem.docRef.isEmpty())
       node.rows.append({QStringLiteral("Doc Ref: ") + elem.docRef, false});
     node.hasBody = node.rows.size() > 2;
+    declared.insert(elem.name);
     input.nodes.append(std::move(node));
   }
   // Edges — mirror RequirementDB.getData() relationship edge construction.
   for (const Relationship& rel : data.relations) {
+    // Upstream resolves each endpoint against the declared nodes while laying the
+    // edge out, and a name that was never declared takes its renderer down with
+    // "Cannot read properties of undefined (reading 'shape')". The parse itself
+    // accepts such a relationship, so the diagram fails here, at render.
+    if (!declared.contains(rel.src) || !declared.contains(rel.dst))
+      throw std::runtime_error("Cannot read properties of undefined (reading 'shape')");
     RequirementLayoutEdgeInput edge;
     edge.id = rel.src + QStringLiteral("-") + rel.dst;
     edge.start = rel.src;

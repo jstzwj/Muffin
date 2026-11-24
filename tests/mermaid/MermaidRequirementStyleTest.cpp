@@ -582,16 +582,29 @@ int main(int argc, char** argv) {
     }
   }
   {
-    // Empty quoted ids are a Parse error in every style-state idList position.
+    // An empty quoted id yields no token (Mermaid 11.16.0 qString rule 1), so it
+    // disappears and the remaining words shift one place. `class` then has one
+    // list where the grammar wants two and fails; `classDef` takes the first
+    // declaration as the class name; `style` has no node to style and does
+    // nothing. requirement-grammar.json records the same answers.
     const QList<QString> bad = {
         head + "requirement A {\n id: 1\n}\nclass A \"\"",
-        head + "requirement A {\n id: 1\n}\nclass \"\" C",
-        head + "requirement A {\n id: 1\n}\nclassDef \"\" fill:#ff0000",
-        head + "requirement A {\n id: 1\n}\nstyle \"\" fill:#ff0000",
+        head + "requirement A {\n id: 1\n}\nclassDef C fill:#f00\nclass \"\" C",
     };
     for (const QString& src : bad)
       require(throwsParseError([&] { requirement::RequirementDiagram::parse(src); }),
-              QStringLiteral("empty quoted id must be a Parse error: %1").arg(src));
+              QStringLiteral("a class line that loses its second list must be a Parse error: %1").arg(src));
+    const requirement::RequirementDiagramData shifted =
+        requirement::RequirementDiagram::parse(head + "requirement A {\n id: 1\n}\nclassDef \"\" red blue\nclass A red")
+            .data();
+    require(shifted.classDefs.value(QStringLiteral("red")) == QStringList{QStringLiteral("blue")},
+            QStringLiteral("classDef \"\" red blue defines class red; got %1")
+                .arg(shifted.classDefs.value(QStringLiteral("red")).join(QStringLiteral(", "))));
+    const requirement::RequirementDiagramData unstyled =
+        requirement::RequirementDiagram::parse(head + "requirement A {\n id: 1\n}\nstyle \"\" fill:#ff0000").data();
+    require(unstyled.requirements.first().cssStyles.isEmpty(),
+            QStringLiteral("style \"\" styles no node; got %1")
+                .arg(unstyled.requirements.first().cssStyles.join(QStringLiteral(", "))));
   }
 
   // ===== 8. Painter RGBA/ink (the REAL painter, not just resolved fields) =====

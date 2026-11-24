@@ -112,6 +112,7 @@ muffin_add_test(NAME MuffinMermaidClassGeometryOracleTest SOURCE tests/mermaid/M
 muffin_add_test(NAME MuffinMermaidRequirementGeometryOracleTest SOURCE tests/mermaid/MermaidRequirementGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/requirement-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementPixelTest SOURCE tests/mermaid/MermaidRequirementPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/requirement-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementParserTest SOURCE tests/mermaid/MermaidRequirementParserTest.cpp LINK MuffinCore)
+muffin_add_test(NAME MuffinMermaidRequirementGrammarTest SOURCE tests/mermaid/MermaidRequirementGrammarTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/requirement-grammar.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementStyleTest SOURCE tests/mermaid/MermaidRequirementStyleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementTextStyleTest SOURCE tests/mermaid/MermaidRequirementTextStyleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementColorIndexTest SOURCE tests/mermaid/MermaidRequirementColorIndexTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)

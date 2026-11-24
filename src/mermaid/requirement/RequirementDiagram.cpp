@@ -363,6 +363,18 @@ QVector<StyleToken> tokenizeStyleState(const QString& s, int lineNo) {
   return out;
 }
 
+// An empty quoted string yields no token upstream: the lexer opens and closes
+// its string state without returning one. It is therefore neither an id nor an
+// error, and whatever follows takes its place in the list being read.
+QVector<StyleToken> withoutEmptyQuotedIds(const QVector<StyleToken>& toks) {
+  QVector<StyleToken> kept;
+  for (const StyleToken& token : toks) {
+    if (!(token.type == StyleTok::QString && token.text.isEmpty()))
+      kept.append(token);
+  }
+  return kept;
+}
+
 // Reads a greedy idList `id (',' id)*` from `toks` starting at `pos`; an id is
 // a Word or qString token. Stops at the first non-Comma token after an id (the
 // style state eats the separating space, so the idList/stylesOpt boundary is
@@ -371,13 +383,7 @@ QVector<StyleToken> tokenizeStyleState(const QString& s, int lineNo) {
 QStringList extractStyleIdList(const QVector<StyleToken>& toks, int& pos, int lineNo) {
   QStringList ids;
   const auto isIdTok = [](const StyleToken& t) { return t.type == StyleTok::Word || t.type == StyleTok::QString; };
-  // An empty qString ("") is not a valid id — mermaid rejects `class A ""` etc.
-  // as a Parse error, in every idList position (node / class / classDef).
-  const auto takeId = [&lineNo](const StyleToken& t) -> QString {
-    if (t.type == StyleTok::QString && t.text.isEmpty())
-      throw RequirementParseError(QStringLiteral("empty quoted id is not allowed"), lineNo);
-    return t.text;
-  };
+  const auto takeId = [](const StyleToken& t) { return t.text; };
   if (pos >= toks.size() || !isIdTok(toks.at(pos)))
     return ids;
   ids.append(takeId(toks.at(pos)));
@@ -472,7 +478,9 @@ public:
         continue;
 
       if (inBody) {
-        if (line == QLatin1String("}")) {
+        // A line that opens with the closing brace ends the body; whatever
+        // follows the brace is a stray token upstream stops on.
+        if (line.startsWith(QLatin1Char('}'))) {
           // Finalize body — look up the owner by name so the reference is stable
           // even if the requirements/elements vectors reallocated mid-body.
           if (bodyOwner == BodyOwner::Requirement) {
@@ -494,6 +502,9 @@ public:
           bodyOwner = BodyOwner::None;
           bodyOwnerName.clear();
           bodyBuffer.clear();
+          const QString stray = line.mid(1).trimmed();
+          if (!stray.isEmpty())
+            throw RequirementParseError(QStringLiteral("Unrecognized requirementDiagram syntax: %1").arg(stray), i + 1);
         } else {
           bodyBuffer.append(line);
         }
@@ -550,7 +561,8 @@ public:
         }
       }
 
-      // accTitle: value
+      // accTitle: value — the value is mandatory upstream (`acc_title: ACC_TITLE
+      // ':' text`), so an empty one is a Parse error.
       // (There is intentionally NO `title:` handler — an inline `title` line is
       // rejected by the Requirement parser: mermaid's lexer returns a `title`
       // token but the grammar does not accept it, so it Parse-errors. Requirement
@@ -558,7 +570,10 @@ public:
       if (line.startsWith(QStringLiteral("accTitle"), Qt::CaseInsensitive)) {
         const int colon = line.indexOf(QLatin1Char(':'));
         if (colon >= 0) {
-          data_.accTitle = unwrapValue(line.mid(colon + 1));
+          const QString title = unwrapValue(line.mid(colon + 1));
+          if (title.trimmed().isEmpty())
+            throw RequirementParseError(QStringLiteral("accTitle requires a value"), i + 1);
+          data_.accTitle = title;
           continue;
         }
       }
@@ -575,7 +590,10 @@ public:
         }
         const int colon = line.indexOf(QLatin1Char(':'));
         if (colon >= 0) {
-          data_.accDescription = unwrapValue(line.mid(colon + 1));
+          const QString description = unwrapValue(line.mid(colon + 1));
+          if (description.trimmed().isEmpty())
+            throw RequirementParseError(QStringLiteral("accDescr requires a value"), i + 1);
+          data_.accDescription = description;
           continue;
         }
       }
@@ -680,15 +698,18 @@ public:
       // See applyClasses / applyStyles / defineClasses for the DB semantics.
       if (line.startsWith(QStringLiteral("classDef"), Qt::CaseInsensitive) &&
           (line.size() == 8 || line.at(8).isSpace())) {
-        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(8), i + 1);
+        const QVector<StyleToken> toks = withoutEmptyQuotedIds(tokenizeStyleState(line.mid(8), i + 1));
         int pos = 0;
         const QStringList classIds = extractStyleIdList(toks, pos, i + 1);
         const QStringList styles = extractStylesOpt(toks, pos, i + 1);
+        // Upstream's grammar requires at least one declaration after the ids.
+        if (styles.isEmpty())
+          throw RequirementParseError(QStringLiteral("classDef requires at least one declaration"), i + 1);
         defineClasses(classIds, styles);
         continue;
       }
       if (line.startsWith(QStringLiteral("class"), Qt::CaseInsensitive) && (line.size() == 5 || line.at(5).isSpace())) {
-        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(5), i + 1);
+        const QVector<StyleToken> toks = withoutEmptyQuotedIds(tokenizeStyleState(line.mid(5), i + 1));
         int pos = 0;
         const QStringList nodeIds = extractStyleIdList(toks, pos, i + 1);
         const QStringList classIds = extractStyleIdList(toks, pos, i + 1);
@@ -698,10 +719,13 @@ public:
         continue;
       }
       if (line.startsWith(QStringLiteral("style"), Qt::CaseInsensitive) && (line.size() == 5 || line.at(5).isSpace())) {
-        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(5), i + 1);
+        const QVector<StyleToken> toks = withoutEmptyQuotedIds(tokenizeStyleState(line.mid(5), i + 1));
         int pos = 0;
         const QStringList nodeIds = extractStyleIdList(toks, pos, i + 1);
         const QStringList styles = extractStylesOpt(toks, pos, i + 1);
+        // Upstream's grammar requires at least one declaration after the ids.
+        if (styles.isEmpty())
+          throw RequirementParseError(QStringLiteral("style requires at least one declaration"), i + 1);
         applyStyles(nodeIds, styles);
         continue;
       }
@@ -711,8 +735,12 @@ public:
       throw RequirementParseError(QStringLiteral("Unrecognized requirementDiagram syntax: %1").arg(line), i + 1);
     }
     // An open body at end-of-source is an unclosed block — also a parse error.
+    // Upstream's parser only notices it at end of input and names the line
+    // after the last one when the source does not end with a newline.
     if (inBody)
-      throw RequirementParseError(QStringLiteral("Unclosed requirement/element body"), lines_.size());
+      throw RequirementParseError(QStringLiteral("Unclosed requirement/element body"),
+                                  lines_.isEmpty() || lines_.last().isEmpty() ? static_cast<int>(lines_.size())
+                                                                             : static_cast<int>(lines_.size()) + 1);
     return std::move(data_);
   }
 
