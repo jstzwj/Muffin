@@ -2,6 +2,7 @@
 
 #include "render/TextLayout.h"
 #include "theme/CssThemeMapper.h"
+#include <QPainter>
 #include <QTextOption>
 #include <QScrollBar>
 #include <QEventLoop>
@@ -178,6 +179,110 @@ void testFirstClickInFormattedParagraphsAndLists() {
       }
     }
   }
+}
+
+void testReferenceDefinitionsReflowAndKeepSourcePositions() {
+  const QString title =
+      QStringLiteral("不再动原来的主词库，除非发现一些很没有必要的词才会进行删除操作，不会进行添加操作。");
+  const QString url = QStringLiteral("https://example.org/") + QString(90, QLatin1Char('a'));
+  struct Example {
+    QString name;
+    QString source;
+    QString field;
+    BlockType type;
+  };
+  const QVector<Example> examples{
+      {QStringLiteral("paragraph control"), QStringLiteral("[//]# (%1)").arg(title), title, BlockType::Paragraph},
+      {QStringLiteral("reference title"), QStringLiteral("[//]: # (%1)").arg(title), title, BlockType::LinkDefinition},
+      {QStringLiteral("reference URL"), QStringLiteral("[ref]: %1 (url)").arg(url), url, BlockType::LinkDefinition}};
+  QStringList failures;
+  for (const Example& example : examples) {
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+    view.resize(1200, 500);
+    view.show();
+    session.setMarkdownText(example.source, false);
+    view.setDocument(session.document());
+    QApplication::processEvents();
+    const auto* node = blockAt(session, 0);
+    require(node->type() == example.type, example.name + " parsed as unexpected block");
+    const NodeId id = node->id();
+    const qreal wideHeight = requireViewBlock(view, id, example.name)->rect().height();
+    view.resize(340, 500);
+    QApplication::processEvents();
+    const QRectF narrow = requireViewBlock(view, id, example.name)->rect();
+    if (narrow.height() <= wideHeight) {
+      failures << QStringLiteral("%1: narrowing the view to %2 px left block height at %3 (wide: %4)")
+                      .arg(example.name)
+                      .arg(narrow.width())
+                      .arg(narrow.height())
+                      .arg(wideHeight);
+      continue;
+    }
+
+    const qsizetype start = example.source.indexOf(example.field) + 1;
+    auto caret = [&](qsizetype offset) {
+      CursorPosition position;
+      position.blockId = position.text.nodeId = id;
+      position.text.sourceOffset = position.text.textOffset = offset;
+      return view.hitForCursorPosition(position).cursorRect;
+    };
+    const QRectF first = caret(start);
+    qsizetype second = start;
+    while (second < start + example.field.size() - 3 && caret(second).top() <= first.top())
+      ++second;
+    ++second; // An interior character on the next row avoids the ambiguous shared wrap boundary.
+    const QRectF next = caret(second);
+    require(!first.isEmpty() && next.top() > first.top() && narrow.contains(next.center()),
+            example.name + " must expose a wrapped caret inside the content");
+    if (example.type == BlockType::LinkDefinition) {
+      QImage image(narrow.toAlignedRect().size(), QImage::Format_ARGB32_Premultiplied);
+      image.fill(Qt::transparent);
+      QPainter painter(&image);
+      painter.translate(-narrow.topLeft());
+      requireViewBlock(view, id, example.name)->paint(painter, view.theme(), 0);
+      painter.end();
+      const QRect row = next.translated(-narrow.topLeft()).toAlignedRect();
+      const QImage rowInk = image.copy(0, row.top(), image.width(), row.height());
+      QImage blank(rowInk.size(), rowInk.format());
+      blank.fill(Qt::transparent);
+      require(rowInk != blank, example.name + " must paint text on the second row");
+    }
+    auto mouse = [&](QEvent::Type type, const QRectF& rect) {
+      const QPointF point = view.mapDocumentToViewport(rect.center());
+      const auto button = type == QEvent::MouseMove ? Qt::NoButton : Qt::LeftButton;
+      const auto buttons = type == QEvent::MouseButtonRelease ? Qt::NoButton : Qt::LeftButton;
+      QMouseEvent event(type, point, view.viewport()->mapToGlobal(point), button, buttons, Qt::NoModifier);
+      QApplication::sendEvent(view.viewport(), &event);
+    };
+    mouse(QEvent::MouseButtonPress, first);
+    mouse(QEvent::MouseMove, next);
+    mouse(QEvent::MouseButtonRelease, next);
+    const auto selection = controller.selection().selection();
+    require(selection.anchor.text.sourceOffset == start && selection.focus.text.sourceOffset == second,
+            example.name + " drag must select the source characters under the pointer");
+    const auto rects = requireViewBlock(view, id, example.name)->selectionRects(selection, view.theme());
+    require(rects.size() >= 2 && rects.first().top() < rects.last().top(),
+            example.name + " selection highlight must span both rows");
+
+    mouse(QEvent::MouseButtonPress, next);
+    mouse(QEvent::MouseButtonRelease, next);
+    require(controller.selection().cursorPosition().text.sourceOffset == second, example.name + " second-row click");
+    require(controller.inputController().insertText(QStringLiteral("X")), example.name + " insertion");
+    QString expected = example.source;
+    expected.insert(second, QLatin1Char('X'));
+    require(session.markdownText().toString() == expected, example.name + " insertion at clicked source character");
+    controller.undo();
+    view.resize(1200, 500);
+    QApplication::processEvents();
+    const auto* restored = blockAt(session, 0);
+    require(session.markdownText().toString() == example.source &&
+                requireViewBlock(view, restored->id(), example.name)->rect().height() == wideHeight,
+            example.name + " widening must restore the original layout and preserve the source");
+  }
+  require(failures.isEmpty(), failures.join(QLatin1Char('\n')));
 }
 
 void testDefinitionPlaceholderHitKeepsCursorInSlot() {
@@ -1353,6 +1458,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testFirstClickInFormattedParagraphsAndLists);
   RUN_TEST(testGapClickBelowNonLastBlockIsNotTrailingBlockAfter);
   RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
+  RUN_TEST(testReferenceDefinitionsReflowAndKeepSourcePositions);
   RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);
   RUN_TEST(testDefinitionBoundaryHitPlacesCursorAtSourceEdges);
   RUN_TEST(testNoTitleDefinitionRightEdgeHasNoInvisibleQuote);

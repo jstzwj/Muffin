@@ -178,37 +178,8 @@ HitTestResult::DefinitionField definitionHitFieldFor(BlockLayout::DefinitionSlot
   return HitTestResult::DefinitionField::None;
 }
 
-const BlockLayout::DefinitionTokenLayout*
-firstDefinitionToken(const QVector<BlockLayout::DefinitionTokenLayout>& tokens) {
-  return tokens.isEmpty() ? nullptr : &tokens.first();
-}
-
-const BlockLayout::DefinitionTokenLayout*
-lastDefinitionToken(const QVector<BlockLayout::DefinitionTokenLayout>& tokens) {
-  return tokens.isEmpty() ? nullptr : &tokens.last();
-}
-
-const BlockLayout::DefinitionTokenLayout*
-nearestEditableDefinitionToken(const QVector<BlockLayout::DefinitionTokenLayout>& tokens, qreal x) {
-  const BlockLayout::DefinitionTokenLayout* target = nullptr;
-  qreal bestDistance = std::numeric_limits<qreal>::max();
-  for (const BlockLayout::DefinitionTokenLayout& token : tokens) {
-    if (!token.editable) {
-      continue;
-    }
-    const qreal distance = x < token.rect.left()    ? token.rect.left() - x
-                           : x > token.rect.right() ? x - token.rect.right()
-                                                    : 0.0;
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      target = &token;
-    }
-  }
-  return target;
-}
-
-qreal horizontalDistanceToDefinitionToken(const BlockLayout::DefinitionTokenLayout& token, qreal x) {
-  return x < token.rect.left() ? token.rect.left() - x : x > token.rect.right() ? x - token.rect.right() : 0.0;
+qsizetype distanceToRange(qsizetype offset, qsizetype start, qsizetype end) {
+  return std::abs(offset - qBound(start, offset, end));
 }
 
 const BlockLayout::DefinitionTokenLayout*
@@ -1011,69 +982,67 @@ DefinitionBlock BlockLayout::definition() const {
   return definition_;
 }
 
-void BlockLayout::setDefinitionSlots(QVector<DefinitionSlotLayout> definitionSlots) {
-  definitionSlots_ = std::move(definitionSlots);
-}
-
 const QVector<BlockLayout::DefinitionSlotLayout>& BlockLayout::definitionSlots() const {
   return definitionSlots_;
 }
 
-void BlockLayout::setDefinitionTokens(QVector<DefinitionTokenLayout> definitionTokens) {
-  definitionTokens_ = std::move(definitionTokens);
+qreal BlockLayout::layoutDefinitionTokens(QVector<DefinitionTokenLayout> tokens, QPointF origin, const QFont& font,
+                                          qreal width, qreal lineHeight) {
+  // A field can span several rows. Keep its source and display ranges intact, and shape the entire
+  // definition so adjacent fields share a line and punctuation follows the same break rules as text.
+  QString display;
+  for (auto& token : tokens) {
+    token.displayStart = display.size();
+    display += token.text.isEmpty() && !token.focused ? token.placeholder : token.text;
+    token.displayEnd = display.size();
+  }
+  definitionText_ = std::make_unique<LiteralTextLayout>(std::move(display), font, width, lineHeight, true);
+  definitionSlots_.clear();
+  for (auto& token : tokens) {
+    const auto fragments = definitionText_->selectionRects(token.displayStart, token.displayEnd);
+    QRectF bounds;
+    for (const auto& fragment : fragments)
+      bounds |= fragment;
+    if (bounds.isEmpty())
+      bounds = definitionText_->cursorRect(token.displayStart);
+    token.rect = bounds.translated(origin);
+    if (token.editable)
+      definitionSlots_.append(token);
+  }
+  definitionTokens_ = std::move(tokens);
+  return definitionText_->height();
 }
 
 const QVector<BlockLayout::DefinitionTokenLayout>& BlockLayout::definitionTokens() const {
   return definitionTokens_;
 }
 
-QRectF BlockLayout::definitionCursorRectForSourceOffset(qsizetype sourceOffset, const RenderTheme& theme) const {
-  if (definitionTokens_.isEmpty() || sourceOffset < 0) {
-    return {};
-  }
-
-  const qsizetype sourceStart =
-      definition_.sourceRange.isValid() ? definition_.sourceRange.start : definition_.markerRange.start;
-  const qsizetype sourceEnd =
-      definition_.sourceRange.isValid()
-          ? definition_.sourceRange.end
-          : qMax(definition_.markerRange.end,
-                 qMax(definition_.destinationRange.end, qMax(definition_.titleRange.end, definition_.noteRange.end)));
-  const DefinitionTokenLayout* firstToken = firstDefinitionToken(definitionTokens_);
-  if (sourceOffset <= sourceStart) {
-    return firstToken ? QRectF(firstToken->rect.left(), rect_.top(), 1.0, rect_.height()) : QRectF();
-  }
-
-  const DefinitionTokenLayout* target = editableDefinitionTokenForSourceOffset(definitionTokens_, sourceOffset);
-  const DefinitionTokenLayout* lastToken = lastDefinitionToken(definitionTokens_);
-  if (!target && sourceOffset >= sourceEnd) {
-    return lastToken ? QRectF(lastToken->rect.right(), rect_.top(), 1.0, rect_.height()) : QRectF();
-  }
-
+qsizetype BlockLayout::definitionDisplayOffset(qsizetype sourceOffset) const {
+  if (sourceOffset <= definition_.markerRange.start)
+    return 0;
+  const auto* target = editableDefinitionTokenForSourceOffset(definitionTokens_, sourceOffset);
   if (!target) {
-    qreal bestDistance = std::numeric_limits<qreal>::max();
-    for (const DefinitionTokenLayout& token : definitionTokens_) {
-      if (!token.editable) {
+    if (sourceOffset >= definition_.sourceRange.end)
+      return definitionTokens_.last().displayEnd;
+    qsizetype best = std::numeric_limits<qsizetype>::max();
+    for (const auto& token : definitionTokens_) {
+      if (!token.editable)
         continue;
-      }
-      const qreal distance = sourceOffset < token.sourceStart ? token.sourceStart - sourceOffset
-                             : sourceOffset > token.sourceEnd ? sourceOffset - token.sourceEnd
-                                                              : 0.0;
-      if (distance < bestDistance) {
-        bestDistance = distance;
+      const auto distance = distanceToRange(sourceOffset, token.sourceStart, token.sourceEnd);
+      if (distance < best) {
         target = &token;
+        best = distance;
       }
     }
   }
-  if (!target) {
-    return {};
-  }
+  return target ? target->displayStart + qBound<qsizetype>(0, sourceOffset - target->sourceStart, target->text.size())
+                : 0;
+}
 
-  const qsizetype slotSourceStart = target->sourceStart >= 0 ? target->sourceStart : 0;
-  const qsizetype localOffset = qBound<qsizetype>(0, sourceOffset - slotSourceStart, target->text.size());
-  const TextFontMetrics metrics(theme.paragraphFont());
-  const qreal cursorX = target->rect.left() + metrics.horizontalAdvance(target->text.left(localOffset));
-  return QRectF(cursorX, rect_.top(), 1.0, rect_.height());
+QRectF BlockLayout::definitionCursorRectForSourceOffset(qsizetype sourceOffset, const RenderTheme&) const {
+  if (!definitionText_ || sourceOffset < 0)
+    return {};
+  return definitionText_->cursorRect(definitionDisplayOffset(sourceOffset)).translated(rect_.topLeft());
 }
 
 void BlockLayout::setTaskListItem(bool taskListItem, bool checked) {
@@ -1913,34 +1882,22 @@ void BlockLayout::paintTable(QPainter& painter, const RenderTheme& theme, qreal 
 void BlockLayout::paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
   painter.save();
   const QFont font = theme.paragraphFont();
-  const TextFontMetrics metrics(font);
-  painter.setFont(font);
-
-  for (const DefinitionTokenLayout& token : definitionTokens_) {
-    if (token.kind == DefinitionTokenLayout::Kind::Slot && token.text.isEmpty() && token.focused) {
-      continue;
-    }
-    const bool slotToken = token.kind == DefinitionTokenLayout::Kind::Slot;
-    painter.setPen(slotToken && !token.text.isEmpty() ? theme.textColor() : theme.mutedTextColor());
-    const QString text = slotToken && token.text.isEmpty() ? token.placeholder : token.text;
-    if (!text.isEmpty()) {
-      drawDocumentText(painter, QPointF(token.rect.left(), viewRect.top() + metrics.ascent()), text);
-    }
+  painter.setPen(theme.mutedTextColor());
+  QTextCharFormat fieldInk;
+  fieldInk.setForeground(theme.textColor());
+  QList<TextLayout::FormatRange> formats;
+  for (const auto& token : definitionTokens_) {
+    if (token.editable && !token.text.isEmpty())
+      formats.append({int(token.displayStart), int(token.text.size()), fieldInk});
   }
+  definitionText_->draw(painter, viewRect.topLeft(), formats);
 
   // Paint continuation lines below the token model for multi-line footnotes
   if (!literal_.isEmpty() && type_ == BlockType::FootnoteDefinition) {
-    const qreal lineHeightF = std::ceil(metrics.height() * kLineHeightFactor);
-    qreal noteX = viewRect.right();
-    for (const DefinitionTokenLayout& token : definitionTokens_) {
-      if (token.field == DefinitionSlotLayout::Field::Note) {
-        noteX = token.rect.left();
-        break;
-      }
-    }
+    const qreal lineHeightF = std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
+    const qreal noteX = definitionSlots_.last().rect.left();
     const qreal continuationWidth = qMax<qreal>(1.0, viewRect.right() - noteX);
-    const qreal continuationTop = viewRect.top() + lineHeightF;
-    painter.setPen(theme.mutedTextColor());
+    const qreal continuationTop = viewRect.top() + definitionText_->height();
     QTextOption option;
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     TextLayout layout(literal_, font);
@@ -2006,127 +1963,48 @@ HitTestResult BlockLayout::hitDefinition(QPointF documentPos, const RenderTheme&
   result.textNodeId = id_;
   result.blockRect = rect_;
   result.zone = HitTestResult::Zone::Text;
+  if (!definitionText_)
+    return result;
 
-  const TextFontMetrics metrics(theme.paragraphFont());
-  const qsizetype sourceStart =
-      definition_.sourceRange.isValid() ? definition_.sourceRange.start : definition_.markerRange.start;
-  const qsizetype sourceEnd =
-      definition_.sourceRange.isValid()
-          ? definition_.sourceRange.end
-          : qMax(definition_.markerRange.end,
-                 qMax(definition_.destinationRange.end, qMax(definition_.titleRange.end, definition_.noteRange.end)));
-  const DefinitionTokenLayout* firstToken = firstDefinitionToken(definitionTokens_);
-  const DefinitionTokenLayout* lastToken = lastDefinitionToken(definitionTokens_);
-  if (firstToken && lastToken) {
-    if (documentPos.x() <= firstToken->rect.left()) {
-      result.sourceOffset = sourceStart;
-      result.textOffset = definition_.markerRange.isValid() ? sourceStart - definition_.markerRange.start : 0;
-      result.cursorRect = QRectF(firstToken->rect.left(), rect_.top(), 1.0, rect_.height());
-      return result;
-    }
-    if (documentPos.x() >= lastToken->rect.right()) {
-      result.sourceOffset = sourceEnd;
-      result.textOffset = definition_.markerRange.isValid() ? sourceEnd - definition_.markerRange.start : 0;
-      result.cursorRect = QRectF(lastToken->rect.right(), rect_.top(), 1.0, rect_.height());
-      return result;
-    }
-  }
-
-  const DefinitionTokenLayout* target = nullptr;
-  qreal bestDistance = std::numeric_limits<qreal>::max();
-  for (const DefinitionTokenLayout& token : definitionTokens_) {
-    if (token.editable && token.rect.adjusted(-4.0, -theme.blockSpacing() * 0.25, 4.0, theme.blockSpacing() * 0.25)
-                              .contains(documentPos)) {
-      const qreal distance = horizontalDistanceToDefinitionToken(token, documentPos.x());
-      if (distance <= bestDistance) {
-        bestDistance = distance;
+  const auto display = definitionText_->offsetAtPoint(documentPos - rect_.topLeft());
+  if (display == 0) {
+    result.sourceOffset = definition_.sourceRange.start;
+  } else if (display == definitionTokens_.last().displayEnd) {
+    result.sourceOffset = definition_.sourceRange.end;
+  } else {
+    // Markup between fields belongs to the closest editable slot. A displayed placeholder
+    // occupies a range on screen but maps to a single insertion point in the document.
+    const DefinitionTokenLayout* target = nullptr;
+    qsizetype best = std::numeric_limits<qsizetype>::max();
+    for (const auto& token : definitionTokens_) {
+      if (!token.editable)
+        continue;
+      const auto distance = distanceToRange(display, token.displayStart, token.displayEnd);
+      if (distance < best || (distance == best && token.focused)) {
+        best = distance;
         target = &token;
       }
     }
+    if (!target)
+      return result;
+    result.definitionField = definitionHitFieldFor(target->field);
+    result.sourceOffset =
+        target->sourceStart + qBound<qsizetype>(0, display - target->displayStart, target->text.size());
   }
-  if (!target) {
-    target = nearestEditableDefinitionToken(definitionTokens_, documentPos.x());
-  }
-
-  if (!target) {
-    result.cursorRect = QRectF(rect_.topLeft(), QSizeF(1.0, rect_.height()));
-    return result;
-  }
-  result.definitionField = definitionHitFieldFor(target->field);
-
-  const QString text = target->text;
-  qsizetype localOffset = 0;
-  qreal cursorX = target->rect.left();
-  if (!text.isEmpty()) {
-    const TextFontMetrics metrics(theme.paragraphFont());
-    qreal best = std::numeric_limits<qreal>::max();
-    for (qsizetype i = 0; i <= text.size(); ++i) {
-      const qreal x = target->rect.left() + metrics.horizontalAdvance(text.left(i));
-      const qreal distance = std::abs(documentPos.x() - x);
-      if (distance <= best) {
-        best = distance;
-        localOffset = i;
-        cursorX = x;
-      }
-    }
-  }
-
-  const qsizetype slotSourceStart = target->sourceStart >= 0 ? target->sourceStart : 0;
-  const qsizetype slotSourceEnd = target->sourceEnd >= target->sourceStart ? target->sourceEnd : slotSourceStart;
-  result.sourceOffset = qBound<qsizetype>(slotSourceStart, slotSourceStart + localOffset, slotSourceEnd);
-  const qsizetype blockStart = definition_.markerRange.isValid() ? definition_.markerRange.start : 0;
-  result.textOffset = qMax<qsizetype>(0, result.sourceOffset - blockStart);
+  result.textOffset = result.sourceOffset - definition_.markerRange.start;
   result.cursorRect = definitionCursorRectForSourceOffset(result.sourceOffset, theme);
-  if (result.cursorRect.isEmpty()) {
-    result.cursorRect = QRectF(cursorX, rect_.top(), 1.0, rect_.height());
-  }
   return result;
 }
 
 QVector<QRectF> BlockLayout::definitionSelectionRects(qsizetype startOffset, qsizetype endOffset,
-                                                      const RenderTheme& theme) const {
-  QVector<QRectF> rects;
-  if (definitionSlots_.isEmpty() || startOffset == endOffset || !definition_.markerRange.isValid()) {
-    return rects;
-  }
-
-  const qsizetype blockStart = definition_.markerRange.start;
-  const qsizetype sourceStart = blockStart + qMin(startOffset, endOffset);
-  const qsizetype sourceEnd = blockStart + qMax(startOffset, endOffset);
-  const TextFontMetrics metrics(theme.paragraphFont());
-  for (const DefinitionSlotLayout& slot : definitionSlots_) {
-    const qsizetype rangeStart = qMax(sourceStart, slot.sourceStart);
-    const qsizetype rangeEnd = qMin(sourceEnd, slot.sourceEnd);
-    if (rangeEnd <= rangeStart) {
-      continue;
-    }
-    const QString text = slot.text;
-    const qsizetype localStart = qBound<qsizetype>(0, rangeStart - slot.sourceStart, text.size());
-    const qsizetype localEnd = qBound<qsizetype>(localStart, rangeEnd - slot.sourceStart, text.size());
-    const qreal x1 = slot.rect.left() + metrics.horizontalAdvance(text.left(localStart));
-    const qreal x2 = slot.rect.left() + metrics.horizontalAdvance(text.left(localEnd));
-    rects.push_back(QRectF(x1, slot.rect.top(), qMax<qreal>(1.0, x2 - x1), slot.rect.height()));
-  }
-
-  // Fill gaps between slot rects so that syntax tokens between selected
-  // slots also receive a continuous selection highlight.
-  if (rects.size() > 1) {
-    std::sort(rects.begin(), rects.end(), [](const QRectF& a, const QRectF& b) { return a.left() < b.left(); });
-    QVector<QRectF> continuous;
-    continuous.push_back(rects.first());
-    for (int i = 1; i < rects.size(); ++i) {
-      QRectF& prev = continuous.last();
-      const QRectF& curr = rects[i];
-      if (curr.left() <= prev.right() + 0.5) {
-        prev.setRight(qMax(prev.right(), curr.right()));
-      } else {
-        prev.setRight(curr.left()); // Extend to cover syntax tokens between slots
-        continuous.push_back(curr);
-      }
-    }
-    rects = std::move(continuous);
-  }
-
+                                                      const RenderTheme&) const {
+  if (!definitionText_ || startOffset == endOffset)
+    return {};
+  const auto start = definitionDisplayOffset(definition_.markerRange.start + startOffset);
+  const auto end = definitionDisplayOffset(definition_.markerRange.start + endOffset);
+  auto rects = definitionText_->selectionRects(start, end);
+  for (auto& rect : rects)
+    rect.translate(rect_.topLeft());
   return rects;
 }
 

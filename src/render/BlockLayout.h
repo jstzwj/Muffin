@@ -81,18 +81,13 @@ public:
     bool focused = false;
   };
 
-  struct DefinitionTokenLayout {
+  struct DefinitionTokenLayout : DefinitionSlotLayout {
     enum class Kind { Syntax, Slot };
 
     Kind kind = Kind::Syntax;
-    DefinitionSlotLayout::Field field = DefinitionSlotLayout::Field::Label;
-    QRectF rect;
-    QString text;
-    QString placeholder;
-    qsizetype sourceStart = -1;
-    qsizetype sourceEnd = -1;
+    qsizetype displayStart = 0;
+    qsizetype displayEnd = 0;
     bool editable = false;
-    bool focused = false;
   };
 
   // One rendered row of a `[TOC]` block: the heading's title, its level (for
@@ -262,9 +257,9 @@ public:
   QString placeholderText() const;
   void setDefinition(const DefinitionBlock& definition);
   DefinitionBlock definition() const;
-  void setDefinitionSlots(QVector<DefinitionSlotLayout> definitionSlots);
   const QVector<DefinitionSlotLayout>& definitionSlots() const;
-  void setDefinitionTokens(QVector<DefinitionTokenLayout> definitionTokens);
+  qreal layoutDefinitionTokens(QVector<DefinitionTokenLayout> tokens, QPointF origin, const QFont& font, qreal width,
+                               qreal lineHeight);
   const QVector<DefinitionTokenLayout>& definitionTokens() const;
   QRectF definitionCursorRectForSourceOffset(qsizetype sourceOffset, const RenderTheme& theme) const;
   void setTaskListItem(bool taskListItem, bool checked);
@@ -392,6 +387,7 @@ private:
                                qreal maxLineWidth) const;
   void paintDefinition(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   HitTestResult hitDefinition(QPointF documentPos, const RenderTheme& theme) const;
+  qsizetype definitionDisplayOffset(qsizetype sourceOffset) const;
   void paintToc(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   QVector<QRectF> definitionSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
 
@@ -429,6 +425,7 @@ private:
   DefinitionBlock definition_;
   QVector<DefinitionSlotLayout> definitionSlots_;
   QVector<DefinitionTokenLayout> definitionTokens_;
+  std::unique_ptr<LiteralTextLayout> definitionText_;
   bool taskListItem_ = false;
   bool taskChecked_ = false;
   AlertKind alertKind_ = AlertKind::None;

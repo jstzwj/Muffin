@@ -449,16 +449,10 @@ BlockHeightEstimator::EstimateResult BlockHeightEstimator::estimateTable(const M
 
 BlockHeightEstimator::EstimateResult
 BlockHeightEstimator::estimateDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal width) const {
-  Q_UNUSED(width);
-  // Definition blocks are rare (footnote/link defs) and render precise token rects;
-  // measure them when they come into view. One line is a safe placeholder.
-  const qreal lineHeight = estimateLineHeight(theme.paragraphFont());
-  qreal height = lineHeight;
-  if (node.type() == BlockType::FootnoteDefinition && !node.literal().isEmpty()) {
-    // Multi-line footnote continuation: rough estimate from source line count.
-    height += lineHeight * (static_cast<qreal>(node.literal().count(QLatin1Char('\n'))) + 1.0);
-  }
-  return {height, true};
+  const QFont font = theme.paragraphFont();
+  const QString source = node.definition().sourceText;
+  const qreal charsPerLine = width / qMax<qreal>(1, avgCharWidthForText(source, font));
+  return {estimateLineHeight(font) * estimateWrappedLines(source, charsPerLine), true};
 }
 
 } // namespace muffin

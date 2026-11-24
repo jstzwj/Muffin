@@ -1591,18 +1591,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(const MarkdownN
   const QFont font = theme.paragraphFont();
   const TextFontMetrics metrics(font);
   const qreal lineHeight = std::ceil(metrics.height() * kLineHeightFactor);
-  qreal cursorX = x;
   QVector<BlockLayout::DefinitionTokenLayout> definitionTokens;
   auto syntax = [&](const QString& text) {
     BlockLayout::DefinitionTokenLayout token;
     token.kind = BlockLayout::DefinitionTokenLayout::Kind::Syntax;
     token.text = text;
-    token.rect = QRectF(cursorX, y, qMax<qreal>(1.0, metrics.horizontalAdvance(text)), lineHeight);
-    token.sourceStart = -1;
-    token.sourceEnd = -1;
-    token.editable = false;
     definitionTokens.push_back(token);
-    cursorX = token.rect.right();
   };
   auto slot = [&](BlockLayout::DefinitionSlotLayout::Field field, const DefinitionFieldRange& sourceRange,
                   const QString& text, const QString& placeholder) {
@@ -1617,10 +1611,6 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(const MarkdownN
     const CursorPosition focus = selection_.focus;
     token.focused = selection_.isCollapsed() && focus.blockId == node.id() &&
                     focus.text.sourceOffset >= token.sourceStart && focus.text.sourceOffset <= token.sourceEnd;
-    const QString display = text.isEmpty() ? placeholder : text;
-    const qreal displayWidth = text.isEmpty() && token.focused ? 1.0 : metrics.horizontalAdvance(display);
-    token.rect = QRectF(cursorX, y, qMax<qreal>(1.0, displayWidth), lineHeight);
-    cursorX = token.rect.right();
     definitionTokens.push_back(token);
   };
   auto titleOpeningSyntax = [&definition]() {
@@ -1716,35 +1706,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(const MarkdownN
     }
   }
 
-  QVector<BlockLayout::DefinitionSlotLayout> definitionSlots;
-  for (const BlockLayout::DefinitionTokenLayout& token : definitionTokens) {
-    if (token.kind != BlockLayout::DefinitionTokenLayout::Kind::Slot) {
-      continue;
-    }
-    BlockLayout::DefinitionSlotLayout slotLayout;
-    slotLayout.field = token.field;
-    slotLayout.rect = token.rect;
-    slotLayout.text = token.text;
-    slotLayout.placeholder = token.placeholder;
-    slotLayout.sourceStart = token.sourceStart;
-    slotLayout.sourceEnd = token.sourceEnd;
-    slotLayout.focused = token.focused;
-    definitionSlots.push_back(slotLayout);
-  }
-  layout->setDefinitionSlots(std::move(definitionSlots));
-  layout->setDefinitionTokens(std::move(definitionTokens));
-
-  // Compute total height including footnote continuation lines
-  qreal totalHeight = lineHeight;
+  qreal totalHeight = layout->layoutDefinitionTokens(std::move(definitionTokens), {x, y}, font, width, lineHeight);
   if (!layout->literal().isEmpty() && definition.kind == DefinitionBlock::Kind::Footnote) {
-    // Find the note slot's X position for continuation indentation
-    qreal noteX = cursorX;
-    for (const auto& token : definitionTokens) {
-      if (token.field == BlockLayout::DefinitionSlotLayout::Field::Note) {
-        noteX = token.rect.left();
-        break;
-      }
-    }
+    const qreal noteX = layout->definitionSlots().last().rect.left();
     const qreal continuationWidth = qMax<qreal>(1.0, x + width - noteX);
     totalHeight += layoutTextHeight(layout->literal(), font, lineHeight, continuationWidth);
   }

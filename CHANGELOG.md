@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Follow the top-level rule for empty paragraphs inside block quotes: a math or HTML block, or a thematic break, followed by one empty quote line no longer leaves a clickable empty paragraph there.
 - Fix the import filter spelling so MediaWiki files are offered as `*.mediawiki`.
 - Keep other log output when `MUFFIN_PERF_LOG` is set: only performance messages go to the file.
+- Wrap a long link-definition title or URL to the available width, and keep clicks, selections and typing on the wrapped rows tied to their source characters.
 
 ### Changed
 
