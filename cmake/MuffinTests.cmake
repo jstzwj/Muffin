@@ -247,6 +247,7 @@ muffin_add_test(NAME MuffinMermaidSequenceWeightTest SOURCE tests/mermaid/Mermai
 muffin_add_test(NAME MuffinMermaidSequenceCoverageMatrixTest SOURCE tests/mermaid/MermaidSequenceCoverageMatrixTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/sequence-db.json)
 muffin_add_test(NAME MuffinMermaidDagreCompoundTest SOURCE tests/mermaid/MermaidDagreCompoundTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
+muffin_add_test(NAME MuffinVirtualEmptyParagraphTest SOURCE tests/parser/VirtualEmptyParagraphTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserAllocationTest SOURCE tests/parser/ParserAllocationTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserDefinitionTest SOURCE tests/parser/ParserDefinitionTest.cpp LINK MuffinCore
   FIXTURE tests/fixtures/parser/cmark-footnote-oracle.json)

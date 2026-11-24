@@ -73,23 +73,115 @@ private:
 
 bool isBlankLine(QStringView line);
 
-// The last non-blank line within [range.lineStart, range.lineEnd] (clamped to [1, totalLines]), or
+// The last line of `range` that is not empty by `isEmptyLine`, clamped to [1, totalLines], or
 // range.lineEnd when the range is degenerate (lineStart<=0 or lineEnd<=lineStart). cmark-gfm
-// over-reports some blocks' lineEnd by absorbing trailing blank lines (thematic breaks, container
-// blocks), so the real content end must be recovered by scanning. Both the byte-range annotation
-// (for a thematic break) and the virtual-empty-paragraph gap math (for any block) need this —
-// single-sourced here instead of duplicated as a downward for-loop at each call site.
-int lastNonBlankLine(const LineStartOffsetCache& lineOffsets, QStringView markdown, const SourceRange& range,
-                     int totalLines) {
+// reports some blocks' lineEnd wrongly: thematic breaks and container blocks absorb trailing
+// blank lines, while a display-math block stops short of its closing $$ line. Both the
+// byte-range annotation (for a thematic break) and the virtual-empty-paragraph gap math (for
+// any block) need the real content end, so it is recovered here once.
+template <typename IsEmptyLine>
+int lastContentLine(const SourceRange& range, int totalLines, IsEmptyLine isEmptyLine) {
   if (range.lineStart <= 0 || range.lineEnd <= range.lineStart) {
     return range.lineEnd;
   }
   for (int line = range.lineEnd; line >= range.lineStart; --line) {
-    if (line >= 1 && line <= totalLines && !isBlankLine(lineOffsets.lineText(markdown, line))) {
+    if (line >= 1 && line <= totalLines && !isEmptyLine(line)) {
       return line;
     }
   }
   return range.lineEnd;
+}
+
+int lastNonBlankLine(const LineStartOffsetCache& lineOffsets, QStringView markdown, const SourceRange& range,
+                     int totalLines) {
+  return lastContentLine(range, totalLines,
+                         [&](int line) { return isBlankLine(lineOffsets.lineText(markdown, line)); });
+}
+
+// ---- Virtual empty paragraphs --------------------------------------------------
+//
+// Between the children of a container, every second empty line is a blank line the author can
+// click into and type on. Markdown has no block for it, so the parser inserts a paragraph that
+// holds nothing: a virtual empty paragraph (VEP). The rule is the same in every container; a
+// container only says which of its lines count as empty and how the inserted paragraph is
+// placed in the source.
+
+template <typename IsEmptyLine, typename MakeEmptyParagraph>
+struct EmptyLineRule {
+  IsEmptyLine isEmptyLine;
+  // May return nullptr when the line has no source position to anchor the paragraph to.
+  MakeEmptyParagraph makeEmptyParagraph;
+};
+
+template <typename IsEmptyLine, typename MakeEmptyParagraph>
+EmptyLineRule(IsEmptyLine, MakeEmptyParagraph) -> EmptyLineRule<IsEmptyLine, MakeEmptyParagraph>;
+
+template <typename IsEmptyLine>
+int countEmptyLines(IsEmptyLine isEmptyLine, int firstLine, int lastLine) {
+  int count = 0;
+  for (int line = firstLine; line <= lastLine; ++line) {
+    if (isEmptyLine(line)) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+// Puts one paragraph on every second line from `firstLine` on, each only where the line is in
+// fact empty: the first empty line of a group stays spacing. The paragraphs go in front of
+// child `at`, or at the end when `at` is negative.
+template <typename Rule>
+void insertEmptyParagraphs(const Rule& rule, MarkdownNode& container, qsizetype at, int firstLine, int count) {
+  for (int i = 0; i < count; ++i) {
+    const int line = firstLine + 2 * i;
+    if (!rule.isEmptyLine(line)) {
+      continue;
+    }
+    auto paragraph = rule.makeEmptyParagraph(line);
+    if (!paragraph) {
+      continue;
+    }
+    if (at < 0) {
+      container.appendChild(std::move(paragraph));
+    } else {
+      container.insertChild(at, std::move(paragraph));
+      ++at;
+    }
+  }
+}
+
+// Walks the children of `container` and fills the empty lines between them. `beforeFirstChild` is
+// the line in front of the first child. The empty lines of that first gap are skipped where the
+// container never opens with one (`countLeadingGap`, false for a list). Returns the content end
+// line of the last child.
+template <typename Rule>
+int insertVirtualEmptyParagraphsInGaps(const Rule& rule, int totalLines, bool countLeadingGap, int beforeFirstChild,
+                                       MarkdownNode& container) {
+  int previousEndLine = beforeFirstChild;
+  qsizetype childIndex = 0;
+  while (childIndex < static_cast<qsizetype>(container.children().size())) {
+    MarkdownNode* child = container.children().at(static_cast<size_t>(childIndex)).get();
+    const SourceRange range = child->sourceRange();
+    // Count the lines of the gap that are really empty rather than trusting the line distance:
+    // a display-math block's range stops before its closing $$ line, which then sits in the gap
+    // as an ordinary content line.
+    int emptyLines = 0;
+    if (range.lineStart > 0 && (countLeadingGap || previousEndLine > 0)) {
+      emptyLines = countEmptyLines(rule.isEmptyLine, previousEndLine + 1, range.lineStart - 1);
+    }
+    // The first empty line after content stays spacing; every second one becomes a paragraph.
+    insertEmptyParagraphs(rule, container, childIndex, previousEndLine + 2, emptyLines / 2);
+    previousEndLine = qMax(previousEndLine,
+                           lastContentLine(range, totalLines, [&](int line) { return rule.isEmptyLine(line); }));
+    ++childIndex;
+  }
+  return previousEndLine;
+}
+
+// Empty lines behind the last block, up to `endLine`, follow the same rule as the gaps.
+template <typename Rule>
+void appendTrailingVirtualEmptyParagraphs(const Rule& rule, MarkdownNode& container, int lastContent, int endLine) {
+  insertEmptyParagraphs(rule, container, -1, lastContent + 2, countEmptyLines(rule.isEmptyLine, lastContent + 1, endLine) / 2);
 }
 
 void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, QStringView markdown, MarkdownNode& node) {
@@ -1794,6 +1886,8 @@ void CmarkGfmParser::attachExtensions(cmark_parser* parser, const ParseOptions& 
     attach(options.relaxedInlineMath ? "math-relaxed" : "math");
 }
 
+// The document's own lines, where an empty line is a blank one. Leading blank lines count: they
+// are the empty paragraphs an all-blank document starts from.
 void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root,
                                                   const LineStartOffsetCache& lineOffsets) const {
   if (root.type() != BlockType::Document) {
@@ -1802,90 +1896,53 @@ void CmarkGfmParser::insertVirtualEmptyParagraphs(QStringView markdown, Markdown
 
   // Index lines through lineOffsets (a view over markdown) instead of markdown.toString() +
   // split('\n'), which on a large document allocates a full copy plus one QString per line. The
-  // blank-line predicate is isBlankLine(lineText(...)) — identical to the old lines.at(i).trimmed().
+  // blank predicate is isBlankLine(lineText(...)) — identical to the old lines.at(i).trimmed().
   const int totalLines = lineOffsets.lineCount();
-  qsizetype childIndex = 0;
-  int previousEndLine = 0;
+  const auto isBlank = [&](int line) {
+    return line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line));
+  };
+  const EmptyLineRule rule{isBlank, [this](int line) { return createVirtualEmptyParagraph(line); }};
 
   if (root.children().empty()) {
+    // Nothing is parsed out of blank lines alone: an empty document is one empty paragraph, and
+    // a document of only blank lines gets every second one.
     if (markdown.isEmpty()) {
       root.appendChild(createVirtualEmptyParagraph(1));
       return;
     }
-    const int emptyCount = totalLines / 2;
-    for (int i = 0; i < emptyCount; ++i) {
-      const int emptyLine = 1 + i * 2;
-      if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
-        root.appendChild(createVirtualEmptyParagraph(emptyLine));
-      }
-    }
+    insertEmptyParagraphs(rule, root, -1, 1, totalLines / 2);
     return;
   }
 
-  while (childIndex < root.children().size()) {
-    MarkdownNode* child = root.children().at(static_cast<size_t>(childIndex)).get();
-    const SourceRange range = child->sourceRange();
-    const int startLine = range.lineStart;
-    // Count ACTUAL blank lines in the gap [previousEndLine+1, startLine) rather than trusting
-    // startLine-previousEndLine-1. cmark-gfm under-reports the end line of some block types
-    // (a display-math block excludes its closing $$/\] line; an HTML block can exclude its closing
-    // tag line), so the apparent gap can include a non-blank closer line. Counting real blank lines
-    // yields the correct virtual-empty-paragraph count regardless — otherwise every display-math /
-    // HTML block followed by a single blank line gained a spurious clickable empty paragraph.
-    int blankLines = 0;
-    if (startLine > 0) {
-      for (int line = previousEndLine + 1; line < startLine; ++line) {
-        if (line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line))) {
-          ++blankLines;
-        }
-      }
-    }
-    const int emptyCount = qMax(0, blankLines / 2);
-    const int firstEmptyLine = previousEndLine == 0 ? 1 : previousEndLine + 2;
-    for (int i = 0; i < emptyCount; ++i) {
-      const int emptyLine = firstEmptyLine + i * 2;
-      if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
-        root.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine));
-        ++childIndex;
-      }
-    }
+  // The document has no opening line to leave as spacing: its very first line can hold the
+  // paragraph (hence -1 in front of the first child).
+  insertVirtualEmptyParagraphsInGaps(rule, totalLines, true, -1, root);
 
-    // Some blocks (notably ThematicBreak, and container blocks) over-report lineEnd to include
-    // trailing blank lines. Using it raw would shrink the FOLLOWING sibling's gap and drop the VEPs
-    // that belong there (the caret-driven VEP after a `---` would collapse on the next Enter's
-    // re-parse — the "content jumps up after Enter" bug). Use the block's actual last non-blank line;
-    // lastNonBlankLine returns range.lineEnd unchanged for degenerate ranges, so this applies
-    // unconditionally.
-    const int endLine = lastNonBlankLine(lineOffsets, markdown, range, totalLines);
-    previousEndLine = qMax(previousEndLine, endLine);
-    ++childIndex;
-  }
-
-  // Container blocks (Lists, BlockQuotes) absorb trailing blank lines into
-  // their lineEnd, so previousEndLine may overestimate where the content ends.
-  // Use the actual last non-blank line for trailing blank-line counting.
-  int lastContentLine = 0;
-  for (int i = totalLines; i >= 1; --i) {
-    if (!isBlankLine(lineOffsets.lineText(markdown, i))) {
-      lastContentLine = i; // 1-indexed
-      break;
-    }
-  }
-  const int trailingLines = totalLines - lastContentLine;
-  const int trailingEmptyCount = qMax(0, trailingLines / 2);
-  for (int i = 0; i < trailingEmptyCount; ++i) {
-    const int emptyLine = lastContentLine + 2 + i * 2;
-    if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
-      root.appendChild(createVirtualEmptyParagraph(emptyLine));
-    }
-  }
+  // The trailing blank lines start after the document's last content line, which can lie beyond
+  // the last block's range: a math block stops short of its closing $$ line, and that line is
+  // content. Container blocks (Lists, BlockQuotes) absorb trailing blank lines into their
+  // lineEnd, so the content end has to be looked for either way.
+  SourceRange document;
+  document.lineStart = 1;
+  document.lineEnd = totalLines;
+  appendTrailingVirtualEmptyParagraphs(rule, root, lastContentLine(document, totalLines, isBlank), totalLines);
 }
 
+// Same rule inside a block quote, where an empty line is one carrying nothing but its `>`
+// markers. The markers belong to the quote's own depth, and the paragraph is placed right
+// behind them so the caret can start typing there.
 void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markdown, MarkdownNode& root,
                                                                const LineStartOffsetCache& lineOffsets) const {
-  // Line content and start offsets come from lineOffsets (a view over markdown) instead of
-  // markdown.toString() + split('\n'); the old lineStartOffset lambda was also O(line) per call,
-  // now O(1) via lineStarts_.
+  const auto quoteDepth = [](const MarkdownNode& node) {
+    int depth = 0;
+    for (const MarkdownNode* current = &node; current; current = current->parent()) {
+      if (current->type() == BlockType::BlockQuote) {
+        ++depth;
+      }
+    }
+    return depth;
+  };
+
   const auto quoteContentOffset = [](QStringView line, int depth) -> int {
     int index = 0;
     for (int currentDepth = 0; currentDepth < depth; ++currentDepth) {
@@ -1903,12 +1960,14 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
     return index;
   };
 
-  const auto isEmptyQuoteLine = [&](int line, int depth, int& contentColumn, qsizetype& contentOffset) {
+  // Line content and start offsets come from lineOffsets (a view over markdown) instead of
+  // markdown.toString() + split('\n'); lineStartOffset is O(1).
+  const auto isEmptyQuoteLine = [&](const MarkdownNode& quote, int line, int& column, qsizetype& offset) -> bool {
     const QStringView sourceLine = lineOffsets.lineText(markdown, line);
     if (sourceLine.isNull()) {
       return false; // out of range
     }
-    const int contentIndex = quoteContentOffset(sourceLine, depth);
+    const int contentIndex = quoteContentOffset(sourceLine, quoteDepth(quote));
     if (contentIndex < 0 || !sourceLine.mid(contentIndex).trimmed().isEmpty()) {
       return false;
     }
@@ -1916,19 +1975,9 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
     if (startOffset < 0) {
       return false;
     }
-    contentColumn = contentIndex + 1;
-    contentOffset = startOffset + contentIndex;
+    column = contentIndex + 1;
+    offset = startOffset + contentIndex;
     return true;
-  };
-
-  const auto quoteDepth = [](const MarkdownNode& node) {
-    int depth = 0;
-    for (const MarkdownNode* current = &node; current; current = current->parent()) {
-      if (current->type() == BlockType::BlockQuote) {
-        ++depth;
-      }
-    }
-    return depth;
   };
 
   const auto visit = [&](const auto& self, MarkdownNode& node) -> void {
@@ -1939,98 +1988,60 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
       return;
     }
 
-    const int depth = quoteDepth(node);
-    qsizetype childIndex = 0;
-    int previousEndLine = node.sourceRange().lineStart - 1;
-    while (childIndex < static_cast<qsizetype>(node.children().size())) {
-      MarkdownNode* child = node.children().at(static_cast<size_t>(childIndex)).get();
-      const SourceRange range = child->sourceRange();
-      const int startLine = range.lineStart;
-      const int blankLines = startLine > 0 ? startLine - previousEndLine - 1 : 0;
-      const int emptyCount = qMax(0, blankLines / 2);
-      const int firstEmptyLine = previousEndLine + 2;
-      for (int i = 0; i < emptyCount; ++i) {
-        const int emptyLine = firstEmptyLine + i * 2;
-        int contentColumn = 1;
-        qsizetype contentOffset = -1;
-        if (isEmptyQuoteLine(emptyLine, depth, contentColumn, contentOffset)) {
-          node.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine, contentColumn, contentOffset));
-          ++childIndex;
-        }
-      }
-
-      previousEndLine = qMax(previousEndLine, range.lineEnd);
-      ++childIndex;
-    }
-
-    const int trailingLines = node.sourceRange().lineEnd - previousEndLine;
-    const int trailingEmptyCount = qMax(0, trailingLines / 2);
-    for (int i = 0; i < trailingEmptyCount; ++i) {
-      const int emptyLine = previousEndLine + 2 + i * 2;
-      int contentColumn = 1;
-      qsizetype contentOffset = -1;
-      if (isEmptyQuoteLine(emptyLine, depth, contentColumn, contentOffset)) {
-        node.appendChild(createVirtualEmptyParagraph(emptyLine, contentColumn, contentOffset));
-      }
-    }
+    const EmptyLineRule rule{
+        [&](int line) {
+          int column = 1;
+          qsizetype offset = -1;
+          return isEmptyQuoteLine(node, line, column, offset);
+        },
+        [&](int line) -> std::unique_ptr<MarkdownNode> {
+          int column = 1;
+          qsizetype offset = -1;
+          return isEmptyQuoteLine(node, line, column, offset) ? createVirtualEmptyParagraph(line, column, offset)
+                                                              : nullptr;
+        }};
+    const SourceRange quote = node.sourceRange();
+    // The quote's opening line counts as content: empty lines directly behind it get their
+    // paragraphs like any gap between two children.
+    const int lastContent =
+        insertVirtualEmptyParagraphsInGaps(rule, lineOffsets.lineCount(), true, quote.lineStart - 1, node);
+    appendTrailingVirtualEmptyParagraphs(rule, node, lastContent, quote.lineEnd);
   };
 
   visit(visit, root);
 }
 
-// Same authored-split contract as the top level, but INSIDE lists: two blank lines between
-// consecutive items (what the editor's Enter-Enter list-split writes) mean "two lists" to the
-// author, while cmark still parses one loose list. Synthesize a virtual empty paragraph between
-// the items so the blank line is a REAL block — it renders like a top-level blank line (the
-// display reads as two lists) AND the caret can land on it and type: text typed at column 0
-// interrupts the list in cmark, turning the authored split into an actual two-list parse.
-// One blank line (loose list) gets no VEP, matching the top-level every-other-blank-line rule.
+// Same rule inside a list, where the empty lines are the author's list split: two blank lines
+// between consecutive items (what the editor's Enter-Enter list-split writes) mean "two lists" to
+// the author, while cmark still parses one loose list. The paragraph between the items renders
+// like a top-level blank line AND the caret can land on it and type: text typed at column 0
+// interrupts the list in cmark, turning the authored split into an actual two-list parse. One
+// blank line (loose list) gets no VEP, matching the top-level every-other-blank-line rule.
 void CmarkGfmParser::insertVirtualEmptyParagraphsInLists(QStringView markdown, MarkdownNode& root,
                                                          const LineStartOffsetCache& lineOffsets) const {
   const int totalLines = lineOffsets.lineCount();
+  const auto isBlank = [&](int line) {
+    return line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line));
+  };
+  // An explicit byte offset, like the block-quote pass: this runs after annotateSourceOffsets,
+  // and the line/col alone would leave the VEP unresolved. Zero-width, so the caret maps to the
+  // line start — typing there begins at column 0 and splits the list.
+  const EmptyLineRule rule{isBlank, [&](int line) -> std::unique_ptr<MarkdownNode> {
+                           const qsizetype offset = lineOffsets.lineStartOffset(line);
+                           return offset < 0 ? nullptr : createVirtualEmptyParagraph(line, 1, offset);
+                         }};
+
   const auto visit = [&](const auto& self, MarkdownNode& node) -> void {
     for (const auto& child : node.children()) {
       self(self, *child);
     }
-    if (node.type() != BlockType::List || node.children().empty()) {
-      return;
-    }
-    qsizetype childIndex = 0;
-    int previousEndLine = 0;
-    while (childIndex < static_cast<qsizetype>(node.children().size())) {
-      MarkdownNode* child = node.children().at(static_cast<size_t>(childIndex)).get();
-      const SourceRange range = child->sourceRange();
-      const int startLine = range.lineStart;
-      // List items absorb trailing blank lines into their lineEnd (same as containers at top
-      // level), so count the authored gap from the item's last non-blank line.
-      const int contentEndLine = lastNonBlankLine(lineOffsets, markdown, range, totalLines);
-      int blankLines = 0;
-      if (startLine > 0 && previousEndLine > 0) {
-        for (int line = previousEndLine + 1; line < startLine; ++line) {
-          if (line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line))) {
-            ++blankLines;
-          }
-        }
-      }
-      const int emptyCount = qMax(0, blankLines / 2);
-      const int firstEmptyLine = previousEndLine + 2;
-      for (int i = 0; i < emptyCount; ++i) {
-        const int emptyLine = firstEmptyLine + i * 2;
-        if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
-          // Explicit byte offset (like the blockquote pass): this runs after annotateSourceOffsets,
-          // and the line/col alone would leave the VEP unresolved. Zero-width, so the caret maps
-          // to the line start — typing there begins at column 0 and splits the list.
-          const qsizetype lineOffset = lineOffsets.lineStartOffset(emptyLine);
-          if (lineOffset >= 0) {
-            node.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine, 1, lineOffset));
-            ++childIndex;
-          }
-        }
-      }
-      previousEndLine = qMax(previousEndLine, contentEndLine);
-      ++childIndex;
+    // List items absorb trailing blank lines into their lineEnd (same as containers at top
+    // level), which the shared content-end lookup already looks past.
+    if (node.type() == BlockType::List && !node.children().empty()) {
+      insertVirtualEmptyParagraphsInGaps(rule, totalLines, false, 0, node);
     }
   };
+
   visit(visit, root);
 }
 
