@@ -1,5 +1,7 @@
 #include "mermaid/c4/C4Diagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QRegularExpression>
@@ -643,8 +645,13 @@ private:
 
 C4ParseError::C4ParseError(C4ErrorKind kindValue, int lineValue, int columnValue, QString tokenValue,
                            const QString& message)
-    : std::runtime_error(message.toStdString()), kind(kindValue), line(lineValue), column(columnValue),
+    : DiagramError(message.toStdString()), kind(kindValue), line(lineValue), column(columnValue),
       token(std::move(tokenValue)) {
+}
+
+muffin::mermaid::DiagramErrorInfo C4ParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"c4", qMax<qsizetype>(1, token.size()));
+  return info;
 }
 
 C4Data C4Diagram::parse(const QString& source, bool wrap) {

@@ -1,5 +1,7 @@
 #include "mermaid/sequence/SequenceDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QColor>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -794,8 +796,25 @@ QString formatSequenceDiagnostic(const SequenceDiagnostic& diagnostic) {
 }
 
 SequenceParseError::SequenceParseError(SequenceDiagnostic diagnostic)
-    : std::runtime_error(formatSequenceDiagnostic(diagnostic).toUtf8().constData()),
+    : DiagramError(formatSequenceDiagnostic(diagnostic).toUtf8().constData()),
       diagnostic_(std::move(diagnostic)) {
+}
+
+muffin::mermaid::DiagramErrorInfo SequenceParseError::info() const {
+  const auto& value = diagnostic();
+  muffin::mermaid::DiagramErrorInfo info;
+  info.stage = sequenceErrorStageName(value.stage);
+  info.code = sequenceErrorCodeName(value.code);
+  info.message = value.detail;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::Offset;
+  info.offset = value.span.offset;
+  info.length = value.span.length;
+  info.line = value.span.line;
+  info.column = value.span.column + 1;
+  info.production = value.production;
+  info.actual = value.actual;
+  info.expected = value.expected;
+  return info;
 }
 
 } // namespace muffin::mermaid::sequence

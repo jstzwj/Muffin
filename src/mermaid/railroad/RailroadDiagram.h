@@ -4,6 +4,7 @@
 #include <QVector>
 
 #include <limits>
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::railroad {
@@ -11,8 +12,19 @@ namespace muffin::mermaid::railroad {
 enum class RailroadDialect { Direct, Ebnf, Abnf, Peg };
 enum class RailroadErrorKind { Lexer, Parser, Runtime };
 
-class RailroadParseError : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(RailroadErrorKind kind) {
+  switch (kind) {
+  case RailroadErrorKind::Lexer: return u"lexer";
+  case RailroadErrorKind::Parser: return u"parse";
+  case RailroadErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class RailroadParseError : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   RailroadParseError(RailroadErrorKind kind, int line, int column, QString token, const QString& message);
 
   RailroadErrorKind kind;

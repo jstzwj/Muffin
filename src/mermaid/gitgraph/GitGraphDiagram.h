@@ -5,14 +5,26 @@
 #include <QVector>
 
 #include <optional>
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::gitgraph {
 
 enum class GitGraphErrorKind { Lexer, Parser, Runtime };
 
-class GitGraphParseError : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(GitGraphErrorKind kind) {
+  switch (kind) {
+  case GitGraphErrorKind::Lexer: return u"lexer";
+  case GitGraphErrorKind::Parser: return u"parse";
+  case GitGraphErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class GitGraphParseError : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   GitGraphParseError(GitGraphErrorKind kind, int line, int column, QString token, const QString& message);
 
   GitGraphErrorKind kind;

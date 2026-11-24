@@ -8,6 +8,7 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::sequence {
@@ -44,8 +45,9 @@ struct SequenceDiagnostic {
   QString detail;
 };
 
-class SequenceParseError final : public std::runtime_error {
+class SequenceParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   explicit SequenceParseError(SequenceDiagnostic diagnostic);
   const SequenceDiagnostic& diagnostic() const noexcept { return diagnostic_; }
 

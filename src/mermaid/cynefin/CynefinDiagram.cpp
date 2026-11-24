@@ -1,5 +1,7 @@
 #include "mermaid/cynefin/CynefinDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -359,8 +361,13 @@ private:
 
 CynefinParseError::CynefinParseError(CynefinErrorKind errorKind, int errorLine, int errorColumn, QString errorToken,
                                      const QString& message)
-    : std::runtime_error(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
+    : DiagramError(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
       token(std::move(errorToken)) {
+}
+
+muffin::mermaid::DiagramErrorInfo CynefinParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"cynefin");
+  return info;
 }
 
 CynefinData CynefinDiagram::parse(const QString& source) {

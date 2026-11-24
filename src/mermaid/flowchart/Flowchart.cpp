@@ -1,4 +1,6 @@
 #include "mermaid/flowchart/Flowchart.h"
+
+#include "mermaid/DiagramError.h"
 #include "mermaid/flowchart/FlowchartTokenizer.h"
 
 #include "blocks/html/HtmlUrlSafety.h"
@@ -1844,8 +1846,25 @@ QString formatFlowchartDiagnostic(const FlowchartDiagnostic& diagnostic) {
 }
 
 FlowchartParseError::FlowchartParseError(FlowchartDiagnostic diagnostic)
-    : std::runtime_error(sanitizeErrorMessage(formatFlowchartDiagnostic(diagnostic)).toUtf8().constData()),
+    : DiagramError(sanitizeErrorMessage(formatFlowchartDiagnostic(diagnostic)).toUtf8().constData()),
       category_(diagnostic.category), diagnostic_(std::move(diagnostic)) {
+}
+
+muffin::mermaid::DiagramErrorInfo FlowchartParseError::info() const {
+  const auto& value = diagnostic();
+  muffin::mermaid::DiagramErrorInfo info;
+  info.stage = flowchartErrorStageName(value.stage);
+  info.code = flowchartErrorCodeName(value.code);
+  info.message = QString::fromUtf8(what());
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::Offset;
+  info.offset = value.span.offset;
+  info.length = value.span.length;
+  info.line = value.span.line;
+  info.column = value.span.column;
+  info.production = value.production;
+  info.actual = value.actual;
+  info.expected = value.expected;
+  return info;
 }
 
 Flowchart Flowchart::parse(const QString& source, FlowchartParseOptions options, FlowchartLimits limits) {

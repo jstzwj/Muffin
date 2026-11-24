@@ -6,14 +6,26 @@
 #include <QSizeF>
 
 #include <optional>
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::wardley {
 
 enum class WardleyErrorKind { Lexer, Parser, Runtime };
 
-class WardleyParseError : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(WardleyErrorKind kind) {
+  switch (kind) {
+  case WardleyErrorKind::Lexer: return u"lexer";
+  case WardleyErrorKind::Parser: return u"parse";
+  case WardleyErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class WardleyParseError : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   WardleyParseError(WardleyErrorKind kind, int line, int column, QString token, const QString& message);
 
   WardleyErrorKind kind;

@@ -3,14 +3,25 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::ishikawa {
 
 enum class IshikawaErrorKind { Lexer, Parser };
 
-class IshikawaParseError final : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(IshikawaErrorKind kind) {
+  switch (kind) {
+  case IshikawaErrorKind::Lexer: return u"lexer";
+  case IshikawaErrorKind::Parser: return u"parse";
+  }
+  return u"parse";
+}
+
+class IshikawaParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   IshikawaParseError(IshikawaErrorKind kind, int line, int column, QString token, const QString& message);
 
   IshikawaErrorKind kind;

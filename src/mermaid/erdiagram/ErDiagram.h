@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::er {
@@ -43,8 +44,9 @@ struct ErDiagnostic {
   QStringList expected;
 };
 
-class ErParseError final : public std::runtime_error {
+class ErParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   explicit ErParseError(ErDiagnostic diagnostic);
   const ErDiagnostic& diagnostic() const noexcept;
 

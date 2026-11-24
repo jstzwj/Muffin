@@ -9,6 +9,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::classdiagram {
@@ -40,8 +41,9 @@ struct ClassDiagnostic {
   QString detail;
 };
 
-class ClassParseError final : public std::runtime_error {
+class ClassParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   explicit ClassParseError(ClassDiagnostic diagnostic);
   const ClassDiagnostic& diagnostic() const noexcept { return diagnostic_; }
 

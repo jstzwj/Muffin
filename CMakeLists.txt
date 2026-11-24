@@ -567,6 +567,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidDiagramDetector.cpp
   src/mermaid/MermaidDiagramDetector.h
   src/mermaid/MermaidDiagnostic.cpp
+  src/mermaid/DiagramError.h
   src/mermaid/MermaidDiagnostic.h
   src/mermaid/MermaidDiagram.h
   src/mermaid/MermaidPaintOptions.h

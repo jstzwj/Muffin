@@ -4,14 +4,26 @@
 #include <QVector>
 
 #include <optional>
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::c4 {
 
 enum class C4ErrorKind { Lexer, Parser, Runtime };
 
-class C4ParseError : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(C4ErrorKind kind) {
+  switch (kind) {
+  case C4ErrorKind::Lexer: return u"lexer";
+  case C4ErrorKind::Parser: return u"parse";
+  case C4ErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class C4ParseError : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   C4ParseError(C4ErrorKind kind, int line, int column, QString token, const QString& message);
 
   C4ErrorKind kind;

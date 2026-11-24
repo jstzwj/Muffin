@@ -1,5 +1,7 @@
 #include "mermaid/erdiagram/ErTokenizer.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -566,7 +568,24 @@ private:
 } // namespace
 
 muffin::mermaid::er::ErParseError::ErParseError(ErDiagnostic diagnostic)
-    : std::runtime_error(formatErDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+    : DiagramError(formatErDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+}
+
+muffin::mermaid::DiagramErrorInfo muffin::mermaid::er::ErParseError::info() const {
+  const auto& value = diagnostic();
+  muffin::mermaid::DiagramErrorInfo info;
+  info.stage = erErrorStageName(value.stage);
+  info.code = erErrorCodeName(value.code);
+  info.message = value.detail.isEmpty() ? QString::fromUtf8(what()) : value.detail;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::Offset;
+  info.offset = value.span.offset;
+  info.length = value.span.length > 0 ? value.span.length : qMax<qsizetype>(1, value.actual.size());
+  info.line = value.span.line;
+  info.column = value.span.column + 1;
+  info.production = value.production;
+  info.actual = value.actual;
+  info.expected = value.expected;
+  return info;
 }
 
 const ErDiagnostic& muffin::mermaid::er::ErParseError::diagnostic() const noexcept {

@@ -1,5 +1,7 @@
 #include "mermaid/state/StateDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QJsonDocument>
 #include <QMap>
 #include <QRegularExpression>
@@ -522,7 +524,24 @@ QJsonArray strings(const QStringList& values) {
 }
 
 StateParseError::StateParseError(StateDiagnostic diagnostic)
-    : std::runtime_error(formatStateDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+    : DiagramError(formatStateDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+}
+
+muffin::mermaid::DiagramErrorInfo StateParseError::info() const {
+  const auto& value = diagnostic();
+  muffin::mermaid::DiagramErrorInfo info;
+  info.stage = stateErrorStageName(value.stage);
+  info.code = stateErrorCodeName(value.code);
+  info.message = value.detail;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::Offset;
+  info.offset = value.span.offset;
+  info.length = value.span.length > 0 ? value.span.length : qMax<qsizetype>(1, value.actual.size());
+  info.line = value.span.line;
+  info.column = value.span.column + 1;
+  info.production = value.production;
+  info.actual = value.actual;
+  info.expected = value.expected;
+  return info;
 }
 
 StateDiagram StateDiagram::parse(const QString& source, StateLimits limits) {

@@ -23,6 +23,7 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::quadrant {
@@ -68,7 +69,8 @@ public:
   static QuadrantData parse(const QString& source);
 };
 
-struct QuadrantParseError : std::runtime_error {
+struct QuadrantParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   QuadrantParseError(const QString& message, int line = 0);
 };

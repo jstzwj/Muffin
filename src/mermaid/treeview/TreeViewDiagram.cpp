@@ -1,5 +1,7 @@
 #include "mermaid/treeview/TreeViewDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -398,7 +400,16 @@ void addNode(TreeViewData& data, QVector<int>& stack, ParsedNode parsed) {
 
 TreeViewParseError::TreeViewParseError(const QString& message, int errorLine, int errorColumn,
                                        TreeViewErrorKind errorKind)
-    : std::runtime_error(message.toUtf8().constData()), line(errorLine), column(errorColumn), kind(errorKind) {
+    : DiagramError(message.toUtf8().constData()), line(errorLine), column(errorColumn), kind(errorKind) {
+}
+
+muffin::mermaid::DiagramErrorInfo TreeViewParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"treeview");
+  // The tree view's preprocess failures name a line but no column; they point at that line's start.
+  if (info.column <= 0) {
+    info.column = 1;
+  }
+  return info;
 }
 
 TreeViewData TreeViewDiagram::parse(const QString& source) {

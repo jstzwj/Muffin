@@ -1,5 +1,7 @@
 #include "mermaid/wardley/WardleyDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -679,8 +681,13 @@ private:
 
 WardleyParseError::WardleyParseError(WardleyErrorKind errorKind, int errorLine, int errorColumn, QString errorToken,
                                      const QString& message)
-    : std::runtime_error(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
+    : DiagramError(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
       token(std::move(errorToken)) {
+}
+
+muffin::mermaid::DiagramErrorInfo WardleyParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"wardley");
+  return info;
 }
 
 WardleyData WardleyDiagram::parse(const QString& source) {

@@ -1,5 +1,7 @@
 #include "mermaid/gantt/GanttDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QDate>
@@ -14,7 +16,12 @@
 namespace muffin::mermaid::gantt {
 
 GanttParseError::GanttParseError(const QString& message, int line, int column, GanttErrorKind kind)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+}
+
+muffin::mermaid::DiagramErrorInfo GanttParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"gantt");
+  return info;
 }
 
 namespace {

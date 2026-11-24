@@ -1,5 +1,7 @@
 #include "mermaid/mindmap/MindmapDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 
@@ -17,8 +19,13 @@
 namespace muffin::mermaid::mindmap {
 
 MindmapParseError::MindmapParseError(const QString& message, int line, int column, MindmapErrorKind kind, QString token)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column), kind(kind),
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind),
       token(std::move(token)) {
+}
+
+muffin::mermaid::DiagramErrorInfo MindmapParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"mindmap");
+  return info;
 }
 
 namespace {

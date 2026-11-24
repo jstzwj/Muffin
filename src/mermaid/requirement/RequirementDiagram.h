@@ -37,6 +37,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::requirement {
@@ -110,7 +111,8 @@ private:
 // missing/unclosed body or a stray token surfaces as a parse error (matching
 // mermaid's "Parse error" instead of silently producing a Ready scene). Carries
 // the 1-based source line for the diagnostic.
-struct RequirementParseError : std::runtime_error {
+struct RequirementParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   RequirementParseError(const QString& message, int line);
 };

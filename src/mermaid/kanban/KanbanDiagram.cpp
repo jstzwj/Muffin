@@ -1,5 +1,7 @@
 #include "mermaid/kanban/KanbanDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 
@@ -20,8 +22,18 @@
 namespace muffin::mermaid::kanban {
 
 KanbanParseError::KanbanParseError(const QString& message, int line, int column, KanbanErrorKind kind, QString token)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column), kind(kind),
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind),
       token(std::move(token)) {
+}
+
+muffin::mermaid::DiagramErrorInfo KanbanParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"kanban");
+  // Jison's Kanban lexer reports an unrecognized token at column 0. The shared diagnostic model
+  // is 1-based, so the known line keeps its first column as the position instead of losing it.
+  if (info.line > 0) {
+    info.column = qMax(1, info.column);
+  }
+  return info;
 }
 
 namespace {

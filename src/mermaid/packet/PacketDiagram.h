@@ -6,11 +6,22 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::packet {
 
 enum class PacketErrorKind { Lexer, Parser, Runtime };
+
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(PacketErrorKind kind) {
+  switch (kind) {
+  case PacketErrorKind::Lexer: return u"lexer";
+  case PacketErrorKind::Parser: return u"parse";
+  case PacketErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
 
 struct PacketBlock {
   qreal start = 0.0;
@@ -28,7 +39,8 @@ struct PacketData {
   QVector<PacketWord> words;
 };
 
-struct PacketParseError : std::runtime_error {
+struct PacketParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 0;
   PacketErrorKind kind = PacketErrorKind::Parser;

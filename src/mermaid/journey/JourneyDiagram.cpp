@@ -1,5 +1,7 @@
 #include "mermaid/journey/JourneyDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "mermaid/editor/MermaidRenderSupport.h"
 
 #include <QJsonValue>
@@ -10,7 +12,17 @@
 namespace muffin::mermaid::journey {
 
 JourneyParseError::JourneyParseError(const QString& message, int line)
-    : std::runtime_error(message.toUtf8().constData()), line(line) {
+    : DiagramError(message.toUtf8().constData()), line(line) {
+}
+
+muffin::mermaid::DiagramErrorInfo JourneyParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("journey-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.line = line;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::LineStart;
+  info.column = line > 0 ? 1 : 0;
+  return info;
 }
 
 namespace {

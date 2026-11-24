@@ -56,6 +56,7 @@ muffin_add_test(NAME MuffinMermaidSecurityTest SOURCE tests/mermaid/MermaidSecur
 muffin_add_test(NAME MuffinMermaidFuzzTest SOURCE tests/mermaid/MermaidFuzzTest.cpp LINK MuffinCore)
 set_tests_properties(MuffinMermaidFuzzTest PROPERTIES RUN_SERIAL TRUE)
 muffin_add_test(NAME MuffinMermaidRenderCacheTest SOURCE tests/mermaid/MermaidRenderCacheTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidDiagramErrorTest SOURCE tests/mermaid/MermaidDiagramErrorTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSvgExportTest SOURCE tests/mermaid/MermaidSvgExportTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui Qt6::Svg FIXTURE tests/fixtures/mermaid/mermaid-theme-css.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidConfigEffectMatrixTest SOURCE tests/mermaid/MermaidConfigEffectMatrixTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/config-effect-matrix.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRemainingParityTest SOURCE tests/mermaid/MermaidRemainingParityTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/remaining-parity.json RESOURCE_LOCK)
@@ -579,6 +580,7 @@ add_test(NAME MuffinLazySessionViewTest COMMAND $<TARGET_FILE:MuffinDocumentTabs
 add_test(NAME MuffinSplitViewTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --split-view)
 set_tests_properties(MuffinSplitViewTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"
+  RESOURCE_LOCK MuffinQtGui)
 add_test(NAME MuffinCommandTableTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --command-table)
 set_tests_properties(MuffinCommandTableTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:offscreen"

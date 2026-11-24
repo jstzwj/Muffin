@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::flowchart {
@@ -110,8 +111,9 @@ struct FlowchartLimits {
 // against upstream is the CATEGORY (+ line/column where determinable), not the
 // human message — messages legitimately diverge between a JS grammar and a C++
 // hand-written parser. `Syntax` is the default for legacy message-only throws.
-class FlowchartParseError final : public std::runtime_error {
+class FlowchartParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   explicit FlowchartParseError(FlowchartDiagnostic diagnostic);
 
   FlowchartErrorCategory category() const noexcept { return category_; }

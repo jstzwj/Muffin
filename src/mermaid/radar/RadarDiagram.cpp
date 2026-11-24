@@ -1,5 +1,7 @@
 #include "mermaid/radar/RadarDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QRegularExpression>
 #include <QStringList>
 
@@ -9,7 +11,17 @@
 namespace muffin::mermaid::radar {
 
 RadarParseError::RadarParseError(const QString& message, int line, int column)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column) {
+}
+
+muffin::mermaid::DiagramErrorInfo RadarParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("radar-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.line = line;
+  info.column = column;
+
+  return info;
 }
 
 namespace {

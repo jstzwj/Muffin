@@ -1,4 +1,6 @@
 // Native pie parser implementation. See PieDiagram.h for the frozen Langium
+
+#include "mermaid/DiagramError.h"
 // grammar contract and tests/fixtures/mermaid/pie-grammar.json for the
 // accept/reject oracle this must reproduce.
 
@@ -13,7 +15,17 @@
 namespace muffin::mermaid::pie {
 
 PieParseError::PieParseError(const QString& message, int line)
-    : std::runtime_error(message.toUtf8().constData()), line(line) {
+    : DiagramError(message.toUtf8().constData()), line(line) {
+}
+
+muffin::mermaid::DiagramErrorInfo PieParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("pie-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.line = line;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::LineStart;
+  info.column = line > 0 ? 1 : 0;
+  return info;
 }
 
 namespace {

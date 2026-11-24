@@ -1,5 +1,7 @@
 #include "mermaid/eventmodeling/EventModelingDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QRegularExpression>
 #include <QStringList>
 
@@ -357,7 +359,12 @@ private:
 
 EventModelingParseError::EventModelingParseError(EventModelingErrorKind kindValue, int lineValue, int columnValue,
                                                  const QString& message)
-    : std::runtime_error(message.toUtf8().constData()), kind(kindValue), line(lineValue), column(columnValue) {
+    : DiagramError(message.toUtf8().constData()), kind(kindValue), line(lineValue), column(columnValue) {
+}
+
+muffin::mermaid::DiagramErrorInfo EventModelingParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"eventmodeling");
+  return info;
 }
 
 EventModelingData EventModelingDiagram::parse(const QString& source) {

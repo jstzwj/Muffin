@@ -35,6 +35,7 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::pie {
@@ -77,7 +78,8 @@ public:
 
 // Thrown by parse() on invalid pie syntax or a negative slice value. `line`
 // is 1-based for diagnostics (0 when unavailable).
-struct PieParseError : std::runtime_error {
+struct PieParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   PieParseError(const QString& message, int line = 0);
 };

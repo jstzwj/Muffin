@@ -1,5 +1,7 @@
 #include "mermaid/architecture/ArchitectureDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -12,8 +14,13 @@ namespace muffin::mermaid::architecture {
 
 ArchitectureParseError::ArchitectureParseError(ArchitectureErrorKind kind, int line, int column, QString token,
                                                const QString& message)
-    : std::runtime_error(message.toUtf8().constData()), kind(kind), line(line), column(column),
+    : DiagramError(message.toUtf8().constData()), kind(kind), line(line), column(column),
       token(std::move(token)) {
+}
+
+muffin::mermaid::DiagramErrorInfo ArchitectureParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"architecture");
+  return info;
 }
 
 namespace {

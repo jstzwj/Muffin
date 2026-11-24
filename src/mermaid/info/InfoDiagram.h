@@ -2,14 +2,25 @@
 
 #include <QString>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::info {
 
 enum class InfoErrorKind { Lexer, Parser };
 
-class InfoParseError : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(InfoErrorKind kind) {
+  switch (kind) {
+  case InfoErrorKind::Lexer: return u"lexer";
+  case InfoErrorKind::Parser: return u"parse";
+  }
+  return u"parse";
+}
+
+class InfoParseError : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   InfoParseError(const QString& message, int line, int column, InfoErrorKind kind);
 
   int line = 0;

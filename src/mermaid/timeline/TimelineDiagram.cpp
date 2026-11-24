@@ -1,5 +1,7 @@
 #include "mermaid/timeline/TimelineDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QRegularExpression>
@@ -11,7 +13,12 @@
 namespace muffin::mermaid::timeline {
 
 TimelineParseError::TimelineParseError(const QString& message, int line, int column, TimelineErrorKind kind)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+}
+
+muffin::mermaid::DiagramErrorInfo TimelineParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"timeline");
+  return info;
 }
 
 namespace {

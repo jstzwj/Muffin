@@ -1,5 +1,7 @@
 #include "mermaid/venn/VennDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QRegularExpression>
 #include <QSet>
 
@@ -301,8 +303,13 @@ void appendSubset(VennData& data, QSet<QString>& knownSets, QStringList sets, st
 } // namespace
 
 VennParseError::VennParseError(VennErrorKind kind, int line, int column, QString token, const QString& message)
-    : std::runtime_error(message.toUtf8().constData()), kind(kind), line(line), column(column),
+    : DiagramError(message.toUtf8().constData()), kind(kind), line(line), column(column),
       token(std::move(token)) {
+}
+
+muffin::mermaid::DiagramErrorInfo VennParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"venn");
+  return info;
 }
 
 VennData VennDiagram::parse(const QString& source) {

@@ -1,5 +1,7 @@
 #include "mermaid/treemap/TreemapDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -344,8 +346,13 @@ private:
 
 TreemapParseError::TreemapParseError(TreemapErrorKind errorKind, int errorLine, int errorColumn, QString errorToken,
                                      const QString& message)
-    : std::runtime_error(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
+    : DiagramError(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
       token(std::move(errorToken)) {
+}
+
+muffin::mermaid::DiagramErrorInfo TreemapParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"treemap");
+  return info;
 }
 
 TreemapData TreemapDiagram::parse(const QString& source) {

@@ -1,4 +1,6 @@
 // Native quadrantChart parser. See QuadrantDiagram.h. Reproduces the frozen
+
+#include "mermaid/DiagramError.h"
 // 21-case tests/fixtures/mermaid/quadrant-grammar.json oracle verbatim.
 
 #include "mermaid/quadrant/QuadrantDiagram.h"
@@ -13,7 +15,17 @@
 namespace muffin::mermaid::quadrant {
 
 QuadrantParseError::QuadrantParseError(const QString& message, int line)
-    : std::runtime_error(message.toUtf8().constData()), line(line) {
+    : DiagramError(message.toUtf8().constData()), line(line) {
+}
+
+muffin::mermaid::DiagramErrorInfo QuadrantParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("quadrant-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.line = line;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::LineStart;
+  info.column = line > 0 ? 1 : 0;
+  return info;
 }
 
 namespace {

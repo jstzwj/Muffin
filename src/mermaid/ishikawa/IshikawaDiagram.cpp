@@ -1,5 +1,7 @@
 #include "mermaid/ishikawa/IshikawaDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <algorithm>
@@ -81,7 +83,16 @@ void addNode(IshikawaData& data, QVector<StackEntry>& stack, std::optional<int>&
 
 IshikawaParseError::IshikawaParseError(IshikawaErrorKind kind, int line, int column, QString token,
                                        const QString& message)
-    : std::runtime_error(message.toStdString()), kind(kind), line(line), column(column), token(std::move(token)) {
+    : DiagramError(message.toStdString()), kind(kind), line(line), column(column), token(std::move(token)) {
+}
+
+muffin::mermaid::DiagramErrorInfo IshikawaParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"ishikawa");
+  // Jison's Ishikawa grammar reports its caret after the accumulated SPACELINE token, which can
+  // lie past the end of the token's line. The exact line and column are still reported, while
+  // the position falls back to the start of that line.
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::LineColumnElseLineStart;
+  return info;
 }
 
 IshikawaData IshikawaDiagram::parse(const QString& source) {

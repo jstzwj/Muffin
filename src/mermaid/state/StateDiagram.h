@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::state {
@@ -38,8 +39,9 @@ struct StateDiagnostic {
   QStringList expected;
   QString detail;
 };
-class StateParseError final : public std::runtime_error {
+class StateParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   explicit StateParseError(StateDiagnostic diagnostic);
   const StateDiagnostic& diagnostic() const noexcept { return diagnostic_; }
 

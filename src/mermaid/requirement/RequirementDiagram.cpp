@@ -1,4 +1,6 @@
 // Native recursive-descent parser for requirementDiagram.
+
+#include "mermaid/DiagramError.h"
 //
 // Per CLAUDE.md / the lupdate namespace convention, this .cpp contains NO
 // `namespace muffin { }` block — file-local helpers live in an anonymous
@@ -58,7 +60,15 @@ QString requirementTypeDisplay(const QString& keyword) {
 }
 
 RequirementParseError::RequirementParseError(const QString& message, int line)
-    : std::runtime_error(message.toUtf8().toStdString()), line(line) {
+    : DiagramError(message.toUtf8().toStdString()), line(line) {
+}
+
+muffin::mermaid::DiagramErrorInfo RequirementParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("requirement-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::None;
+  return info;
 }
 
 QString RequirementEnumDisplay::risk(const QString& keyword) {

@@ -1,5 +1,7 @@
 #include "mermaid/info/InfoDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QRegularExpression>
 
 namespace muffin::mermaid::info {
@@ -128,7 +130,12 @@ QString deindentAccDescr(QString value) {
 } // namespace
 
 InfoParseError::InfoParseError(const QString& message, int errorLine, int errorColumn, InfoErrorKind errorKind)
-    : std::runtime_error(message.toUtf8().constData()), line(errorLine), column(errorColumn), kind(errorKind) {
+    : DiagramError(message.toUtf8().constData()), line(errorLine), column(errorColumn), kind(errorKind) {
+}
+
+muffin::mermaid::DiagramErrorInfo InfoParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"info");
+  return info;
 }
 
 InfoData InfoDiagram::parse(const QString& source) {

@@ -6,14 +6,26 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::block {
 
 enum class BlockErrorKind { Lexer, Parser, Runtime };
 
-class BlockParseError final : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(BlockErrorKind kind) {
+  switch (kind) {
+  case BlockErrorKind::Lexer: return u"lexer";
+  case BlockErrorKind::Parser: return u"parse";
+  case BlockErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class BlockParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   BlockParseError(BlockErrorKind kind, int line, int column, QString token, const QString& message);
 
   BlockErrorKind kind;

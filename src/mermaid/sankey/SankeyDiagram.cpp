@@ -1,5 +1,7 @@
 #include "mermaid/sankey/SankeyDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QHash>
@@ -77,8 +79,13 @@ double jsParseFloat(const QString& source) {
 
 SankeyParseError::SankeyParseError(SankeyErrorKind errorKind, int errorLine, int errorColumn, QString errorToken,
                                    const QString& message)
-    : std::runtime_error(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
+    : DiagramError(message.toStdString()), kind(errorKind), line(errorLine), column(errorColumn),
       token(std::move(errorToken)) {
+}
+
+muffin::mermaid::DiagramErrorInfo SankeyParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"sankey");
+  return info;
 }
 
 SankeyData SankeyDiagram::parse(const QString& source) {

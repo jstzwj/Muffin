@@ -6,12 +6,22 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::timeline {
 
 enum class TimelineDirection { LeftToRight, TopDown };
 enum class TimelineErrorKind { Parser, Runtime };
+
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(TimelineErrorKind kind) {
+  switch (kind) {
+  case TimelineErrorKind::Parser: return u"parse";
+  case TimelineErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
 
 struct TimelineTask {
   int id = 0;
@@ -31,7 +41,8 @@ struct TimelineData {
   TimelineDirection direction = TimelineDirection::LeftToRight;
 };
 
-struct TimelineParseError : std::runtime_error {
+struct TimelineParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 0;
   TimelineErrorKind kind = TimelineErrorKind::Parser;

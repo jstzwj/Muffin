@@ -5,14 +5,26 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::architecture {
 
 enum class ArchitectureErrorKind { Lexer, Parser, Runtime };
 
-class ArchitectureParseError final : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(ArchitectureErrorKind kind) {
+  switch (kind) {
+  case ArchitectureErrorKind::Lexer: return u"lexer";
+  case ArchitectureErrorKind::Parser: return u"parse";
+  case ArchitectureErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class ArchitectureParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   ArchitectureParseError(ArchitectureErrorKind kind, int line, int column, QString token, const QString& message);
 
   ArchitectureErrorKind kind;

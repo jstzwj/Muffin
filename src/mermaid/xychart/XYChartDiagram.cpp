@@ -1,5 +1,7 @@
 #include "mermaid/xychart/XYChartDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
@@ -16,7 +18,17 @@
 namespace muffin::mermaid::xychart {
 
 XYChartParseError::XYChartParseError(const QString& message, int line, int column)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column) {
+}
+
+muffin::mermaid::DiagramErrorInfo XYChartParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info;
+  info.code = QStringLiteral("xychart-parse-error");
+  info.message = QString::fromUtf8(what());
+  info.line = line;
+  info.column = column;
+
+  return info;
 }
 
 namespace {

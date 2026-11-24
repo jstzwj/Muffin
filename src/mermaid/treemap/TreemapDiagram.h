@@ -4,14 +4,26 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::treemap {
 
 enum class TreemapErrorKind { Lexer, Parser, Runtime };
 
-class TreemapParseError final : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(TreemapErrorKind kind) {
+  switch (kind) {
+  case TreemapErrorKind::Lexer: return u"lexer";
+  case TreemapErrorKind::Parser: return u"parse";
+  case TreemapErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
+
+class TreemapParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   TreemapParseError(TreemapErrorKind kind, int line, int column, QString token, const QString& message);
 
   TreemapErrorKind kind = TreemapErrorKind::Parser;

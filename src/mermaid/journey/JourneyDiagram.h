@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::journey {
@@ -26,7 +27,8 @@ struct JourneyData {
   QVector<JourneyTask> tasks;
 };
 
-struct JourneyParseError : std::runtime_error {
+struct JourneyParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   JourneyParseError(const QString& message, int line = 0);
 };

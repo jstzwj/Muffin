@@ -1,5 +1,7 @@
 #include "mermaid/classdiagram/ClassDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include <QJsonArray>
 #include <QMap>
 #include <QRegularExpression>
@@ -738,7 +740,24 @@ QJsonObject memberJson(const ClassMember& member) {
 } // namespace
 
 ClassParseError::ClassParseError(ClassDiagnostic diagnostic)
-    : std::runtime_error(formatClassDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+    : DiagramError(formatClassDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+}
+
+muffin::mermaid::DiagramErrorInfo ClassParseError::info() const {
+  const auto& value = diagnostic();
+  muffin::mermaid::DiagramErrorInfo info;
+  info.stage = classErrorStageName(value.stage);
+  info.code = classErrorCodeName(value.code);
+  info.message = value.detail;
+  info.place = muffin::mermaid::DiagramErrorInfo::Place::Offset;
+  info.offset = value.span.offset;
+  info.length = value.span.length > 0 ? value.span.length : qMax<qsizetype>(1, value.actual.size());
+  info.line = value.span.line;
+  info.column = value.span.column + 1;
+  info.production = value.production;
+  info.actual = value.actual;
+  info.expected = value.expected;
+  return info;
 }
 
 ClassDiagram ClassDiagram::parse(const QString& source, ClassLimits limits) {

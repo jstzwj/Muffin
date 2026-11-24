@@ -8,11 +8,22 @@
 #include <QStringList>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::gantt {
 
 enum class GanttErrorKind { Lexer, Parser, Runtime };
+
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(GanttErrorKind kind) {
+  switch (kind) {
+  case GanttErrorKind::Lexer: return u"lexer";
+  case GanttErrorKind::Parser: return u"parse";
+  case GanttErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
 
 struct GanttTask {
   QString section;
@@ -58,7 +69,8 @@ struct GanttData {
   QVector<GanttTask> tasks;
 };
 
-struct GanttParseError : std::runtime_error {
+struct GanttParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 1;
   GanttErrorKind kind = GanttErrorKind::Parser;

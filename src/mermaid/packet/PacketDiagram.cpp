@@ -1,5 +1,7 @@
 #include "mermaid/packet/PacketDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 
@@ -14,7 +16,12 @@
 namespace muffin::mermaid::packet {
 
 PacketParseError::PacketParseError(const QString& message, int line, int column, PacketErrorKind kind)
-    : std::runtime_error(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind) {
+}
+
+muffin::mermaid::DiagramErrorInfo PacketParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"packet");
+  return info;
 }
 
 namespace {

@@ -3,14 +3,25 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::eventmodeling {
 
 enum class EventModelingErrorKind { Lexer, Parser };
 
-class EventModelingParseError final : public std::runtime_error {
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(EventModelingErrorKind kind) {
+  switch (kind) {
+  case EventModelingErrorKind::Lexer: return u"lexer";
+  case EventModelingErrorKind::Parser: return u"parse";
+  }
+  return u"parse";
+}
+
+class EventModelingParseError final : public DiagramError {
 public:
+  DiagramErrorInfo info() const override;
   EventModelingParseError(EventModelingErrorKind kind, int line, int column, const QString& message);
 
   EventModelingErrorKind kind;

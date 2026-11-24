@@ -6,11 +6,22 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::mindmap {
 
 enum class MindmapErrorKind { Lexer, Parser, Runtime };
+
+// The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
+inline QStringView kindName(MindmapErrorKind kind) {
+  switch (kind) {
+  case MindmapErrorKind::Lexer: return u"lexer";
+  case MindmapErrorKind::Parser: return u"parse";
+  case MindmapErrorKind::Runtime: return u"runtime";
+  }
+  return u"parse";
+}
 
 enum class MindmapNodeType {
   Default = 0,
@@ -83,7 +94,8 @@ struct MindmapData {
   QString effectiveLayout = QStringLiteral("cose-bilkent");
 };
 
-struct MindmapParseError : std::runtime_error {
+struct MindmapParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 0;
   MindmapErrorKind kind = MindmapErrorKind::Parser;

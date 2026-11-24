@@ -7,6 +7,7 @@
 #include <QVector>
 
 #include <limits>
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::xychart {
@@ -49,7 +50,8 @@ struct XYChartData {
   bool hasTitleDirective = false;
 };
 
-struct XYChartParseError : std::runtime_error {
+struct XYChartParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 0;
   XYChartParseError(const QString& message, int line = 0, int column = 1);

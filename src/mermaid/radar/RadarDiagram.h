@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVector>
 
+#include "mermaid/DiagramError.h"
 #include <stdexcept>
 
 namespace muffin::mermaid::radar {
@@ -38,7 +39,8 @@ struct RadarData {
   RadarOptions options;
 };
 
-struct RadarParseError : std::runtime_error {
+struct RadarParseError : DiagramError {
+  DiagramErrorInfo info() const override;
   int line = 0;
   int column = 0;
   RadarParseError(const QString& message, int line = 0, int column = 1);

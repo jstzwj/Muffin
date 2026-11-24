@@ -1,5 +1,7 @@
 #include "mermaid/railroad/RailroadDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QRegularExpression>
@@ -848,8 +850,13 @@ private:
 
 RailroadParseError::RailroadParseError(RailroadErrorKind kindValue, int lineValue, int columnValue, QString tokenValue,
                                        const QString& message)
-    : std::runtime_error(message.toUtf8().constData()), kind(kindValue), line(lineValue), column(columnValue),
+    : DiagramError(message.toUtf8().constData()), kind(kindValue), line(lineValue), column(columnValue),
       token(std::move(tokenValue)) {
+}
+
+muffin::mermaid::DiagramErrorInfo RailroadParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"railroad", qMax<qsizetype>(1, token.size()));
+  return info;
 }
 
 RailroadData RailroadDiagram::parse(const QString& source, RailroadDialect dialect) {

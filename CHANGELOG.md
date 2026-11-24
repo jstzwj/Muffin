@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Follow the top-level rule for empty paragraphs inside block quotes: a math or HTML block, or a thematic break, followed by one empty quote line no longer leaves a clickable empty paragraph there.
 - Fix the import filter spelling so MediaWiki files are offered as `*.mediawiki`.
 - Keep other log output when `MUFFIN_PERF_LOG` is set: only performance messages go to the file.
+- Report ER, pie and quadrant chart parse failures as a parse error with a position in the source, instead of a generic render failure.
 - Wrap a long link-definition title or URL to the available width, and keep clicks, selections and typing on the wrapped rows tied to their source characters.
 
 ### Changed
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move the column commands in tables to Ctrl+Alt+Shift+←/→. Their previous shortcuts, Alt+←/→, collided with navigating the edit history. Remove the "Switch Windows" command, which never ran.
 - Read the project version from the newest version heading in this file, so a release builds with the version it documents. The release workflow refuses a tag without a heading here.
 - Route every change of the document text through one session function and every user edit through one editor pipeline, and give each block controller the same refresh after an edit. The style and paragraph commands no longer carry their own copies of that pipeline.
+- Derive every Mermaid parse error from one base class that reports its own diagnostic, which lets the renderer handle all of them in one place.
 
 ## [0.7.16] - 2026-11-20
 

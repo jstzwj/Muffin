@@ -1,5 +1,7 @@
 #include "mermaid/gitgraph/GitGraphDiagram.h"
 
+#include "mermaid/DiagramError.h"
+
 #include "blocks/html/HtmlSanitizer.h"
 
 #include <QRegularExpression>
@@ -493,8 +495,13 @@ private:
 
 GitGraphParseError::GitGraphParseError(GitGraphErrorKind kindValue, int lineValue, int columnValue, QString tokenValue,
                                        const QString& message)
-    : std::runtime_error(message.toStdString()), kind(kindValue), line(lineValue), column(columnValue),
+    : DiagramError(message.toStdString()), kind(kindValue), line(lineValue), column(columnValue),
       token(std::move(tokenValue)) {
+}
+
+muffin::mermaid::DiagramErrorInfo GitGraphParseError::info() const {
+  muffin::mermaid::DiagramErrorInfo info = kindErrorInfo(*this, u"gitgraph");
+  return info;
 }
 
 GitGraphData GitGraphDiagram::parse(const QString& source, const GitGraphParseConfig& config) {
