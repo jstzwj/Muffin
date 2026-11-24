@@ -1056,18 +1056,21 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          .text = muffin::MainWindow::tr("Move Row Down"),
          .handler = [](MainWindow& window) { window.tab_->renderCommands.moveCurrentRowDown(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
+        // Alt+Left / Alt+Right belong to Back and Forward, which are enabled whenever the
+        // navigation history is non-empty; a table-cell copy of them made both commands
+        // ambiguous inside a table. These share the Ctrl+Alt+Shift family with alignment.
         {.id = QStringLiteral("table.move_column_left"),
          .category = CommandCategory::Table,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Move Column Left"),
-         .shortcut = QKeySequence(QStringLiteral("Alt+Left")),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+Left")),
          .handler = [](MainWindow& window) { window.tab_->renderCommands.moveCurrentColumnLeft(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
         {.id = QStringLiteral("table.move_column_right"),
          .category = CommandCategory::Table,
          .requiresEditableDocument = true,
          .text = muffin::MainWindow::tr("Move Column Right"),
-         .shortcut = QKeySequence(QStringLiteral("Alt+Right")),
+         .shortcut = QKeySequence(QStringLiteral("Ctrl+Alt+Shift+Right")),
          .handler = [](MainWindow& window) { window.tab_->renderCommands.moveCurrentColumnRight(); },
          .enabled = [](const MainWindow& w) { return inTableCell(w); }},
         {.id = QStringLiteral("table.delete_row"),
@@ -2069,11 +2072,6 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                window.setZoomPercent(window.zoomPercent_ - 10);
                window.saveAppearanceZoomPercent(window.zoomPercent_);
              }},
-        {.id = QStringLiteral("view.window_switch"),
-         .category = CommandCategory::View,
-         .text = muffin::MainWindow::tr("Switch Windows"),
-         .shortcut = QKeySequence(QStringLiteral("Ctrl+Tab")),
-         .enabledInitial = false},
 
         // ---------------- Theme ----------------
         // Theme selection is no longer a fixed command list — the Theme menu is a

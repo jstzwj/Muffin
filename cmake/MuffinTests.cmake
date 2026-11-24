@@ -548,7 +548,8 @@ get_target_property(_tab_test_app_sources Muffin SOURCES)
 list(FILTER _tab_test_app_sources INCLUDE REGEX "^src/app/.*\\.(cpp|h)$")
 muffin_add_test(NAME MuffinDocumentTabsTest SOURCE tests/app/DocumentTabsTest.cpp LINK MuffinUi
   EXTRA_LINK Qt6::Test Qt6::Svg Qt6::PrintSupport Qt6::Concurrent
-  EXTRA_SOURCES ${_tab_test_app_sources} tests/app/WindowsUpdateTest.cpp tests/app/SplitViewTest.cpp src/icons.qrc src/translations.qrc ${MUFFIN_THEMES_QRC} ${MUFFIN_HELP_QRC} ${MUFFIN_EMOJI_QRC}
+  EXTRA_SOURCES ${_tab_test_app_sources} tests/app/WindowsUpdateTest.cpp tests/app/SplitViewTest.cpp
+    tests/app/CommandTableTest.cpp src/icons.qrc src/translations.qrc ${MUFFIN_THEMES_QRC} ${MUFFIN_HELP_QRC} ${MUFFIN_EMOJI_QRC}
   RESOURCE_LOCK SYNTHETIC_IME)
 if(WIN32)
   target_link_libraries(MuffinDocumentTabsTest PRIVATE bcrypt msi.lib)
@@ -568,6 +569,9 @@ add_test(NAME MuffinLazySessionViewTest COMMAND $<TARGET_FILE:MuffinDocumentTabs
 add_test(NAME MuffinSplitViewTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --split-view)
 set_tests_properties(MuffinSplitViewTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal"
+add_test(NAME MuffinCommandTableTest COMMAND $<TARGET_FILE:MuffinDocumentTabsTest> --command-table)
+set_tests_properties(MuffinCommandTableTest PROPERTIES
+  ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:offscreen"
   RESOURCE_LOCK MuffinQtGui)
 set_tests_properties(MuffinLazySessionViewTest PROPERTIES
   ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:minimal;MUFFIN_TEXT_LAYOUT_BACKEND=set:fractional"

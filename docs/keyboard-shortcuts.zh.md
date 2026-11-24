@@ -54,6 +54,7 @@
 | 下方插入行 | Alt+Shift+↓ | 在当前表格中插入一行 |
 | 删除当前行 | Ctrl+Shift+Backspace 或 Alt+Shift+↑ | 本次加入兼容键 |
 | 上移/下移当前行 | Alt+↑ / Alt+↓ | 本次修正上下文；表格内移动行，普通正文中移动块 |
+| 左移/右移当前列 | Ctrl+Alt+Shift+← / Ctrl+Alt+Shift+→ | 在当前表格中移动列；Alt+←/→ 保留给笔记链接的后退/前进 |
 | 移到下一行同列 | Enter | 在末行跳到表后，可直接输入正文 |
 | 前后单元格 | Tab / Shift+Tab | 已支持 |
 | 合并单元格 | 无 | 不支持；标准 GFM Markdown 表格不能表达合并单元格 |

@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
 
+### Changed
+
+- Move the column commands in tables to Ctrl+Alt+Shift+←/→. Their previous shortcuts, Alt+←/→, collided with navigating the edit history. Remove the "Switch Windows" command, which never ran.
+
 ## [0.7.11] - 2026-10-31
 
 ### Fixed

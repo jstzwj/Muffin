@@ -5187,6 +5187,7 @@ void runWindowsUpdateTests();
 int runWindowsUpdateHandoffTest();
 
 void runSplitViewTests();
+void runCommandTableTests();
 
 int main(int argc, char** argv) {
   // A deterministic converter process for export plumbing tests. Actual
@@ -5277,6 +5278,10 @@ int main(int argc, char** argv) {
   };
   if (QCoreApplication::arguments().contains(QStringLiteral("--locked-editing"))) {
     runLockedEditingTests();
+    return 0;
+  }
+  if (QCoreApplication::arguments().contains(QStringLiteral("--command-table"))) {
+    runCommandTableTests();
     return 0;
   }
   if (QCoreApplication::arguments().contains(QStringLiteral("--shortcut-preferences"))) {
