@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Report ER, pie and quadrant chart parse failures as a parse error with a position in the source, instead of a generic render failure.
 - Wrap a long link-definition title or URL to the available width, and keep clicks, selections and typing on the wrapped rows tied to their source characters.
 - Read a requirement diagram the way Mermaid does: an empty `accTitle:` or `accDescr:`, a `classDef` or `style` line without declarations, and text after a closing brace are parse errors, an empty quoted id no longer names a class, and a relationship to an undeclared node is reported instead of drawing a diagram without it.
+- Size an exported Mermaid image to the nearest pixel of the diagram's canvas, as a browser does. ER, pie, quadrant, requirement, journey, kanban, packet, radar, sequence, timeline, XY chart and git-graph diagrams could come out a pixel too wide or too tall.
 
 ### Changed
 

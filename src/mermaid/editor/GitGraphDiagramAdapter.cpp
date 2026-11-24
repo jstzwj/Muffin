@@ -606,7 +606,7 @@ struct GitGraphDiagramImpl final : Diagram {
     // Chrome lays the svg out at LayoutUnit floor of the viewBox and the
     // CSS box rounds up, matching ceil of the exact bounds (the same
     // reconciliation the other families use).
-    entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+    entry.naturalSize = QSize(qRound(scene.bounds.width()), qRound(scene.bounds.height()));
     entry.scene = std::make_shared<const gitgraph::GitGraphScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;

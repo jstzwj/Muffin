@@ -357,7 +357,7 @@ struct SequenceDiagramImpl : Diagram {
     scene.viewportRect = viewport;
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
-    entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
+    entry.naturalSize = QSize(qRound(viewport.width()), qRound(viewport.height()));
     entry.scene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;

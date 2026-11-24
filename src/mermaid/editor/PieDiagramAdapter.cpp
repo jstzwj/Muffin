@@ -289,7 +289,7 @@ struct PieDiagramImpl : Diagram {
     metadata.svgUseMaxWidth = config.useMaxWidth;
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
-    entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+    entry.naturalSize = QSize(qRound(scene.bounds.width()), qRound(scene.bounds.height()));
     entry.scene = std::make_shared<const pie::PieScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;

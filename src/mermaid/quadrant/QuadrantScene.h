@@ -102,6 +102,9 @@ struct QuadrantAxisLabel {
 
 struct QuadrantScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
+  // Upstream's viewBox is fractional and the browser screenshots it to the
+  // nearest pixel, so the raster is rounded like the natural size.
+  bool roundRasterExtentToNearestPixel() const override { return true; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
 
