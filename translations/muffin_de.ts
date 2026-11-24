@@ -977,27 +977,27 @@ Ein schneller, leichtgewichtiger nativer Markdown-Editor, gebaut mit C++ und Qt 
         <translation type="vanished">Ein schneller nativer Markdown-Editor, entwickelt mit C++ und Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="94"/>
+        <location filename="../src/main.cpp" line="71"/>
         <source>Cannot write to the portable data folder.</source>
         <translation>In den Datenordner der portablen Version kann nicht geschrieben werden.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="104"/>
+        <location filename="../src/main.cpp" line="81"/>
         <source>Cannot load the bundled ICU data. Please reinstall Muffin.</source>
         <translation>Die mitgelieferten ICU-Daten konnten nicht geladen werden. Bitte installieren Sie Muffin neu.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="142"/>
+        <location filename="../src/main.cpp" line="119"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Ein schneller, leichtgewichtiger, nativer Markdown-Editor, erstellt mit C++ und Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="149"/>
+        <location filename="../src/main.cpp" line="126"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>&lt;folder&gt; im Dateibrowser der Seitenleiste öffnen.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="159"/>
+        <location filename="../src/main.cpp" line="136"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>Zu öffnende Markdown- oder Textdatei (oder Ordner).</translation>
     </message>
@@ -1019,7 +1019,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="504"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="492"/>
         <source>Start writing...</source>
         <translation>Beginnen Sie zu schreiben...</translation>
     </message>
@@ -1103,13 +1103,13 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="116"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1661"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1692"/>
         <source>(no spelling suggestions)</source>
         <translation>(keine Rechtschreibvorschläge)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="132"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1672"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1703"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>„%1“ ignorieren</translation>
     </message>
@@ -1119,12 +1119,12 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Laden…</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="822"/>
+        <location filename="../src/editor/EditorView.cpp" line="835"/>
         <source>Markdown editor</source>
         <translation>Markdown-Editor</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="823"/>
+        <location filename="../src/editor/EditorView.cpp" line="836"/>
         <source>Rendered Markdown document</source>
         <translation>Gerendertes Markdown-Dokument</translation>
     </message>
@@ -1503,7 +1503,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Ordner öffnen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1933"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1936"/>
         <source>Show / Hide Sidebar</source>
         <translation>Seitenleiste anzeigen / ausblenden</translation>
     </message>
@@ -1512,7 +1512,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation type="vanished">Zwischen Quell- und Renderansicht wechseln</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2170"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2168"/>
         <location filename="../src/app/MainWindowNoteLinks.cpp" line="85"/>
         <location filename="../src/app/MainWindowSearch.cpp" line="264"/>
         <source>File</source>
@@ -1545,12 +1545,12 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="144"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2178"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2176"/>
         <source>Open Recent</source>
         <translation>Zuletzt geöffnet</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2182"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2180"/>
         <source>Reopen with Encoding</source>
         <translation>Mit Kodierung erneut öffnen</translation>
     </message>
@@ -1603,24 +1603,24 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Importieren...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1914"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1917"/>
         <source>Could not move images:
 %1</source>
         <translation>Bilder konnten nicht verschoben werden:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1968"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1971"/>
         <source>Source and Preview</source>
         <translation>Quelltext und Vorschau</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2134"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2132"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Plattform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;Lizenz:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2197"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2195"/>
         <source>Export</source>
         <translation>Exportieren</translation>
     </message>
@@ -1639,7 +1639,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation type="vanished">Schließen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2233"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2231"/>
         <source>Edit</source>
         <translation>Bearbeiten</translation>
     </message>
@@ -1664,7 +1664,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Kopieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1559"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1562"/>
         <source>Copy Image</source>
         <translation>Bild kopieren</translation>
     </message>
@@ -1694,7 +1694,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Als Klartext einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2250"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2248"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
         <source>Select</source>
         <translation>Auswählen</translation>
@@ -1730,7 +1730,7 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2272"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2270"/>
         <source>Delete Range</source>
         <translation>Bereich löschen</translation>
     </message>
@@ -1756,17 +1756,17 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Aktuelles Wort löschen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2281"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2279"/>
         <source>Math Tools</source>
         <translation>Mathematikwerkzeuge</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2287"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2285"/>
         <source>Smart Punctuation</source>
         <translation>Intelligente Zeichensetzung</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2301"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2299"/>
         <source>Line Breaks</source>
         <translation>Zeilenumbrüche</translation>
     </message>
@@ -1794,13 +1794,13 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation type="vanished">Rechtschreibprüfung...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2311"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2309"/>
         <source>Find and Replace</source>
         <translation>Suchen und Ersetzen</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="739"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2332"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2330"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="60"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="215"/>
         <source>Paragraph</source>
@@ -1822,8 +1822,8 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Überschrift herabstufen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2367"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2448"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2365"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2446"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="172"/>
         <source>Table</source>
         <translation>Tabelle</translation>
@@ -1840,12 +1840,12 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Codeblock</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2394"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2392"/>
         <source>Code Tools</source>
         <translation>Codewerkzeuge</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2407"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2405"/>
         <source>Alert</source>
         <translation>Hinweis</translation>
     </message>
@@ -1872,12 +1872,12 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Aufgabenliste</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2349"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2347"/>
         <source>Task Status</source>
         <translation>Aufgabenstatus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2355"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2353"/>
         <source>List Indent</source>
         <translation>Listeneinzug</translation>
     </message>
@@ -1892,198 +1892,198 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Absatz danach einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="899"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="900"/>
         <source>Link Reference</source>
         <translation>Linkreferenz</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="906"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="907"/>
         <source>Footnote</source>
         <translation>Fußnote</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="913"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="914"/>
         <source>Horizontal Rule</source>
         <translation>Horizontale Linie</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="921"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="922"/>
         <source>Table of Contents</source>
         <translation>Inhaltsverzeichnis</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2420"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2418"/>
         <source>Front Matter</source>
         <translation>Front Matter</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="928"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="929"/>
         <source>YAML</source>
         <translation>YAML</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="933"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="934"/>
         <source>TOML</source>
         <translation>TOML</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="938"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="939"/>
         <source>JSON</source>
         <translation>JSON</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2485"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2483"/>
         <source>Format</source>
         <translation>Format</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1297"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1300"/>
         <source>Bold</source>
         <translation>Fett</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1309"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1312"/>
         <source>Italic</source>
         <translation>Kursiv</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1321"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1324"/>
         <source>Underline</source>
         <translation>Unterstreichen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1343"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1346"/>
         <source>Inline Code</source>
         <translation>Inline-Code</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1355"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1358"/>
         <source>Inline Formula</source>
         <translation>Inline-Formel</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1368"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1371"/>
         <source>Strikethrough</source>
         <translation>Durchstreichen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1381"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1384"/>
         <source>Comment</source>
         <translation>Kommentar</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1386"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1389"/>
         <source>Hyperlink</source>
         <translation>Hyperlink</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2217"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2215"/>
         <source>Export Presets</source>
         <translation>Exportvorgaben</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2435"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2433"/>
         <source>Paragraph Alignment</source>
         <translation>Absatzausrichtung</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2497"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2495"/>
         <source>Link Actions</source>
         <translation>Linkaktionen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2504"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2502"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="156"/>
         <source>Image</source>
         <translation>Bild</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1533"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1536"/>
         <source>Insert Image...</source>
         <translation>Bild einfügen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1540"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1543"/>
         <source>Insert Local Image...</source>
         <translation>Lokales Bild einfügen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1545"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1548"/>
         <source>Open Image Location...</source>
         <translation>Bildspeicherort öffnen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1579"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1582"/>
         <source>Delete Image File</source>
         <translation>Bilddatei löschen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1605"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1608"/>
         <source>Copy Image To...</source>
         <translation>Bild kopieren nach...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1639"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1642"/>
         <source>Rename / Move Image To...</source>
         <translation>Bild umbenennen / verschieben nach...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1713"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1716"/>
         <source>Upload All Local Images</source>
         <translation>Alle lokalen Bilder hochladen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1772"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1775"/>
         <source>Reload All Images</source>
         <translation>Alle Bilder neu laden</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2521"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2519"/>
         <source>Resize Image</source>
         <translation>Bildgröße ändern</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1783"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1786"/>
         <source>25%</source>
         <translation>25 %</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1793"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1796"/>
         <source>50%</source>
         <translation>50 %</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1803"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1806"/>
         <source>75%</source>
         <translation>75 %</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1813"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1816"/>
         <source>100%</source>
         <translation>100 %</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1824"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1827"/>
         <source>150%</source>
         <translation>150 %</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1834"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1837"/>
         <source>Custom...</source>
         <translation>Benutzerdefiniert...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2533"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2531"/>
         <source>Convert Image Syntax</source>
         <translation>Bildsyntax konvertieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1856"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1859"/>
         <source>Standard Markdown ![](url)</source>
         <translation>Standard-Markdown ![](url)</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1863"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1866"/>
         <source>HTML &lt;img&gt;</source>
         <translation>HTML &lt;img&gt;</translation>
     </message>
@@ -2104,43 +2104,43 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation type="vanished">In benutzerdefinierten Ordner kopieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1870"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1873"/>
         <source>Copy All Images To...</source>
         <translation>Alle Bilder kopieren nach...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1897"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1900"/>
         <source>Move All Images To...</source>
         <translation>Alle Bilder verschieben nach...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1927"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1930"/>
         <source>Global Image Settings...</source>
         <translation>Globale Bildeinstellungen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1412"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1415"/>
         <source>Clear Style</source>
         <translation>Stil entfernen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1017"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1018"/>
         <location filename="../src/app/MainWindowActions.cpp" line="165"/>
         <source>Insert Table</source>
         <translation>Tabelle einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1024"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1025"/>
         <source>Insert Row Above</source>
         <translation>Zeile oberhalb einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1030"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1031"/>
         <source>Insert Row Below</source>
         <translation>Zeile unterhalb einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1076"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1079"/>
         <source>Delete Row</source>
         <translation>Zeile löschen</translation>
     </message>
@@ -2165,42 +2165,42 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Spalte rechts einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1084"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1087"/>
         <source>Delete Column</source>
         <translation>Spalte löschen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1062"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1065"/>
         <source>Move Column Left</source>
         <translation>Spalte nach links verschieben</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1069"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1072"/>
         <source>Move Column Right</source>
         <translation>Spalte nach rechts verschieben</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1107"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1110"/>
         <source>Align Left</source>
         <translation>Linksbündig ausrichten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1113"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1116"/>
         <source>Align Center</source>
         <translation>Zentriert ausrichten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1119"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1122"/>
         <source>Align Right</source>
         <translation>Rechtsbündig ausrichten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1125"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1128"/>
         <source>Clear Alignment</source>
         <translation>Ausrichtung entfernen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1101"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1104"/>
         <source>Delete Table</source>
         <translation>Tabelle löschen</translation>
     </message>
@@ -2245,43 +2245,43 @@ Soll Muffin jetzt Ihr Standardeditor werden?</translation>
         <translation>Zum Zeilenende springen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1089"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1092"/>
         <source>Copy Table</source>
         <translation>Tabelle kopieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1095"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1098"/>
         <source>Format Table Source</source>
         <translation>Tabellenquelle formatieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1679"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1719"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1682"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1722"/>
         <source>No upload command is configured.
 Set up a custom upload command in Preferences → Images.</source>
         <translation>Es ist kein Upload-Befehl konfiguriert.
 Richten Sie einen benutzerdefinierten Upload-Befehl unter Einstellungen → Bilder ein.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1695"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1751"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1698"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1754"/>
         <source>Upload failed:
 %1</source>
         <translation>Upload fehlgeschlagen:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1741"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1744"/>
         <source>There are no local images to upload.</source>
         <translation>Es sind keine lokalen Bilder zum Hochladen vorhanden.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1753"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1756"/>
         <source>the uploader did not return one URL per image</source>
         <translation>das Upload-Programm hat nicht für jedes Bild eine URL geliefert</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1767"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1770"/>
         <source>Uploaded %1 image(s).</source>
         <translation>%1 Bild(er) hochgeladen.</translation>
     </message>
@@ -2298,56 +2298,56 @@ Ein schneller, leichtgewichtiger, nativer Markdown-Editor, erstellt mit C++ und 
 Live-Vorschau und Quelltextbearbeitung; Export nach PDF, HTML und viele weitere Formate über Pandoc; Bild-Einfügen mit Ordner-Kopie und benutzerdefiniertem Befehls-Upload; Rechtschreibprüfung; Designs; Suchen &amp; Ersetzen; Gliederung; Schnelloffen; und absturzsichere Entwurfswiederherstellung.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2458"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2456"/>
         <source>Code</source>
         <translation>Code</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1133"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1223"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1260"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1136"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1226"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1263"/>
         <source>Enter Edit</source>
         <translation>Bearbeitung starten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1141"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1231"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1268"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1144"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1234"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1271"/>
         <source>Exit Edit</source>
         <translation>Bearbeitung beenden</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1150"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1153"/>
         <source>Set Language...</source>
         <translation>Sprache festlegen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2476"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2474"/>
         <source>Math</source>
         <translation>Mathematik</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1277"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1280"/>
         <source>Set TeX...</source>
         <translation>TeX festlegen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1240"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1243"/>
         <source>Set HTML...</source>
         <translation>HTML festlegen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2548"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2546"/>
         <source>View</source>
         <translation>Ansicht</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1944"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1947"/>
         <source>Outline</source>
         <translation>Gliederung</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1949"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1952"/>
         <source>File Tree</source>
         <translation>Dateibaum</translation>
     </message>
@@ -2356,131 +2356,130 @@ Live-Vorschau und Quelltextbearbeitung; Export nach PDF, HTML und viele weitere 
         <translation type="vanished">Suche</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1954"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1957"/>
         <source>Source Code Mode</source>
         <translation>Quellcodemodus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1981"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1984"/>
         <source>Word Wrap</source>
         <translation>Zeilenumbruch</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1994"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1997"/>
         <source>Focus Mode</source>
         <translation>Fokusmodus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2005"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2008"/>
         <source>Typewriter Mode</source>
         <translation>Schreibmaschinenmodus</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2016"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2019"/>
         <source>Show Status Bar</source>
         <translation>Statusleiste anzeigen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2027"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2030"/>
         <source>Word Count Window</source>
         <translation>Wortzählungsfenster</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2031"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2034"/>
         <source>Toggle Full Screen</source>
         <translation>Vollbild umschalten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2036"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2039"/>
         <source>Always on Top</source>
         <translation>Immer im Vordergrund</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2047"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2050"/>
         <source>Actual Size</source>
         <translation>Tatsächliche Größe</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2056"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2059"/>
         <source>Zoom In</source>
         <translation>Vergrößern</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2065"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2068"/>
         <source>Zoom Out</source>
         <translation>Verkleinern</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2074"/>
         <source>Switch Windows</source>
-        <translation>Fenster wechseln</translation>
+        <translation type="vanished">Fenster wechseln</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
         <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Plattform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Lizenz:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2364"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2362"/>
         <source>Insert</source>
         <translation>Einfügen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2578"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2576"/>
         <source>Theme</source>
         <translation>Design</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2580"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2578"/>
         <source>Help</source>
         <translation>Hilfe</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2086"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2084"/>
         <source>Quick Start</source>
         <translation>Schnellstart</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2090"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2088"/>
         <source>Markdown Reference</source>
         <translation>Markdown-Referenz</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2094"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2092"/>
         <source>Custom Themes</source>
         <translation>Benutzerdefinierte Designs</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2098"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2096"/>
         <source>Acknowledgements</source>
         <translation>Danksagungen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2102"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2100"/>
         <source>Changelog</source>
         <translation>Änderungsprotokoll</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2110"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2108"/>
         <source>Official Website</source>
         <translation>Offizielle Website</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2115"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2113"/>
         <source>Feedback</source>
         <translation>Feedback</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2122"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2120"/>
         <source>Check for Updates...</source>
         <translation>Nach Updates suchen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2130"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2128"/>
         <source>About</source>
         <translation>Über</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1589"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1592"/>
         <source>Delete Image</source>
         <translation>Bild löschen</translation>
     </message>
@@ -2511,7 +2510,7 @@ Live-Vorschau und Quelltextbearbeitung; Export nach PDF, HTML und viele weitere 
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="252"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2467"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2465"/>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
@@ -2693,153 +2692,153 @@ Live-Vorschau und Quelltextbearbeitung; Export nach PDF, HTML und viele weitere 
         <translation>Absatz im Blocksatz ausrichten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="945"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="946"/>
         <source>Note</source>
         <translation>Hinweis</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="952"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="953"/>
         <source>Tip</source>
         <translation>Tipp</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="959"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="960"/>
         <source>Important</source>
         <translation>Wichtig</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="966"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="967"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="973"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="974"/>
         <source>Caution</source>
         <translation>Vorsicht</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="983"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="984"/>
         <source>Toggle Task Status</source>
         <translation>Aufgabenstatus umschalten</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="995"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="996"/>
         <source>Indent</source>
         <translation>Einrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1005"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1006"/>
         <source>Outdent</source>
         <translation>Ausrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1168"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1171"/>
         <source>Copy Code Block Content</source>
         <translation>Codeblock-Inhalt kopieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1183"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1186"/>
         <source>Indent Selection</source>
         <translation>Auswahl einrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1193"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1196"/>
         <source>Dedent Selection</source>
         <translation>Auswahl ausrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1203"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1206"/>
         <source>Indent Whole Block</source>
         <translation>Ganzen Block einrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1212"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1215"/>
         <source>Dedent Whole Block</source>
         <translation>Ganzen Block ausrücken</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1336"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1425"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1339"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1428"/>
         <source>Switch to live editing to use this formatting command.</source>
         <translation>Wechseln Sie zur Live-Bearbeitung, um diesen Formatierungsbefehl zu verwenden.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1337"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1406"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1340"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1409"/>
         <source>Select text within a single paragraph or table cell, or place the caret in editable text.</source>
         <translation>Markieren Sie Text innerhalb eines einzelnen Absatzes oder einer Tabellenzelle, oder setzen Sie den Cursor in bearbeitbaren Text.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1402"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1405"/>
         <source>Wait for the document to finish loading.</source>
         <translation>Warten Sie, bis das Dokument vollständig geladen ist.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1404"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1407"/>
         <source>Select text within one line, or place the caret where you want to insert the link.</source>
         <translation>Markieren Sie Text innerhalb einer Zeile, oder setzen Sie den Cursor an die Stelle, an der Sie den Link einfügen möchten.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1426"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1429"/>
         <source>Place the caret in the paragraph or table cell whose formatting you want to clear.</source>
         <translation>Setzen Sie den Cursor in den Absatz oder die Tabellenzelle, deren Formatierung Sie entfernen möchten.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1433"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1436"/>
         <source>Refresh All Math</source>
         <translation>Alle Formeln aktualisieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1442"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1445"/>
         <source>Convert on Input</source>
         <translation>Bei Eingabe umwandeln</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1463"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1466"/>
         <source>Convert on Rendering</source>
         <translation>Bei der Darstellung umwandeln</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1484"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1487"/>
         <source>Smart Quotes</source>
         <translation>Intelligente Anführungszeichen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1498"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1501"/>
         <source>Smart Dashes</source>
         <translation>Intelligente Gedankenstriche</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1512"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1515"/>
         <source>Remap Unicode Punctuation on Parse</source>
         <translation>Unicode-Zeichensetzung beim Parsen neu zuordnen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1526"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1529"/>
         <source>More Options...</source>
         <translation>Weitere Optionen...</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1590"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1593"/>
         <source>Delete image file &quot;%1&quot;?
 This cannot be undone.</source>
         <translation>Bilddatei „%1“ löschen?
 Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1616"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1619"/>
         <source>Copy Image To</source>
         <translation>Bild kopieren nach</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1650"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1653"/>
         <source>Move Image To</source>
         <translation>Bild verschieben nach</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1672"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1678"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1694"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1675"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1681"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1697"/>
         <source>Upload Image</source>
         <translation>Bild hochladen</translation>
     </message>
@@ -2850,88 +2849,88 @@ Set up an image uploader in Preferences → Images.</source>
 Richten Sie einen Uploader unter Einstellungen → Bilder ein.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1718"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1740"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1750"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1765"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1766"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1721"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1743"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1753"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1768"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1769"/>
         <source>Upload All Images</source>
         <translation>Alle Bilder hochladen</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1841"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1844"/>
         <source>Image Size</source>
         <translation>Bildgröße</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1841"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1844"/>
         <source>Zoom percent:</source>
         <translation>Zoom-Prozentsatz:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1878"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1881"/>
         <source>Copy All Images To</source>
         <translation>Alle Bilder kopieren nach</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1890"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1893"/>
         <source>Copy All Images</source>
         <translation>Alle Bilder kopieren</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1891"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1894"/>
         <source>Copied %1 of %2 image(s).</source>
         <translation>%1 von %2 Bild(ern) kopiert.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1905"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1908"/>
         <source>Move All Images To</source>
         <translation>Alle Bilder verschieben nach</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1913"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1919"/>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1921"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1916"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1922"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1924"/>
         <source>Move All Images</source>
         <translation>Alle Bilder verschieben</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1922"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1925"/>
         <source>Moved %1 image(s).</source>
         <translation>%1 Bild(er) verschoben.</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1155"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1158"/>
         <source>Code Language</source>
         <translation>Codesprache</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1156"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1159"/>
         <source>Language:</source>
         <translation>Sprache:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1244"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1247"/>
         <source>HTML Source</source>
         <translation>HTML-Quelle</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1245"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1248"/>
         <source>HTML:</source>
         <translation>HTML:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1281"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1284"/>
         <source>Math TeX</source>
         <translation>Mathematik-TeX</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1282"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1285"/>
         <source>TeX:</source>
         <translation>TeX:</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="2133"/>
+        <location filename="../src/app/CommandDeclarations.cpp" line="2131"/>
         <source>About Muffin</source>
         <translation>Über Muffin</translation>
     </message>
@@ -3151,8 +3150,8 @@ Parse-Zeit: %6 ms</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="717"/>
-        <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
-        <translation>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;Alle Dateien (*)</translation>
+        <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawiki);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
+        <translation>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawiki);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;Alle Dateien (*)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="734"/>
@@ -3773,7 +3772,7 @@ Möchten Sie die Download-Seite öffnen?</translation>
         <translation>Öffnen</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="153"/>
+        <location filename="../src/main.cpp" line="130"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="342"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="359"/>
         <source>Open in New Window</source>
@@ -6499,32 +6498,32 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
         <translation>Markdown-Quelltext als Klartext</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1681"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1712"/>
         <source>Undo</source>
         <translation>Rückgängig</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1683"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1714"/>
         <source>Redo</source>
         <translation>Wiederholen</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1687"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1718"/>
         <source>Cut</source>
         <translation>Ausschneiden</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1693"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1724"/>
         <source>Copy</source>
         <translation>Kopieren</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1697"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1728"/>
         <source>Paste</source>
         <translation>Einfügen</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1708"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1739"/>
         <source>Select All</source>
         <translation>Alles auswählen</translation>
     </message>
@@ -6550,14 +6549,14 @@ Dateien, die danach bearbeitet wurden oder ungespeicherte Änderungen enthalten,
 <context>
     <name>muffin::WindowsUpdater</name>
     <message>
-        <location filename="../src/main.cpp" line="199"/>
+        <location filename="../src/main.cpp" line="176"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="200"/>
         <location filename="../src/app/WindowsUpdater.cpp" line="453"/>
         <source>Update Muffin</source>
         <translation>Muffin aktualisieren</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="200"/>
+        <location filename="../src/main.cpp" line="177"/>
         <source>The update was canceled or could not be installed (code %1). Your session has been restored. You can try again from Help &gt; Check for Updates.</source>
         <translation>Die Aktualisierung wurde abgebrochen oder konnte nicht installiert werden (Code %1). Ihre Sitzung wurde wiederhergestellt. Sie können es unter Hilfe &gt; Nach Updates suchen erneut versuchen.</translation>
     </message>

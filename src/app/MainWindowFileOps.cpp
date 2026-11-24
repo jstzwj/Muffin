@@ -715,7 +715,7 @@ void muffin::MainWindow::importFile(QString sourcePath) {
     sourcePath = QFileDialog::getOpenFileName(
         this, tr("Import"), dir,
         tr("Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;"
-           "LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;"
+           "LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawiki);;reStructuredText (*.rst);;"
            "Textile (*.textile);;OPML (*.opml);;All files (*)"));
   if (sourcePath.isEmpty()) {
     return;
