@@ -471,6 +471,10 @@ const MarkdownNode* MarkdownNode::topLevelBlock() const {
   return n;
 }
 
+MarkdownNode* MarkdownNode::topLevelBlock() {
+  return const_cast<MarkdownNode*>(static_cast<const MarkdownNode*>(this)->topLevelBlock());
+}
+
 void MarkdownNode::subtractDefinitionFields(DefinitionBlock& def, qsizetype byteBase) {
   if (!def.isValid()) {
     return;

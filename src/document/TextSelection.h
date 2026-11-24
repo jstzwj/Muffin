@@ -11,6 +11,8 @@ struct TextPosition {
   bool inMeta = false;
 
   bool isValid() const { return nodeId.isValid(); }
+
+  friend bool operator==(const TextPosition&, const TextPosition&) = default;
 };
 
 struct CursorPosition {
@@ -22,6 +24,10 @@ struct CursorPosition {
   bool afterBlock = false;
 
   bool isValid() const { return blockId.isValid(); }
+
+  // One caret position. Every field names part of the position: table cells share a blockId but
+  // not a text node, and a caret behind a block is not the caret at the block's end.
+  friend bool operator==(const CursorPosition&, const CursorPosition&) = default;
 };
 
 struct SelectionRange {
@@ -37,14 +43,10 @@ struct SelectionRange {
            qMax(anchor.text.sourceOffset, focus.text.sourceOffset) == sourceLength;
   }
 
-  // Collapsed means ONE caret position. nodeId must be compared too: table cells share their
-  // table's blockId but have per-cell text nodes, so two cells at equal offsets are NOT one
-  // position (the historical omission made cross-cell selections masquerade as collapsed).
-  bool isCollapsed() const {
-    return anchor.blockId == focus.blockId && anchor.text.nodeId == focus.text.nodeId &&
-           anchor.text.textOffset == focus.text.textOffset && anchor.text.sourceOffset == focus.text.sourceOffset &&
-           anchor.text.inMeta == focus.text.inMeta && anchor.afterBlock == focus.afterBlock;
-  }
+  // Collapsed means anchor and focus are one caret position. Comparing every field matters:
+  // table cells share their table's blockId but have per-cell text nodes, so two cells at equal
+  // offsets are NOT one position.
+  bool isCollapsed() const { return anchor == focus; }
 
   bool isSingleBlock() const { return anchor.blockId.isValid() && anchor.blockId == focus.blockId; }
 

@@ -6,6 +6,7 @@
 #include "editor/BlockEditContext.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "edit/UndoStack.h"
 #include "unicode/WordBoundary.h"
 
@@ -1011,13 +1012,9 @@ StylizeController::ToggledContent StylizeController::buildToggledContent(const Q
 bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart,
                                         qsizetype removedLength, QString insertedText, qsizetype nextSelectionStart,
                                         qsizetype nextSelectionEnd, QVector<LocalEditNodeHint> nodeHints) {
-  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0 ||
-      sourceStart + removedLength > ctx_.session->markdownText().size()) {
+  if (!ctx_.hasSession()) {
     return false;
   }
-
-  const CursorPosition beforeCursor =
-      ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
   // Resolve direction against the old document. Node ids and local offsets may
   // change when delimiters are inserted, and the focus must stay on the same end.
   bool backwards = false;
@@ -1028,67 +1025,19 @@ bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QStrin
     const auto focus = resolver.sourceAnchoredCursor(selection.focus);
     backwards = anchor.text.sourceOffset > focus.text.sourceOffset;
   }
-  const QString removedText = ctx_.session->markdownText().mid(sourceStart, removedLength);
-  QVector<NodeId> affectedNodes;
-  for (const LocalEditNodeHint& hint : nodeHints) {
-    if (hint.nodeId.isValid() && !affectedNodes.contains(hint.nodeId)) {
-      affectedNodes.push_back(hint.nodeId);
-    }
-  }
-  if (!ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints))) {
-    return false;
-  }
-
-  SelectionRange nextSelection;
-  nextSelection.anchor = cursorForSourceOffset(backwards ? nextSelectionEnd : nextSelectionStart);
-  nextSelection.focus = cursorForSourceOffset(backwards ? nextSelectionStart : nextSelectionEnd);
-  if (ctx_.selection && nextSelection.focus.isValid()) {
-    ctx_.selection->setSelection(nextSelection);
-  }
-  if (nextSelection.anchor.blockId.isValid() && !affectedNodes.contains(nextSelection.anchor.blockId)) {
-    affectedNodes.push_back(nextSelection.anchor.blockId);
-  }
-  if (nextSelection.focus.blockId.isValid() && !affectedNodes.contains(nextSelection.focus.blockId)) {
-    affectedNodes.push_back(nextSelection.focus.blockId);
-  }
-  if (ctx_.undoStack && beforeCursor.isValid() && nextSelection.focus.isValid()) {
-    ctx_.undoStack->push(EditTransaction(kind, label,
-                                         TextDeltaCommand{TextDelta{sourceStart, removedText, insertedText},
-                                                          beforeCursor, nextSelection.focus, affectedNodes}));
-  }
-  if (ctx_.brushQueue) {
-    if (!affectedNodes.isEmpty()) {
-      ctx_.brushQueue->requestBlocksRefresh(std::move(affectedNodes));
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-  }
-  return true;
-}
-
-CursorPosition StylizeController::cursorForSourceOffset(qsizetype sourceOffset) const {
-  CursorPosition cursor;
-  if (!ctx_.hasSession()) {
-    return cursor;
-  }
-
-  auto resolver = ctx_.contextResolver();
-  MarkdownNode* node = resolver.nodeAtContentSourceOffset(ctx_.session->document().root(), sourceOffset);
-  if (!node) {
-    return cursor;
-  }
-
-  BlockEditContext context;
-  if (!resolver.fill(*node, context)) {
-    return cursor;
-  }
-
-  cursor.blockId = node->id();
-  cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
-  cursor.text.textOffset =
-      qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
-  cursor.text.sourceOffset = sourceOffset;
-  return cursor;
+  const EditOutcome outcome =
+      applyEdit(ctx_,
+                {.sourceStart = sourceStart,
+                 .removedLength = removedLength,
+                 .insertedText = std::move(insertedText),
+                 .nodeHints = std::move(nodeHints)},
+                {.kind = kind,
+                 .label = label,
+                 .fallbackSourceOffset = nextSelectionStart,
+                 .selectionStart = nextSelectionStart,
+                 .selectionEnd = nextSelectionEnd,
+                 .selectionBackwards = backwards});
+  return outcome.applied;
 }
 
 } // namespace muffin

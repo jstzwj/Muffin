@@ -384,10 +384,16 @@ int RenderCommandFacade::currentImageZoomPercent() const {
   return image_syntax::zoomPercent(source);
 }
 
-// Apply a transform to the image under the cursor. Replaces the whole document text via
-// applyMarkdownText (not a local applyTextDelta): a local edit's view refresh is driven by the
-// editor's transaction path, which these commands bypass, so a local edit would update the model
-// but never repaint. applyMarkdownText does a full re-parse, which fires `parsed` with
+bool RenderCommandFacade::replaceSourceRange(const QString& label, qsizetype start, qsizetype length,
+                                             const QString& text) {
+  const QByteArray name = label.toUtf8();
+  return runCommand(name.constData(),
+                    [&] { return editorController_.replaceSourceRangeWithUndo(start, length, text, label); });
+}
+
+// Apply a transform to the image under the cursor. The whole document text is replaced, which
+// keeps the caret where it was, on the image, so that the next image command still finds it;
+// replaceSourceRange would move the caret behind the image. The full re-parse fires `parsed` with
 // lastParseWasLocalEdit() == false and triggers setDocument on the rendered view.
 bool RenderCommandFacade::replaceImageUnderCursor(const std::function<QString(const QString&)>& transform,
                                                   const char* name) {

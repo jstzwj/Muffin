@@ -9,6 +9,7 @@
 #include "editor/InlineSplit.h"
 #include "editor/TextBlockCommandBuilder.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "edit/UndoStack.h"
 
 #include <algorithm>
@@ -290,87 +291,22 @@ bool ParagraphController::applyBlockDelta(EditTransaction::Kind kind, const QStr
                                           qsizetype removedLength, QString insertedText,
                                           qsizetype nextCursorSourceOffset, QVector<LocalEditNodeHint> nodeHints,
                                           bool structureEdit) {
-  if (!ctx_.hasSession() || sourceStart < 0 || removedLength < 0 ||
-      sourceStart + removedLength > ctx_.session->markdownText().size()) {
-    return false;
-  }
-
-  const CursorPosition beforeCursor =
-      ctx_.selection && ctx_.selection->hasCursor() ? ctx_.selection->cursorPosition() : CursorPosition();
-  const QString removedText = ctx_.session->markdownText().mid(sourceStart, removedLength);
-
-  QVector<NodeId> affectedNodes;
-  for (const LocalEditNodeHint& hint : nodeHints) {
-    if (hint.nodeId.isValid() && !affectedNodes.contains(hint.nodeId)) {
-      affectedNodes.push_back(hint.nodeId);
-    }
-  }
-
-  const bool appliedLocally =
-      ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
-  if (!appliedLocally) {
-    return false;
-  }
-
-  const CursorPosition nextCursor =
-      cursorForSourceOffset(qBound<qsizetype>(0, nextCursorSourceOffset, ctx_.session->markdownText().size()));
-  if (ctx_.selection && nextCursor.isValid()) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  }
-
-  // Build the cursor for the undo transaction — prefer the resolved cursor,
-  // fall back to the beforeCursor if the source offset lands in a non-text block
-  const CursorPosition undoCursor = nextCursor.isValid() ? nextCursor : beforeCursor;
-
-  if (undoCursor.blockId.isValid() && !affectedNodes.contains(undoCursor.blockId)) {
-    affectedNodes.push_back(undoCursor.blockId);
-  }
-
-  if (ctx_.undoStack && beforeCursor.isValid()) {
-    ctx_.undoStack->push(EditTransaction(kind, label,
-                                         TextDeltaCommand{TextDelta{sourceStart, removedText, insertedText},
-                                                          beforeCursor, undoCursor, std::move(affectedNodes)}));
-  }
-
-  if (ctx_.brushQueue) {
-    if (structureEdit || ctx_.session->lastLocalEditChangedTopLevelStructure()) {
-      ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
-    } else if (!affectedNodes.isEmpty()) {
-      ctx_.brushQueue->requestBlocksRefresh(std::move(affectedNodes));
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-  }
-  return true;
-}
-
-// ---------------------------------------------------------------------------
-// cursorForSourceOffset
-// ---------------------------------------------------------------------------
-
-CursorPosition ParagraphController::cursorForSourceOffset(qsizetype sourceOffset) const {
-  CursorPosition cursor;
   if (!ctx_.hasSession()) {
-    return cursor;
+    return false;
   }
-
-  auto resolver = ctx_.contextResolver();
-  MarkdownNode* node = resolver.nodeAtContentSourceOffset(ctx_.session->document().root(), sourceOffset);
-  if (!node) {
-    return cursor;
-  }
-
-  BlockEditContext context;
-  if (!resolver.fill(*node, context)) {
-    return cursor;
-  }
-
-  cursor.blockId = node->id();
-  cursor.text.nodeId = context.editableNode ? context.editableNode->id() : node->id();
-  cursor.text.textOffset =
-      qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
-  cursor.text.sourceOffset = sourceOffset;
-  return cursor;
+  const EditOutcome outcome =
+      applyEdit(ctx_,
+                {.sourceStart = sourceStart,
+                 .removedLength = removedLength,
+                 .insertedText = std::move(insertedText),
+                 .nodeHints = std::move(nodeHints)},
+                {.kind = kind,
+                 .label = label,
+                 .fallbackSourceOffset = nextCursorSourceOffset,
+                 // A paragraph a command just inserted starts where the block before it ends.
+                 .preferLaterEmptyAtOffset = true,
+                 .structureEdit = structureEdit});
+  return outcome.applied;
 }
 
 // ---------------------------------------------------------------------------

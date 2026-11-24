@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restore the selected range and its direction when undoing text replacement or deletion in live editing, and keep those operations separate from neighbouring typing.
 - Disable unsupported hyperlink and underline selections before invocation, explain formatting restrictions in menu hints, and enable inline formatting within individual table cells.
 - Add continuous editing regression coverage for Chinese input, reverse selections, cross-paragraph cut/paste, list indentation, undo/redo, tab switching and deleting the entire document.
+- Put the caret where a style or paragraph command leaves it in the visible text, not at its offset in the Markdown: behind a `**bold**` word it no longer lands too far right, and it is where undo brings it back to. Undoing a style command gives the selection it was applied to back.
+- Apply an edit the incremental parser cannot take by re-parsing the document in every command. Style, paragraph and table commands used to do nothing in that case.
+- Make a spelling replacement and the image path rewrite of Copy To, Move To, Upload and Delete Image undoable. They changed the text past the undo stack.
 - Place the caret at the nearest visible caret position when clicking in bidirectional text. A click in a right-to-left run used to land at the start of the line.
 - Keep `[TOC]` rows and link or footnote definitions aligned with their block when blocks above them are resized lazily.
 - Follow the top-level rule for empty paragraphs inside block quotes: a math or HTML block, or a thematic break, followed by one empty quote line no longer leaves a clickable empty paragraph there.
@@ -24,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Move the column commands in tables to Ctrl+Alt+Shift+←/→. Their previous shortcuts, Alt+←/→, collided with navigating the edit history. Remove the "Switch Windows" command, which never ran.
 - Read the project version from the newest version heading in this file, so a release builds with the version it documents. The release workflow refuses a tag without a heading here.
+- Route every change of the document text through one session function and every user edit through one editor pipeline, and give each block controller the same refresh after an edit. The style and paragraph commands no longer carry their own copies of that pipeline.
 
 ## [0.7.16] - 2026-11-20
 

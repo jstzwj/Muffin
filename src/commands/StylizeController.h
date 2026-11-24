@@ -108,7 +108,6 @@ private:
   bool applyStyleDelta(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart, qsizetype removedLength,
                        QString insertedText, qsizetype nextSelectionStart, qsizetype nextSelectionEnd,
                        QVector<LocalEditNodeHint> nodeHints = {});
-  CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
 };
 
 } // namespace muffin

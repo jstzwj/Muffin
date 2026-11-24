@@ -142,7 +142,7 @@ void testInlineProjectionEntityDisplayAfterEdit() {
           QStringLiteral("initial entity visible text mismatch: %1").arg(initialProjection.visibleText()));
 
   // Insert 'a' at the beginning (source offset 0)
-  require(session.applyTextDelta(0, 0, QStringLiteral("a"), true), "entity edit should apply");
+  require(session.applyTextEdit(0, 0, QStringLiteral("a")) != muffin::TextEditResult::Rejected, "entity edit should apply");
 
   const QString editedMarkdown = session.markdownText().toString();
   require(editedMarkdown == QStringLiteral("aEntities are decoded by renderers: &amp; &lt; &gt; &copy;."),
@@ -222,7 +222,7 @@ void testInlineProjectionKeepsValidEntitiesDecodedAfterBrokenEntityEdit() {
   session.setMarkdownText(original, false);
   const qsizetype copyAmp = original.indexOf(QStringLiteral("&copy;"));
   require(copyAmp >= 0, "copy entity ampersand should exist");
-  require(session.applyTextDelta(copyAmp, 1, QString(), true), "copy entity ampersand delete should apply");
+  require(session.applyTextEdit(copyAmp, 1, QString()) != muffin::TextEditResult::Rejected, "copy entity ampersand delete should apply");
 
   const QString markdown = QStringLiteral("Entities are decoded by renderers: &amp; &lt; &gt; copy;.");
   require(session.markdownText().toString() == markdown,
@@ -259,7 +259,7 @@ void testInlineProjectionEntityDisplayAfterEditMultiParagraph() {
           QStringLiteral("initial visible text mismatch: %1").arg(initialProjection.visibleText()));
 
   // Edit the first paragraph to trigger local re-parse of a slice containing the second paragraph
-  require(session.applyTextDelta(0, 0, QStringLiteral("x"), true), "multi-paragraph entity edit should apply");
+  require(session.applyTextEdit(0, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected, "multi-paragraph entity edit should apply");
 
   const QString editedMarkdown = session.markdownText().toString();
   require(editedMarkdown == QStringLiteral("xFirst paragraph.\n\nEntities: &amp; &lt; &gt; &copy;."),

@@ -42,10 +42,9 @@ int BlockStructure::indexFor(const MarkdownDocument& document, NodeId id) const 
   if (revision_ != document.revision())
     return -1;
   const auto* node = document.node(id);
-  while (node && node->parent() && node->parent()->type() != BlockType::Document)
-    node = node->parent();
   if (!node || !node->parent())
     return -1;
+  node = node->topLevelBlock();
   const int ordinal = node->siblingIndex();
   const auto it = std::lower_bound(units_.cbegin(), units_.cend(), ordinal,
                                    [](const auto& unit, int value) { return unit.last < value; });

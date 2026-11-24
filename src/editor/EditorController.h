@@ -133,6 +133,7 @@ private:
   void initializeEmptyDocumentCursor();
   void finishHistoryReplay(const EditTransaction& transaction, bool undo);
   void remapCurrentSelection();
+  void refreshAfterTextEdit(TextEditResult applied, const QVector<NodeId>& affectedNodes, CursorPosition cursor);
   bool activateHtmlSource(CursorPosition initialPosition);
   void deactivateLiteralEditors();
   void exitAllLiteralEditModes();

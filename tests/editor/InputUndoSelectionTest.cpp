@@ -38,15 +38,15 @@ void testInputUndoRedoSnapshots() {
   require(undo.textDeltaCommand().delta.removedText.isEmpty(), "plain insert delta removed text mismatch");
   require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("!"),
           "plain insert delta inserted text mismatch");
-  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText, true);
+  session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText().toString() == QStringLiteral("alpha"), "undo snapshot text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "undo snapshot cursor mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
-  session.applyTextDelta(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
-                         redo.textDeltaCommand().delta.insertedText, true);
+  session.applyTextEdit(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
+                         redo.textDeltaCommand().delta.insertedText);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText().toString() == QStringLiteral("alpha!"), "redo snapshot text mismatch");
   require(selection.cursorPosition().text.textOffset == 6, "redo snapshot cursor mismatch");
@@ -326,13 +326,13 @@ void testUndoRedoAfterBackingCompaction() {
   const auto undo = stack.takeUndo();
   require(undo.isTextDeltaCommand(), "selection deletion retains a text-delta undo command");
   const auto& delta = undo.textDeltaCommand().delta;
-  require(session.applyTextDelta(delta.start, delta.insertedText.size(), delta.removedText, true),
+  require(session.applyTextEdit(delta.start, delta.insertedText.size(), delta.removedText) != muffin::TextEditResult::Rejected,
           "undo applies after backing buffers have been rebased");
   require(session.markdownText().toString() == QStringLiteral("alpha") + pasted,
           "undo restores every deleted character after compaction");
   const auto redo = stack.takeRedo();
   const auto& repeated = redo.textDeltaCommand().delta;
-  require(session.applyTextDelta(repeated.start, repeated.removedText.size(), repeated.insertedText, true),
+  require(session.applyTextEdit(repeated.start, repeated.removedText.size(), repeated.insertedText) != muffin::TextEditResult::Rejected,
           "redo applies after compaction");
   require(session.markdownText().toString() == QStringLiteral("alpha"), "redo restores the compacted text");
 }

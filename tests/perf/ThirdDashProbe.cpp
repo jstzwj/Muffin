@@ -1,17 +1,18 @@
 // Regression test for the "third dash freezes the editor" bug.
 //
 // Typing the 3rd dash turns paragraph "--" into a thematic break (---). A thematic break hosts no
-// inline text, so the post-edit caret used to be unresolvable: cursorAfterEdit failed, the caret was
-// cleared, and (because the caret was invalid) applyLocalEdit took the snapshot-undo path whose
-// collectPendingMarkerOffsets walks every paragraph — plus an O(document) selection-clear chain.
-// On a 112k-block document this was ~49 s per keystroke. The fix lands the caret block-after the
-// non-text block so it stays resolvable, collapsing all three O(document) phases back to the normal
-// TextDeltaCommand typing path.
+// inline text, so the post-edit caret used to be unresolvable: the caret after the edit could
+// not be placed, the caret was cleared, and (because the caret was invalid) the edit took the
+// snapshot-undo path, which copies the whole document — plus an O(document) selection-clear
+// chain. On a 112k-block document this was ~49 s per keystroke. The fix lands the caret behind
+// the non-text block so it stays resolvable, collapsing all three O(document) phases back to the
+// normal TextDeltaCommand typing path.
 //
 // This test types three dashes into an empty paragraph of a large document and asserts the 3rd dash
 // behaves like normal typing:
-//   1. It must NOT trigger collectPendingMarkerOffsets (the snapshot-undo smoking gun — fires iff the
-//      caret was invalid). Binary and size/machine independent.
+//   1. Its undo step must be a text delta, not a snapshot of the document (the snapshot record is
+//      the smoking gun: it is taken when the caret after the edit is invalid). The probe label
+//      edit.apply.undoSnapshot makes that visible without touching the undo stack.
 //   2. Its sync time must be within a small multiple of the normal-typing baseline (dashes 1 & 2).
 //      Pre-fix this ratio was ~80×; post-fix ~1-3×.
 //
@@ -85,7 +86,7 @@ QString makeBigDoc(qsizetype targetBytes) {
 
 struct KeystrokeResult {
   double syncMs = 0.0;
-  bool firedCollectPendingMarkerOffsets = false;
+  bool tookSnapshotUndo = false;
   double cursorAfterEditMs = 0.0; // the O(total-nodes) tree-walk signal
 };
 
@@ -107,8 +108,8 @@ double probeMs(const QStringList& lines, const char* label) {
   return -1.0;
 }
 
-// Send one keypress; capture the synchronous applyLocalEdit wall time, whether the snapshot-undo
-// path (collectPendingMarkerOffsets) fired, and the cursorAfterEdit cost (the tree-walk signal).
+// Send one keypress; capture the synchronous edit's wall time, whether its undo step was a
+// snapshot, and the cost of placing the caret (the tree-walk signal).
 KeystrokeResult pressAndCapture(QObject* target, int key, const QString& text) {
   g_perfLines.clear();
   QElapsedTimer wall;
@@ -125,10 +126,10 @@ KeystrokeResult pressAndCapture(QObject* target, int key, const QString& text) {
 
   KeystrokeResult result;
   result.syncMs = syncMs;
-  result.cursorAfterEditMs = probeMs(snapshot, "input.applyLocalEdit.cursorAfterEdit");
+  result.cursorAfterEditMs = probeMs(snapshot, "edit.apply.caret");
   for (const QString& line : snapshot) {
-    if (line.startsWith(QLatin1String("input.collectPendingMarkerOffsets"))) {
-      result.firedCollectPendingMarkerOffsets = true;
+    if (line.startsWith(QLatin1String("edit.apply.undoSnapshot"))) {
+      result.tookSnapshotUndo = true;
       break;
     }
   }
@@ -203,7 +204,7 @@ int main(int argc, char** argv) {
     const int len = static_cast<int>(qMin<qsizetype>(60, src.size() - from));
     QString snippet = src.mid(from, len);
     snippet.replace(QLatin1Char('\n'), QStringLiteral("\\n"));
-    const char* markers = r.firedCollectPendingMarkerOffsets ? "YES" : "no";
+    const char* markers = r.tookSnapshotUndo ? "YES" : "no";
     const char* zone = hit.zone == muffin::HitTestResult::Zone::BlockAfter ? "BlockAfter" : "other";
     const int afterBlock = c.afterBlock ? 1 : 0;
     const long long off = static_cast<long long>(c.text.sourceOffset);
@@ -230,8 +231,8 @@ int main(int argc, char** argv) {
                dashes[0].syncMs, dashes[1].syncMs, dashes[2].syncMs, ratio);
   std::fprintf(stdout, "cursorAfterEdit (tree-walk signal): dash1=%.2f dash2=%.2f dash3=%.2f ms\n",
                dashes[0].cursorAfterEditMs, dashes[1].cursorAfterEditMs, dashes[2].cursorAfterEditMs);
-  std::fprintf(stdout, "collectPendingMarkerOffsets fired on dash3: %s  (snapshot-undo path = caret was invalid)\n",
-               dashes[2].firedCollectPendingMarkerOffsets ? "YES" : "no");
+  std::fprintf(stdout, "snapshot undo record on dash3: %s  (the snapshot path means the caret was invalid)\n",
+               dashes[2].tookSnapshotUndo ? "YES" : "no");
   std::fprintf(stdout, "enter-after-rule: sync=%.2f ms  cursorAfterEdit=%.2f ms  (insertBlockAfterCurrentBlock path)\n",
                enterAfterRule.syncMs, enterAfterRule.cursorAfterEditMs);
   std::fprintf(stdout, "source now contains a thematic break: %s\n", madeThematicBreak ? "YES" : "no");
@@ -249,7 +250,7 @@ int main(int argc, char** argv) {
     std::fprintf(stdout, "FAIL: the 3rd dash did not produce a thematic break — scenario not exercised.\n");
     ok = false;
   }
-  if (dashes[2].firedCollectPendingMarkerOffsets) {
+  if (dashes[2].tookSnapshotUndo) {
     std::fprintf(stdout, "FAIL: 3rd dash took the snapshot-undo path (caret was unresolvable). "
                          "Expected the block-after caret to keep it on the TextDeltaCommand path.\n");
     ok = false;
@@ -281,11 +282,10 @@ int main(int argc, char** argv) {
     ok = false;
   }
   // insertBlockAfterCurrentBlock used to pass structureEdit=true, forcing the O(document) snapshot
-  // undo (full-doc toString ×3 + collectPendingMarkerOffsets ×2). It now uses the cheap
-  // TextDeltaCommand path, so the marker scan must not fire.
-  if (enterAfterRule.firedCollectPendingMarkerOffsets) {
-    std::fprintf(stdout, "FAIL: enter-after-rule fired collectPendingMarkerOffsets — still on the "
-                         "snapshot-undo path (structureEdit should be false for a plain text insert).\n");
+  // undo. It must stay on the text-delta path for a plain text insert.
+  if (enterAfterRule.tookSnapshotUndo) {
+    std::fprintf(stdout, "FAIL: enter-after-rule took the snapshot-undo path (a plain text insert "
+                         "should record a text delta).\n");
     ok = false;
   }
 

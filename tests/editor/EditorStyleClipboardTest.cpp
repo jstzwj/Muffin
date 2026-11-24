@@ -34,27 +34,29 @@ void testStylizeCollapsedSkeletons() {
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleBold(), "bold should wrap word");
   require(session.markdownText().toString() == QStringLiteral("**alpha**"), "bold word-wrap text mismatch");
-  require(selection.cursorPosition().text.textOffset == 7, "bold word-wrap cursor mismatch");
+  // The caret sits behind the word: offset 5 in the visible text, 7 in the Markdown.
+  require(selection.cursorPosition().text.textOffset == 5, "bold word-wrap cursor mismatch");
   require(selection.cursorPosition().text.sourceOffset == 7, "bold word-wrap source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleItalic(), "italic should wrap word");
   require(session.markdownText().toString() == QStringLiteral("*alpha*"), "italic word-wrap text mismatch");
-  require(selection.cursorPosition().text.textOffset == 6, "italic word-wrap cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == 5, "italic word-wrap cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.toggleCode(), "code should wrap word");
   require(session.markdownText().toString() == QStringLiteral("`alpha`"), "code word-wrap text mismatch");
-  require(selection.cursorPosition().text.textOffset == 6, "code word-wrap cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == 5, "code word-wrap cursor mismatch");
   require(selection.cursorPosition().text.sourceOffset == 6, "code word-wrap source cursor mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setCursor(selection, blockAt(session, 0), 5);
   require(stylize.insertLink(), "link skeleton should insert");
   require(session.markdownText().toString() == QStringLiteral("alpha[](url)"), "link skeleton text mismatch");
-  require(selection.cursorPosition().text.textOffset == 6, "link skeleton cursor mismatch");
+  // The caret sits between the brackets, where the link text goes.
+  require(selection.cursorPosition().text.sourceOffset == 6, "link skeleton caret should sit between the brackets");
 }
 void testTypingIntoCollapsedStyleSkeletons() {
   DocumentSession session;
@@ -97,8 +99,15 @@ void testStylizeSelectionWrap() {
   require(stylize.toggleBold(), "bold should wrap selection");
   require(session.markdownText().toString() == QStringLiteral("a**lph**a"), "bold wrap text mismatch");
   require(!selection.selection().isCollapsed(), "bold wrap should preserve selected text range");
-  require(selection.selection().startOffset() == 3, "bold wrap selection start mismatch");
-  require(selection.selection().endOffset() == 6, "bold wrap selection end mismatch");
+  // The selection is still "lph": the markers around it are not part of the visible text.
+  const SelectionRange wrapped = selection.selection();
+  require(wrapped.startOffset() == 1,
+          QStringLiteral("bold wrap selection start mismatch: %1..%2 (source %3..%4)")
+              .arg(wrapped.startOffset())
+              .arg(wrapped.endOffset())
+              .arg(wrapped.anchor.text.sourceOffset)
+              .arg(wrapped.focus.text.sourceOffset));
+  require(wrapped.endOffset() == 4, "bold wrap selection end mismatch");
 
   session.setMarkdownText(QStringLiteral("alpha"), false);
   setSelection(selection, blockAt(session, 0), 1, 4);
@@ -133,19 +142,19 @@ void testStylizeUndoRedoTextDelta() {
   require(undo.textDeltaCommand().delta.removedText == QStringLiteral("alpha"), "style undo removed text mismatch");
   require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("**alpha**"),
           "style undo inserted text mismatch");
-  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText, true);
+  session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText().toString() == QStringLiteral("alpha"), "style undo text mismatch");
   require(selection.cursorPosition().text.textOffset == 5, "style undo cursor mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
   require(redo.isTextDeltaCommand(), "style redo should use TextDeltaCommand");
-  session.applyTextDelta(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
-                         redo.textDeltaCommand().delta.insertedText, true);
+  session.applyTextEdit(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
+                         redo.textDeltaCommand().delta.insertedText);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText().toString() == QStringLiteral("**alpha**"), "style redo text mismatch");
-  require(selection.cursorPosition().text.textOffset == 7, "style redo cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == 5, "style redo cursor mismatch");
 }
 void testHeadingAndListItemStylize() {
   DocumentSession session;
@@ -159,8 +168,9 @@ void testHeadingAndListItemStylize() {
   setSelection(selection, blockAt(session, 0), 0, 5);
   require(stylize.toggleBold(), "heading selection style should wrap body text");
   require(session.markdownText().toString() == QStringLiteral("# **Title**!"), "heading style should preserve marker");
-  require(selection.selection().startOffset() == 2, "heading style selection start mismatch");
-  require(selection.selection().endOffset() == 7, "heading style selection end mismatch");
+  // "Title" without the heading marker: offsets 0..5 in the visible text.
+  require(selection.selection().startOffset() == 0, "heading style selection start mismatch");
+  require(selection.selection().endOffset() == 5, "heading style selection end mismatch");
 
   session.setMarkdownText(QStringLiteral("- alpha!\n- beta"), false);
   setSelection(selection, listItemAt(session, 0, 0), 0, 5);
@@ -699,8 +709,8 @@ void testClearFormattingUndoRedo() {
   require(undo.textDeltaCommand().delta.insertedText == QStringLiteral("bold and italic"),
           "clearFormatting undo insertedText should be the cleared text");
   // Undo: replace the cleared text with the formatted original.
-  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText, true);
+  session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText().toString() == QStringLiteral("**bold** and *italic*"),
           "clearFormatting undo should restore formatting");
@@ -708,8 +718,8 @@ void testClearFormattingUndoRedo() {
   // Redo: re-apply the clearing.
   const EditTransaction redo = undoStack.takeRedo();
   require(redo.isTextDeltaCommand(), "clearFormatting redo should use TextDeltaCommand");
-  session.applyTextDelta(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
-                         redo.textDeltaCommand().delta.insertedText, true);
+  session.applyTextEdit(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
+                         redo.textDeltaCommand().delta.insertedText);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText().toString() == QStringLiteral("bold and italic"),
           "clearFormatting redo should re-clear");

@@ -281,7 +281,7 @@ QString RenderEditorBackend::fullText() const {
 }
 
 void RenderEditorBackend::setFullText(const QString& text) {
-  session_.applyMarkdownText(text, true);
+  session_.applyMarkdownText(text);
 }
 
 void RenderEditorBackend::centerCursor() {

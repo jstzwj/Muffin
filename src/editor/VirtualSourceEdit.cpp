@@ -556,22 +556,11 @@ bool VirtualSourceEdit::applyEdit(qsizetype start, qsizetype end, const QString&
 
   applyingEdit_ = true;
   if (session_) {
-    if (!session_->applyTextDelta(start, end - start, inserted, true)) {
-      // A structural change can extend beyond the local parse window. Source
-      // edits must still apply and remain undoable through a full parse.
-      QString nextText = source().toString();
-      nextText.replace(start, end - start, inserted);
-      auto pendingOffsets =
-          shiftPendingMarkerOffsets(session_->pendingMarkerOffsets(), start, end - start, inserted.size());
-      if (!inserted.contains(QLatin1Char('\n'))) {
-        const qsizetype pendingOffset = pendingBlockMarkerOffset(nextText, start);
-        if (pendingOffset >= 0)
-          pendingOffsets.append(pendingOffset);
-      }
-      if (!session_->applyMarkdownText(std::move(nextText), true, std::move(pendingOffsets))) {
-        applyingEdit_ = false;
-        return false;
-      }
+    // A structural change can extend beyond the local parse window; the session then re-parses
+    // the whole document, so the source edit applies either way.
+    if (session_->applyTextEdit(start, end - start, inserted) == TextEditResult::Rejected) {
+      applyingEdit_ = false;
+      return false;
     }
   } else {
     standaloneSource().replace(start, end, inserted);

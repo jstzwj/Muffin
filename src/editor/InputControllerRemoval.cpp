@@ -4,7 +4,9 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
+#include "editor/CursorMapper.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "edit/EditTransaction.h"
 #include "edit/UndoStack.h"
 #include "blocks/code/CodeFenceController.h"
@@ -34,8 +36,6 @@ bool InputController::computeStandardRemovalRange(qsizetype blockStart, qsizetyp
 bool InputController::removeTopLevelBlock(MarkdownNode& node, int nodeIndex, qsizetype blockStart,
                                           qsizetype deleteStart, qsizetype deleteEnd, EditTransaction::Kind kind,
                                           const QString& label, bool exitLiteralEditorFirst) {
-  const CursorPosition beforeCursor = ctx_.selection->cursorPosition();
-  const QString removedText = ctx_.session->markdownText().mid(deleteStart, deleteEnd - deleteStart);
   std::unique_ptr<MarkdownNode> removedNode = node.clone(CloneMode::PreserveIds);
   const NodeId removedNodeId = node.id();
   const BlockType removedNodeType = node.type();
@@ -51,41 +51,30 @@ bool InputController::removeTopLevelBlock(MarkdownNode& node, int nodeIndex, qsi
     }
   }
 
-  QVector<LocalEditNodeHint> nodeHints;
-  nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, removedNodeType});
-  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
-    return false;
-  }
-
-  CursorPosition nextCursor = cursorAfterEdit(CursorPosition(), deleteStart, true);
-  if (nextCursor.isValid()) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  } else {
-    ctx_.selection->clear();
-  }
-
-  if (ctx_.undoStack) {
-    QVector<NodeId> affectedNodes{removedNodeId};
-    if (nextCursor.isValid() && !affectedNodes.contains(nextCursor.blockId)) {
-      affectedNodes.push_back(nextCursor.blockId);
-    }
-    ctx_.undoStack->push(EditTransaction(
-        kind, label,
-        RemoveNodeCommand{removedNodeId, removedNodeType, nodeIndex, TextDelta{deleteStart, removedText, QString()},
-                          blockStart, std::move(removedNode), beforeCursor, nextCursor, std::move(affectedNodes)}));
-  }
-  if (ctx_.brushQueue) {
-    if (nextCursor.isValid()) {
-      ctx_.brushQueue->requestBlockRefresh(nextCursor.blockId);
-    } else {
-      ctx_.brushQueue->requestFullRefresh();
-    }
-    // Flush synchronously so the layout reflects this deletion before control returns to the
-    // event loop (mirrors applyLocalEdit); otherwise BrushQueue defers via a 0-ms timer and the
-    // view paints one frame of stale layout.
-    ctx_.brushQueue->flush();
-  }
-  return true;
+  // The caret lands behind the block that precedes the removed one.
+  const EditOutcome outcome = applyEdit(
+      ctx_,
+      {.sourceStart = deleteStart,
+       .removedLength = deleteEnd - deleteStart,
+       .nodeHints = {LocalEditNodeHint{removedNodeId, blockStart, removedNodeType}}},
+      {.kind = kind,
+       .label = label,
+       .fallbackSourceOffset = deleteStart,
+       .preferLaterEmptyAtOffset = true,
+       .layoutImmediately = true,
+       .undoRecord = [&](const EditOutcome& applied) {
+         QVector<NodeId> affectedNodes{removedNodeId};
+         if (applied.cursor.isValid() && !affectedNodes.contains(applied.cursor.blockId)) {
+           affectedNodes.push_back(applied.cursor.blockId);
+         }
+         return EditTransaction(
+             kind, label,
+             RemoveNodeCommand{removedNodeId, removedNodeType, nodeIndex,
+                               TextDelta{deleteStart, applied.removedText, QString()}, blockStart,
+                               std::move(removedNode), applied.beforeSelection.focus, applied.cursor,
+                               std::move(affectedNodes)});
+       }});
+  return outcome.applied;
 }
 
 bool InputController::tryRemoveExactWholeBlockSelection(EditTransaction::Kind kind, const QString& label) {

@@ -353,7 +353,7 @@ void testIncrementalCounterPrograms() {
     blocks(session.document().root());
   };
   const auto edit = [&](qsizetype start, qsizetype count, const QString& value) {
-    require(session.applyTextDelta(start, count, value, true), "incremental counter edit applied");
+    require(session.applyTextEdit(start, count, value) != muffin::TextEditResult::Rejected, "incremental counter edit applied");
     const auto range = session.lastLocalTopLevelRangeChange();
     require(range.isValid(), "edit supplies a precise replacement range");
     theme.invalidateDocumentStyles(range);
@@ -377,7 +377,7 @@ void testPlainEditRetainsCounterScope() {
   DocumentSession session;
   session.setMarkdownText("paragraph\n\n" + QString("# Heading\n\nbody\n\n").repeated(1000), false);
   const auto before = theme.resolveDocumentCounters(session.document());
-  require(session.applyTextDelta(2, 0, "edit", true), "plain text edit applied");
+  require(session.applyTextEdit(2, 0, "edit") != muffin::TextEditResult::Rejected, "plain text edit applied");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange());
   enableThemePerformance(true);
   resetThemePerformance();
@@ -388,7 +388,7 @@ void testPlainEditRetainsCounterScope() {
   require(samples[size_t(ThemePerfStage::Css)].work == 0 && samples[size_t(ThemePerfStage::Counters)].work <= 4,
           "ordinary text edits must not recompile or execute unchanged numbered blocks");
   auto copy = theme;
-  require(session.applyTextDelta(0, 0, "# New\n\n", true), "heading insertion applied");
+  require(session.applyTextEdit(0, 0, "# New\n\n") != muffin::TextEditResult::Rejected, "heading insertion applied");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange());
   theme.resolveDocumentCounters(session.document());
   require(copy.hasGeneratedCounters(), "retained theme snapshots keep their previous counter results");
@@ -403,7 +403,7 @@ void testCounterStructuralContextInvalidation() {
   session.setMarkdownText("one\n\ntwo\n\n# Heading\n\nthree", false);
   theme.resolveDocumentCounters(session.document());
   for (const auto& value : {QString("prefix\n\n"), QString("**bold**\n\n")}) {
-    require(session.applyTextDelta(0, 0, value, true), "contextual counter edit applied");
+    require(session.applyTextEdit(0, 0, value) != muffin::TextEditResult::Rejected, "contextual counter edit applied");
     theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange());
     auto full = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, "counter-full", {}));
     require(theme.resolveDocumentCounters(session.document()) == full.resolveDocumentCounters(session.document()),
@@ -418,7 +418,7 @@ void testCounterPropagationStopsAtReset() {
   DocumentSession session;
   session.setMarkdownText("# First\n\n## A\n\n## B\n\n# Reset\n\n" + QString("## Later\n\n").repeated(1000), false);
   const auto before = theme.resolveDocumentCounters(session.document());
-  require(session.applyTextDelta(9, 0, "## Inserted\n\n", true), "insert numbered heading before the scope boundary");
+  require(session.applyTextEdit(9, 0, "## Inserted\n\n") != muffin::TextEditResult::Rejected, "insert numbered heading before the scope boundary");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange());
   enableThemePerformance(true);
   resetThemePerformance();
@@ -439,7 +439,7 @@ void testEquivalentContextDeclarationsReusePrograms() {
   DocumentSession session;
   session.setMarkdownText(QString("# Title\n\ntext\n\n").repeated(1000), false);
   theme.resolveDocumentCounters(session.document());
-  require(session.applyTextDelta(0, 0, "# New\n\n", true), "insert heading in a sheet with structural alternatives");
+  require(session.applyTextEdit(0, 0, "# New\n\n") != muffin::TextEditResult::Rejected, "insert heading in a sheet with structural alternatives");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange());
   enableThemePerformance(true);
   resetThemePerformance();
@@ -478,7 +478,7 @@ void testSharedCounterSnapshotStorage() {
           "numbered blocks with identical input/output states share immutable snapshots");
   for (int i = 0; i < 20; ++i) {
     const bool adding = session.document().markdownText().mid(0, 7) != "**new**";
-    require(session.applyTextDelta(0, adding ? 0 : 8, adding ? "**new** " : "", true), "signature replacement applies");
+    require(session.applyTextEdit(0, adding ? 0 : 8, adding ? "**new** " : "") != muffin::TextEditResult::Rejected, "signature replacement applies");
     theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange(), &session.document());
     theme.resolveDocumentCounters(session.document());
     const auto updated = theme.documentCounterStats();
@@ -519,14 +519,14 @@ void testThemeSwitchReusesOnlyDocumentSemantics() {
   require(old.resolveDocumentCounters(session.document()) == oldText,
           "theme switch leaves old counter snapshot immutable");
   const auto ordinary = session.document().markdownText().toString().indexOf("ordinary");
-  require(session.applyTextDelta(ordinary, 1, "O", true), "plain edit after theme change applies");
+  require(session.applyTextEdit(ordinary, 1, "O") != muffin::TextEditResult::Rejected, "plain edit after theme change applies");
   switched.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange(), &session.document());
   require(switched.hasLocalStyleChange(), "prepared projection must not share a live view's mutable CSS cache");
   auto plainFull = RenderTheme::fromDefinition(second);
   plainFull.updateForViewport(800, 600);
   require(switched.resolveDocumentCounters(session.document()) == plainFull.resolveDocumentCounters(session.document()),
           "plain edit after theme change agrees with a full counter walk");
-  require(session.applyTextDelta(0, 0, "# Inserted\n\n", true), "structural edit after theme switch applies");
+  require(session.applyTextEdit(0, 0, "# Inserted\n\n") != muffin::TextEditResult::Rejected, "structural edit after theme switch applies");
   auto edited = RenderTheme::fromDefinition(second);
   edited.reuseDocumentSemantics(switched);
   auto fresh = RenderTheme::fromDefinition(second);

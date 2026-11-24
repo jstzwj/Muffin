@@ -122,8 +122,9 @@ void EditorView::restoreViewportPosition(const ViewportPosition& position, Curso
     layout_->ensureBuilt(slot, slot, theme_);
   }
   const auto* cursorHost = document_->node(textPosition.blockId);
-  while (cursorHost && cursorHost->parent() && cursorHost->parent()->type() != BlockType::Document)
-    cursorHost = cursorHost->parent();
+  if (cursorHost) {
+    cursorHost = cursorHost->topLevelBlock();
+  }
   const auto anchorY = [&] {
     // A caret resolved through a gap may belong to a completely different
     // block. Block-after carets also express editing intent, not a reading row.
@@ -455,7 +456,7 @@ void EditorView::prefetchViewport() {
       PerfTimer trimPerf("view.prefetch.trim");
       layout_->trimDetails(
           range.first, range.second, theme_,
-          {cursorPosition_.blockId, selection_.anchor.blockId, selection_.focus.blockId, editingHtmlBlockId_});
+          {selection_.focus.blockId, selection_.anchor.blockId, selection_.focus.blockId, editingHtmlBlockId_});
     }
   }
   if (!complete)

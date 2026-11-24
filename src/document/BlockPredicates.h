@@ -41,10 +41,10 @@ inline qsizetype paragraphContentStartIncludingCommonMarkIndent(const Text& mark
   return start == lineStart ? start : astStart;
 }
 
-// Selectable length for a link/footnote definition: the span from the marker start to the farthest
-// end of the definition's component ranges. Shared by the two selectableTextLength variants (they
-// agree on every case except their inline-leaf handling — TableCell vs ListItem — so this isolates
-// the one piece of logic that is genuinely identical). Returns 0 when the marker is absent/invalid.
+// Length of a link/footnote definition as one run of text: the span from the marker start to the
+// farthest end of the definition's component ranges. Both caret navigation (InputController) and
+// selection (EditorController) measure a definition this way, while they differ on containers.
+// Returns 0 when the marker is absent/invalid.
 inline qsizetype definitionSelectableLength(const MarkdownNode& node) {
   const DefinitionBlock definition = node.definition();
   if (!definition.markerRange.isValid()) {

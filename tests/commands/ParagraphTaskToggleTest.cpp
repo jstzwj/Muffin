@@ -105,8 +105,8 @@ void testToggleUndoRestores() {
   require(session.markdownText().toString() == QStringLiteral("- [x] task"), "should be checked after toggle");
 
   const EditTransaction undo = requireTextDeltaCommand(undoStack, "toggle task undo should be a TextDeltaCommand");
-  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText, true);
+  session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == original, "undo should restore the original marker");
 }
 

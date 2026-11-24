@@ -28,17 +28,17 @@ void testCommittedSourceChanges() {
                    [&](const SourceTextChange& change) { changes.append(change); });
   QObject::connect(&session, &DocumentSession::parsed, &session,
                    [&] { require(!changes.isEmpty(), "committed mapping precedes parsed consumers"); });
-  require(session.applyTextDelta(5, 0, " longer", true), "local text edit succeeds");
+  require(session.applyTextEdit(5, 0, " longer") != muffin::TextEditResult::Rejected, "local text edit succeeds");
   require(changes.size() == 1 && changes.back().mapOffset(20) == 27, "local commit publishes one exact source mapping");
-  require(!session.applyTextDelta(-1, 0, "x", true) && changes.size() == 1,
+  require(session.applyTextEdit(-1, 0, "x") == muffin::TextEditResult::Rejected && changes.size() == 1,
           "rejected edits never move reading anchors");
   const auto old = session.markdownText().toString();
   auto next = old;
   next.insert(0, "```cpp\nx\n```\n\n");
-  require(session.applyMarkdownText(next, true), "full-text fallback succeeds");
+  require(session.applyMarkdownText(next), "full-text fallback succeeds");
   require(changes.size() == 2 && changes.back().mapOffset(old.size() - 3) == next.size() - 3,
           "full-text commits preserve unchanged suffix anchors");
-  require(session.applyMarkdownText(next, true) && changes.size() == 2,
+  require(session.applyMarkdownText(next) && changes.size() == 2,
           "reparsing unchanged text does not double-map anchors");
   const SourceTextChange separated{{{2, 1, 4}, {20, 3, 1}}};
   require(separated.mapOffset(10) == 13 && separated.mapOffset(30) == 31 && separated.reversed().mapOffset(13) == 10 &&
@@ -168,8 +168,8 @@ void testPreparedAsyncDocumentMatchesSyncAndRemainsEditable() {
     require(async.document().lineOffsets().lineForOffset(i) == sync.document().lineOffsets().lineForOffset(i),
             "prepared text index must retain line lookup");
   const auto offset = text.indexOf(QStringLiteral("Tail")) + 2;
-  require(async.applyTextDelta(offset, 0, QStringLiteral("X"), true), "prepared document must accept local edits");
-  require(sync.applyTextDelta(offset, 0, QStringLiteral("X"), true), "synchronous reference must accept local edits");
+  require(async.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected, "prepared document must accept local edits");
+  require(sync.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected, "synchronous reference must accept local edits");
   require(async.markdownText().toString() == sync.markdownText().toString(),
           "prepared text must remain correct after editing");
   require(blockSnapshot(async.document().root()) == blockSnapshot(sync.document().root()),
@@ -303,10 +303,10 @@ void testOpenDocumentAsyncSupersedesInFlight() {
           "the second openDocumentAsync should win (the first was superseded)");
 }
 
-// An edit attempted while an async open parse is in flight must be rejected (applyTextDelta returns
+// An edit attempted while an async open parse is in flight must be rejected (applyTextEdit returns
 // false) so it can't land on the stale pre-open document and supersede (discard) the worker's result
 // for the file the user actually opened. Regression guard for the "type during async open loses the
-// file" data-loss bug — also covers the applyTextDelta paths that bypass InputController (undo,
+// file" data-loss bug — also covers the applyTextEdit paths that bypass InputController (undo,
 // table snapshot, render facade), which a view-only loading mask would NOT stop.
 void testApplyTextDeltaRejectedWhileAsyncInFlight() {
   DocumentSession session;
@@ -337,8 +337,8 @@ void testApplyTextDeltaRejectedWhileAsyncInFlight() {
 
   require(session.isAsyncParseInProgress(),
           "an async open parse should be in flight immediately after openDocumentAsync");
-  const bool accepted = session.applyTextDelta(0, 0, QStringLiteral("X"), false, {});
-  require(!accepted, "applyTextDelta must be rejected while an async parse is in flight (would clobber the open)");
+  const bool accepted = session.applyTextEdit(0, 0, QStringLiteral("X"), {}) != muffin::TextEditResult::Rejected;
+  require(!accepted, "applyTextEdit must be rejected while an async parse is in flight (would clobber the open)");
 
   loop.exec(); // let the worker finish on the GUI thread
 

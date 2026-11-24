@@ -209,7 +209,7 @@ void testCloneOwnsTextAndSurvivesDocumentReplacement() {
 void testLocalReparseSharesSliceText() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("alpha\n\nbravo"), false);
-  require(session.applyTextDelta(9, 0, QStringLiteral("X"), true), "local edit failed");
+  require(session.applyTextEdit(9, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected, "local edit failed");
   require(session.markdownText().toString() == QStringLiteral("alpha\n\nbrXavo"), "local edit text mismatch");
   require(countShared(session.document().root()) > 0, "local reparse did not bind shared slice text");
 }

@@ -47,7 +47,7 @@ void testSelectionRefreshRetainsStylesAndUnchangedProjection() {
           "crossing inline boundary updates both markers");
   require(layout.block(other) == otherLayout && theme.elementStyleForNode(node, "p") == style,
           "selection changes preserve other blocks and the document style cache");
-  require(session.applyTextDelta(0, 0, "edited ", true, {{nodeId, 0, BlockType::Paragraph}}),
+  require(session.applyTextEdit(0, 0, "edited ", {{nodeId, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
           "edit before queued refresh");
   require(
       layout.rebuildBlock(nodeId, session.document(), theme, selection, DocumentLayout::BlockUpdateReason::Selection)

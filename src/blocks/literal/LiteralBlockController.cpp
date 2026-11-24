@@ -6,6 +6,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "parser/MarkdownSerializer.h"
 
 namespace muffin {
@@ -246,7 +247,8 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
     return true;
   }
 
-  if (!ctx_.session->applyNodeSnapshot(nodeId, spec_.blockType, nodeIndex, *afterNode, true)) {
+  const TextEditResult applied = ctx_.session->applyNodeSnapshot(nodeId, spec_.blockType, nodeIndex, *afterNode);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
   if (MarkdownNode* reparsed = blockByIndex(nodeIndex)) {
@@ -275,9 +277,7 @@ bool LiteralBlockController::mutateBlock(NodeId requestedId, QString label, Edit
                                                             std::move(beforeNode), std::move(afterNode), beforeCursor,
                                                             nextCursor, QVector<NodeId>{originalId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(nodeId);
-  }
+  requestEditRefresh(ctx_, applied, {nodeId});
   return true;
 }
 

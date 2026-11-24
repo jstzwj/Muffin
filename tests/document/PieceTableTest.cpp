@@ -224,7 +224,7 @@ static void testFuzzMirrorsQString() {
 }
 
 // Phase 1 dual-write invariant: MarkdownDocument now keeps a PieceTable (pieceText()) mirror in
-// sync with markdownText_ across setMarkdownText + the real per-keystroke edit path (applyTextDelta
+// sync with markdownText_ across setMarkdownText + the real per-keystroke edit path (applyTextEdit
 // → replaceTopLevelRange). This validates that mirror stays byte-identical, since Phase 2 flips the
 // piece-table into the edit master relying on exactly this invariant.
 static void testDualWriteStaysInSyncWithMarkdownText() {
@@ -243,13 +243,13 @@ static void testDualWriteStaysInSyncWithMarkdownText() {
             QStringLiteral("line-offset facade count %1").arg(QString::fromUtf8(label)));
   };
 
-  require(session.applyTextDelta(0, 0, QStringLiteral("X"), false, {}), "insert X at 0");
+  require(session.applyTextEdit(0, 0, QStringLiteral("X"), {}) != muffin::TextEditResult::Rejected, "insert X at 0");
   checkSync("after insert");
-  require(session.applyTextDelta(0, 1, QString(), false, {}), "delete [0,1)");
+  require(session.applyTextEdit(0, 1, QString(), {}) != muffin::TextEditResult::Rejected, "delete [0,1)");
   checkSync("after delete");
-  require(session.applyTextDelta(0, 0, QStringLiteral("你好"), false, {}), "insert CJK at 0");
+  require(session.applyTextEdit(0, 0, QStringLiteral("你好"), {}) != muffin::TextEditResult::Rejected, "insert CJK at 0");
   checkSync("after CJK insert");
-  require(session.applyTextDelta(0, 2, QStringLiteral("AB"), false, {}), "replace [0,2) with AB");
+  require(session.applyTextEdit(0, 2, QStringLiteral("AB"), {}) != muffin::TextEditResult::Rejected, "replace [0,2) with AB");
   checkSync("after replace");
 
   require(session.document().pieceText().size() == session.document().markdownText().toString().size(),
@@ -392,10 +392,10 @@ static void testPendingMarkerCacheTracksLocalEdits() {
             QStringLiteral("pending marker cache mismatch %1").arg(QString::fromUtf8(label)));
   };
   requireCache("after full parse");
-  require(session.applyTextDelta(0, 0, QStringLiteral("x"), true), "pending marker prefix insert should apply locally");
+  require(session.applyTextEdit(0, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected, "pending marker prefix insert should apply locally");
   requireCache("after suffix shift");
   const qsizetype marker = session.markdownText().toString().indexOf(QLatin1Char('*'));
-  require(session.applyTextDelta(marker + 1, 0, QStringLiteral(" item"), true),
+  require(session.applyTextEdit(marker + 1, 0, QStringLiteral(" item")) != muffin::TextEditResult::Rejected,
           "pending marker completion should apply locally");
   requireCache("after marker completion");
 }

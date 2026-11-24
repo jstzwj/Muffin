@@ -98,7 +98,8 @@ public:
   QPointF mapDocumentToViewport(const QPointF& documentPos) const;
   // Exposed for tests: the current caret hit and the laid-out document height.
   HitTestResult cursorHit() const { return cursorHit_; }
-  CursorPosition cursorPosition() const { return cursorPosition_; }
+  // The caret is the focus of the selection; the view keeps no second copy of it.
+  CursorPosition cursorPosition() const { return selection_.focus; }
   qreal layoutTotalHeight() const { return layout_ ? layout_->totalHeight() : 0.0; }
   qsizetype residentLayoutCount() const { return layout_ ? layout_->residentDetailCount() : 0; }
   const RenderTheme& theme() const { return theme_; }
@@ -359,6 +360,8 @@ private:
   void clearHtmlHover();
   HtmlBlockHoverController::Inputs htmlHoverInputs() const;
   void applySelectionRange(SelectionRange selection);
+  // Stores a selection and does what follows a caret or selection change.
+  void adoptSelection(SelectionRange selection, bool hitIsFresh = false);
   void updateDragSelection(QPointF viewportPos);
   void updateMouseCursor(QPointF viewportPos);
   void ensureScrollAnimation();
@@ -377,7 +380,6 @@ private:
   QString documentPath_;
   RenderTheme theme_ = RenderTheme::defaultTheme();
   std::unique_ptr<DocumentLayout> layout_;
-  CursorPosition cursorPosition_;
   SelectionRange selection_;
   HitTestResult cursorHit_;
   bool cursorVisible_ = false;

@@ -28,6 +28,13 @@ struct LocalEditNodeHint {
   BlockType type = BlockType::Unknown;
 };
 
+// Outcome of a text edit: applyTextEdit and the block-snapshot edits below.
+enum class TextEditResult {
+  Rejected,       // nothing changed: editing is locked, or the range is invalid
+  AppliedLocally, // only the touched top-level blocks were re-parsed
+  Reparsed,       // the parser could not take the slice; the whole document was re-parsed
+};
+
 class MUFFIN_CORE_EXPORT DocumentSession final : public QObject {
   Q_OBJECT
 
@@ -68,7 +75,7 @@ public:
   const QVector<qsizetype>& pendingMarkerOffsets() const { return pendingMarkerOffsets_; }
   // True while an async open parse (openDocumentAsync) is in flight on the worker thread. document_
   // holds the stale pre-open text during this window, so callers MUST treat the document as
-  // read-only: applyTextDelta rejects edits and InputController drops keystrokes, so a stray edit
+  // read-only: applyTextEdit rejects edits and InputController drops keystrokes, so a stray edit
   // can't land on the stale text and supersede (discard) the worker's parsed result for the open.
   bool isAsyncParseInProgress() const;
   // Opening also includes waiting for user confirmation, before any file content is read.
@@ -118,8 +125,9 @@ public:
   // the `parsed` signal). No-op (no re-parse) when unchanged, so callers can invoke unconditionally.
   void setParseOptions(ParseOptions options);
   const ParseOptions& parseOptions() const { return parseOptions_; }
+  // Replaces the whole document text and re-parses it, as if the text had been opened.
   // False means the edit was rejected; callers must not advance selection or undo history.
-  bool applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets = {});
+  bool applyMarkdownText(QString text, QVector<qsizetype> demoteAtOffsets = {});
   // 锁定编辑 / locked editing: reject every incremental user edit (typing, IME commit, paste,
   // drag, format/paragraph/table commands, undo) while open/parse/save flows keep working.
   // Set by MainWindow's edit.lock_editing command.
@@ -130,13 +138,18 @@ public:
     if (std::exchange(presentationBusy_, busy) != busy)
       emit editingAvailabilityChanged(isEditingAllowed());
   }
-  bool applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText, bool modified,
-                      QVector<LocalEditNodeHint> nodeHints = {});
-  bool applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot, bool modified);
-  bool applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot,
-                         bool modified);
-  bool applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart, qsizetype targetSourceOffset,
-                         qsizetype removedLength, QString insertedText, bool modified);
+  // Replaces [sourceStart, sourceStart + removedLength) of the Markdown text: as a local slice
+  // while the parser can re-parse just the touched top-level blocks, otherwise by re-parsing the
+  // whole document. Every edit of an open document comes in here, so an edit the slice parser
+  // cannot take is still applied rather than left to the caller. `nodeHints` name the blocks the
+  // edit is about and let the slice parser keep their ids.
+  TextEditResult applyTextEdit(qsizetype sourceStart, qsizetype removedLength, QString insertedText,
+                               QVector<LocalEditNodeHint> nodeHints = {});
+  // The same edit for a block changed in place: its source is replaced by the serialized snapshot.
+  TextEditResult applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot);
+  TextEditResult applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex, const MarkdownNode& nodeSnapshot);
+  TextEditResult applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
+                                   qsizetype targetSourceOffset, qsizetype removedLength, QString insertedText);
 
 signals:
   // Emitted once for a successful text commit, before parsed/layout consumers.

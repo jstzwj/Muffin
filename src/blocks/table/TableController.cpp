@@ -8,6 +8,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "parser/MarkdownSerializer.h"
 
 #include <QApplication>
@@ -329,8 +330,9 @@ bool TableController::formatCurrentTableSource() {
 
   const CursorPosition beforeCursor = ctx_.selection ? ctx_.selection->cursorPosition() : CursorPosition();
   QVector<LocalEditNodeHint> nodeHints{LocalEditNodeHint{beforeLocation.tableId, range.byteStart, BlockType::Table}};
-  if (!ctx_.session->applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, true,
-                                    std::move(nodeHints))) {
+  const TextEditResult applied = ctx_.session->applyTextEdit(range.byteStart, range.byteEnd - range.byteStart,
+                                                             replacementText, std::move(nodeHints));
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -349,10 +351,7 @@ bool TableController::formatCurrentTableSource() {
                         TextDeltaCommand{TextDelta{range.byteStart, removedText, replacementText}, beforeCursor,
                                          nextCursor, QVector<NodeId>{beforeLocation.tableId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(afterLocation.tableId.isValid() ? afterLocation.tableId
-                                                                         : beforeLocation.tableId);
-  }
+  requestEditRefresh(ctx_, applied, {afterLocation.tableId.isValid() ? afterLocation.tableId : beforeLocation.tableId});
   return true;
 }
 
@@ -409,7 +408,9 @@ bool TableController::deleteCurrentTable() {
 
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{removedNodeId, blockStart, BlockType::Table});
-  if (!ctx_.session->applyTextDelta(deleteStart, deleteEnd - deleteStart, QString(), true, std::move(nodeHints))) {
+  const TextEditResult applied =
+      ctx_.session->applyTextEdit(deleteStart, deleteEnd - deleteStart, QString(), std::move(nodeHints));
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -438,9 +439,7 @@ bool TableController::deleteCurrentTable() {
         RemoveNodeCommand{removedNodeId, BlockType::Table, nodeIndex, TextDelta{deleteStart, removedText, QString()},
                           blockStart, std::move(removedNode), beforeCursor, nextCursor, std::move(affectedNodes)}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestFullRefresh();
-  }
+  requestEditRefresh(ctx_, applied, {});
   return true;
 }
 
@@ -477,8 +476,9 @@ bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
   const CursorPosition beforeCursor = ctx_.selection ? ctx_.selection->cursorPosition() : CursorPosition();
   auto afterTable = table->clone(CloneMode::PreserveIds);
   afterTable->setTableAlignments(afterAlignments);
-  if (!ctx_.session->applyNodeSnapshot(beforeLocation.tableId, BlockType::Table, beforeLocation.tableIndex, *afterTable,
-                                       true)) {
+  const TextEditResult applied =
+      ctx_.session->applyNodeSnapshot(beforeLocation.tableId, BlockType::Table, beforeLocation.tableIndex, *afterTable);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -502,9 +502,7 @@ bool TableController::setCurrentColumnAlignment(TableAlignment alignment) {
                                            NodeAttribute::TableAlignments, beforeAlignments, afterAlignments,
                                            beforeCursor, effectiveCursor, QVector<NodeId>{beforeLocation.tableId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(afterLocation.tableId);
-  }
+  requestEditRefresh(ctx_, applied, {afterLocation.tableId});
   return true;
 }
 
@@ -599,8 +597,9 @@ bool TableController::insertTable(int rows, int columns) {
   };
   countTables(countTables, ctx_.session->document().root());
   auto commandNode = table->clone(CloneMode::PreserveIds);
-  if (!ctx_.session->applyInsertedNode(insertedTableId, BlockType::Table, replaceStart, tableSourceStart,
-                                       removedText.size(), insertedText, true)) {
+  const TextEditResult applied = ctx_.session->applyInsertedNode(
+      insertedTableId, BlockType::Table, replaceStart, tableSourceStart, removedText.size(), insertedText);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -620,9 +619,7 @@ bool TableController::insertTable(int rows, int columns) {
                                                            tableSourceStart, std::move(commandNode), beforeCursor,
                                                            nextCursor, QVector<NodeId>{insertedTableId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(insertedTableId);
-  }
+  requestEditRefresh(ctx_, applied, {insertedTableId});
   return true;
 }
 
@@ -683,8 +680,9 @@ bool TableController::editCurrentCellSource(
   const qsizetype absoluteReplaceStart = contentRange.start + edit->replaceStart;
   QVector<LocalEditNodeHint> nodeHints;
   nodeHints.push_back(LocalEditNodeHint{tableId, contentRange.start, BlockType::Table});
-  if (!ctx_.session->applyTextDelta(absoluteReplaceStart, edit->replaceLength, edit->replacement, true,
-                                    std::move(nodeHints))) {
+  const TextEditResult applied =
+      ctx_.session->applyTextEdit(absoluteReplaceStart, edit->replaceLength, edit->replacement, std::move(nodeHints));
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -710,9 +708,7 @@ bool TableController::editCurrentCellSource(
                         TextDeltaCommand{TextDelta{absoluteReplaceStart, removedText, edit->replacement},
                                          storedBeforeCursor, nextCursor, QVector<NodeId>{tableId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(tableId);
-  }
+  requestEditRefresh(ctx_, applied, {tableId});
   return true;
 }
 
@@ -750,7 +746,9 @@ bool TableController::mutateCurrentTable(QString label, EditTransaction::Kind ki
     return false;
   }
 
-  if (!ctx_.session->applyTableSnapshot(beforeLocation.tableId, beforeLocation.tableIndex, *afterTable, true)) {
+  const TextEditResult applied =
+      ctx_.session->applyTableSnapshot(beforeLocation.tableId, beforeLocation.tableIndex, *afterTable);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 

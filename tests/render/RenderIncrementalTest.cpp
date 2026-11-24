@@ -68,11 +68,10 @@ void testIncrementalBlockRebuildContract() {
           QStringLiteral("zero-height-delta rebuild must not change total height"));
 
   require(
-      session.applyTextDelta(
+      session.applyTextEdit(
           5, 0,
           QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"
-                         " alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"),
-          true, {LocalEditNodeHint{firstParagraphId, 0, BlockType::Paragraph}}),
+                         " alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"), {LocalEditNodeHint{firstParagraphId, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
       QStringLiteral("paragraph local delta should apply"));
   const DocumentLayout::BlockRebuildResult paragraphResult =
       layout.rebuildBlock(firstParagraphId, session.document(), theme, {});
@@ -110,7 +109,7 @@ void testIncrementalTopLevelRangeRebuildContract() {
     DocumentLayout incremental;
     incremental.rebuild(session.document(), theme, 800.0);
 
-    require(session.applyTextDelta(sourceStart, removedLength, insertedText, true),
+    require(session.applyTextEdit(sourceStart, removedLength, insertedText) != muffin::TextEditResult::Rejected,
             label + QStringLiteral(" local edit should apply"));
     const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
     require(range.isValid(), label + QStringLiteral(" range should be valid"));
@@ -201,15 +200,15 @@ void testRetainedSuffixKeepsCurrentSourceCoordinates() {
     for (const auto& edit :
          {QPair<qsizetype, QString>{0, QStringLiteral("中文🙂")}, QPair<qsizetype, QString>{1, QString()},
           QPair<qsizetype, QString>{3, QStringLiteral("X")}}) {
-      require(session.applyTextDelta(0, edit.first, edit.second, true,
-                                     {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}),
+      require(session.applyTextEdit(0, edit.first, edit.second,
+                                     {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
               "edit preceding paragraph without changing suffix content");
       require(layout.rebuildBlock(firstId, session.document(), theme, {}).rebuilt, "rebuild edited paragraph");
       verify();
     }
     const QString prefix = QStringLiteral("inserted paragraph\n\n");
     for (const bool insert : {true, false}) {
-      require(session.applyTextDelta(0, insert ? 0 : prefix.size(), insert ? prefix : QString(), true),
+      require(session.applyTextEdit(0, insert ? 0 : prefix.size(), insert ? prefix : QString()) != muffin::TextEditResult::Rejected,
               "insert or remove a preceding block");
       require(
           layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
@@ -345,7 +344,7 @@ void testThemeRebuildReusesNavigationWithoutStaleGeometry() {
     layout.rebuild(session.document(), theme, 440, {}, {}, DocumentLayout::BuildPolicy::Lazy);
     compare();
   }
-  require(session.applyTextDelta(0, 0, "# Inserted\n\n", true), "insert a numbered heading");
+  require(session.applyTextEdit(0, 0, "# Inserted\n\n") != muffin::TextEditResult::Rejected, "insert a numbered heading");
   require(layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
           "local splice before theme rebuild succeeds");
   layout.rebuild(session.document(), theme, 440, {}, {}, DocumentLayout::BuildPolicy::Lazy);
@@ -376,16 +375,16 @@ void testRangeRebuildAfterLazySuffixShiftMatchesFullLayout() {
   incremental.rebuild(session.document(), theme, 360.0);
 
   const NodeId firstId = mutableBlockAt(session.document(), 0)->id();
-  require(session.applyTextDelta(
-              5, 0, QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"), true,
-              {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}),
+  require(session.applyTextEdit(
+              5, 0, QStringLiteral(" alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha"),
+              {LocalEditNodeHint{firstId, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
           QStringLiteral("height-changing edit should apply"));
   require(incremental.rebuildBlock(firstId, session.document(), theme, {}).rebuilt,
           QStringLiteral("height-changing block rebuild should succeed"));
 
   const QString current = session.markdownText().toString();
   const qsizetype splitAt = current.indexOf(QStringLiteral("gamma")) + 5;
-  require(session.applyTextDelta(splitAt, 0, QStringLiteral("\n\n"), true),
+  require(session.applyTextEdit(splitAt, 0, QStringLiteral("\n\n")) != muffin::TextEditResult::Rejected,
           QStringLiteral("structural split after lazy suffix shift should apply"));
   const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
   require(range.isValid(), QStringLiteral("structural split should expose a range change"));

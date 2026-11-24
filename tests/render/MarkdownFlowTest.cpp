@@ -189,13 +189,13 @@ void containerCssAndEdits() {
   require(layout.block(nodes.front()->id())->cssBoxGeometry().usedBox.borderTopWidth == 2,
           "has-child selector sees Markdown heading");
   const auto openId = nodes.front()->id();
-  require(session.applyTextDelta(source.indexOf("center"), 6, "right", true),
+  require(session.applyTextEdit(source.indexOf("center"), 6, "right") != muffin::TextEditResult::Rejected,
           "tag source is editable through the normal document edit API");
   const auto result = layout.rebuildBlock(openId, session.document(), theme, {});
   require(result.rebuilt, "tag edit rebuilds borrowed relationships safely");
   const auto flow = theme.markdownFlow(session.document().root());
   require(!flow->empty(), "editing an attribute retains container structure");
-  require(session.applyTextDelta(session.markdownText().toString().indexOf("</div>"), 6, "</aside>", true),
+  require(session.applyTextEdit(session.markdownText().toString().indexOf("</div>"), 6, "</aside>") != muffin::TextEditResult::Rejected,
           "closing tag can be edited");
   layout.rebuild(session.document(), theme, 900);
   require(theme.markdownFlow(session.document().root())->empty(), "broken pairing returns to explicit source fallback");
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
         auto theme = RenderTheme::github();
         DocumentLayout layout;
         layout.rebuild(session.document(), theme, 900, {}, {}, DocumentLayout::BuildPolicy::Lazy);
-        require(session.applyTextDelta(0, session.markdownText().size(), "Replacement\n", true),
+        require(session.applyTextEdit(0, session.markdownText().size(), "Replacement\n") != muffin::TextEditResult::Rejected,
                 "replace AST before its queued layout refresh");
         layout.ensureBuilt(0, layout.slotCount(), theme);
         layout.rebuild(session.document(), theme, 900, {}, {}, DocumentLayout::BuildPolicy::Lazy);
@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
         for (bool add : {true, false}) {
           const qsizetype oldCount = session.document().root().children().size();
           const QString opener = "<div align=\"center\">\n\n";
-          require(session.applyTextDelta(0, add ? 0 : opener.size(), add ? opener : QString(), true),
+          require(session.applyTextEdit(0, add ? 0 : opener.size(), add ? opener : QString()) != muffin::TextEditResult::Rejected,
                   "insert/remove a container boundary through document editing");
           const TopLevelRangeChange change{0, oldCount, qsizetype(session.document().root().children().size()),
                                            session.document().revision()};

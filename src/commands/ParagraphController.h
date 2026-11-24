@@ -110,7 +110,6 @@ private:
   bool applyBlockDelta(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart, qsizetype removedLength,
                        QString insertedText, qsizetype nextCursorSourceOffset,
                        QVector<LocalEditNodeHint> nodeHints = {}, bool structureEdit = false);
-  CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
 };
 
 } // namespace muffin

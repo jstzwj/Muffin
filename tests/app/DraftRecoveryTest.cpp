@@ -165,7 +165,7 @@ void testBackgroundSnapshotsOwnTextCoalesceAndClean() {
                 writer.queueStats().runningCodeUnits == session.markdownText().size(),
             "running snapshot accounting must not copy or omit its text");
     require(!writer.request(session, key), "same in-flight revision must not enqueue twice");
-    require(session.applyTextDelta(0, 8, QStringLiteral("second"), true), "edit while snapshot is running");
+    require(session.applyTextEdit(0, 8, QStringLiteral("second")) != muffin::TextEditResult::Rejected, "edit while snapshot is running");
     require(writer.request(session, key), "new revision accepted");
     require(writer.queueStats().pending == 1 && writer.queueStats().pendingCodeUnits == session.markdownText().size(),
             "pending snapshot accounting must track the coalesced revision");
@@ -267,7 +267,7 @@ void testClearedDocumentReplacesPreviousSnapshot() {
   require(!recovery.snapshotSession(session, key), QStringLiteral("An unmodified empty document needs no draft"));
   session.setMarkdownText(QStringLiteral("before deletion"), true);
   require(recovery.snapshotSession(session, key), QStringLiteral("Initial dirty snapshot must commit"));
-  require(session.applyTextDelta(0, session.markdownText().size(), QString(), true),
+  require(session.applyTextEdit(0, session.markdownText().size(), QString()) != muffin::TextEditResult::Rejected,
           QStringLiteral("Deleting all document text must succeed"));
   require(recovery.snapshotSession(session, key), QStringLiteral("Cleared dirty document must replace the snapshot"));
   recovery.pruneOrphaned();

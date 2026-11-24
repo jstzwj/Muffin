@@ -407,7 +407,7 @@ void testEditingAndCaches() {
       };
       compare();
       const auto id = session.document().root().children().front()->id();
-      require(session.applyTextDelta(2, 0, "Edited ", true, {{id, 2, BlockType::Heading}}), "heading edit");
+      require(session.applyTextEdit(2, 0, "Edited ", {{id, 2, BlockType::Heading}}) != muffin::TextEditResult::Rejected, "heading edit");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
         incremental.rebuildTopLevelRange(range, session.document(), theme, {});
@@ -593,7 +593,7 @@ void testThemeTypography() {
     };
     consistent();
     const auto id = session.document().root().children().front()->id();
-    require(session.applyTextDelta(2, 0, "Edited ", true, {{id, 2, BlockType::Heading}}), context + " edit");
+    require(session.applyTextEdit(2, 0, "Edited ", {{id, 2, BlockType::Heading}}) != muffin::TextEditResult::Rejected, context + " edit");
     const auto range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
       layout.rebuildTopLevelRange(range, session.document(), theme, {});
@@ -692,7 +692,7 @@ void benchmark() {
   const auto documentMs = timer.elapsed();
   const auto id = session.document().root().children().front()->id();
   timer.restart();
-  require(session.applyTextDelta(3, 0, "Edited ", true, {{id, 3, BlockType::Heading}}), "benchmark edit");
+  require(session.applyTextEdit(3, 0, "Edited ", {{id, 3, BlockType::Heading}}) != muffin::TextEditResult::Rejected, "benchmark edit");
   const auto range = session.lastLocalTopLevelRangeChange();
   if (range.isValid())
     document.rebuildTopLevelRange(range, session.document(), theme, {});
@@ -703,7 +703,7 @@ void benchmark() {
   std::vector<qint64> editTimes;
   for (int i = 0; i < 12; ++i) {
     timer.restart();
-    require(session.applyTextDelta(3, 0, "x", true, {{id, 3, BlockType::Heading}}), "repeated benchmark edit");
+    require(session.applyTextEdit(3, 0, "x", {{id, 3, BlockType::Heading}}) != muffin::TextEditResult::Rejected, "repeated benchmark edit");
     const auto changed = session.lastLocalTopLevelRangeChange();
     if (changed.isValid())
       document.rebuildTopLevelRange(changed, session.document(), theme, {});

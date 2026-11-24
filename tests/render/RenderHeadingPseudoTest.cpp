@@ -421,7 +421,7 @@ void testBrowserInlinePseudoGeometryAndEditing() {
         }
       };
       compare();
-      require(session.applyTextDelta(5, 0, "Edited ", true, {{nodeId, 5, BlockType::Heading}}), context + " edit");
+      require(session.applyTextEdit(5, 0, "Edited ", {{nodeId, 5, BlockType::Heading}}) != muffin::TextEditResult::Rejected, context + " edit");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
         layout.rebuildTopLevelRange(range, session.document(), theme, {});
@@ -450,7 +450,7 @@ void testPseudoStructuralCascadeAndCache() {
   const auto* old = layout.block(nodes[0]->id())->inlineLayout();
   require(old->stylesMatch(theme, *nodes[0]), "unchanged pseudo style can reuse layout");
   const auto originalHeading = nodes[0]->id();
-  require(session.applyTextDelta(0, 0, "Prose\n\n", true, {{originalHeading, 0, BlockType::Heading}}),
+  require(session.applyTextEdit(0, 0, "Prose\n\n", {{originalHeading, 0, BlockType::Heading}}) != muffin::TextEditResult::Rejected,
           "insert sibling before generated heading");
   const auto range = session.lastLocalTopLevelRangeChange();
   if (range.isValid())
@@ -542,7 +542,7 @@ void testLivePositionedPseudosAndInvalidation() {
     require(first->visualOverflowRect().contains(first->positionedPseudoRects()[0]),
             "generated overflow participates in the host snapshot");
     require(first->stylesMatch(theme, session.document()), "positioned style snapshot matches before editing");
-    require(session.applyTextDelta(0, 0, "#### Inserted\n\n", true, {{firstId, 0, BlockType::Heading}}),
+    require(session.applyTextEdit(0, 0, "#### Inserted\n\n", {{firstId, 0, BlockType::Heading}}) != muffin::TextEditResult::Rejected,
             "insert preceding heading");
     theme.invalidateDocumentStyles();
     require(!first->stylesMatch(theme, session.document()), "structural edits invalidate positioned pseudo snapshots");

@@ -108,7 +108,7 @@ void markdownFlex() {
   }
   require(eager.block(nodes[0]->id())->rect().left() > eager.block(nodes[2]->id())->rect().left(),
           "visual order differs from source order");
-  require(session.applyTextDelta(0, 0, "a much longer first paragraph that wraps across many lines ", true),
+  require(session.applyTextEdit(0, 0, "a much longer first paragraph that wraps across many lines ") != muffin::TextEditResult::Rejected,
           "apply real Flex text edit");
   const auto rebuilt = eager.rebuildBlock(document.root().children()[0]->id(), document, theme, {});
   require(rebuilt.rebuilt, "Flex group rebuild after edit");

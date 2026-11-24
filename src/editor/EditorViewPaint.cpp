@@ -195,13 +195,13 @@ void EditorView::paintDocument(QPainter& painter, const QRegion& dirtyRegion) {
   const QVector<const BlockLayout*> blocks = layout_->visibleBlocks(
       (cssPaintTimer_->isActive() ? visible : dirtyDocument.intersected(visible)).adjusted(0, -80, 0, 80), theme_);
   const NodeId activeTopLevel =
-      (focusMode_ && cursorPosition_.isValid()) ? layout_->topLevelBlockIdFor(cursorPosition_.blockId) : NodeId();
+      (focusMode_ && selection_.focus.isValid()) ? layout_->topLevelBlockIdFor(selection_.focus.blockId) : NodeId();
 
   cssPaintContext_.timeMs = cssPaintClock_.elapsed();
   cssPaintContext_.needsFrame = false;
   cssPaintContext_.focusedAncestors.clear();
-  if (document_ && cursorPosition_.isValid()) {
-    const auto focused = cursorPosition_.text.nodeId.isValid() ? cursorPosition_.text.nodeId : cursorPosition_.blockId;
+  if (document_ && selection_.focus.isValid()) {
+    const auto focused = selection_.focus.text.nodeId.isValid() ? selection_.focus.text.nodeId : selection_.focus.blockId;
     for (auto* node = document_->node(focused); node; node = node->parent())
       cssPaintContext_.focusedAncestors.insert(node->id());
   }
@@ -220,8 +220,8 @@ void EditorView::paintDocument(QPainter& painter, const QRegion& dirtyRegion) {
     BlockLayout::BlockPaintState blockState;
     blockState.css = &cssPaintContext_;
     blockState.focusedNode =
-        cursorPosition_.text.nodeId.isValid() ? cursorPosition_.text.nodeId : cursorPosition_.blockId;
-    blockState.focusSourceOffset = cursorPosition_.text.sourceOffset;
+        selection_.focus.text.nodeId.isValid() ? selection_.focus.text.nodeId : selection_.focus.blockId;
+    blockState.focusSourceOffset = selection_.focus.text.sourceOffset;
     blockState.mermaidAnimationTimeSeconds = block->hasAnimatedMermaid() ? mermaidAnimationTime : -1;
     blockState.openSequenceMenus = openMenus;
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
@@ -513,7 +513,7 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
 }
 
 void EditorView::paintHeadingBadge(QPainter& painter) const {
-  const HeadingBadge badge = headingBadgeForBlock(cursorPosition_.blockId);
+  const HeadingBadge badge = headingBadgeForBlock(selection_.focus.blockId);
   if (!badge.isValid()) {
     return;
   }

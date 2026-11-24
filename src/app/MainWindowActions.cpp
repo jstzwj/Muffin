@@ -109,11 +109,9 @@ void muffin::MainWindow::updateBlockSourceLabel(const HitTestResult& hit) {
     statusBar_->setBlockSource(QString(), QString());
     return;
   }
-  // Walk up to the top-level block so the preview shows the whole construct (list/table/code),
-  // not just the innermost text node the caret sits in.
-  while (node->parent() && node->parent()->type() != BlockType::Document) {
-    node = node->parent();
-  }
+  // Show the whole construct the caret sits in (list/table/code), not just the innermost text
+  // node.
+  node = node->topLevelBlock();
   const SourceRange range = fullBlockSourceRange(*node, tab_->session.markdownText());
   if (range.byteStart < 0 || range.byteEnd <= range.byteStart) {
     statusBar_->setBlockSource(QString(), QString());

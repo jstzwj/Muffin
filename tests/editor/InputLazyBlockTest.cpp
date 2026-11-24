@@ -288,7 +288,7 @@ void testEnterOnBracketMathConvertsToMathBlock() {
 // fix for "typing ### sometimes snaps to a heading" when the local edit is rejected.
 void testApplyMarkdownTextDemotesHeadingMarkerAtOffset() {
   Harness h;
-  h.session.applyMarkdownText(QStringLiteral("###"), true, {0});
+  h.session.applyMarkdownText(QStringLiteral("###"), {0});
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph,
           "applyMarkdownText with offset 0 should demote lone '###' to paragraph");
   require(h.session.markdownText().toString() == QStringLiteral("###"), "markdown should remain '###'");
@@ -298,7 +298,7 @@ void testApplyMarkdownTextDemotesHeadingMarkerAtOffset() {
 // import keep producing real structural blocks.
 void testApplyMarkdownTextWithoutOffsetCommitsHeading() {
   Harness h;
-  h.session.applyMarkdownText(QStringLiteral("###"), true);
+  h.session.applyMarkdownText(QStringLiteral("###"));
   require(blockAt(h.session, 0)->type() == BlockType::Heading,
           "applyMarkdownText without offset must NOT demote (default off)");
 }
@@ -312,7 +312,7 @@ void testLoadDoesNotDemoteButEditFallbackDoes() {
           "loading a lone '###' must produce a real heading (no demotion on load)");
 
   Harness edited;
-  edited.session.applyMarkdownText(QStringLiteral("###"), true, {0});
+  edited.session.applyMarkdownText(QStringLiteral("###"), {0});
   require(blockAt(edited.session, 0)->type() == BlockType::Paragraph,
           "edit-fallback with offset must demote lone '###' to paragraph");
 }
@@ -320,19 +320,19 @@ void testLoadDoesNotDemoteButEditFallbackDoes() {
 // All pending marker kinds demote on the edit fallback, not just headings.
 void testApplyMarkdownTextDemotesListFenceMathMarkers() {
   Harness listH;
-  listH.session.applyMarkdownText(QStringLiteral("-"), true, {0});
+  listH.session.applyMarkdownText(QStringLiteral("-"), {0});
   require(blockAt(listH.session, 0)->type() == BlockType::Paragraph, "fallback should demote lone '-' to paragraph");
 
   Harness fenceH;
-  fenceH.session.applyMarkdownText(QStringLiteral("```"), true, {0});
+  fenceH.session.applyMarkdownText(QStringLiteral("```"), {0});
   require(blockAt(fenceH.session, 0)->type() == BlockType::Paragraph, "fallback should demote lone '```' to paragraph");
 
   Harness mathH;
-  mathH.session.applyMarkdownText(QStringLiteral("$$"), true, {0});
+  mathH.session.applyMarkdownText(QStringLiteral("$$"), {0});
   require(blockAt(mathH.session, 0)->type() == BlockType::Paragraph, "fallback should demote lone '$$' to paragraph");
 
   Harness bracketH;
-  bracketH.session.applyMarkdownText(QStringLiteral("\\["), true, {0});
+  bracketH.session.applyMarkdownText(QStringLiteral("\\["), {0});
   require(blockAt(bracketH.session, 0)->type() == BlockType::Paragraph,
           "fallback should demote lone bracket-math opener to paragraph");
 }
@@ -351,7 +351,7 @@ void testApplyMarkdownTextDemotesAllPendingMarkers() {
   require(blockAt(h.session, 2)->type() == BlockType::Heading, "precondition: third lone '###' loads as a heading");
 
   // Demote the first (offset 0) and third (offset 10) only; the second (offset 5) is omitted.
-  h.session.applyMarkdownText(QStringLiteral("###\n\n###\n\n###"), true, {0, 10});
+  h.session.applyMarkdownText(QStringLiteral("###\n\n###\n\n###"), {0, 10});
   require(blockAt(h.session, 0)->type() == BlockType::Paragraph, "offset 0 should demote to paragraph");
   require(blockAt(h.session, 1)->type() == BlockType::Heading, "offset 5 was not supplied, must stay a heading");
   require(blockAt(h.session, 2)->type() == BlockType::Paragraph, "offset 10 should demote to paragraph");
@@ -359,7 +359,7 @@ void testApplyMarkdownTextDemotesAllPendingMarkers() {
 
 void testApplyMarkdownTextDemotesPendingMarkersInContainers() {
   Harness quote;
-  quote.session.applyMarkdownText(QStringLiteral("> ###"), true, {2});
+  quote.session.applyMarkdownText(QStringLiteral("> ###"), {2});
   MarkdownNode* quoteBlock = blockAt(quote.session, 0);
   require(quoteBlock->type() == BlockType::BlockQuote, "quote wrapper should remain block quote");
   MarkdownNode* quoteParagraph = firstChildOfType(quoteBlock, BlockType::Paragraph);
@@ -368,7 +368,7 @@ void testApplyMarkdownTextDemotesPendingMarkersInContainers() {
           "quote pending marker paragraph text mismatch");
 
   Harness list;
-  list.session.applyMarkdownText(QStringLiteral("- ###"), true, {2});
+  list.session.applyMarkdownText(QStringLiteral("- ###"), {2});
   MarkdownNode* listBlock = blockAt(list.session, 0);
   require(listBlock->type() == BlockType::List, "list wrapper should remain list");
   MarkdownNode* listItem = childAt(listBlock, 0);
@@ -378,7 +378,7 @@ void testApplyMarkdownTextDemotesPendingMarkersInContainers() {
           "list-item pending marker paragraph text mismatch");
 
   Harness math;
-  math.session.applyMarkdownText(QStringLiteral("> $$"), true, {2});
+  math.session.applyMarkdownText(QStringLiteral("> $$"), {2});
   MarkdownNode* mathParagraph = firstChildOfType(blockAt(math.session, 0), BlockType::Paragraph);
   require(mathParagraph != nullptr, "quote pending math marker should demote to paragraph");
   require(mathParagraph->inlines().size() == 1 && mathParagraph->inlines().first().text() == QStringLiteral("$$"),

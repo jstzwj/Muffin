@@ -562,7 +562,7 @@ void structuralPreviewEdits() {
     // Exercise both source structure editing and full AST replacement. The
     // latter also covers source parse fallbacks and parse-option changes.
     tab->editor->insertText(QStringLiteral("\n\n```cpp\n"));
-    require(tab->session.applyMarkdownText(tab->session.markdownText().toString(), true),
+    require(tab->session.applyMarkdownText(tab->session.markdownText().toString()),
             "reparse the current source as a replacement AST");
     require(!tab->session.lastParseWasLocalEdit() && tab->renderView->isLayoutPending(),
             "structural source edit takes the cooperative full layout path");

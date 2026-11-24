@@ -149,7 +149,7 @@ void markdownGrid() {
   near(eager.block(nodes[0]->id())->rect().width(), 230, "Markdown second Grid track width");
   require(eager.block(nodes[0]->id())->rect().left() > eager.block(nodes[1]->id())->rect().left(),
           "Grid placement differs from source order");
-  require(session.applyTextDelta(0, 0, "a longer first paragraph with several more words to wrap ", true),
+  require(session.applyTextEdit(0, 0, "a longer first paragraph with several more words to wrap ") != muffin::TextEditResult::Rejected,
           "real Grid text edit");
   require(eager.rebuildBlock(session.document().root().children()[0]->id(), session.document(), theme, {}).rebuilt,
           "Grid group invalidated after edit");
@@ -175,7 +175,7 @@ void markdownGrid() {
     near(quote->children()[0]->rect().width(), 230.0 / 3, "nested first Grid track");
     near(quote->children()[1]->rect().width(), 460.0 / 3, "nested second Grid track");
   }
-  require(session.applyTextDelta(2, 0, "several extra words to increase the height of this nested item ", true),
+  require(session.applyTextEdit(2, 0, "several extra words to increase the height of this nested item ") != muffin::TextEditResult::Rejected,
           "edit nested Grid text");
   const auto nestedId = session.document().root().children()[0]->children()[0]->id();
   // A container reparse can replace node IDs. Follow the editor's range update
@@ -314,7 +314,7 @@ void responsiveMarkdown() {
                              : main.top() < side.top(),
               "media query switches named area layout");
     }
-    require(session.applyTextDelta(0, 0, "text added after resizing the named grid ", true),
+    require(session.applyTextEdit(0, 0, "text added after resizing the named grid ") != muffin::TextEditResult::Rejected,
             "edit responsive named Grid");
     require(eager.rebuildBlock(session.document().root().children()[0]->id(), session.document(), theme, {}).rebuilt,
             "responsive named Grid edit invalidates context");
@@ -480,7 +480,7 @@ void markdownSubgrid() {
   DocumentLayout edited, fresh;
   edited.rebuild(session.document(), theme, 400, {}, {}, DocumentLayout::BuildPolicy::Eager);
   const auto before = edited.block(session.document().root().children()[1]->id())->rect().width();
-  require(session.applyTextDelta(2, 0, "WWWWWWWWWW ", true), "Edit subgrid descendant text");
+  require(session.applyTextEdit(2, 0, "WWWWWWWWWW ") != muffin::TextEditResult::Rejected, "Edit subgrid descendant text");
   const auto& roots = session.document().root().children();
   require(edited.rebuildBlock(roots[0]->children()[0]->id(), session.document(), theme, {}).rebuilt,
           "Subgrid descendant edit invalidates owning formatting context");
@@ -533,7 +533,7 @@ void markdownRowSubgrid() {
     }
     if (zoom == 100) {
       const qreal before = eager.totalHeight();
-      require(session.applyTextDelta(2, 0, "many extra words that wrap in the narrow first shared row ", true),
+      require(session.applyTextEdit(2, 0, "many extra words that wrap in the narrow first shared row ") != muffin::TextEditResult::Rejected,
               "Row-subgrid descendant edit");
       const auto& updated = session.document().root().children();
       require(eager.rebuildBlock(updated[0]->children()[0]->id(), session.document(), theme, {}).rebuilt,
@@ -769,7 +769,7 @@ void incrementalFormattingReuse() {
     layout.rebuild(session.document(), theme, 340);
     const auto second = session.document().root().children()[1]->id();
     const auto* before = layout.block(second);
-    require(session.applyTextDelta(0, 0, "much longer paragraph text ", true), "Incremental formatting real edit");
+    require(session.applyTextEdit(0, 0, "much longer paragraph text ") != muffin::TextEditResult::Rejected, "Incremental formatting real edit");
     const auto first = session.document().root().children()[0]->id();
     require(layout.rebuildBlock(first, session.document(), theme, {}).rebuilt, "Incremental formatting rebuild");
     const auto stats = layout.formattingReuseStats();
@@ -856,7 +856,7 @@ void inlineSourceMapping() {
   require(text->hitTestSourceOffset(after.center()) == source.indexOf("after") + 2,
           "Text following mixed atoms preserves source positions");
   SelectionRange selected;
-  require(session.applyTextDelta(offset, 0, "Z", true), "Real inline component edit");
+  require(session.applyTextEdit(offset, 0, "Z") != muffin::TextEditResult::Rejected, "Real inline component edit");
   const auto editedId = session.document().root().children()[0]->id();
   selected.focus.blockId = editedId;
   selected.focus.text = {editedId, -1, offset + 1};

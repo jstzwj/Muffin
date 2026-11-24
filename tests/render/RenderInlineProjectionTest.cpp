@@ -379,7 +379,7 @@ void testEntityDisplayAfterEdit() {
           QStringLiteral("initial entity display text mismatch: %1").arg(layout.displayText()));
 
   // Simulate inserting 'a' at the beginning
-  require(session.applyTextDelta(0, 0, QStringLiteral("a"), true), "entity edit should apply");
+  require(session.applyTextEdit(0, 0, QStringLiteral("a")) != muffin::TextEditResult::Rejected, "entity edit should apply");
 
   const QString edited = session.markdownText().toString();
   const QVector<InlineNode> editedInlines = session.document().root().children().front()->inlines();

@@ -1180,7 +1180,7 @@ void testInlineStyleLifetimeAndThemeChanges() {
   theme.releaseInlineStyles({session.document().root().children()[0]->id()});
   require(query(9).fingerprint == initial.fingerprint,
           "retired inline views rebuild equivalent styles without stale identities");
-  require(session.applyTextDelta(0, 0, "X", true), "plain replacement applies");
+  require(session.applyTextEdit(0, 0, "X") != muffin::TextEditResult::Rejected, "plain replacement applies");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange(), &session.document());
   require(theme.hasLocalStyleChange(), "text-only replacement preserves CSS topology");
   theme.resolveDocumentCounters(session.document());
@@ -1198,7 +1198,7 @@ void testInlineStyleLifetimeAndThemeChanges() {
   theme.invalidateDocumentStyles();
   theme.resolveDocumentCounters(session.document());
   require(query(19).paint.color == QColor("red"), "authored HTML starts with its current class style");
-  require(session.applyTextDelta(13, 3, "cold", true), "HTML class edit applies");
+  require(session.applyTextEdit(13, 3, "cold") != muffin::TextEditResult::Rejected, "HTML class edit applies");
   theme.invalidateDocumentStyles(session.lastLocalTopLevelRangeChange(), &session.document());
   theme.resolveDocumentCounters(session.document());
   require(!theme.hasLocalStyleChange() && query(20).paint.color == QColor("blue"),

@@ -516,7 +516,7 @@ void nestedEdits() {
     layout.rebuild(session.document(), theme, 420);
     const auto* retained = layout.block(sibling);
     for (int i = 0; i < 3; ++i) {
-      require(session.applyTextDelta(2, 0, "a long prefix ", true, {{quote, 0, BlockType::BlockQuote}}),
+      require(session.applyTextEdit(2, 0, "a long prefix ", {{quote, 0, BlockType::BlockQuote}}) != muffin::TextEditResult::Rejected,
               "nested real edit with editor identity hint");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
@@ -594,7 +594,7 @@ void listMarkerEdits() {
     const auto list = session.document().root().children()[0]->id();
     const auto second = session.document().root().children()[0]->children()[1]->id();
     const auto oldIndent = layout.block(second)->listContentIndent();
-    require(session.applyTextDelta(0, 1, "123456", true, {{list, 0, BlockType::List}}),
+    require(session.applyTextEdit(0, 1, "123456", {{list, 0, BlockType::List}}) != muffin::TextEditResult::Rejected,
             "edit ordered marker while preserving list identity");
     auto range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
@@ -605,7 +605,7 @@ void listMarkerEdits() {
             "wider authored marker invalidates the shared gutter of unchanged list items");
     sameFresh(layout, session, theme, 420);
     const auto* retained = layout.block(second);
-    require(session.applyTextDelta(8, 0, "new ", true, {{list, 0, BlockType::List}}),
+    require(session.applyTextEdit(8, 0, "new ", {{list, 0, BlockType::List}}) != muffin::TextEditResult::Rejected,
             "edit list body without changing marker geometry");
     range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
@@ -630,7 +630,7 @@ void htmlStructuralEdits() {
     layout.rebuild(session.document(), theme, 600);
     const auto paragraph = session.document().root().children()[1]->id();
     const auto before = paint(layout, theme, 600);
-    require(session.applyTextDelta(0, 2, {}, true), "edit HTML ancestor selector through real Markdown parse");
+    require(session.applyTextEdit(0, 2, {}) != muffin::TextEditResult::Rejected, "edit HTML ancestor selector through real Markdown parse");
     const auto range = session.lastLocalTopLevelRangeChange();
     require(range.isValid() && layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,
             "structural edit refreshes formatting context containing inline HTML");
@@ -719,7 +719,7 @@ void realThemes() {
         layout.rebuild(session.document(), theme, width);
         const auto id = session.document().root().children()[1]->id();
         const auto start = session.document().root().children()[1]->sourceRange().byteStart;
-        require(session.applyTextDelta(start, 0, "Inserted text ", true, {{id, start, BlockType::Paragraph}}),
+        require(session.applyTextEdit(start, 0, "Inserted text ", {{id, start, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
                 "real theme text edit");
         const auto range = session.lastLocalTopLevelRangeChange();
         if (range.isValid())
@@ -817,7 +817,7 @@ void performance() {
     const auto id = session.document().root().children()[0]->id();
     QElapsedTimer timer;
     timer.start();
-    require(session.applyTextDelta(0, 0, "x", true, {{id, 0, BlockType::Paragraph}}), "benchmark actual typing");
+    require(session.applyTextEdit(0, 0, "x", {{id, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected, "benchmark actual typing");
     const auto range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
       layout.rebuildTopLevelRange(range, session.document(), theme, {});

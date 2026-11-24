@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
   phase = "cancel";
   session.applyBatchAsync(beforeSnapshot, "stale", 0, 0, 0, 0);
   operation.restart();
-  require(session.applyTextDelta(0, 0, "new edit\n\n", true), "live editing remains available during preparation");
+  require(session.applyTextEdit(0, 0, "new edit\n\n") != muffin::TextEditResult::Rejected, "live editing remains available during preparation");
   std::fprintf(stdout, "batch cancellation by editing=%lld ms\n", static_cast<long long>(operation.elapsed()));
   std::fflush(stdout);
   wait([&] { return !session.isBatchPending(); });

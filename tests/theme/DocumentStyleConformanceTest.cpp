@@ -438,7 +438,7 @@ void testStructuralEditInvalidatesExistingLayout() {
     incremental.rebuild(document.document(), theme, 800, {}, {},
                         lazy ? muffin::DocumentLayout::BuildPolicy::Lazy : muffin::DocumentLayout::BuildPolicy::Eager);
     incremental.buildAll(theme);
-    require(document.applyTextDelta(0, 2, QString(), true), "heading removal applies as local edit");
+    require(document.applyTextEdit(0, 2, QString()) != muffin::TextEditResult::Rejected, "heading removal applies as local edit");
     const auto range = document.lastLocalTopLevelRangeChange();
     require(range.isValid() && incremental.rebuildTopLevelRange(range, document.document(), theme, {}).rebuilt,
             "structural edit rebuilds changed range");
@@ -631,7 +631,7 @@ void testTextOnlyStyleRebinding() {
   const auto counters = theme.resolveDocumentCounters(session.document());
   for (int i = 0; i < 40; ++i) {
     paragraph = session.document().root().children()[1].get();
-    require(session.applyTextDelta(paragraph->sourceRange().byteStart + 2, 0, "x", true), "ordinary edit applies");
+    require(session.applyTextEdit(paragraph->sourceRange().byteStart + 2, 0, "x") != muffin::TextEditResult::Rejected, "ordinary edit applies");
     require(layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
             "ordinary edit rebuilds its local range");
     paragraph = session.document().root().children()[1].get();
@@ -676,7 +676,7 @@ void testTextOnlyStyleRebinding() {
        {qMakePair(QString("**bold**"), QString("bold")), qMakePair(QString("class='hot'"), QString("class='cold'")),
         qMakePair(QString("(url)"), QString("(other)")), qMakePair(QString("# Heading"), QString("## Heading"))}) {
     const auto start = session.document().markdownText().indexOf(edit.first);
-    require(start >= 0 && session.applyTextDelta(start, edit.first.size(), edit.second, true), "semantic edit applies");
+    require(start >= 0 && session.applyTextEdit(start, edit.first.size(), edit.second) != muffin::TextEditResult::Rejected, "semantic edit applies");
     require(layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
             "semantic edit rebuilds its range");
     require(!theme.hasLocalStyleChange(), "structure, attributes and link targets invalidate dependent styles");
@@ -696,7 +696,7 @@ void testTextRebindingWithoutCountersAndNestedNodes() {
     muffin::DocumentLayout layout;
     layout.rebuild(session.document(), theme, 800);
     const auto start = session.document().markdownText().indexOf(QStringLiteral("First"));
-    require(session.applyTextDelta(start + 2, 0, "added", true), "nested plain edit applies");
+    require(session.applyTextEdit(start + 2, 0, "added") != muffin::TextEditResult::Rejected, "nested plain edit applies");
     require(
         layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt &&
             theme.hasLocalStyleChange(),
@@ -708,7 +708,7 @@ void testTextRebindingWithoutCountersAndNestedNodes() {
     for (const auto& node : session.document().root().children())
       require(layout.block(node->id())->rect() == full.block(node->id())->rect(), "nested block bounds agree");
     auto retained = theme;
-    require(session.applyTextDelta(start + 2, 0, "x", true), "edit with retained theme applies");
+    require(session.applyTextEdit(start + 2, 0, "x") != muffin::TextEditResult::Rejected, "edit with retained theme applies");
     require(
         layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt &&
             !theme.hasLocalStyleChange(),
@@ -725,7 +725,7 @@ void testPendingRangeKeepsStyleSnapshot() {
   layout.rebuild(session.document(), theme, 800);
   const auto* unaffected = session.document().root().children().back().get();
   const auto* snapshot = theme.elementStyleForNode(*unaffected, "p");
-  require(session.applyTextDelta(0, 0, "# Inserted\n\n", true), "pending structural edit applies");
+  require(session.applyTextEdit(0, 0, "# Inserted\n\n") != muffin::TextEditResult::Rejected, "pending structural edit applies");
   muffin::enableThemePerformance(true);
   muffin::resetThemePerformance();
   const auto stale = layout.rebuildBlock(unaffected->id(), session.document(), theme, {},

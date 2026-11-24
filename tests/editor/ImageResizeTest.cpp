@@ -43,7 +43,7 @@ struct ImageHarness {
     }
     const QString source = session.markdownText().toString().mid(start, end - start);
     const QString replacement = transform(source);
-    session.applyTextDelta(start, end - start, replacement, true);
+    session.applyTextEdit(start, end - start, replacement);
     return replacement;
   }
 };

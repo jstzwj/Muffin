@@ -54,6 +54,24 @@ struct TopLevelSlice {
                                   // a leading VEP in the replacements is a separator artifact
 };
 
+// A full parse turns every marker that is still being typed (`###`, `*`, "```") into the block it
+// starts. They are paragraphs until completed, so the parse is told to keep them: the ones that
+// existed before the edit, moved to where the edit left them, and for an edit that stayed on one
+// line the edited line itself, which may only now look like a marker.
+QVector<qsizetype> demotedPendingMarkers(const QVector<qsizetype>& markersBefore, const QString& text,
+                                         qsizetype sourceStart, qsizetype removedLength,
+                                         const QString& insertedText) {
+  QVector<qsizetype> offsets =
+      muffin::shiftPendingMarkerOffsets(markersBefore, sourceStart, removedLength, insertedText.size());
+  if (!insertedText.contains(QLatin1Char('\n'))) {
+    const qsizetype edited = muffin::pendingBlockMarkerOffset(text, sourceStart);
+    if (edited >= 0) {
+      offsets.append(edited);
+    }
+  }
+  return offsets;
+}
+
 void warnLocalEditRejected(const char* reason, qsizetype sourceStart, qsizetype sourceEnd, qsizetype replacementLength,
                            qsizetype documentSize) {
   qCWarning(sessionLog).nospace() << "Rejected local document edit: " << reason << " sourceStart=" << sourceStart
@@ -1077,7 +1095,7 @@ void muffin::DocumentSession::acceptSavedText(const QString& text) {
 }
 
 void muffin::DocumentSession::updateFromEditor(QString text) {
-  applyMarkdownText(std::move(text), true);
+  applyMarkdownText(std::move(text));
 }
 
 void muffin::DocumentSession::setEditingReadOnly(bool readOnly) {
@@ -1088,10 +1106,10 @@ void muffin::DocumentSession::setEditingReadOnly(bool readOnly) {
   emit editingAvailabilityChanged(isEditingAllowed());
 }
 
-bool muffin::DocumentSession::applyMarkdownText(QString text, bool modified, QVector<qsizetype> demoteAtOffsets) {
+bool muffin::DocumentSession::applyMarkdownText(QString text, QVector<qsizetype> demoteAtOffsets) {
   if (!isEditingAllowed())
     return false;
-  parseAndStore(std::move(text), modified, std::move(demoteAtOffsets));
+  parseAndStore(std::move(text), true, std::move(demoteAtOffsets));
   emit documentTextChanged(document_.markdownText().toString());
   return true;
 }
@@ -1111,15 +1129,16 @@ void muffin::DocumentSession::setOpenConfirmationPending(bool pending) {
   emit parseBusy(isOpenInProgress());
 }
 
-bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype removedLength, QString insertedText,
-                                             bool modified, QVector<LocalEditNodeHint> nodeHints) {
+muffin::TextEditResult muffin::DocumentSession::applyTextEdit(qsizetype sourceStart, qsizetype removedLength,
+                                                      QString insertedText,
+                                                      QVector<LocalEditNodeHint> nodeHints) {
   // Reject edits before touching history or parseGeneration_. During an async open the current
   // document is still the old buffer; superseding the worker here would discard the opened file.
   if (!isEditingAllowed()) {
     warnLocalEditRejected(editingReadOnly_ ? "editing locked" : "async open in progress", sourceStart,
                           sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
                           insertedText.size(), document_.pieceText().size());
-    return false;
+    return TextEditResult::Rejected;
   }
   cancelBatch();
   lastChangeWasBatch_ = false;
@@ -1130,90 +1149,96 @@ bool muffin::DocumentSession::applyTextDelta(qsizetype sourceStart, qsizetype re
     warnLocalEditRejected("invalid text delta range", sourceStart,
                           sourceStart >= 0 && removedLength >= 0 ? sourceStart + removedLength : qsizetype(-1),
                           insertedText.size(), document_.pieceText().size());
-    return false;
+    return TextEditResult::Rejected;
   }
-  if (!tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, modified, nodeHints)) {
-    qCDebug(sessionPerf).nospace() << "localEdit.rejected start=" << sourceStart << " removedLen=" << removedLength
-                                   << " insertedLen=" << insertedText.size() << " -> caller full-reparses";
-    lastLocalEditChangedTopLevelStructure_ = false;
-    lastLocalTopLevelRangeChange_ = {};
-    return false;
+  if (tryApplyTopLevelLocalEdit(sourceStart, sourceStart + removedLength, insertedText, true, nodeHints)) {
+    emit documentLocallyEdited(sourceStart, removedLength, insertedText);
+    qCDebug(sessionPerf).nospace() << "localEdit.applied start=" << sourceStart << " removedLen=" << removedLength
+                                   << " insertedLen=" << insertedText.size();
+    return TextEditResult::AppliedLocally;
   }
-  emit documentLocallyEdited(sourceStart, removedLength, insertedText);
-  qCDebug(sessionPerf).nospace() << "localEdit.applied start=" << sourceStart << " removedLen=" << removedLength
-                                 << " insertedLen=" << insertedText.size();
-  return true;
+  qCDebug(sessionPerf).nospace() << "localEdit.rejected start=" << sourceStart << " removedLen=" << removedLength
+                                 << " insertedLen=" << insertedText.size() << " -> full reparse";
+  lastLocalEditChangedTopLevelStructure_ = false;
+  lastLocalTopLevelRangeChange_ = {};
+  // The slice parser could not take the edit on its own: it reaches into a construct whose context
+  // lies outside the touched top-level blocks. The whole document is re-parsed instead.
+  const QVector<qsizetype> markersBefore = pendingMarkerOffsets_;
+  QString text = document_.markdownText().toString();
+  text.replace(sourceStart, removedLength, insertedText);
+  parseAndStore(std::move(text), true,
+                demotedPendingMarkers(markersBefore, text, sourceStart, removedLength, insertedText));
+  emit documentTextChanged(document_.markdownText().toString());
+  return TextEditResult::Reparsed;
 }
 
-bool muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex, const MarkdownNode& tableSnapshot,
-                                                 bool modified) {
+muffin::TextEditResult muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex,
+                                                           const MarkdownNode& tableSnapshot) {
   if (!isEditingAllowed()) {
-    return false; // 锁定编辑: table structure/content changes are user edits
+    return TextEditResult::Rejected; // 锁定编辑: table structure/content changes are user edits
   }
   if (tableSnapshot.type() != BlockType::Table) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   MarkdownNode* currentTable = tableByIdOrIndex(document_, tableId, tableIndex);
   if (!currentTable) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   const SourceRange range = currentTable->sourceRange();
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > document_.pieceText().size()) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   MarkdownSerializer serializer;
   const QString replacementText = serializer.serializeBlock(tableSnapshot);
   QVector<LocalEditNodeHint> nodeHints{
       LocalEditNodeHint{tableId.isValid() ? tableId : currentTable->id(), range.byteStart, BlockType::Table}};
-  return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified,
-                        std::move(nodeHints));
+  return applyTextEdit(range.byteStart, range.byteEnd - range.byteStart, replacementText, std::move(nodeHints));
 }
 
-bool muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex,
-                                                const MarkdownNode& nodeSnapshot, bool modified) {
+muffin::TextEditResult muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex,
+                                                          const MarkdownNode& nodeSnapshot) {
   if (!isEditingAllowed()) {
-    return false; // 锁定编辑: block rewrites are user edits
+    return TextEditResult::Rejected; // 锁定编辑: block rewrites are user edits
   }
   if (nodeType == BlockType::Unknown || nodeSnapshot.type() != nodeType) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   MarkdownNode* currentNode = nodeByIdOrTypeIndex(document_, nodeId, nodeType, nodeIndex);
   if (!currentNode) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   const SourceRange range = fullBlockSourceRange(*currentNode, document_.markdownText());
   if (range.byteStart < 0 || range.byteEnd < range.byteStart || range.byteEnd > document_.pieceText().size()) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   MarkdownSerializer serializer;
   const QString replacementText = serializer.serializeBlock(nodeSnapshot);
   QVector<LocalEditNodeHint> nodeHints{
       LocalEditNodeHint{nodeId.isValid() ? nodeId : currentNode->id(), range.byteStart, nodeType}};
-  return applyTextDelta(range.byteStart, range.byteEnd - range.byteStart, replacementText, modified,
-                        std::move(nodeHints));
+  return applyTextEdit(range.byteStart, range.byteEnd - range.byteStart, replacementText, std::move(nodeHints));
 }
 
-bool muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
-                                                qsizetype targetSourceOffset, qsizetype removedLength,
-                                                QString insertedText, bool modified) {
+muffin::TextEditResult muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
+                                                          qsizetype targetSourceOffset, qsizetype removedLength,
+                                                          QString insertedText) {
   if (!isEditingAllowed()) {
-    return false; // 锁定编辑: node insertion/removal are user edits
+    return TextEditResult::Rejected; // 锁定编辑: node insertion/removal are user edits
   }
   if (!nodeId.isValid() || nodeType == BlockType::Unknown) {
-    return false;
+    return TextEditResult::Rejected;
   }
 
   QVector<LocalEditNodeHint> nodeHints;
   if (!insertedText.isEmpty()) {
     nodeHints.push_back(LocalEditNodeHint{nodeId, targetSourceOffset, nodeType});
   }
-  return applyTextDelta(sourceStart, removedLength, std::move(insertedText), modified, std::move(nodeHints));
+  return applyTextEdit(sourceStart, removedLength, std::move(insertedText), std::move(nodeHints));
 }
 
 void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector<qsizetype> demoteAtOffsets,

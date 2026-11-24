@@ -430,7 +430,7 @@ int main(int argc, char** argv) {
       layout.rebuildBlock(id, session.document(), theme, selection, DocumentLayout::BlockUpdateReason::Selection);
     }));
     rows.append(measure("edit", [&] {
-      if (!session.applyTextDelta(2, 0, "Edited ", true))
+      if (session.applyTextEdit(2, 0, "Edited ") == muffin::TextEditResult::Rejected)
         qFatal("Benchmark edit failed");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
@@ -440,7 +440,7 @@ int main(int argc, char** argv) {
     }));
     recordCounterStorage();
     const auto applyEdit = [&](qsizetype start, const QString& text) {
-      if (!session.applyTextDelta(start, 0, text, true))
+      if (session.applyTextEdit(start, 0, text) == muffin::TextEditResult::Rejected)
         qFatal("Benchmark edit failed");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (!range.isValid() || !layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt)

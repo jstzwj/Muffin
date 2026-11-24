@@ -154,29 +154,16 @@ private:
   BlockEditContextResolver contextResolver() const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
-  // Resolve an absolute source offset that is known to land inside the editable-text `node`
-  // (paragraph / heading / list item / cell / definition). O(block) — it fills the node's edit
-  // context and maps source→visible locally, instead of cursorForSourceOffset's document-wide
-  // tree walk to LOCATE the node. Use this whenever the block is already in hand (vertical
-  // navigation, which fires per key press).
-  CursorPosition cursorForSourceInNode(MarkdownNode& node, qsizetype sourceOffset) const;
-  CursorPosition cursorForSourceInContext(const BlockEditContext& context, qsizetype sourceOffset) const;
-  CursorPosition cursorAfterEdit(CursorPosition preferredCursor, qsizetype fallbackSourceOffset,
-                                 bool preferLaterEmptyAtOffset = false) const;
-  // A caret that sits block-after a non-text top-level block (thematic break, etc.) — the only kind
-  // of caret an offset on such a block can resolve to, since they host no inline-editable text.
-  CursorPosition cursorForBlockAfter(const MarkdownNode& host, qsizetype sourceOffset) const;
-  MarkdownNode* paragraphAtSourceOffset(MarkdownNode& node, qsizetype sourceOffset,
-                                        bool preferLaterEmptyAtOffset = false) const;
+  // Source offset -> caret lives in editor/CursorMapper.h; the other helpers this class used to
+  // define were the same conversion and call it now.
   MarkdownNode* selectableBlockByDirection(NodeId current, int direction) const;
   // The neighbour block in DOCUMENT ORDER, climbing out of containers (lists / block quotes) so a
   // nested caret can reach the editable block that visually follows/precedes it. Unlike
   // selectableBlockByDirection (top-level only), this crosses list items and quoted paragraphs.
   MarkdownNode* neighborBlockInDocumentDirection(const MarkdownNode& node, int direction) const;
-  qsizetype selectableTextLength(const MarkdownNode& node) const;
-  // The selectable text itself (mirrors selectableTextLength's per-type source), used for
-  // grapheme-aware caret stepping.
-  QString selectableTextOf(const MarkdownNode& node) const;
+  // The text the caret moves through in a block, and the text itself for grapheme-aware stepping.
+  qsizetype navigationTextLength(const MarkdownNode& node) const;
+  QString navigationTextOf(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
   // Ctrl+Left/Right: caret by programmer word (shared muffin::words semantics), crossing to the
   // neighbouring block when the caret is already at the word-less edge of this one.
@@ -209,16 +196,10 @@ private:
   void setCursorOrExtend(CursorPosition cursor, bool extendSelection);
   void setHitOrExtend(HitTestResult hit, bool extendSelection);
   void clearVerticalNavigationX();
-  void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset);
-  void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, qsizetype nextSourceOffset,
-                 bool preferLaterEmptyAtOffset);
   void applyLocalEdit(EditTransaction::Kind kind, const QString& label, qsizetype sourceStart, qsizetype removedLength,
                       QString insertedText, CursorPosition preferredCursor, qsizetype fallbackSourceOffset,
                       QVector<LocalEditNodeHint> nodeHints = {}, bool preferLaterEmptyAtOffset = false,
                       bool structureEdit = false);
-  void applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText, CursorPosition preferredCursor,
-                 qsizetype fallbackSourceOffset, QVector<LocalEditNodeHint> nodeHints = {},
-                 bool preferLaterEmptyAtOffset = false);
   QString printableText(QKeyEvent* event) const;
 
   LiteralBlockController* activeLiteralEditor() const;

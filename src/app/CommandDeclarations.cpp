@@ -1594,10 +1594,11 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                                              .arg(QFileInfo(resolved).fileName())) != QMessageBox::Yes) {
                  return;
                }
-               // Remove the image markdown syntax first
+               // Remove the image from the document, then the file.
                qsizetype srcStart = 0, srcEnd = 0;
                if (window.tab_->renderCommands.imageSourceRangeAtCursor(srcStart, srcEnd)) {
-                 window.tab_->session.applyTextDelta(srcStart, srcEnd - srcStart, QString(), true);
+                 window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Delete Image"), srcStart,
+                                                                srcEnd - srcStart, QString());
                }
                ImageFileOps::deleteImageFile(resolved);
              },
@@ -1630,7 +1631,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                    const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
                    const QString newImage = image_syntax::replaceSource(oldImage, link_syntax::localPathHref(relPath));
                    if (newImage != oldImage) {
-                     window.tab_->session.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+                     window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Copy Image To..."), srcStart,
+                                                                    srcEnd - srcStart, newImage);
                    }
                  }
                }
@@ -1663,7 +1665,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                    const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
                    const QString newImage = image_syntax::replaceSource(oldImage, link_syntax::localPathHref(relPath));
                    if (newImage != oldImage) {
-                     window.tab_->session.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+                     window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Rename / Move Image To..."),
+                                                                    srcStart, srcEnd - srcStart, newImage);
                    }
                  }
                }
@@ -1705,7 +1708,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                  const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
                  const QString newImage = image_syntax::replaceSource(oldImage, url);
                  if (newImage != oldImage) {
-                   window.tab_->session.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
+                   window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Upload Image"), srcStart,
+                                                                  srcEnd - srcStart, newImage);
                  }
                }
              },

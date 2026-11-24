@@ -106,7 +106,7 @@ void testDoubleDollarMathSaveRoundTrip(const QString& path) {
   require(controller.open(session, nullptr, path), QStringLiteral("Could not open double-dollar formulas"));
   waitForParse(session);
   const qsizetype offset = session.markdownText().toString().indexOf(QStringLiteral("{a}")) + 2;
-  require(session.applyTextDelta(offset, 0, QStringLiteral("+1"), true),
+  require(session.applyTextEdit(offset, 0, QStringLiteral("+1")) != muffin::TextEditResult::Rejected,
           QStringLiteral("Could not edit double-dollar math"));
   require(controller.save(session, nullptr) == SaveOutcome::Saved,
           QStringLiteral("Could not save double-dollar formulas"));

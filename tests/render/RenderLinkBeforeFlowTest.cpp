@@ -145,7 +145,7 @@ void testBrowserGeneratedLinksAndEditing() {
         }
       };
       compare();
-      require(session.applyTextDelta(0, 0, "Edited ", true, {{id, 0, BlockType::Paragraph}}), context + " edit");
+      require(session.applyTextEdit(0, 0, "Edited ", {{id, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected, context + " edit");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
         layout.rebuildTopLevelRange(range, session.document(), theme, {});

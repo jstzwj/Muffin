@@ -454,6 +454,10 @@ muffin_add_test(NAME MuffinEditorCoreTest              SOURCE tests/editor/Edito
 muffin_add_test(NAME MuffinSourceLineHeightIndexTest   SOURCE tests/editor/SourceLineHeightIndexTest.cpp   LINK MuffinUi)
 muffin_add_test(NAME MuffinImageResizeTest             SOURCE tests/editor/ImageResizeTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinEditorStyleClipboardTest    SOURCE tests/editor/EditorStyleClipboardTest.cpp    LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinEditPipelineTest            SOURCE tests/editor/EditPipelineTest.cpp            LINK MuffinUi RESOURCE_LOCK
+  EXTRA_SOURCES src/app/RenderCommandFacade.cpp)
+muffin_add_test(NAME MuffinEditPipelineAuditTest        SOURCE tests/editor/EditPipelineAuditTest.cpp        LINK MuffinCore)
+target_compile_definitions(MuffinEditPipelineAuditTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinEditorCodeFenceSelectionTest SOURCE tests/editor/EditorCodeFenceSelectionTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinInputTextEditingTest        SOURCE tests/editor/InputTextEditingTest.cpp        LINK MuffinUi RESOURCE_LOCK SYNTHETIC_IME)
 muffin_add_test(NAME MuffinInputParagraphTest          SOURCE tests/editor/InputParagraphTest.cpp          LINK MuffinUi RESOURCE_LOCK)

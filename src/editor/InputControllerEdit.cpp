@@ -4,12 +4,11 @@
 
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
-#include "document/PendingBlockMarker.h"
 #include "edit/EditTransaction.h"
-#include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
-#include "editor/EditorView.h"
+#include "editor/CursorMapper.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "editor/TextBlockCommandBuilder.h"
 
 #include <QElapsedTimer>
@@ -23,45 +22,6 @@ Q_LOGGING_CATEGORY(inputEditPerf, "muffin.perf", QtWarningMsg)
 struct PerfTimer : diag::ScopedPerfProbe {
   explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, inputEditPerf()) {}
 };
-
-NodeId refreshNodeFor(DocumentSession* session, NodeId nodeId) {
-  if (!session || !nodeId.isValid()) {
-    return nodeId;
-  }
-  MarkdownNode* node = session->document().node(nodeId);
-  if (!node) {
-    return nodeId;
-  }
-  while (node->parent() && node->parent()->type() != BlockType::Document) {
-    node = node->parent();
-  }
-  return node->id();
-}
-
-QVector<qsizetype> collectPendingMarkerOffsetsForSession(DocumentSession* session) {
-  if (!session) {
-    return {};
-  }
-  return session->pendingMarkerOffsets();
-}
-
-// For a single-line edit, the line being typed may itself be a (possibly brand-new) pending marker.
-// Return its line-start offset so the rejected-local-edit fallback keeps it as a paragraph.
-qsizetype pendingMarkerOffsetForSingleLineEdit(const QString& text, qsizetype offset, QStringView insertedText) {
-  return insertedText.contains(QLatin1Char('\n')) ? -1 : pendingBlockMarkerOffset(text, offset);
-}
-
-SelectionRange anchoredSelection(DocumentSession* session, SelectionController* selection) {
-  if (!selection || !selection->hasCursor()) {
-    return {};
-  }
-  auto range = selection->selection();
-  const bool collapsed = range.isCollapsed();
-  const BlockEditContextResolver resolver(session, selection);
-  range.anchor = resolver.sourceAnchoredCursor(range.anchor);
-  range.focus = collapsed ? range.anchor : resolver.sourceAnchoredCursor(range.focus);
-  return range;
-}
 
 } // namespace
 
@@ -157,212 +117,27 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
                                      qsizetype fallbackSourceOffset, QVector<LocalEditNodeHint> nodeHints,
                                      bool preferLaterEmptyAtOffset, bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
-  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed() || sourceStart < 0 || removedLength < 0) {
-    return;
-  }
-
-  const SelectionRange beforeSelection = anchoredSelection(ctx_.session, ctx_.selection);
-  const CursorPosition beforeCursor = beforeSelection.focus;
-  const PieceTable& currentText = ctx_.session->markdownText();
-  if (sourceStart + removedLength > currentText.size()) {
-    return;
-  }
-
-  const QString removedText = currentText.mid(sourceStart, removedLength);
-  const bool snapshotUndoLikely = ctx_.undoStack && !beforeCursor.blockId.isValid();
-  // Pre-edit pending-marker offsets feed the snapshot undo path's "before" DocumentSnapshot
-  // (replayed on undo to re-demote pending markers — see DocumentSnapshot::demoteAtOffsets). Normal
-  // typing takes the TextDeltaCommand path, which never stores them, so we skip the O(doc) scan
-  // (collectPendingMarkerOffsets walks every paragraph; ~1.5s @ 50MB) there. Collect eagerly only
-  // when the snapshot path is guaranteed up front (structure edit, or no valid pre-edit cursor);
-  // the !appliedLocally fallback below collects lazily AND reuses the same vector for the forward
-  // demote — so there is at most one scan per edit, and the undo snapshot always carries the
-  // pre-edit markers when its branch is taken.
-  const bool needsPreEditMarkerOffsets = ctx_.undoStack && (structureEdit || snapshotUndoLikely);
-  QVector<qsizetype> beforeOffsets =
-      needsPreEditMarkerOffsets ? collectPendingMarkerOffsetsForSession(ctx_.session) : QVector<qsizetype>{};
-  // Capture beforeText up front whenever the snapshot undo path is reachable (structural edit, or
-  // no valid pre-edit cursor). Reconstructing it AFTER applyTextDelta from the post-edit document
-  // (the !beforeTextCaptured fallback below) is only correct for a pure text delta: a structural
-  // edit's slice re-parse reflows separators, so the post-edit doc is NOT `before + simple replace`
-  // and the reverse-substitution lands at the wrong offset — corrupting the undo snapshot.
-  QString beforeText = needsPreEditMarkerOffsets ? currentText.toString() : QString();
-  bool beforeTextCaptured = needsPreEditMarkerOffsets;
-  const bool appliedLocally =
-      ctx_.session->applyTextDelta(sourceStart, removedLength, insertedText, true, std::move(nodeHints));
-  QString nextText;
-  if (!appliedLocally) {
-    if (!beforeTextCaptured) {
-      beforeText = currentText.toString();
-      beforeTextCaptured = true;
-    }
-    nextText = beforeText;
-    nextText.replace(sourceStart, removedLength, insertedText);
-    const qsizetype editedOffset = pendingMarkerOffsetForSingleLineEdit(nextText, sourceStart, insertedText);
-    // The local edit was rejected, so the session still holds the PRE-EDIT text + tree. If we
-    // skipped the eager scan above (normal typing, expected to take the TextDeltaCommand path),
-    // collect now — once — and reuse for both the forward demote and the undo snapshot's "before"
-    // side. (Snapshot path: !appliedLocally forces it, so beforeOffsets must be populated here.)
-    if (!needsPreEditMarkerOffsets) {
-      beforeOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
-    }
-    QVector<qsizetype> demoteOffsets =
-        shiftPendingMarkerOffsets(beforeOffsets, sourceStart, removedLength, insertedText.size());
-    if (editedOffset >= 0) {
-      demoteOffsets.append(editedOffset);
-    }
-    qCDebug(inputEditPerf).nospace() << "applyLocalEdit.fullReparseFallback label=" << label << " start=" << sourceStart
-                                     << " removedLen=" << removedLength << " insertedLen=" << insertedText.size();
-    if (!ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets)))
-      return;
-  }
-
-  CursorPosition nextCursor;
-  {
-    PerfTimer cursorAfterEditTimer("input.applyLocalEdit.cursorAfterEdit");
-    nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
-  }
-  if (ctx_.selection) {
-    PerfTimer setSelectionTimer("input.applyLocalEdit.setSelection");
-    {
-      PerfTimer setCursorPosTimer("input.applyLocalEdit.setSelection.setCursorPos");
-      ctx_.selection->setCursorPosition(nextCursor);
-    }
-  }
+  const EditOutcome outcome =
+      applyEdit(ctx_,
+                {.sourceStart = sourceStart,
+                 .removedLength = removedLength,
+                 .insertedText = std::move(insertedText),
+                 .nodeHints = std::move(nodeHints)},
+                {.kind = kind,
+                 .label = label,
+                 .cursor = std::move(preferredCursor),
+                 .fallbackSourceOffset = fallbackSourceOffset,
+                 .preferLaterEmptyAtOffset = preferLaterEmptyAtOffset,
+                 .structureEdit = structureEdit,
+                 .snapshotUndo = structureEdit,
+                 .layoutImmediately = true});
   // A structure edit (e.g. committing "```"/"$$" with Enter) can leave the caret inside a newly
   // created literal block. Activate that block's inline editor so the caret paints as an editing
   // caret and subsequent keystrokes route into it rather than being rejected. syncLiteralEditMode
   // is a no-op when the caret is on a plain text block, so this is safe for ordinary edits.
-  if (nextCursor.isValid()) {
+  if (outcome.cursor.isValid()) {
     PerfTimer syncLiteralTimer("input.applyLocalEdit.syncLiteral");
-    syncLiteralEditMode(nextCursor.blockId);
-  }
-
-  if (ctx_.undoStack) {
-    PerfTimer undoTimer("input.applyLocalEdit.undo");
-    const bool textDeltaUndoEligible =
-        appliedLocally && !structureEdit && beforeCursor.isValid() && nextCursor.isValid();
-    if (textDeltaUndoEligible) {
-      QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(refreshNodeFor(ctx_.session, nextCursor.blockId));
-      EditTransaction transaction(kind, label,
-                                  TextDeltaCommand{TextDelta{sourceStart, removedText, insertedText}, beforeCursor,
-                                                   nextCursor, std::move(affectedNodes)});
-      transaction.setBeforeSelection(beforeSelection);
-      ctx_.undoStack->push(std::move(transaction));
-    } else {
-      if (!beforeTextCaptured) {
-        beforeText = ctx_.session->markdownText().toString();
-        beforeText.replace(sourceStart, insertedText.size(), removedText);
-        beforeTextCaptured = true;
-      }
-      if (nextText.isEmpty()) {
-        nextText = ctx_.session->markdownText().toString();
-      }
-      const QVector<qsizetype> afterOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
-      EditTransaction transaction(kind, label, {beforeText, beforeCursor, beforeOffsets},
-                                  {std::move(nextText), nextCursor, afterOffsets});
-      transaction.setBeforeSelection(beforeSelection);
-      ctx_.undoStack->push(std::move(transaction));
-    }
-  }
-  if (ctx_.brushQueue) {
-    PerfTimer brushNotifyTimer("input.applyLocalEdit.brushNotify");
-    bool blockOnlyRefresh = false;
-    if (!appliedLocally) {
-      ctx_.brushQueue->requestFullRefresh();
-    } else if (structureEdit || ctx_.session->lastLocalEditChangedTopLevelStructure()) {
-      ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
-    } else {
-      ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
-      blockOnlyRefresh = true;
-    }
-    // Keep the current block synchronous for caret geometry. Structural suffix layout remains
-    // queued on BrushQueue's zero timer so position and repaint changes commit together.
-    if (blockOnlyRefresh) {
-      ctx_.brushQueue->flush();
-    }
-  }
-}
-
-void InputController::applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText,
-                                qsizetype nextSourceOffset) {
-  applyEdit(kind, label, std::move(nextText), nextSourceOffset, false);
-}
-
-void InputController::applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText,
-                                qsizetype nextSourceOffset, bool preferLaterEmptyAtOffset) {
-  applyEdit(kind, label, std::move(nextText), CursorPosition(), nextSourceOffset, {}, preferLaterEmptyAtOffset);
-}
-
-void InputController::applyEdit(EditTransaction::Kind kind, const QString& label, QString nextText,
-                                CursorPosition preferredCursor, qsizetype fallbackSourceOffset,
-                                QVector<LocalEditNodeHint> nodeHints, bool preferLaterEmptyAtOffset) {
-  PerfTimer perf("input.applyEdit.diffFallback");
-  if (!ctx_.hasSession() || !ctx_.session->isEditingAllowed())
-    return;
-  const SelectionRange beforeSelection = anchoredSelection(ctx_.session, ctx_.selection);
-  const CursorPosition beforeCursor = beforeSelection.focus;
-  const QString beforeText = ctx_.session->markdownText().toString();
-
-  qsizetype prefix = 0;
-  const qsizetype minSize = qMin(beforeText.size(), nextText.size());
-  while (prefix < minSize && beforeText.at(prefix) == nextText.at(prefix)) {
-    ++prefix;
-  }
-  qsizetype beforeSuffix = beforeText.size();
-  qsizetype nextSuffix = nextText.size();
-  while (beforeSuffix > prefix && nextSuffix > prefix &&
-         beforeText.at(beforeSuffix - 1) == nextText.at(nextSuffix - 1)) {
-    --beforeSuffix;
-    --nextSuffix;
-  }
-
-  const QVector<qsizetype> beforeOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
-  const QString insertedText = nextText.mid(prefix, nextSuffix - prefix);
-  const qsizetype editedOffset = pendingMarkerOffsetForSingleLineEdit(nextText, prefix, insertedText);
-  const bool appliedLocally =
-      ctx_.session->applyTextDelta(prefix, beforeSuffix - prefix, insertedText, true, std::move(nodeHints));
-  if (!appliedLocally) {
-    QVector<qsizetype> demoteOffsets =
-        shiftPendingMarkerOffsets(beforeOffsets, prefix, beforeSuffix - prefix, insertedText.size());
-    if (editedOffset >= 0) {
-      demoteOffsets.append(editedOffset);
-    }
-    if (!ctx_.session->applyMarkdownText(nextText, true, std::move(demoteOffsets)))
-      return;
-  }
-  CursorPosition nextCursor = cursorAfterEdit(preferredCursor, fallbackSourceOffset, preferLaterEmptyAtOffset);
-  if (ctx_.selection) {
-    ctx_.selection->setCursorPosition(nextCursor);
-  }
-  if (ctx_.undoStack) {
-    const QString removedText = beforeText.mid(prefix, beforeSuffix - prefix);
-    const bool textDeltaUndoEligible = appliedLocally && beforeCursor.isValid() && nextCursor.isValid();
-    if (textDeltaUndoEligible) {
-      QVector<NodeId> affectedNodes;
-      affectedNodes.push_back(refreshNodeFor(ctx_.session, nextCursor.blockId));
-      EditTransaction transaction(kind, label,
-                                  TextDeltaCommand{TextDelta{prefix, removedText, insertedText}, beforeCursor,
-                                                   nextCursor, std::move(affectedNodes)});
-      transaction.setBeforeSelection(beforeSelection);
-      ctx_.undoStack->push(std::move(transaction));
-    } else {
-      const QVector<qsizetype> afterOffsets = collectPendingMarkerOffsetsForSession(ctx_.session);
-      EditTransaction transaction(kind, label, {beforeText, beforeCursor, beforeOffsets},
-                                  {std::move(nextText), nextCursor, afterOffsets});
-      transaction.setBeforeSelection(beforeSelection);
-      ctx_.undoStack->push(std::move(transaction));
-    }
-  }
-  if (ctx_.brushQueue) {
-    if (!appliedLocally) {
-      ctx_.brushQueue->requestFullRefresh();
-    } else if (ctx_.session->lastLocalEditChangedTopLevelStructure()) {
-      ctx_.brushQueue->requestTopLevelRangeRefresh(ctx_.session->lastLocalTopLevelRangeChange());
-    } else {
-      ctx_.brushQueue->requestBlockRefresh(refreshNodeFor(ctx_.session, nextCursor.blockId));
-    }
+    syncLiteralEditMode(outcome.cursor.blockId);
   }
 }
 

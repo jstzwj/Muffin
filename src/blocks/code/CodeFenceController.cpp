@@ -5,6 +5,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 
 #include <QSettings>
 
@@ -238,7 +239,8 @@ bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QStrin
   auto afterNode = activeCode->clone(CloneMode::PreserveIds);
   afterNode->setCodeLanguage(language);
 
-  if (!ctx_.session->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode, true)) {
+  const TextEditResult applied = ctx_.session->applyNodeSnapshot(codeId, BlockType::CodeFence, codeIndex, *afterNode);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
   if (MarkdownNode* reparsed = literal_.blockByIndex(codeIndex)) {
@@ -267,9 +269,7 @@ bool CodeFenceController::setLanguageForCodeFence(NodeId requestedCodeId, QStrin
         SetNodeAttrCommand{originalCodeId, BlockType::CodeFence, codeIndex, NodeAttribute::CodeLanguage, beforeLanguage,
                            language, beforeCursor, nextCursor, QVector<NodeId>{originalCodeId}}));
   }
-  if (ctx_.brushQueue) {
-    ctx_.brushQueue->requestBlockRefresh(codeId);
-  }
+  requestEditRefresh(ctx_, applied, {codeId});
   return true;
 }
 

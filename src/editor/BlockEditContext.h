@@ -34,6 +34,8 @@ class BlockEditContextResolver {
 public:
   BlockEditContextResolver(DocumentSession* session, SelectionController* selection);
 
+  DocumentSession* session() const { return session_; }
+
   bool current(BlockEditContext& context) const;
   bool forBlock(NodeId blockId, BlockEditContext& context) const;
   bool fill(MarkdownNode& displayNode, BlockEditContext& context) const;

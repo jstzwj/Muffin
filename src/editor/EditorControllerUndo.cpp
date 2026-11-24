@@ -23,9 +23,9 @@ Q_LOGGING_CATEGORY(undoPerf, "muffin.perf", QtWarningMsg)
 
 // Scoped perf probe routed to the muffin.perf category (captured by MUFFIN_PERF_LOG). No-op when
 // perf debugging is off. Used to localize the Ctrl+Z-hangs-on-a-huge-document regression: the
-// blocking cost is a synchronous full reparse (applyMarkdownText) + full layout rebuild fired when
-// the undo's localized edit can't be applied (applyTextDelta returns false). These probes record
-// which undo branch ran, the snapshot-diff region, and whether the localized path succeeded.
+// blocking cost is a synchronous full reparse + full layout rebuild fired when the undo's
+// localized edit cannot be applied as a slice. These probes record which undo branch ran, the
+// snapshot-diff region, and whether the localized path succeeded.
 struct UndoPerfTimer : diag::ScopedPerfProbe {
   explicit UndoPerfTimer(const char* label) : diag::ScopedPerfProbe(label, undoPerf()) {}
 };
@@ -75,11 +75,6 @@ void warnUndoApplyFailed(bool undo, const char* command, const char* reason, qsi
                          qsizetype documentSize) {
   qCWarning(undoLog).nospace() << "Cannot apply " << undoDirection(undo) << " " << command << ": " << reason
                                << " start=" << start << " length=" << length << " documentSize=" << documentSize;
-}
-
-void warnUndoApplyFallback(bool undo, const char* command, const char* reason) {
-  qCWarning(undoLog).nospace() << "Falling back while applying " << undoDirection(undo) << " " << command << ": "
-                               << reason;
 }
 
 MarkdownNode* tableByIdOrIndex(DocumentSession& session, NodeId tableId, int tableIndex) {
@@ -341,22 +336,15 @@ bool applyNodeAttribute(MarkdownNode& node, NodeAttribute attribute, const NodeA
   return false;
 }
 
-bool applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsizetype replaceLength,
-                          const QString& replacement, const QVector<NodeId>& affectedNodes) {
+// Replaces a text range while replaying a command, with the command's affected nodes as hints so
+// the slice parser keeps their ids.
+TextEditResult applyTextReplacement(DocumentSession& session, qsizetype replaceStart, qsizetype replaceLength,
+                                    const QString& replacement, const QVector<NodeId>& affectedNodes) {
   QVector<LocalEditNodeHint> nodeHints;
   for (NodeId nodeId : affectedNodes) {
     nodeHints.push_back(LocalEditNodeHint{nodeId, replaceStart, BlockType::Unknown});
   }
-  if (session.applyTextDelta(replaceStart, replaceLength, replacement, true, std::move(nodeHints))) {
-    return true;
-  }
-
-  QString text = session.markdownText().toString();
-  if (replaceStart < 0 || replaceLength < 0 || replaceStart + replaceLength > text.size()) {
-    return false;
-  }
-  text.replace(replaceStart, replaceLength, replacement);
-  return session.applyMarkdownText(std::move(text), true);
+  return session.applyTextEdit(replaceStart, replaceLength, replacement, std::move(nodeHints));
 }
 
 NodeId topLevelBlockIdFor(DocumentSession& session, NodeId nodeId) {
@@ -364,13 +352,7 @@ NodeId topLevelBlockIdFor(DocumentSession& session, NodeId nodeId) {
     return {};
   }
   const MarkdownNode* node = session.document().node(nodeId);
-  if (!node) {
-    return {};
-  }
-  while (node->parent() && node->parent()->type() != BlockType::Document) {
-    node = node->parent();
-  }
-  return node && node->parent() && node->parent()->type() == BlockType::Document ? node->id() : NodeId();
+  return node && node->parent() ? node->topLevelBlock()->id() : NodeId();
 }
 
 void addRefreshNode(DocumentSession& session, QVector<NodeId>& refreshNodes, NodeId nodeId) {
@@ -438,19 +420,31 @@ void requestRefreshForNodes(BrushQueue& brushQueue, DocumentSession& session, co
 
 } // namespace
 
+void EditorController::refreshAfterTextEdit(TextEditResult applied, const QVector<NodeId>& affectedNodes,
+                                            CursorPosition cursor) {
+  // A full re-parse may have re-assigned node ids and rebuilds the layout by itself: the stored
+  // nodes name nothing, and the caret is resolved again from its source offset.
+  if (applied == TextEditResult::Reparsed) {
+    brushQueue_.requestFullRefresh();
+    remapCurrentSelection();
+    return;
+  }
+  requestRefreshForNodes(brushQueue_, *session_, affectedNodes, cursor);
+}
+
 bool EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   if (!session_ || !session_->isEditingAllowed()) {
     return false;
   }
 
   UndoPerfTimer perf("undo.applySnapshot");
-  // Undo/redo only changed a localized region (the originating edit was local), so the diff between
-  // the current LIVE text and the snapshot text is small. Apply it as a LOCAL edit (slice reparse)
-  // via applyTextDelta instead of applyMarkdownText's full-document reparse — that full reparse was
-  // the Ctrl+Z-hangs-on-a-huge-document regression (O(doc) parse + full view rebuild). The chunked
-  // common-prefix/suffix skips the (typically huge) unchanged runs in O(doc/chunk). Falls back to
-  // the full reparse only when the local edit is rejected (a wholesale change the slice logic can't
-  // localize), which is rare for ordinary edits.
+  // Undo/redo of a snapshot usually changed a localized region (the originating edit was local),
+  // so the diff between the current text and the snapshot text is small. Apply it as a local
+  // slice instead of re-parsing the whole document — that full reparse was the
+  // Ctrl+Z-hangs-on-a-huge-document regression (O(doc) parse + full view rebuild). The chunked
+  // common-prefix/suffix skips the (typically huge) unchanged runs in O(doc/chunk). The session
+  // falls back to the full reparse when the slice parser cannot take the edit, which is rare for
+  // ordinary edits.
   const QString current = session_->markdownText().toString();
   const QString& target = snapshot.markdownText;
   const qsizetype prefix = commonPrefixLength(current, target);
@@ -458,18 +452,16 @@ bool EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   const qsizetype curSuffix = current.size() - commonSuffix;
   const qsizetype tgtSuffix = target.size() - commonSuffix;
   const QString inserted = target.mid(prefix, tgtSuffix - prefix);
-  const bool appliedLocally = session_->applyTextDelta(prefix, curSuffix - prefix, inserted, true);
+  const TextEditResult applied = session_->applyTextEdit(prefix, curSuffix - prefix, inserted);
   // Record the diff region + outcome so the perf trace shows exactly why a snapshot undo either
   // localized (fast) or fell back to a full reparse (the ~20s regression). curSize/tgtSize make a
   // pathological "whole document changed" diff obvious at a glance.
   qCDebug(undoPerf).nospace() << "undo.snapshot diff curSize=" << current.size() << " tgtSize=" << target.size()
                               << " prefix=" << prefix << " suffix=" << commonSuffix
                               << " curReplaceLen=" << (curSuffix - prefix) << " insertedLen=" << inserted.size()
-                              << " appliedLocally=" << appliedLocally;
-  if (!appliedLocally) {
-    UndoPerfTimer fullParsePerf("undo.snapshot.fullParseFallback");
-    if (!session_->applyMarkdownText(target, true, snapshot.demoteAtOffsets))
-      return false;
+                              << " appliedLocally=" << (applied == TextEditResult::AppliedLocally);
+  if (applied == TextEditResult::Rejected) {
+    return false;
   }
 
   const CursorPosition cursor = remapSnapshotCursor(snapshot.cursor);
@@ -478,7 +470,7 @@ bool EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   } else {
     selection_.clear();
   }
-  if (appliedLocally) {
+  if (applied == TextEditResult::AppliedLocally) {
     brushQueue_.requestTopLevelRangeRefresh(session_->lastLocalTopLevelRangeChange());
   } else {
     brushQueue_.requestFullRefresh();
@@ -511,12 +503,8 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     if (delta.start < 0 || delta.start > session_->markdownText().size() - removed.size() ||
         session_->markdownText().mid(delta.start, removed.size()) != removed)
       return false;
-    if (!session_->applyTextDelta(delta.start, removed.size(), inserted, true)) {
-      auto text = session_->markdownText().toString();
-      text.replace(delta.start, removed.size(), inserted);
-      if (!session_->applyMarkdownText(std::move(text), true))
-        return false;
-    }
+    if (session_->applyTextEdit(delta.start, removed.size(), inserted) == TextEditResult::Rejected)
+      return false;
     brushQueue_.requestFullRefresh();
     return true;
   }
@@ -528,8 +516,8 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
       warnUndoApplyFailed(undo, "table command", "missing stored table snapshot");
       return false;
     }
-    const bool applied = session_->applyTableSnapshot(command.tableId, command.tableIndex, *table, true);
-    if (!applied) {
+    const TextEditResult applied = session_->applyTableSnapshot(command.tableId, command.tableIndex, *table);
+    if (applied == TextEditResult::Rejected) {
       warnUndoApplyFailed(undo, "table command", "table snapshot could not be applied");
       return false;
     }
@@ -544,7 +532,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    requestRefreshForNodes(brushQueue_, *session_, QVector<NodeId>{command.tableId}, cursor);
+    refreshAfterTextEdit(applied, QVector<NodeId>{command.tableId}, cursor);
     return true;
   }
 
@@ -554,11 +542,12 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     const qsizetype replaceStart = command.delta.start;
     const qsizetype replaceEnd =
         command.delta.start + (undo ? command.delta.insertedText.size() : command.delta.removedText.size());
-    const bool appliedLocally =
-        session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart, command.nodeSourceStart,
-                                    replaceEnd - replaceStart, replacement, true);
-    if (!appliedLocally) {
-      warnUndoApplyFallback(undo, "insert node command", "inserted node delta could not be applied locally");
+    const TextEditResult applied = session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart,
+                                                               command.nodeSourceStart, replaceEnd - replaceStart,
+                                                               replacement);
+    if (applied == TextEditResult::Rejected) {
+      warnUndoApplyFailed(undo, "insert node command", "inserted node text edit was rejected", replaceStart,
+                          replaceEnd - replaceStart, session_->markdownText().size());
       return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
@@ -578,7 +567,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     if (!undo && command.nodeId.isValid() && !affectedNodes.contains(command.nodeId)) {
       affectedNodes.push_back(command.nodeId);
     }
-    requestRefreshForNodes(brushQueue_, *session_, affectedNodes, cursor);
+    refreshAfterTextEdit(applied, affectedNodes, cursor);
     return true;
   }
 
@@ -589,10 +578,10 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
       warnUndoApplyFailed(undo, "replace node command", "missing stored node snapshot");
       return false;
     }
-    const bool appliedLocally =
-        session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *node, true);
-    if (!appliedLocally) {
-      warnUndoApplyFallback(undo, "replace node command", "node snapshot could not be applied locally");
+    const TextEditResult applied =
+        session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *node);
+    if (applied == TextEditResult::Rejected) {
+      warnUndoApplyFailed(undo, "replace node command", "node snapshot text edit was rejected");
       return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
@@ -605,7 +594,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    refreshAfterTextEdit(applied, command.affectedNodes, cursor);
     return true;
   }
 
@@ -613,9 +602,9 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     const RemoveNodeCommand& command = transaction.removeNodeCommand();
     const QString replacement = undo ? command.delta.removedText : QString();
     const qsizetype replaceLength = undo ? 0 : command.delta.removedText.size();
-    const bool applied =
+    const TextEditResult applied =
         applyTextReplacement(*session_, command.delta.start, replaceLength, replacement, command.affectedNodes);
-    if (!applied) {
+    if (applied == TextEditResult::Rejected) {
       warnUndoApplyFailed(undo, "remove node command", "text replacement range is invalid", command.delta.start,
                           replaceLength, session_->markdownText().size());
       return false;
@@ -627,7 +616,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    refreshAfterTextEdit(applied, command.affectedNodes, cursor);
     return true;
   }
 
@@ -643,10 +632,10 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
       warnUndoApplyFailed(undo, "set node attribute command", "attribute value could not be applied");
       return false;
     }
-    const bool appliedLocally =
-        session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *nextNode, true);
-    if (!appliedLocally) {
-      warnUndoApplyFallback(undo, "set node attribute command", "node snapshot could not be applied locally");
+    const TextEditResult applied =
+        session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *nextNode);
+    if (applied == TextEditResult::Rejected) {
+      warnUndoApplyFailed(undo, "set node attribute command", "node snapshot text edit was rejected");
       return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
@@ -656,7 +645,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    refreshAfterTextEdit(applied, command.affectedNodes, cursor);
     return true;
   }
 
@@ -678,13 +667,13 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
   for (NodeId nodeId : command.affectedNodes) {
     nodeHints.push_back(LocalEditNodeHint{nodeId, replaceStart, BlockType::Unknown});
   }
-  const bool appliedLocally =
-      session_->applyTextDelta(replaceStart, replaceEnd - replaceStart, replacement, true, std::move(nodeHints));
+  const TextEditResult applied =
+      session_->applyTextEdit(replaceStart, replaceEnd - replaceStart, replacement, std::move(nodeHints));
   qCDebug(undoPerf).nospace() << "undo.textDelta replaceStart=" << replaceStart
                               << " replaceLen=" << (replaceEnd - replaceStart)
                               << " replacementLen=" << replacement.size()
                               << " affectedNodes=" << command.affectedNodes.size()
-                              << " appliedLocally=" << appliedLocally;
+                              << " appliedLocally=" << (applied == TextEditResult::AppliedLocally);
   const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
   CursorPosition cursor = tableCellTextCursor(*session_, storedCursor);
   if (!cursor.isValid()) {
@@ -696,25 +685,7 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     selection_.clear();
   }
 
-  if (!appliedLocally) {
-    warnUndoApplyFallback(undo, "text delta command", "text delta could not be applied locally");
-    QString text = session_->markdownText().toString();
-    if (replaceStart < 0 || replaceEnd < replaceStart || replaceEnd > text.size()) {
-      warnUndoApplyFailed(undo, "text delta command", "fallback text replacement range is invalid", replaceStart,
-                          replaceEnd >= replaceStart ? replaceEnd - replaceStart : qsizetype(-1), text.size());
-      return false;
-    }
-    text.replace(replaceStart, replaceEnd - replaceStart, replacement);
-    {
-      UndoPerfTimer fullParsePerf("undo.textDelta.fullParseFallback");
-      if (!session_->applyMarkdownText(std::move(text), true))
-        return false;
-    }
-    brushQueue_.requestFullRefresh();
-    remapCurrentSelection();
-  } else {
-    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
-  }
+  refreshAfterTextEdit(applied, command.affectedNodes, cursor);
   return true;
 }
 

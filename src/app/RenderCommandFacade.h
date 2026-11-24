@@ -109,6 +109,10 @@ public:
   bool isOnImage() const;
   QString imageSrcAtCursor() const;
   bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
+  // Replaces [start, start + length) of the Markdown source as one undoable edit and leaves the
+  // caret after it. For window-level commands that change the text (a spelling correction, an
+  // image path); the session's own edit functions are not for use outside the editor.
+  bool replaceSourceRange(const QString& label, qsizetype start, qsizetype length, const QString& text);
 
   // Zoom percent encoded in the image's style="zoom:N%" (100 when none). For the resize
   // radio group's checked state.

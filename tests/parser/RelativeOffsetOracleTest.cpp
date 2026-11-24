@@ -219,7 +219,7 @@ void testEditThenCompare() {
   require(descBefore != nullptr, "list should contain a paragraph descendant");
   const SourceRange descBeforeRange = descBefore->sourceRange();
 
-  require(session.applyTextDelta(0, 0, QStringLiteral("ZZZ"), true), "edit should apply");
+  require(session.applyTextEdit(0, 0, QStringLiteral("ZZZ")) != muffin::TextEditResult::Rejected, "edit should apply");
 
   const auto& childrenAfter = session.document().root().children();
   require(childrenAfter.size() == 3, "no-newline insertion should not change top-level structure");
@@ -249,7 +249,7 @@ void testFrontMatterRootRangeAfterLocalEdit() {
   session.setMarkdownText(QStringLiteral("---\ntitle: Example\n---\n\nbody paragraph\n\nlast line\n"), false);
   const qsizetype body = session.markdownText().indexOf(QStringView(u"body"));
   require(body >= 0, "front-matter sample should contain body text");
-  require(session.applyTextDelta(body + 4, 0, QStringLiteral(" edited"), true), "front-matter body edit should apply");
+  require(session.applyTextEdit(body + 4, 0, QStringLiteral(" edited")) != muffin::TextEditResult::Rejected, "front-matter body edit should apply");
   require(session.lastParseWasLocalEdit(), "front-matter body edit should remain local");
   QString err;
   const bool matches = documentMatchesFreshParse(session, err);
@@ -290,7 +290,7 @@ void testSeparatorEditsMatchFullParse() {
             QString expected = original;
             expected.replace(start, removed, replacement);
             QString error;
-            const bool applied = session.applyTextDelta(start, removed, replacement, true);
+            const bool applied = session.applyTextEdit(start, removed, replacement) != muffin::TextEditResult::Rejected;
             const bool matches =
                 applied && session.markdownText().toString() == expected && documentMatchesFreshParse(session, error);
             ++edits;
@@ -304,11 +304,11 @@ void testSeparatorEditsMatchFullParse() {
               ++failures;
             } else {
               const QString inverse = original.mid(start, removed);
-              const bool restored = session.applyTextDelta(start, replacement.size(), inverse, true) &&
+              const bool restored = session.applyTextEdit(start, replacement.size(), inverse) != muffin::TextEditResult::Rejected &&
                                     session.markdownText().toString() == original &&
                                     documentMatchesFreshParse(session, error);
               require(restored, QStringLiteral("separator inverse edit: %1").arg(error));
-              const bool replayed = session.applyTextDelta(start, removed, replacement, true) &&
+              const bool replayed = session.applyTextEdit(start, removed, replacement) != muffin::TextEditResult::Rejected &&
                                     session.markdownText().toString() == expected &&
                                     documentMatchesFreshParse(session, error);
               require(replayed, QStringLiteral("separator replayed edit: %1").arg(error));

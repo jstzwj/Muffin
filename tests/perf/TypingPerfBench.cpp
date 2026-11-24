@@ -1,7 +1,7 @@
 // Benchmark: per-keystroke phase breakdown when typing inside a paragraph of a large document.
 //
 // Links MuffinCore only (pure Qt Core — no GUI, no RESOURCE_LOCK). It drives
-// DocumentSession::applyTextDelta on a synthetic document rich in inline formatting (so the
+// DocumentSession::applyTextEdit on a synthetic document rich in inline formatting (so the
 // node/inline count — and thus the shiftRanges suffix cost — is realistic), captures the
 // muffin.perf probes emitted by DocumentSession/MarkdownDocument, and reports median/max/sum
 // per phase.
@@ -124,7 +124,7 @@ void countTree(const muffin::MarkdownNode& node, qsizetype& blocks, qsizetype& i
 void typeAt(muffin::DocumentSession& session, qsizetype offset, int iters) {
   g_perfLines.clear();
   for (int k = 0; k < iters; ++k) {
-    session.applyTextDelta(offset, 0, QStringLiteral("x"), true);
+    session.applyTextEdit(offset, 0, QStringLiteral("x"));
   }
 }
 

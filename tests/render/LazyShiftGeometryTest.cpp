@@ -29,7 +29,7 @@ namespace {
 void growFirstParagraph(DocumentSession& session, DocumentLayout& layout, const RenderTheme& theme) {
   const NodeId paragraphId = mutableBlockAt(session.document(), 0)->id();
   const QString text = QStringLiteral("alpha beta gamma delta ");
-  require(session.applyTextDelta(5, 0, text.repeated(14), true, {LocalEditNodeHint{paragraphId, 0, BlockType::Paragraph}}),
+  require(session.applyTextEdit(5, 0, text.repeated(14), {LocalEditNodeHint{paragraphId, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
           QStringLiteral("the height-changing edit should apply"));
   require(layout.rebuildBlock(paragraphId, session.document(), theme, {}).rebuilt,
           QStringLiteral("the edited block should rebuild in place"));

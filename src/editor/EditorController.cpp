@@ -500,7 +500,7 @@ void EditorController::applyMarkdownTextWithUndo(QString text, const QString& la
   }
   const QString beforeText = session_->markdownText().toString();
   const CursorPosition beforeCursor = selection_.hasCursor() ? selection_.cursorPosition() : CursorPosition();
-  if (!session_->applyMarkdownText(std::move(text), true))
+  if (!session_->applyMarkdownText(std::move(text)))
     return;
   remapCurrentSelection();
   const QString afterText = session_->markdownText().toString();
@@ -621,12 +621,8 @@ bool EditorController::replaceSourceRangeWithUndo(qsizetype start, qsizetype len
   command.afterAnchor = command.afterCursor = start + text.size();
   if (!command.delta.isValid())
     return false;
-  if (!session_->applyTextDelta(start, length, text, true)) {
-    auto changed = session_->markdownText().toString();
-    changed.replace(start, length, text);
-    if (!session_->applyMarkdownText(std::move(changed), true))
-      return false;
-  }
+  if (session_->applyTextEdit(start, length, text) == TextEditResult::Rejected)
+    return false;
   undoStack().push(EditTransaction(EditTransaction::Kind::ReplaceDocumentText, label, command));
   selectSourceRange(command.afterAnchor, command.afterCursor);
   brushQueue_.requestFullRefresh();
@@ -851,13 +847,11 @@ bool EditorController::selectCurrentBlockForRemoval() {
     return false;
   }
 
-  // Walk up to the top-level child of Document (same strategy as moveBlockUp).
-  while (current->parent() && current->parent()->type() != BlockType::Document) {
-    current = current->parent();
-  }
-  if (!current->parent() || current->parent()->type() != BlockType::Document) {
+  // Work on the top-level block that holds the caret (same strategy as moveBlockUp).
+  if (!current->parent()) {
     return false;
   }
+  current = current->topLevelBlock();
 
   BlockEditContextResolver resolver(const_cast<DocumentSession*>(session_),
                                     const_cast<SelectionController*>(&selection_));
@@ -1350,12 +1344,10 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
       const InlineProjectionSpan* span = imageAtomSpanAtCursor(context);
       if (span) {
         // Resolve the absolute document source range from the backing inline node. Both a markdown
-        // Image node and an HTML <img> HtmlInline node back an Image Atom span. As in
-        // imageAtomSpanAtCursor, the span offsets are content-local while the node offsets are
-        // absolute; shift the node range to local for the containment test, but return the node's
-        // Inlines are stored relative to the owning top-level block; convert to content-local for
-        // the span comparison (base = content offset within block), then back to ABSOLUTE for the
-        // returned range (what the caller splices into the full markdown).
+        // Image node and an HTML <img> HtmlInline node back an Image Atom span. Inlines are stored
+        // relative to the owning top-level block while the span offsets are content-local, so shift
+        // the node range into content-local coordinates for the containment test and return the
+        // range as absolute offsets (what the caller splices into the full markdown).
         const qsizetype topLevelByteStart = context.editableNode->inlineAbsoluteDelta();
         const qsizetype base = context.contentRange.byteStart - topLevelByteStart;
         for (const auto& inlineNode : context.editableNode->inlines()) {

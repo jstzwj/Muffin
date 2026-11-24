@@ -233,8 +233,8 @@ int main(int argc, char** argv) {
       const auto nodeId = node->id();
       const auto start = node->sourceRange().byteStart;
       for (bool insert : {true, false}) {
-        check(document.applyTextDelta(start, insert ? 0 : 14, insert ? QString("Inserted text ") : QString(), true,
-                                      {{nodeId, start, BlockType::Paragraph}}),
+        check(document.applyTextEdit(start, insert ? 0 : 14, insert ? QString("Inserted text ") : QString(),
+                                      {{nodeId, start, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
               id + " typing/deletion");
         const auto range = document.lastLocalTopLevelRangeChange();
         if (range.isValid())

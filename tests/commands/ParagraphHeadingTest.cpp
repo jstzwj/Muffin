@@ -93,14 +93,14 @@ void testHeadingUndoRedo() {
 
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "heading undo should use TextDeltaCommand");
-  session.applyTextDelta(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText, true);
+  session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
+                         undo.textDeltaCommand().delta.removedText);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText().toString() == QStringLiteral("Hello"), "heading undo text mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
-  session.applyTextDelta(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
-                         redo.textDeltaCommand().delta.insertedText, true);
+  session.applyTextEdit(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
+                         redo.textDeltaCommand().delta.insertedText);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText().toString() == QStringLiteral("## Hello"), "heading redo text mismatch");
 }
@@ -192,13 +192,13 @@ void testParagraphAlignmentPreservesContentAndUndo() {
           "repeating alignment does not add undo entries");
   for (int i = 0; i < 4; ++i) {
     const auto undo = undoStack.takeUndo().textDeltaCommand();
-    session.applyTextDelta(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText, true);
+    session.applyTextEdit(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText);
     selection.setCursorPosition(undo.beforeCursor);
   }
   require(session.markdownText().toString() == original, "alignment sequence undoes to exact source");
   for (int i = 0; i < 4; ++i) {
     const auto redo = undoStack.takeRedo().textDeltaCommand();
-    session.applyTextDelta(redo.delta.start, redo.delta.removedText.size(), redo.delta.insertedText, true);
+    session.applyTextEdit(redo.delta.start, redo.delta.removedText.size(), redo.delta.insertedText);
     selection.setCursorPosition(redo.afterCursor);
   }
   require(session.markdownText().toString().contains(QStringLiteral("text-align: left")) &&
@@ -227,7 +227,7 @@ void testSharedConversionsAndNestedPrefixes() {
   require(paragraph.convertToOrderedList() && session.markdownText().toString() == "1. \\> quoted",
           "caret list conversion must retain protected paragraph content");
   const auto undo = undoStack.takeUndo().textDeltaCommand();
-  session.applyTextDelta(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText, true);
+  session.applyTextEdit(undo.delta.start, undo.delta.insertedText.size(), undo.delta.removedText);
   selection.setCursorPosition(undo.beforeCursor);
   require(session.markdownText().toString() == "\\> quoted", "list conversion undo must keep semantic protection");
 

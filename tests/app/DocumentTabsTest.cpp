@@ -583,7 +583,7 @@ void reopenClosedDocuments() {
           "reopening restores mode, directed selection and tab state while reading current disk bytes");
   f.close(restored);
   restored = f.open(first);
-  restored->session.applyTextDelta(0, 0, "Unsaved ", true);
+  restored->session.applyTextEdit(0, 0, "Unsaved ");
   restored->editor->setSelection(1, 3);
   const auto before = restored->session.markdownText().toString();
   reopen->trigger();
@@ -717,7 +717,7 @@ void exportPresetsAndRepeat() {
   selectExport(action(f.window, "Web article"), html);
   require(read(html).contains("snapshot") && document->lastExport && document->lastExport->target == html,
           "named preset appears in the export menu and successful export records settings");
-  document->session.applyTextDelta(0, 0, "Current unsaved content\n\n", true);
+  document->session.applyTextEdit(0, 0, "Current unsaved content\n\n");
   auto changed = exportPresets();
   changed[0].options.insert("head", "<meta name=\"changed\">");
   saveExportPresets(changed);
@@ -1512,8 +1512,8 @@ void lockedEditingPreservesUndoAndRejectsChanges() {
     document->editor->undo();
     document->editorController.applyMarkdownTextWithUndo("Rejected\n", "Rejected replacement");
     document->editor->replaceAllWithUndo("Rejected\n");
-    require(!document->session.applyMarkdownText("Rejected\n", true) &&
-                !document->session.applyTextDelta(0, 0, "Rejected", true),
+    require(!document->session.applyMarkdownText("Rejected\n") &&
+                document->session.applyTextEdit(0, 0, "Rejected") == muffin::TextEditResult::Rejected,
             "full and incremental edits explicitly report rejection");
     input->setFocus();
     QApplication::processEvents();
@@ -1567,7 +1567,7 @@ void lockedEditingScopesSurviveLoading() {
     f.window.setEditingLocked(false);
     require(first->editor->isReadOnly() && !first->session.isEditingAllowed(),
             "unlocking does not remove loading protection");
-    require(!first->session.applyMarkdownText("Wrong buffer", true), "loading refuses full-parse edit fallback");
+    require(!first->session.applyMarkdownText("Wrong buffer"), "loading refuses full-parse edit fallback");
     first->session.setOpenConfirmationPending(false);
     require(!first->editor->isReadOnly(), "loading protection releases after confirmation ends");
     first->session.openDocumentAsync("Reloaded\n");
@@ -3320,7 +3320,7 @@ void fileOpenConfirmationDefersReadingAndPreservesTabs() {
   SettingsOverride limit{"files/sizeLimitMb", 1};
   Fixture f;
   auto* original = f.open(f.file("original.md", "Original document\n"));
-  original->session.applyTextDelta(0, 0, "Unsaved ", true);
+  original->session.applyTextEdit(0, 0, "Unsaved ");
   const auto originalText = original->session.markdownText().toString();
   const QString path = f.file("guard.binary", "Before confirmation\n");
   require(f.window.openFile(path), "guard accepts open request");
@@ -3345,7 +3345,7 @@ void fileOpenConfirmationDefersReadingAndPreservesTabs() {
   }
   require(pending->fileController.save(pending->session, &f.window) == SaveOutcome::SkippedBusy,
           "save cannot create an empty file while awaiting consent");
-  require(!pending->session.applyTextDelta(0, 0, "stray edit", true), "model rejects editing while awaiting consent");
+  require(pending->session.applyTextEdit(0, 0, "stray edit") == muffin::TextEditResult::Rejected, "model rejects editing while awaiting consent");
   ParseOptions options;
   options.enableAutolink = false;
   pending->session.setParseOptions(options);

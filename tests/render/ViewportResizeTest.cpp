@@ -148,7 +148,7 @@ void testHtmlViewportUnitsAndEditsDuringResize() {
   require(layout.relayoutForViewportWidth(theme, 1200, changed), "HTML viewport change should be incremental");
   require(layout.block(html, theme)->height() > before + 40, "height-only resize must update HTML vh units");
   const auto first = session.document().root().children().front()->id();
-  require(session.applyTextDelta(5, 0, "\n\nnew paragraph\n\n", true, {{first, 5, BlockType::Paragraph}}),
+  require(session.applyTextEdit(5, 0, "\n\nnew paragraph\n\n", {{first, 5, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
           "edit during resize");
   const auto range = session.lastLocalTopLevelRangeChange();
   require(range.isValid() && layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,
@@ -363,7 +363,7 @@ void testBudgetedPrefetchAndEviction() {
     layout.trimDetails(100, 103, theme, {caret}, 8);
   }
   const auto offset = nodes[30]->sourceRange().byteStart + 2;
-  require(session.applyTextDelta(offset, 0, "new ", true), "edit an evicted block");
+  require(session.applyTextEdit(offset, 0, "new ") != muffin::TextEditResult::Rejected, "edit an evicted block");
   require(layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {}).rebuilt,
           "local edits must rebind retained navigation after eviction");
   layout.buildAll(theme);

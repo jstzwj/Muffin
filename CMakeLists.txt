@@ -1311,10 +1311,14 @@ set(MUFFIN_UI_SOURCES
   src/editor/BrushQueue.h
   src/editor/BlockEditContext.cpp
   src/editor/BlockEditContext.h
+  src/editor/CursorMapper.cpp
+  src/editor/CursorMapper.h
   src/editor/InlineSplit.cpp
   src/editor/InlineSplit.h
   src/editor/ClipboardController.cpp
   src/editor/ClipboardController.h
+  src/editor/TextEditApplier.cpp
+  src/editor/TextEditApplier.h
   src/projection/HtmlMarkdownImporter.cpp
   src/projection/HtmlMarkdownImporter.h
   src/editor/ShortcutSettings.cpp

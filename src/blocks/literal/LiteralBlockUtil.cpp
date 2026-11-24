@@ -8,6 +8,7 @@
 #include "edit/UndoStack.h"
 #include "editor/BrushQueue.h"
 #include "editor/SelectionController.h"
+#include "editor/TextEditApplier.h"
 #include "parser/MarkdownSerializer.h"
 
 namespace muffin {
@@ -65,7 +66,9 @@ bool insertFrontMatter(const EditorContext& ctx, LiteralBlockController& ctrl, F
     insertedText += QStringLiteral("\n\n");
   }
 
-  if (!ctx.session->applyInsertedNode(insertedId, BlockType::FrontMatter, 0, 0, 0, insertedText, true)) {
+  const TextEditResult applied =
+      ctx.session->applyInsertedNode(insertedId, BlockType::FrontMatter, 0, 0, 0, insertedText);
+  if (applied == TextEditResult::Rejected) {
     return false;
   }
 
@@ -80,9 +83,7 @@ bool insertFrontMatter(const EditorContext& ctx, LiteralBlockController& ctrl, F
         InsertNodeCommand{insertedId, BlockType::FrontMatter, 0, TextDelta{0, QString(), insertedText}, 0,
                           std::move(commandNode), beforeCursor, nextCursor, QVector<NodeId>{insertedId}}));
   }
-  if (ctx.brushQueue) {
-    ctx.brushQueue->requestBlockRefresh(insertedId);
-  }
+  requestEditRefresh(ctx, applied, {insertedId});
   return true;
 }
 

@@ -271,7 +271,7 @@ void testStructuredNodeCommandModels() {
   require(attrTransaction.isSetNodeAttrCommand(), "set node attr transaction storage mismatch");
   auto afterHeading = heading->clone(CloneMode::PreserveIds);
   afterHeading->setHeadingLevel(2);
-  session.applyNodeSnapshot(heading->id(), BlockType::Heading, 0, *afterHeading, true);
+  session.applyNodeSnapshot(heading->id(), BlockType::Heading, 0, *afterHeading);
   controller.undoStack().push(attrTransaction);
   controller.undo();
   require(session.markdownText().toString() == QStringLiteral("# Title"), "set node attr undo mismatch");

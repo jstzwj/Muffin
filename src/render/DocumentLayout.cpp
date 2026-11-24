@@ -1590,10 +1590,7 @@ const MarkdownNode* DocumentLayout::topLevelBlockFor(NodeId id, const MarkdownDo
   if (!node) {
     return nullptr;
   }
-  while (node->parent() && node->parent()->type() != BlockType::Document) {
-    node = node->parent();
-  }
-  return node && node->parent() && node->parent()->type() == BlockType::Document ? node : nullptr;
+  return node->parent() ? node->topLevelBlock() : nullptr;
 }
 
 void DocumentLayout::indexLayoutBlock(const BlockLayout& block) {

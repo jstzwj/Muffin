@@ -132,6 +132,7 @@ public:
   // top-level block never changes (within-block surgery preserves it; cross-block edits destroy +
   // re-parse rather than reparent). The relativize walk seeds the cache for the whole subtree.
   const MarkdownNode* topLevelBlock() const;
+  MarkdownNode* topLevelBlock();
   // Relativize this top-level block's subtree (its own sourceRange is left absolute). Call once
   // after the subtree is built with absolute offsets. The base is read from this block's OWN
   // current byteStart, so for a slice-assembled block call BEFORE adding slice.sourceStart to it.

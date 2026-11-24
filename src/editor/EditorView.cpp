@@ -61,13 +61,8 @@ namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
 
-bool sameCursorPosition(const CursorPosition& a, const CursorPosition& b) {
-  return a.blockId == b.blockId && a.text.nodeId == b.text.nodeId && a.text.textOffset == b.text.textOffset &&
-         a.text.sourceOffset == b.text.sourceOffset && a.text.inMeta == b.text.inMeta;
-}
-
 bool sameSelectionRange(const SelectionRange& a, const SelectionRange& b) {
-  return sameCursorPosition(a.anchor, b.anchor) && sameCursorPosition(a.focus, b.focus);
+  return a.anchor == b.anchor && a.focus == b.focus;
 }
 
 // Image extensions whose drop inserts an inline ![alt](path) rather than a [name](path)
@@ -413,8 +408,8 @@ void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
   layout_ = std::move(layoutBuild_);
   {
     ScopedViewportPin pin(*this);
-    if (!livePreview_ && cursorPosition_.isValid()) {
-      const auto index = layout_->topLevelIndexFor(cursorPosition_.blockId);
+    if (!livePreview_ && selection_.focus.isValid()) {
+      const auto index = layout_->topLevelIndexFor(selection_.focus.blockId);
       if (index >= 0)
         layout_->ensureBuilt(index, index, theme_);
     }
@@ -425,8 +420,8 @@ void EditorView::advanceLayoutBuild(quint64 generation, quint64 revision) {
   } else {
     ensureVisibleBuilt();
   }
-  if (cursorPosition_.isValid()) {
-    cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
+  if (selection_.focus.isValid()) {
+    cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, selection_.focus);
     cursorVisible_ = cursorHit_.isValid();
   }
   setLoading(false);
@@ -493,7 +488,7 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   updateTableToolbar();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
-  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(selection_.focus.blockId);
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
@@ -551,7 +546,7 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
   for (const DocumentLayout::BlockRebuildResult& result : results) {
     addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
   }
-  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(selection_.focus.blockId);
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
@@ -594,7 +589,7 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
     ensureCursorVisible();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
-  const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
+  const QRectF badgeRect = headingBadgeViewportRectForBlock(selection_.focus.blockId);
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
@@ -649,43 +644,44 @@ void EditorView::setTheme(RenderTheme theme) {
   rebuildLayout();
 }
 
-void EditorView::setCursorHit(HitTestResult hit) {
-  PerfTimer perf("view.setCursorHit");
-  dragState_ = DragState::Idle;
+// Stores the selection and does what follows a change of the caret or the selection, always in
+// this order: the caret blink starts over, the blocks whose look depends on the selection are
+// laid out again (which also brings the hit test up to date), the caret is scrolled into view,
+// and the table toolbar follows it.
+//
+// `hitIsFresh` says the hit test was just made for this caret, as it is after a click. Only then
+// is the caret also revealed inside an unwrapped code fence: that reads the hit's rectangle, and
+// a hit made for an earlier caret can name a block of a layout that no longer exists.
+void EditorView::adoptSelection(SelectionRange selection, bool hitIsFresh) {
   const SelectionRange previousSelection = selection_;
-  cursorHit_ = hit;
-  cursorPosition_ = hit.cursorPosition();
-  selection_.anchor = cursorPosition_;
-  selection_.focus = cursorPosition_;
+  selection_ = selection;
   resetCaretBlink();
   refreshInlineProjectionForSelectionChange(previousSelection);
-  ensureCodeFenceCursorVisible();
+  if (hitIsFresh) {
+    ensureCodeFenceCursorVisible();
+  }
   ensureCursorVisible();
   updateTableToolbar();
 }
 
+void EditorView::setCursorHit(HitTestResult hit) {
+  PerfTimer perf("view.setCursorHit");
+  dragState_ = DragState::Idle;
+  cursorHit_ = hit;
+  adoptSelection({hit.cursorPosition(), hit.cursorPosition()}, true);
+}
+
 void EditorView::setCursorPosition(CursorPosition position) {
   dragState_ = DragState::Idle;
-  const SelectionRange previousSelection = selection_;
-  cursorPosition_ = position;
   if (layoutBuild_) {
+    // Only the selection is stored here: the document is being re-laid out, and setDocument
+    // starts from the selection once the layout exists.
     selection_ = {position, position};
     if (document_)
       setDocument(*document_, documentPath_, true);
     return;
   }
-  selection_.anchor = cursorPosition_;
-  selection_.focus = cursorPosition_;
-  {
-    PerfTimer t("view.setSelection.refreshInlineProjection");
-    refreshInlineProjectionForSelectionChange(previousSelection);
-  }
-  {
-    PerfTimer t("view.setSelection.updateTableToolbar");
-    updateTableToolbar();
-  }
-  resetCaretBlink();
-  ensureCursorVisible();
+  adoptSelection({position, position});
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
@@ -704,12 +700,13 @@ void EditorView::setEditingHtmlBlock(NodeId id, CursorPosition cursor) {
   }
   // Switching representation must not follow the previous block's caret or
   // publish geometry for the new caret against the old HTML preview.
-  const ScopedViewportPin pin(*this, id.isValid() ? id : cursorPosition_.blockId);
+  const ScopedViewportPin pin(*this, id.isValid() ? id : selection_.focus.blockId);
   const auto previousId = editingHtmlBlockId_;
   const auto previousSelection = selection_;
   editingHtmlBlockId_ = id;
   if (cursor.isValid()) {
-    cursorPosition_ = cursor;
+    // The selection is stored without the usual follow-up: scrolling to the caret has to wait
+    // until the block below is shown in its new representation.
     selection_ = {cursor, cursor};
     resetCaretBlink();
   }
@@ -730,25 +727,25 @@ void EditorView::setEditingHtmlBlock(NodeId id, CursorPosition cursor) {
 }
 
 void EditorView::applySelectionRange(SelectionRange selection) {
-  const SelectionRange previousSelection = selection_;
-  selection_ = selection;
-  cursorPosition_ = selection.focus;
   if (layoutBuild_) {
+    // Only the selection is stored here: the document is being re-laid out, and setDocument
+    // starts from the selection once the layout exists.
+    selection_ = selection;
     if (document_)
       setDocument(*document_, documentPath_, true);
     return;
   }
   if (dragState_ == DragState::Dragging) {
+    // While the mouse drags a selection the caret stays hidden, so only the selection is stored
+    // and the covered area repainted.
+    selection_ = selection;
     cursorVisible_ = false;
     cursorTimer_->stop();
     diag::updateViewport(viewport());
     updateTableToolbar();
     return;
   }
-  resetCaretBlink();
-  refreshInlineProjectionForSelectionChange(previousSelection);
-  updateTableToolbar();
-  ensureCursorVisible();
+  adoptSelection(selection);
 }
 
 void EditorView::setEditingLocked(bool locked) {
@@ -783,7 +780,7 @@ void EditorView::setEditingLocked(bool locked) {
 }
 
 void EditorView::requestInitialCursor() {
-  if (hasFocus() && !editingLocked_ && !layoutBuild_ && !cursorPosition_.isValid() && document_ &&
+  if (hasFocus() && !editingLocked_ && !layoutBuild_ && !selection_.focus.isValid() && document_ &&
       document_->markdownText().isEmpty())
     emit initialCursorRequested();
 }
@@ -806,7 +803,6 @@ void EditorView::resetCaretBlink() {
 
 void EditorView::clearCursor() {
   inputMethodState_.schedule();
-  cursorPosition_ = {};
   selection_ = {};
   preDragSelection_ = {};
   cursorHit_ = {};
@@ -1079,9 +1075,9 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       return;
     }
     if (event->modifiers().testFlag(Qt::ShiftModifier) && hit.isValid() && isDragSelectableZone(hit.zone) &&
-        cursorPosition_.isValid()) {
+        selection_.focus.isValid()) {
       SelectionRange range;
-      range.anchor = selection_.anchor.isValid() ? selection_.anchor : cursorPosition_;
+      range.anchor = selection_.anchor.isValid() ? selection_.anchor : selection_.focus;
       range.focus = hit.cursorPosition();
       setSelectionRange(range);
       emit selectionChanged(range, hit);
@@ -1336,9 +1332,9 @@ void EditorView::resetComposition() {
   preedit_.clear();
   preeditFormats_.clear();
   preeditCursor_ = -1;
-  if (document_ && cursorPosition_.blockId.isValid()) {
-    blockBuiltAt_.remove(cursorPosition_.blockId);
-    refreshBlocks({cursorPosition_.blockId}, *document_);
+  if (document_ && selection_.focus.blockId.isValid()) {
+    blockBuiltAt_.remove(selection_.focus.blockId);
+    refreshBlocks({selection_.focus.blockId}, *document_);
   }
 }
 
@@ -1452,10 +1448,10 @@ void EditorView::inputMethodEvent(QInputMethodEvent* event) {
     // BuiltStamp is dropped so the cached build is discarded; refreshBlocks resolves a nested caret
     // (list item / quote paragraph) up to its top-level block. configureBuilder forwards the preedit.
     resetCaretBlink(); // a composition replaces the caret — stop blinking while composing
-    if (layout_ && document_ && cursorPosition_.blockId.isValid()) {
+    if (layout_ && document_ && selection_.focus.blockId.isValid()) {
       layout_->setPreedit(preedit_, preeditFormats_, preeditCursor_);
-      blockBuiltAt_.remove(cursorPosition_.blockId);
-      refreshBlocks({cursorPosition_.blockId}, *document_);
+      blockBuiltAt_.remove(selection_.focus.blockId);
+      refreshBlocks({selection_.focus.blockId}, *document_);
       ensureCodeFenceCursorVisible();
     } else {
       QRect dirty = uniteDocumentRectDirty({}, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
@@ -1486,7 +1482,7 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
   case Qt::ImSurroundingText: {
     // The caret block's visible text — the paragraph around the cursor, which is what conversion
     // IMEs consume for context/reconversion. Folded inline syntax reports the VISIBLE projection.
-    const BlockLayout* block = layout_ ? layout_->blockIfPromoted(cursorPosition_.blockId) : nullptr;
+    const BlockLayout* block = layout_ ? layout_->blockIfPromoted(selection_.focus.blockId) : nullptr;
     if (!block) {
       return QString();
     }
@@ -1505,16 +1501,16 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
   }
   case Qt::ImCursorPosition: {
     const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
-    return static_cast<int>(qBound<qsizetype>(0, cursorPosition_.text.textOffset, surrounding.size()));
+    return static_cast<int>(qBound<qsizetype>(0, selection_.focus.text.textOffset, surrounding.size()));
   }
   case Qt::ImAnchorPosition: {
     const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
     const auto offset =
-        selection_.isSingleTextNode() ? selection_.anchor.text.textOffset : cursorPosition_.text.textOffset;
+        selection_.isSingleTextNode() ? selection_.anchor.text.textOffset : selection_.focus.text.textOffset;
     return static_cast<int>(qBound<qsizetype>(0, offset, surrounding.size()));
   }
   case Qt::ImAbsolutePosition:
-    return cursorPosition_.text.sourceOffset;
+    return selection_.focus.text.sourceOffset;
   case Qt::ImCurrentSelection: {
     // Only a same-text-node selection maps into the surrounding text; cross-block/cross-cell
     // selections have no single surrounding string.
@@ -1569,16 +1565,16 @@ void EditorView::rebuildLayout(bool preserveViewport) {
       ScopedViewportPin pin(*this);
       layout_->rebuild(*document_, theme_, viewport()->width(), selection_, documentPath_,
                        lazy ? DocumentLayout::BuildPolicy::Lazy : DocumentLayout::BuildPolicy::Eager);
-      if (cursorPosition_.isValid()) {
-        const qsizetype caretIdx = layout_->topLevelIndexFor(cursorPosition_.blockId);
+      if (selection_.focus.isValid()) {
+        const qsizetype caretIdx = layout_->topLevelIndexFor(selection_.focus.blockId);
         if (caretIdx >= 0) {
           layout_->ensureBuilt(caretIdx, caretIdx, theme_); // caret block needed for hit resolution
         }
       }
     }
     ensureVisibleBuilt(); // promote the visible window; self-pinned so the promotion snap is invisible
-    if (cursorPosition_.isValid()) {
-      cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
+    if (selection_.focus.isValid()) {
+      cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, selection_.focus);
       cursorVisible_ = cursorHit_.isValid();
       ensureCodeFenceCursorVisible();
     }
@@ -1590,7 +1586,7 @@ void EditorView::rebuildLayout(bool preserveViewport) {
   }
   updateCodeLanguageEditor();
   updateTableToolbar();
-  if (cursorPosition_.isValid() && !preserveViewport) {
+  if (selection_.focus.isValid() && !preserveViewport) {
     ensureCursorVisible();
   }
   inputMethodState_.schedule();
@@ -1613,7 +1609,7 @@ void EditorView::updateCodeLanguageEditor() {
     codeLanguageEditor_->forceHide(); // 锁定编辑: no floating code-fence language editor
     return;
   }
-  codeLanguageEditor_->update(cursorPosition_, cursorHit_, layout_.get(), document_.data(), scrollY(),
+  codeLanguageEditor_->update(selection_.focus, cursorHit_, layout_.get(), document_.data(), scrollY(),
                               viewport()->height());
 }
 
@@ -1630,7 +1626,7 @@ void EditorView::updateTableToolbar() {
 
 void EditorView::updateCursorHitFromPosition() {
   inputMethodState_.schedule();
-  cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, cursorPosition_);
+  cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, selection_.focus);
   cursorVisible_ = cursorHit_.isValid();
   updateCodeLanguageEditor();
   updateTableToolbar();
@@ -1647,7 +1643,7 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
   // rebuild and restored after; a no-op when nothing above the focus block moved. refreshBlocks
   // also pins internally on the topmost visible block — this explicit focus pin is applied last, so
   // it governs the final position.
-  const ViewportAnchor anchor = captureViewportAnchor(cursorPosition_.blockId);
+  const ViewportAnchor anchor = captureViewportAnchor(selection_.focus.blockId);
 
   bool refreshed = false;
   if (document_ && layout_ && !blockIds.isEmpty()) {
@@ -1682,7 +1678,7 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
       diag::updateViewport(viewport()); // content shifted under a new scroll offset — repaint coherently
     }
     // Erase old heading badge if cursor moved away from a heading block
-    if (previousSelection.focus.blockId != cursorPosition_.blockId) {
+    if (previousSelection.focus.blockId != selection_.focus.blockId) {
       const QRectF oldBadge = headingBadgeViewportRectForBlock(previousSelection.focus.blockId);
       if (!oldBadge.isEmpty()) {
         diag::updateViewport(viewport(), oldBadge.adjusted(-2, -2, 2, 2).toAlignedRect());

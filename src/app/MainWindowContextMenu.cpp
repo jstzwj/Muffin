@@ -125,7 +125,7 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
             replace->setEnabled(tab_->session.isEditingAllowed() && !tab_->previewActive());
             connect(replace, &QAction::triggered, this, [this, start, length, suggestion]() {
               if (!tab_->previewActive())
-                tab_->session.applyTextDelta(start, length, suggestion, true);
+                tab_->renderCommands.replaceSourceRange(tr("Replace"), start, length, suggestion);
             });
           }
         }
