@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { bundledFontArguments } from "./mermaid_bundled_fonts.mjs";
 
 // Captures real mermaid 11.16.0 classDiagram geometry (class node bounds +
 // compartment divider count + relationship edge markers) via headless Chrome,
@@ -69,7 +70,7 @@ try {
   await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
   const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
   const results = await page.evaluate(
-    async ({ cases, mermaidModule }) => {
+    async ({ cases, mermaidModule, fontFaces, fontFamily }) => {
       const number = (v) => Math.round(v * 1000) / 1000;
       const { default: mermaid } = await import(mermaidModule);
       // Extract bare marker type from url(#.._class-extensionStart); drop the
@@ -104,17 +105,21 @@ try {
         return m ? m[1] : tail;
       };
 
+      // The bundled Noto faces: what the port measures text in.
+      const fontStyle = document.createElement("style");
+      fontStyle.textContent = fontFaces;
+      document.head.appendChild(fontStyle);
+      await document.fonts.load('16px "Noto Sans"');
+      await document.fonts.ready;
       const out = [];
       for (let index = 0; index < cases.length; ++index) {
         const fixture = cases[index];
-        // fontFamily matches Muffin's default theme stack; htmlLabels:false
-        // forces deterministic SVG <text>.
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
           theme: "default",
-          fontFamily: '"trebuchet ms", verdana, arial, sans-serif',
-          flowchart: { htmlLabels: false },
+          fontFamily,
+          themeVariables: { fontFamily },
         });
         const svgId = `class-geometry-${index}`;
         const { svg } = await mermaid.render(svgId, fixture.source);
@@ -157,7 +162,7 @@ try {
       }
       return out;
     },
-    { cases, mermaidModule },
+    { cases, mermaidModule, ...bundledFontArguments },
   );
 
   const root = {
@@ -174,7 +179,7 @@ try {
         "classdiagram::ClassScene::toJsonObject.",
     },
     mermaidVersion: "11.16.0",
-    fontMode: "trebuchet-ms",
+    fontMode: "bundled-noto-2.13b171",
     oracle: "classDiagram.render class nodes (bounds+dividers) + relationship edges (pattern+markers)",
     cases: results,
   };

@@ -5,7 +5,7 @@
     "notes": "Real mermaid 11.16.0 requirementDiagram geometry captured via headless Chrome with htmlLabels:false (deterministic SVG <text>). Per requirementBox node: body-row count (.label groups minus 2) + divider presence + width/height (origin-independent, font-coupled). Per relationship edge: line pattern + start/end marker kinds + relationship type (extracted from the <<type>> label). Marker kinds are bare types (Start/End suffix dropped). Positions are not captured (doubly font-coupled via dagre). Compare against requirement::RequirementScene::toJsonObject."
   },
   "mermaidVersion": "11.16.0",
-  "fontMode": "trebuchet-ms",
+  "fontMode": "bundled-noto-2.13b171",
   "oracle": "requirementDiagram.render requirementBox nodes (bounds+bodyRows+dividers) + relationship edges (pattern+markers+type)",
   "cases": [
     {
@@ -18,9 +18,9 @@
             "type": "Requirement",
             "bodyRows": 4,
             "dividers": 1,
-            "width": 188.344,
+            "width": 192.25,
             "height": 184,
-            "dividerY": -22
+            "dividerY": -24
           }
         ],
         "edges": []
@@ -36,54 +36,54 @@
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "R2",
             "type": "Functional Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 225.203,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 236.906,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "R3",
             "type": "Interface Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 215.484,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 226.469,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "R4",
             "type": "Performance Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 240.953,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 256.203,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "R5",
             "type": "Physical Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 206.922,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 218.875,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "R6",
             "type": "Design Constraint",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 178.734,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 191.172,
+            "height": 112,
+            "dividerY": 12
           }
         ],
         "edges": []
@@ -99,9 +99,9 @@
             "type": "Element",
             "bodyRows": 2,
             "dividers": 1,
-            "width": 142.359,
-            "height": 134,
-            "dividerY": 3
+            "width": 147.797,
+            "height": 136,
+            "dividerY": 0
           }
         ],
         "edges": []
@@ -117,18 +117,18 @@
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "Child",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           }
         ],
         "edges": [
@@ -152,63 +152,63 @@
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "B",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "C",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "D",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "E",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "F",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "G",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           }
         ],
         "edges": [
@@ -267,27 +267,27 @@
             "type": "Requirement",
             "bodyRows": 4,
             "dividers": 1,
-            "width": 217.617,
+            "width": 220.547,
             "height": 184,
-            "dividerY": -22
+            "dividerY": -24
           },
           {
             "id": "Req2",
             "type": "Functional Requirement",
             "bodyRows": 4,
             "dividers": 1,
-            "width": 225.203,
+            "width": 236.906,
             "height": 184,
-            "dividerY": -22
+            "dividerY": -24
           },
           {
             "id": "Mod",
             "type": "Element",
             "bodyRows": 2,
             "dividers": 1,
-            "width": 123.703,
-            "height": 134,
-            "dividerY": 3
+            "width": 129.578,
+            "height": 136,
+            "dividerY": 0
           }
         ],
         "edges": [
@@ -318,18 +318,18 @@
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           },
           {
             "id": "Right",
             "type": "Requirement",
             "bodyRows": 1,
             "dividers": 1,
-            "width": 145.219,
-            "height": 109,
-            "dividerY": 15.5
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
           }
         ],
         "edges": [
@@ -341,6 +341,239 @@
             "label": "<<contains>>"
           }
         ]
+      }
+    },
+    {
+      "id": "every-relationship",
+      "source": "requirementDiagram\nrequirement A {\n  id: 1\n}\nrequirement B {\n  id: 2\n}\nelement E {\n  type: t\n}\nA -contains-> B\nA -copies-> B\nA -derives-> B\nA -satisfies-> B\nA -verifies-> B\nA -refines-> B\nA -traces-> B\nE <-contains- A",
+      "expected": {
+        "nodes": [
+          {
+            "id": "A",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "B",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "E",
+            "type": "Element",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 118.313,
+            "height": 112,
+            "dividerY": 12
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "traces",
+            "label": "<<traces>>"
+          },
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wide-body",
+      "source": "requirementDiagram\nrequirement SystemRequirement {\n  id: 1.2.3\n  text: The system shall respond within three seconds under nominal load\n  risk: high\n  verifyMethod: demonstration\n}\nrequirement Other {\n  id: 2\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "SystemRequirement",
+            "type": "Requirement",
+            "bodyRows": 4,
+            "dividers": 1,
+            "width": 562.016,
+            "height": 184,
+            "dividerY": -24
+          },
+          {
+            "id": "Other",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          }
+        ],
+        "edges": []
+      }
+    },
+    {
+      "id": "tree",
+      "source": "requirementDiagram\nrequirement Root {\n  id: 1\n}\nrequirement Left {\n  id: 2\n}\nrequirement Right {\n  id: 3\n}\nrequirement Leaf {\n  id: 4\n}\nRoot -contains-> Left\nRoot -contains-> Right\nRight -contains-> Leaf",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Root",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "Left",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "Right",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "Leaf",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          },
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          },
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "elements",
+      "source": "requirementDiagram\nelement Sensor {\n  type: Hardware\n  docref: D1\n}\nelement Controller {\n  type: Software\n  docref: D2\n}\nSensor <-contains- Controller",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Sensor",
+            "type": "Element",
+            "bodyRows": 2,
+            "dividers": 1,
+            "width": 137.875,
+            "height": 136,
+            "dividerY": 0
+          },
+          {
+            "id": "Controller",
+            "type": "Element",
+            "bodyRows": 2,
+            "dividers": 1,
+            "width": 130.656,
+            "height": 136,
+            "dividerY": 0
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direction-bt",
+      "source": "requirementDiagram\ndirection BT\nrequirement Top {\n  id: 1\n}\nrequirement Bottom {\n  id: 2\n}\nTop -contains-> Bottom",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Top",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          },
+          {
+            "id": "Bottom",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 154.406,
+            "height": 112,
+            "dividerY": 12
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "single-node",
+      "source": "requirementDiagram\nrequirement Alone {\n  id: 1\n  text: stands by itself\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Alone",
+            "type": "Requirement",
+            "bodyRows": 2,
+            "dividers": 1,
+            "width": 171.203,
+            "height": 136,
+            "dividerY": 0
+          }
+        ],
+        "edges": []
       }
     }
   ]

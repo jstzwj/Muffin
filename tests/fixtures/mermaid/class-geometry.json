@@ -5,7 +5,7 @@
     "notes": "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome. Per class node: compartment divider count + width/height (origin-independent, font-coupled diagnostic). Per relationship edge: line pattern + start/end marker kinds. Marker kinds are bare types (Start/End suffix dropped; field position encodes the side) to line up with ClassScene's markerStart/markerEnd. Positions are not captured (doubly font-coupled via dagre). Compare against classdiagram::ClassScene::toJsonObject."
   },
   "mermaidVersion": "11.16.0",
-  "fontMode": "trebuchet-ms",
+  "fontMode": "bundled-noto-2.13b171",
   "oracle": "classDiagram.render class nodes (bounds+dividers) + relationship edges (pattern+markers)",
   "cases": [
     {
@@ -16,13 +16,13 @@
           {
             "id": "Animal",
             "dividers": 2,
-            "width": 75.344,
+            "width": 76.313,
             "height": 84
           },
           {
             "id": "Duck",
             "dividers": 2,
-            "width": 60.688,
+            "width": 61.797,
             "height": 84
           }
         ],
@@ -43,13 +43,13 @@
           {
             "id": "Shape",
             "dividers": 2,
-            "width": 68.703,
+            "width": 70.516,
             "height": 84
           },
           {
             "id": "Shape2",
             "dividers": 2,
-            "width": 78.078,
+            "width": 79.672,
             "height": 84
           }
         ],
@@ -70,13 +70,13 @@
           {
             "id": "Car",
             "dividers": 2,
-            "width": 49.156,
+            "width": 49.703,
             "height": 84
           },
           {
             "id": "Wheel",
             "dividers": 2,
-            "width": 70.734,
+            "width": 70.953,
             "height": 84
           }
         ],
@@ -97,13 +97,13 @@
           {
             "id": "Company",
             "dividers": 2,
-            "width": 92.422,
+            "width": 95.625,
             "height": 84
           },
           {
             "id": "Employee",
             "dividers": 2,
-            "width": 96.875,
+            "width": 97.406,
             "height": 84
           }
         ],
@@ -124,13 +124,13 @@
           {
             "id": "A",
             "dividers": 2,
-            "width": 34.141,
+            "width": 34.234,
             "height": 84
           },
           {
             "id": "B",
             "dividers": 2,
-            "width": 33.531,
+            "width": 34.406,
             "height": 84
           }
         ],
@@ -151,13 +151,13 @@
           {
             "id": "C",
             "dividers": 2,
-            "width": 33.797,
+            "width": 34.125,
             "height": 84
           },
           {
             "id": "D",
             "dividers": 2,
-            "width": 34.281,
+            "width": 35.688,
             "height": 84
           }
         ],
@@ -178,13 +178,13 @@
           {
             "id": "E",
             "dividers": 2,
-            "width": 33.109,
+            "width": 32.906,
             "height": 84
           },
           {
             "id": "F",
             "dividers": 2,
-            "width": 33.344,
+            "width": 32.313,
             "height": 84
           }
         ],
@@ -205,13 +205,13 @@
           {
             "id": "P",
             "dividers": 2,
-            "width": 33.391,
+            "width": 33.688,
             "height": 84
           },
           {
             "id": "Q",
             "dividers": 2,
-            "width": 35.344,
+            "width": 36.5,
             "height": 84
           }
         ],
@@ -232,13 +232,13 @@
           {
             "id": "R",
             "dividers": 2,
-            "width": 33.781,
+            "width": 33.953,
             "height": 84
           },
           {
             "id": "S",
             "dividers": 2,
-            "width": 32.188,
+            "width": 32.797,
             "height": 84
           }
         ],
@@ -259,13 +259,13 @@
           {
             "id": "Owner",
             "dividers": 2,
-            "width": 73.266,
+            "width": 74.594,
             "height": 84
           },
           {
             "id": "Pet",
             "dividers": 2,
-            "width": 48.188,
+            "width": 48.484,
             "height": 84
           }
         ],
@@ -286,7 +286,7 @@
           {
             "id": "Duck",
             "dividers": 2,
-            "width": 168.953,
+            "width": 177.836,
             "height": 168
           }
         ],
@@ -301,13 +301,13 @@
           {
             "id": "X",
             "dividers": 2,
-            "width": 33.609,
+            "width": 33.391,
             "height": 84
           },
           {
             "id": "Y",
             "dividers": 2,
-            "width": 33.813,
+            "width": 33.063,
             "height": 84
           }
         ],

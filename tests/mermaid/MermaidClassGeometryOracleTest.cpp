@@ -3,22 +3,20 @@
 // captured by scripts/generate_mermaid_class_geometry_fixture.mjs (headless
 // Chrome via the sibling mermaid-cli checkout).
 //
-// ASSERTS (font-independent):
+// The fixture is captured in the bundled Noto fonts, which is also what the
+// port measures text in, so no number here depends on the machine's fonts.
+//
+// ASSERTS:
 //   - node count + edge count (topology)
 //   - the multiset of relationship edge tuples (pattern, markerStart, markerEnd)
-//   - per-node HEIGHT (compartment row model: font ascent/descent is stable
-//     across Qt/Chrome — like the ER oracle's entity-height parity)
+//   - per-node HEIGHT (compartment row model)
+//   - per-node WIDTH (text measurement in the same font)
 //   - per-node compartment DIVIDER count (exact — both sides reserve the same
 //     header|members|methods structure, even for bare classes).
 // The edge-tuple multiset proves Muffin draws exactly mermaid's arrows for every
 // class relationship type (inheritance/realization/composition/aggregation/
 // association/dependency, solid/dashed, start/end/both) — the class analogue of
-// the ER oracle's cardinality assertion.
-//
-// REPORTS (font-coupled, printed not failed): per-node WIDTH. Width depends on
-// per-glyph advance widths, which differ between Qt and Chrome by ~1px/text (a
-// milder form of the same font-coupling that limits the pixel goldens). Positions
-// (cx/cy) are doubly font-coupled via dagre and are not captured.
+// the ER oracle's cardinality assertion. Positions (cx/cy) are not captured.
 //
 // Marker normalization: Muffin emits markerStart="none" for marker-less ends;
 // mermaid emits null. Both normalize to empty for the tuple comparison.
@@ -44,10 +42,9 @@ using namespace muffin::mermaid;
 
 namespace {
 
-// Asserted (font-independent) tolerances.
+// Tolerances in px.
 constexpr qreal kHeight = 1.5; // class node height: compartment row-model parity
-// Reported (font-coupled) — printed, not failed.
-constexpr qreal kReport = 0.5; // class node width: per-glyph advance (Qt vs Chrome)
+constexpr qreal kWidth = 0.05; // class node width: text measured in the same font
 
 [[noreturn]] void fail(const QString& message) {
   std::fprintf(stderr, "%s\n", qPrintable(message));
@@ -110,7 +107,7 @@ int main(int argc, char** argv) {
     const QJsonObject actual = classScene->toJsonObject();
 
     QStringList assertErrors;
-    QStringList reportNotes;
+
 
     const QJsonArray expectedNodes = expected.value(QStringLiteral("nodes")).toArray();
     const QJsonArray actualNodes = actual.value(QStringLiteral("nodes")).toArray();
@@ -134,13 +131,11 @@ int main(int argc, char** argv) {
       assertErrors << QStringLiteral("  muffin : %1").arg(actualTuples.join(QStringLiteral(", ")));
     }
 
-    // Node geometry + compartment structure (font-coupled / model-dependent) —
-    // reported, matched by id.
     // Node geometry + compartment structure, matched by id.
     QHash<QString, QJsonValue> expectedNodeById;
     for (const QJsonValue& n : expectedNodes)
       expectedNodeById.insert(n.toObject().value(QStringLiteral("id")).toString(), n);
-    const parity::Tier reportTier{kReport};
+    const parity::Tier widthTier{kWidth};
     const parity::Tier heightTier{kHeight};
     for (const QJsonValue& n : actualNodes) {
       const QJsonObject node = n.toObject();
@@ -159,22 +154,15 @@ int main(int argc, char** argv) {
       const int expectedDiv = static_cast<int>(exp.value(QStringLiteral("dividers")).toDouble());
       if (actualDiv != expectedDiv)
         assertErrors << prefix + QStringLiteral("/dividers: muffin=%1 mermaid=%2").arg(actualDiv).arg(expectedDiv);
-      // Width is font-coupled (reported only).
-      reportNotes +=
+      assertErrors +=
           parity::compareNumber(node.value(QStringLiteral("width")).toDouble(),
-                                exp.value(QStringLiteral("width")).toDouble(), reportTier, prefix + "/width");
+                                exp.value(QStringLiteral("width")).toDouble(), widthTier, prefix + "/width");
     }
 
-    if (!reportNotes.isEmpty()) {
-      std::fprintf(stderr, "[Class geometry] %s: %llu font-coupled delta(s) (reported, not asserted):\n",
-                   qPrintable(id), static_cast<unsigned long long>(reportNotes.size()));
-      for (const QString& note : reportNotes)
-        std::fprintf(stderr, "  %s\n", qPrintable(note));
-    }
     if (!assertErrors.isEmpty()) {
       for (const QString& e : assertErrors)
         std::fprintf(stderr, "%s\n", qPrintable(e));
-      fail(id + QStringLiteral(": class geometry parity regression (topology/edge tuples/height/dividers)"));
+      fail(id + QStringLiteral(": class geometry parity regression (topology/edge tuples/size/dividers)"));
     }
   }
   return 0;

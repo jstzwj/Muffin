@@ -5,7 +5,7 @@
     "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State node sizes + transition topology. Transition from/to recovered by matching each edge's data-points endpoints (first=source, last=target) to the nearest node centre — state edges carry no LS-/LE- class encoding. Node ids match Muffin directly (root_start/root_end/<name>). width/height are font-coupled; compare against state::StateScene::toJsonObject (nodes id/height/width, edges start/end/markerEnd)."
   },
   "mermaidVersion": "11.16.0",
-  "fontMode": "trebuchet-ms",
+  "fontMode": "bundled-noto-2.13b171",
   "oracle": "stateDiagram.render state nodes (size) + transition topology (from/to by endpoint match)",
   "cases": [
     {
@@ -20,12 +20,12 @@
           },
           {
             "id": "Active",
-            "width": 60.828,
+            "width": 60.969,
             "height": 40
           },
           {
             "id": "Inactive",
-            "width": 73,
+            "width": 75.031,
             "height": 40
           },
           {
@@ -65,17 +65,17 @@
           },
           {
             "id": "A",
-            "width": 25.438,
+            "width": 26.234,
             "height": 40
           },
           {
             "id": "B",
-            "width": 25.063,
+            "width": 26.406,
             "height": 40
           },
           {
             "id": "C",
-            "width": 25.578,
+            "width": 26.125,
             "height": 40
           },
           {
@@ -125,7 +125,7 @@
           },
           {
             "id": "Active",
-            "width": 60.828,
+            "width": 60.969,
             "height": 40
           },
           {
@@ -135,12 +135,12 @@
           },
           {
             "id": "S1",
-            "width": 32.094,
+            "width": 33.938,
             "height": 40
           },
           {
             "id": "S2",
-            "width": 32.094,
+            "width": 33.938,
             "height": 40
           },
           {
@@ -205,7 +205,7 @@
           },
           {
             "id": "Idle",
-            "width": 42.813,
+            "width": 44.422,
             "height": 40
           },
           {
@@ -245,12 +245,12 @@
           },
           {
             "id": "Off",
-            "width": 38.609,
+            "width": 39.516,
             "height": 40
           },
           {
             "id": "On",
-            "width": 35.531,
+            "width": 38.391,
             "height": 40
           },
           {
@@ -277,6 +277,596 @@
           },
           {
             "from": "On",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "composite",
+      "source": "stateDiagram-v2\n[*] --> Outer\nstate Outer {\n  [*] --> Inner1\n  Inner1 --> Inner2\n  Inner2 --> [*]\n}\nOuter --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Outer_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Inner1",
+            "width": 65.984,
+            "height": 40
+          },
+          {
+            "id": "Inner2",
+            "width": 65.984,
+            "height": 40
+          },
+          {
+            "id": "Outer_end",
+            "width": 14.013,
+            "height": 14
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Outer_start",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Outer_end",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Outer_start",
+            "to": "Inner1",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Inner1",
+            "to": "Inner2",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Inner2",
+            "to": "Outer_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "choice",
+      "source": "stateDiagram-v2\n[*] --> A\nstate c <<choice>>\nA --> c\nc --> B : yes\nc --> C : no\nB --> [*]\nC --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 26.234,
+            "height": 40
+          },
+          {
+            "id": "c",
+            "width": 28,
+            "height": 28
+          },
+          {
+            "id": "B",
+            "width": 26.406,
+            "height": 40
+          },
+          {
+            "id": "C",
+            "width": 26.125,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "c",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "c",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "c",
+            "to": "C",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "C",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "note",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Running : start\nnote right of Idle : waits for input\nnote right of Running : processing\nRunning --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Idle",
+            "width": 44.422,
+            "height": 40
+          },
+          {
+            "id": "Running",
+            "width": 79.484,
+            "height": 40
+          },
+          {
+            "id": "Idle----note-2",
+            "width": 138.766,
+            "height": 54
+          },
+          {
+            "id": "Running----note-3",
+            "width": 111.703,
+            "height": 54
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Idle",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Idle",
+            "to": "Running",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Idle",
+            "to": "Idle----note-2",
+            "markerEnd": null
+          },
+          {
+            "from": "Running",
+            "to": "Running----note-3",
+            "markerEnd": null
+          },
+          {
+            "from": "Running",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "diamond",
+      "source": "stateDiagram-v2\n[*] --> A\nA --> B\nA --> C\nB --> D\nC --> D\nD --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 26.234,
+            "height": 40
+          },
+          {
+            "id": "B",
+            "width": 26.406,
+            "height": 40
+          },
+          {
+            "id": "C",
+            "width": 26.125,
+            "height": 40
+          },
+          {
+            "id": "D",
+            "width": 27.688,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "C",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "D",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "C",
+            "to": "D",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "D",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "chain",
+      "source": "stateDiagram-v2\n[*] --> S1\nS1 --> S2\nS2 --> S3\nS3 --> S4\nS4 --> S5\nS5 --> S6\nS6 --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "S1",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "S2",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "S3",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "S4",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "S5",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "S6",
+            "width": 33.938,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "S1",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S1",
+            "to": "S2",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S2",
+            "to": "S3",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S3",
+            "to": "S4",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S4",
+            "to": "S5",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S5",
+            "to": "S6",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S6",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "long-names",
+      "source": "stateDiagram-v2\n[*] --> AwaitingUserConfirmation\nAwaitingUserConfirmation --> ProcessingPaymentAuthorization : submit\nProcessingPaymentAuthorization --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "AwaitingUserConfirmation",
+            "width": 215.859,
+            "height": 40
+          },
+          {
+            "id": "ProcessingPaymentAuthorization",
+            "width": 266.172,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "AwaitingUserConfirmation",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "AwaitingUserConfirmation",
+            "to": "ProcessingPaymentAuthorization",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "ProcessingPaymentAuthorization",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "description",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle : waiting for a signal from the host\nIdle --> Busy : a much longer transition label with several words\nBusy --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Idle",
+            "width": 216,
+            "height": 64
+          },
+          {
+            "id": "Busy",
+            "width": 52.125,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Idle",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Idle",
+            "to": "Busy",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Busy",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direction-lr",
+      "source": "stateDiagram-v2\ndirection LR\n[*] --> A\nA --> B\nB --> C\nC --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 26.234,
+            "height": 40
+          },
+          {
+            "id": "B",
+            "width": 26.406,
+            "height": 40
+          },
+          {
+            "id": "C",
+            "width": 26.125,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "C",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "two-loops",
+      "source": "stateDiagram-v2\n[*] --> A\nA --> A : retry\nA --> B : go\nB --> B : wait\nB --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 26.234,
+            "height": 40
+          },
+          {
+            "id": "B",
+            "width": 26.406,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "long-description",
+      "source": "stateDiagram-v2\n[*] --> A\nA : Waiting for the user to confirm the payment authorization before anything else can proceed\nA --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 216,
+            "height": 112
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
             "to": "root_end",
             "markerEnd": "barbEnd"
           }

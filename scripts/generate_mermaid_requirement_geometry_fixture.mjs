@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { bundledFontArguments } from "./mermaid_bundled_fonts.mjs";
 
 // Captures real mermaid 11.16.0 requirementDiagram geometry (requirementBox
 // node bounds + body-row count + divider presence + relationship edge markers
@@ -141,6 +142,60 @@ const cases = [
       "requirement Right {\n  id: 2\n}\n" +
       "Left -contains-> Right",
   },
+  // Wider structures: every relationship type at once, a wide body, a tree of
+  // requirements, elements only, bottom-to-top, and a lone node.
+  {
+    id: "every-relationship",
+    source:
+      "requirementDiagram\n" +
+      "requirement A {\n  id: 1\n}\n" +
+      "requirement B {\n  id: 2\n}\n" +
+      "element E {\n  type: t\n}\n" +
+      "A -contains-> B\nA -copies-> B\nA -derives-> B\nA -satisfies-> B\nA -verifies-> B\nA -refines-> B\nA -traces-> B\nE <-contains- A",
+  },
+  {
+    id: "wide-body",
+    source:
+      "requirementDiagram\n" +
+      "requirement SystemRequirement {\n" +
+      "  id: 1.2.3\n" +
+      "  text: The system shall respond within three seconds under nominal load\n" +
+      "  risk: high\n" +
+      "  verifyMethod: demonstration\n" +
+      "}\n" +
+      "requirement Other {\n  id: 2\n}",
+  },
+  {
+    id: "tree",
+    source:
+      "requirementDiagram\n" +
+      "requirement Root {\n  id: 1\n}\n" +
+      "requirement Left {\n  id: 2\n}\n" +
+      "requirement Right {\n  id: 3\n}\n" +
+      "requirement Leaf {\n  id: 4\n}\n" +
+      "Root -contains-> Left\nRoot -contains-> Right\nRight -contains-> Leaf",
+  },
+  {
+    id: "elements",
+    source:
+      "requirementDiagram\n" +
+      "element Sensor {\n  type: Hardware\n  docref: D1\n}\n" +
+      "element Controller {\n  type: Software\n  docref: D2\n}\n" +
+      "Sensor <-contains- Controller",
+  },
+  {
+    id: "direction-bt",
+    source:
+      "requirementDiagram\n" +
+      "direction BT\n" +
+      "requirement Top {\n  id: 1\n}\n" +
+      "requirement Bottom {\n  id: 2\n}\n" +
+      "Top -contains-> Bottom",
+  },
+  {
+    id: "single-node",
+    source: "requirementDiagram\nrequirement Alone {\n  id: 1\n  text: stands by itself\n}",
+  },
 ];
 
 const browser = await puppeteer.launch({
@@ -153,7 +208,7 @@ try {
   await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
   const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
   const results = await page.evaluate(
-    async ({ cases, mermaidModule }) => {
+    async ({ cases, mermaidModule, fontFaces, fontFamily }) => {
       const number = (v) => Math.round(v * 1000) / 1000;
       const { default: mermaid } = await import(mermaidModule);
       // Extract the bare marker type from url(#id_type-requirement_XStart/End);
@@ -188,17 +243,21 @@ try {
         return { x: left, y: top, width: right - left, height: bottom - top };
       };
 
+      // The bundled Noto faces: what the port measures text in.
+      const fontStyle = document.createElement("style");
+      fontStyle.textContent = fontFaces;
+      document.head.appendChild(fontStyle);
+      await document.fonts.load('16px "Noto Sans"');
+      await document.fonts.ready;
       const out = [];
       for (let index = 0; index < cases.length; ++index) {
         const fixture = cases[index];
-        // htmlLabels:false forces deterministic SVG <text> for both node rows
-        // and edge labels (matching Muffin's measurement path).
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
           theme: "default",
-          fontFamily: '"trebuchet ms", verdana, arial, sans-serif',
-          htmlLabels: false,
+          fontFamily,
+          themeVariables: { fontFamily },
         });
         const svgId = `req-geometry-${index}`;
         const { svg } = await mermaid.render(svgId, fixture.source);
@@ -256,7 +315,11 @@ try {
 
         // Edges: pattern + marker kinds + relationship type (from the label).
         const edgePaths = [...root.querySelectorAll(".edgePaths path")];
-        const edgeLabels = [...root.querySelectorAll(".edgeLabels .edgeLabel")];
+        // Only the label groups directly under .edgeLabels: with HTML labels
+        // (the default) each group holds a nested element of the same class.
+        const edgeLabels = [...root.querySelectorAll(".edgeLabels .edgeLabel")].filter(
+          (el) => el.parentElement.classList.contains("edgeLabels"),
+        );
         const edges = edgePaths.map((edge, i) => {
           const klass = edge.getAttribute("class") ?? "";
           const pattern = klass.includes("edge-pattern-dashed") ? "dashed" : "solid";
@@ -279,7 +342,7 @@ try {
       }
       return out;
     },
-    { cases, mermaidModule },
+    { cases, mermaidModule, ...bundledFontArguments },
   );
 
   const root = {
@@ -296,7 +359,7 @@ try {
         "dagre). Compare against requirement::RequirementScene::toJsonObject.",
     },
     mermaidVersion: "11.16.0",
-    fontMode: "trebuchet-ms",
+    fontMode: "bundled-noto-2.13b171",
     oracle:
       "requirementDiagram.render requirementBox nodes (bounds+bodyRows+dividers) + " +
       "relationship edges (pattern+markers+type)",

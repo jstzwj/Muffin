@@ -1,10 +1,11 @@
 // Requirement geometry parity oracle: compares Muffin's native
 // requirement::RequirementScene against real mermaid 11.16.0 requirementDiagram
 // geometry captured by scripts/generate_mermaid_requirement_geometry_fixture.mjs
-// (headless Chrome via the sibling mermaid-cli checkout, htmlLabels:false for
-// deterministic SVG <text>).
+// (headless Chrome via the sibling mermaid-cli checkout, in the bundled Noto
+// fonts and under the default configuration; the port measures text in the
+// same fonts, so no number here depends on the machine).
 //
-// ASSERTS (font-independent):
+// ASSERTS:
 //   - node count + edge count (topology)
 //   - the multiset of relationship edge tuples (pattern, markerStart, markerEnd,
 //     relationship type) — proves all 7 relationship types (contains solid +
@@ -13,7 +14,7 @@
 //     non-empty, which is the requirementBox compartment model).
 //   - per-node DIVIDER presence (exact — drawn iff body rows exist).
 //   - per-node node TYPE string ("Functional Requirement", "Element", ...).
-// REPORTS (font-coupled, printed not failed): per-node HEIGHT + WIDTH.
+//   - per-node HEIGHT, DIVIDER position and WIDTH.
 //
 // editor::MermaidRenderCache::getSync -> entry.scene ->
 // dynamic_cast to RequirementScene -> toJsonObject().
@@ -37,16 +38,10 @@ using namespace muffin::mermaid;
 
 namespace {
 
-// Asserted (font-independent) tolerances.
-// Height is font-coupled (row height = ink height + 6 per row) but stable
-// across Qt/Chrome for the same font — asserted within a tolerance that
-// accounts for sub-pixel glyph-height differences.
-constexpr qreal kHeight = 5.0;
-// Divider Y is font-coupled (typeHeight/nameHeight come from the row model);
-// the formula is exact, the residual is the row-height model's sub-pixel gap.
-constexpr qreal kDividerY = 4.0;
-// Reported (font-coupled) — printed, not failed.
-constexpr qreal kReport = 0.5;
+// Tolerances in px.
+constexpr qreal kHeight = 0.05;
+constexpr qreal kDividerY = 0.05;
+constexpr qreal kWidth = 0.05;
 
 [[noreturn]] void fail(const QString& message) {
   std::fprintf(stderr, "%s\n", qPrintable(message));
@@ -110,7 +105,7 @@ int main(int argc, char** argv) {
     const QJsonObject actual = reqScene->toJsonObject();
 
     QStringList assertErrors;
-    QStringList reportNotes;
+
 
     const QJsonArray expectedNodes = expected.value(QStringLiteral("nodes")).toArray();
     const QJsonArray actualNodes = actual.value(QStringLiteral("nodes")).toArray();
@@ -139,8 +134,8 @@ int main(int argc, char** argv) {
     QHash<QString, QJsonValue> expectedNodeById;
     for (const QJsonValue& n : expectedNodes)
       expectedNodeById.insert(n.toObject().value(QStringLiteral("id")).toString(), n);
-    const parity::Tier reportTier{kReport};
     const parity::Tier heightTier{kHeight};
+    const parity::Tier widthTier{kWidth};
     for (const QJsonValue& n : actualNodes) {
       const QJsonObject node = n.toObject();
       const QString nodeId = node.value(QStringLiteral("id")).toString();
@@ -165,35 +160,27 @@ int main(int argc, char** argv) {
       const QString expectedType = exp.value(QStringLiteral("type")).toString();
       if (actualType != expectedType)
         assertErrors << prefix + QStringLiteral("/type: muffin='%1' mermaid='%2'").arg(actualType, expectedType);
-      // Height (font-coupled — asserted within tolerance).
+      // Height.
       assertErrors +=
           parity::compareNumber(node.value(QStringLiteral("height")).toDouble(),
                                 exp.value(QStringLiteral("height")).toDouble(), heightTier, prefix + "/height");
-      // Divider Y (font-coupled — exact formula, asserted within tolerance) for
-      // nodes that have a divider.
+      // Divider Y for nodes that have a divider.
       if (exp.value(QStringLiteral("dividerY")).isDouble() && node.contains(QStringLiteral("dividerY"))) {
         const parity::Tier dividerTier{kDividerY};
         assertErrors +=
             parity::compareNumber(node.value(QStringLiteral("dividerY")).toDouble(),
                                   exp.value(QStringLiteral("dividerY")).toDouble(), dividerTier, prefix + "/dividerY");
       }
-      // Width is font-coupled (reported only).
-      reportNotes +=
+      assertErrors +=
           parity::compareNumber(node.value(QStringLiteral("width")).toDouble(),
-                                exp.value(QStringLiteral("width")).toDouble(), reportTier, prefix + "/width");
+                                exp.value(QStringLiteral("width")).toDouble(), widthTier, prefix + "/width");
     }
 
-    if (!reportNotes.isEmpty()) {
-      std::fprintf(stderr, "[Requirement geometry] %s: %llu font-coupled delta(s) (reported, not asserted):\n",
-                   qPrintable(id), static_cast<unsigned long long>(reportNotes.size()));
-      for (const QString& note : reportNotes)
-        std::fprintf(stderr, "  %s\n", qPrintable(note));
-    }
     if (!assertErrors.isEmpty()) {
       for (const QString& e : assertErrors)
         std::fprintf(stderr, "%s\n", qPrintable(e));
       fail(id + QStringLiteral(
-                    ": requirement geometry parity regression (topology/edge tuples/body rows/dividers/type/height)"));
+                    ": requirement geometry parity regression (topology/edge tuples/body rows/dividers/type/size)"));
     }
   }
   return 0;
