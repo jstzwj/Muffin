@@ -2724,38 +2724,60 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
       return hit;
     }
 
-    if (localPos.x() <= line.cursorToX(lineStart)) {
-      hit.displayOffset = composition_.toDisplayOffset(lineStart);
-      hit.cursorRect = QRectF(line.cursorToX(lineStart), line.y(), 1.0, line.height());
-      return hit;
-    }
-    if (localPos.x() >= line.cursorToX(lineEnd)) {
-      hit.displayOffset = composition_.toDisplayOffset(lineEnd);
-      hit.bias = lineEndBias;
-      hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
-      return hit;
+    // Let the text engine pick the caret: it knows the visual order of every run. A scan that
+    // takes the first caret right of the click is only correct when carets are ordered like
+    // the text — in a right-to-left run they run the other way, and for a paragraph whose
+    // base direction is right-to-left the first caret is the line's right edge, so every click
+    // landed on the start of the line.
+    //
+    // The caret that is returned should be the painted caret (cursorToX) nearest to the click.
+    // xToCursor leaves the end of a soft-wrapped line out, and at the edge of a right-to-left
+    // run it follows the run's own direction: clicking the right edge of an embedded Hebrew
+    // word is "before its first letter" to Qt, although that caret is painted at the word's
+    // left edge. So compare its answer with the neighbouring carets, both line edges (as
+    // LiteralTextLayout::offsetAtLineX does) and the first and last position of every glyph
+    // run. On a tie the caret further along the line wins, which keeps the established rule
+    // that the second half of a character belongs to the caret after it.
+    const qreal x = localPos.x();
+    const auto caretX = [&](int offset) { return line.cursorToX(offset); };
+    int caret = qBound(lineStart, line.xToCursor(x - line.x()), lineEnd);
+    qreal best = qAbs(x - caretX(caret));
+    const auto consider = [&](int candidate) {
+      if (candidate < lineStart || candidate > lineEnd || !textLayout_->isValidCursorPosition(candidate))
+        return;
+      const qreal distance = qAbs(x - caretX(candidate));
+      if (distance < best || (distance == best && candidate > caret)) {
+        caret = candidate;
+        best = distance;
+      }
+    };
+    consider(lineStart);
+    consider(lineEnd);
+    consider(textLayout_->previousCursorPosition(caret));
+    consider(textLayout_->nextCursorPosition(caret));
+    for (const QGlyphRun& run : line.glyphRuns(-1, -1, QTextLayout::RetrieveStringIndexes)) {
+      // Glyphs without a source position (object replacements) are -1 and bound nothing.
+      int first = -1;
+      int last = -1;
+      for (qsizetype index : run.stringIndexes()) {
+        if (index < 0)
+          continue;
+        first = first < 0 ? int(index) : qMin(first, int(index));
+        last = qMax(last, int(index));
+      }
+      if (first < 0)
+        continue;
+      consider(qBound(lineStart, first, lineEnd));
+      consider(qBound(lineStart, last + 1, lineEnd));
     }
 
-    for (int offset = lineStart; offset < lineEnd; ++offset) {
-      const qreal left = line.cursorToX(offset);
-      const qreal right = line.cursorToX(offset + 1);
-      const qreal midpoint = (left + right) / 2.0;
-      if (localPos.x() < midpoint) {
-        hit.displayOffset = composition_.toDisplayOffset(offset);
-        hit.bias = InlineProjectionBias::Backward;
-        hit.cursorRect = QRectF(line.cursorToX(offset), line.y(), 1.0, line.height());
-        return hit;
-      }
-      if (localPos.x() < right) {
-        hit.displayOffset = composition_.toDisplayOffset(offset + 1);
-        hit.bias = offset + 1 == lineEnd ? lineEndBias : InlineProjectionBias::Forward;
-        hit.cursorRect = QRectF(line.cursorToX(offset + 1), line.y(), 1.0, line.height());
-        return hit;
-      }
-    }
-    hit.displayOffset = composition_.toDisplayOffset(lineEnd);
-    hit.bias = lineEndBias;
-    hit.cursorRect = QRectF(line.cursorToX(lineEnd), line.y(), 1.0, line.height());
+    // A click to the left of the caret it resolved to sits after whatever collapsed at that
+    // position; one to the right sits before it.
+    hit.displayOffset = composition_.toDisplayOffset(caret);
+    hit.bias = caret == lineEnd ? lineEndBias
+             : x < caretX(caret) ? InlineProjectionBias::Forward
+                                : InlineProjectionBias::Backward;
+    hit.cursorRect = QRectF(caretX(caret), line.y(), 1.0, line.height());
     return hit;
   }
 
