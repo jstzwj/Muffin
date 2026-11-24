@@ -97,8 +97,8 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(actual, expected);
     const qreal rgba = rgbaScore(actual, expected);
     std::fprintf(stderr, "%s IoU %.5f RGBA %.5f\n", qPrintable(id), iou, rgba);
-    require(iou >= .88, id + QStringLiteral("/alpha-IoU"));
-    require(rgba >= .90, id + QStringLiteral("/RGBA"));
+    require(iou >= .96, id + QStringLiteral("/alpha-IoU"));
+    require(rgba >= .93, id + QStringLiteral("/RGBA"));
   }
   std::puts("MermaidBlockPixelTest: 4/4 passed");
   return 0;

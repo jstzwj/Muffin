@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
                                       .arg(ref.height()));
     qreal ai = iou(got, ref), rs = rgba(got, ref);
     std::fprintf(stderr, "%s IoU %.4f RGBA %.4f\n", qPrintable(id), ai, rs);
-    qreal floor = id == "hand-drawn" ? .72 : .88;
+    qreal floor = id == "hand-drawn" ? .84 : .90;
     req(ai >= floor && rs >= floor, id + ": pixel parity");
   }
 }

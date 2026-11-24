@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
                                       .arg(ref.height()));
     double ai = iou(nat, ref), rs = rgba(nat, ref);
     std::fprintf(stderr, "%s iou=%.5f rgba=%.5f\n", qPrintable(id), ai, rs);
-    req(ai >= .91, id + " iou");
-    req(rs >= .94, id + " rgba");
+    req(ai >= .97, id + " iou");
+    req(rs >= .97, id + " rgba");
   }
 }

@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(native, reference);
     const qreal rgba = foregroundRgba(native, reference);
     std::fprintf(stderr, "%s: IoU %.4f RGBA %.4f\n", qPrintable(id), iou, rgba);
-    require(iou >= 0.95 && rgba >= 0.95, id + QStringLiteral(": Packet pixel parity below threshold"));
+    require(iou >= 0.98 && rgba >= 0.98, id + QStringLiteral(": Packet pixel parity below threshold"));
   }
   return 0;
 }

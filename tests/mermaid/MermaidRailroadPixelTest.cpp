@@ -114,8 +114,8 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(native, browser);
     const qreal rgba = foregroundRgba(native, browser);
     std::fprintf(stderr, "%s IoU %.6f RGBA %.6f\n", qPrintable(id), iou, rgba);
-    require(iou >= 0.88, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.88, id + QStringLiteral(": foreground RGBA regressed"));
+    require(iou >= 0.96, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA regressed"));
   }
   std::puts("MermaidRailroadPixelTest: 3 cases passed");
   return 0;

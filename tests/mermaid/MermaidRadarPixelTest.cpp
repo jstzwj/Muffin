@@ -149,8 +149,8 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s native=%dx%d browser=%dx%d iou=%.6f rgba=%.6f\n", qPrintable(id), native.width(),
                  native.height(), browser.width(), browser.height(), iou, rgba);
     std::fflush(stderr);
-    require(iou >= 0.88, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA similarity regressed"));
+    require(iou >= 0.97, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.97, id + QStringLiteral(": foreground RGBA similarity regressed"));
     minimumIou = std::min(minimumIou, iou);
     minimumRgba = std::min(minimumRgba, rgba);
   }

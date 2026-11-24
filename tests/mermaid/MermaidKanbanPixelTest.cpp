@@ -98,8 +98,8 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(native, reference);
     const qreal rgba = rgbaSimilarity(native, reference);
     std::fprintf(stderr, "%s: IoU %.4f RGBA %.4f\n", qPrintable(id), iou, rgba);
-    const qreal iouFloor = id == QLatin1String("hand-drawn") ? 0.75 : 0.90;
-    const qreal rgbaFloor = id == QLatin1String("hand-drawn") ? 0.75 : 0.88;
+    const qreal iouFloor = id == QLatin1String("hand-drawn") ? 0.94 : 0.96;
+    const qreal rgbaFloor = id == QLatin1String("hand-drawn") ? 0.92 : 0.94;
     require(iou >= iouFloor && rgba >= rgbaFloor, id + QStringLiteral(": Kanban pixel parity below threshold"));
   }
   return 0;

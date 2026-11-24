@@ -1,9 +1,8 @@
 // Pie pixel-parity golden via the REAL production PNG path
-// (MermaidRenderCache::renderMermaidSourceToPng). The native PNG is scaled once
-// into the Chrome golden's coordinate system, and the canvas size is asserted
-// within 3% (legend text width is font-coupled — Noto Sans vs trebuchet-ms — so
-// an exact match is not expected). IoU/RGBA absorb the residual font-shaping and
-// dark-theme palette difference. Mirrors MermaidRequirementPixelTest.
+// (MermaidRenderCache::renderMermaidSourceToPng). The native PNG must be the
+// Chrome golden's size to the pixel, and is compared to it directly: no
+// scaling, which would hide a canvas that is a pixel off and blur the detail
+// the comparison is for. Mirrors MermaidRequirementPixelTest.
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 
@@ -25,6 +24,8 @@
 using namespace muffin::mermaid;
 
 namespace {
+constexpr qreal kMinIou = 0.97;
+constexpr qreal kMinRgba = 0.96;
 [[noreturn]] void fail(const QString& message) {
   std::fprintf(stderr, "FAIL: %s\n", qPrintable(message));
   std::fflush(stderr);
@@ -46,12 +47,12 @@ QImage decodePng(const QString& dataUrl) {
   img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
   return img;
 }
+// Both images have the same size.
 qreal alphaIou(const QImage& native, const QImage& reference) {
-  const QImage left = native.scaled(reference.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   int intersection = 0, united = 0;
   for (int y = 0; y < reference.height(); ++y)
     for (int x = 0; x < reference.width(); ++x) {
-      const bool a = left.pixelColor(x, y).alpha() >= 32;
+      const bool a = native.pixelColor(x, y).alpha() >= 32;
       const bool b = reference.pixelColor(x, y).alpha() >= 32;
       intersection += a && b;
       united += a || b;
@@ -59,13 +60,12 @@ qreal alphaIou(const QImage& native, const QImage& reference) {
   return united ? qreal(intersection) / united : 1.0;
 }
 qreal foregroundRgbaSimilarity(const QImage& native, const QImage& reference) {
-  const QImage left = native.scaled(reference.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   qreal difference = 0.0;
   int united = 0;
   const auto pm = [](int channel, int alpha) { return channel * alpha / 255; };
   for (int y = 0; y < reference.height(); ++y)
     for (int x = 0; x < reference.width(); ++x) {
-      const QColor a = left.pixelColor(x, y);
+      const QColor a = native.pixelColor(x, y);
       const QColor b = reference.pixelColor(x, y);
       if (a.alpha() < 32 && b.alpha() < 32)
         continue;
@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
               QLatin1String("84b2150cc9fcc9304f61ed08985645922d5acbc8ced2445503308392be603883"),
           QStringLiteral("Pie pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
-  qreal minimumIou = 1.0;
+  qreal minimumIou = 1.0, minimumRgba = 1.0;
   QSet<QString> coveredThemes;
   for (const QJsonValue& cv : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = cv.toObject();
@@ -113,25 +113,26 @@ int main(int argc, char** argv) {
     require(!native.isNull(), id + QStringLiteral(": production PNG must decode"));
     const qreal widthDiff = std::abs(native.width() - browser.width());
     const qreal heightDiff = std::abs(native.height() - browser.height());
+    // Canvas: upstream's viewBox is fractional and the browser screenshots it to
+    // the nearest pixel; the port rounds its extent the same way, so the image is
+    // the golden's size exactly.
+    require(widthDiff == 0 && heightDiff == 0,
+            QStringLiteral("%1: canvas %2x%3, browser %4x%5")
+                .arg(id).arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
     const qreal iou = alphaIou(native, browser);
     const qreal rgba = foregroundRgbaSimilarity(native, browser);
-    std::fprintf(stderr, "%s native=%dx%d browser=%dx%d widthDiff=%.0f heightDiff=%.0f iou=%.3f rgba=%.3f\n",
-                 qPrintable(id), native.width(), native.height(), browser.width(), browser.height(), widthDiff,
-                 heightDiff, iou, rgba);
+    std::fprintf(stderr, "%s native=%dx%d iou=%.6f rgba=%.6f\n", qPrintable(id), native.width(), native.height(), iou,
+                 rgba);
     std::fflush(stderr);
-    // Canvas tolerance: pie canvas width is font-coupled (legend text width);
-    // 3% absorbs Noto-Sans-vs-trebuchet differences while flagging a structural
-    // regression. Height is fixed at 450.
-    require(
-        widthDiff <= 0.03 * browser.width() && heightDiff <= 0.03 * browser.height(),
-        QStringLiteral("%1: canvas differs by %2 x %3").arg(id).arg(widthDiff, 0, 'f', 0).arg(heightDiff, 0, 'f', 0));
-    // Alpha IoU (shape parity) — the slice geometry is exact, so this sits well
-    // above 0.90. Foreground RGBA catches theme/palette regressions IoU misses;
-    // both themes now render with the exact upstream palette (the dark case
-    // self-declares its theme), so RGBA sits well above the threshold.
-    require(iou >= 0.90, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA regressed"));
+    // Alpha IoU (shape parity) — the slice geometry is exact. Foreground RGBA
+    // catches theme/palette regressions IoU misses; both themes render with the
+    // exact upstream palette. Floors leave room for the rasterizers to differ:
+    // the closest image measures 0.99 IoU and 0.98 RGBA.
+    require(iou >= kMinIou, id + QStringLiteral(": alpha IoU %1 below %2").arg(iou, 0, 'f', 4).arg(kMinIou));
+    require(rgba >= kMinRgba,
+            id + QStringLiteral(": foreground RGBA %1 below %2").arg(rgba, 0, 'f', 4).arg(kMinRgba));
     minimumIou = std::min(minimumIou, iou);
+    minimumRgba = std::min(minimumRgba, rgba);
   }
   // Theme axis: all 11 built-in themes are pinned at pixel level (mirrors the
   // flowchart golden-pixel coverage), so a dropped/renamed theme fails loudly.
@@ -141,6 +142,7 @@ int main(int argc, char** argv) {
                                          QStringLiteral("redux-dark"), QStringLiteral("redux-color"),
                                          QStringLiteral("redux-dark-color")},
           QStringLiteral("Pie pixel theme coverage regressed"));
-  qDebug() << "MermaidPiePixelTest: passed; minimum alpha IoU" << minimumIou;
+  std::printf("MermaidPiePixelTest passed: minimum alpha IoU %.4f, minimum foreground RGBA %.4f\n", minimumIou,
+              minimumRgba);
   return 0;
 }

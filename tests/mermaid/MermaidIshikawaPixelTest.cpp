@@ -126,8 +126,8 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(native, reference);
     const qreal rgba = rgbaSimilarity(native, reference);
     std::fprintf(stderr, "%s alphaIoU=%.6f rgba=%.6f\n", qPrintable(id), iou, rgba);
-    require(iou >= 0.72, id + QStringLiteral("/alpha IoU"));
-    require(rgba >= 0.80, id + QStringLiteral("/RGBA"));
+    require(iou >= 0.90, id + QStringLiteral("/alpha IoU"));
+    require(rgba >= 0.91, id + QStringLiteral("/RGBA"));
   }
   return 0;
 }

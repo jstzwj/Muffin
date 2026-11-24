@@ -111,8 +111,8 @@ int main(int argc, char** argv) {
     const qreal rgba = rgbaSimilarity(native, browser);
     std::fprintf(stderr, "%s native=%dx%d browser=%dx%d iou=%.6f rgba=%.6f\n", qPrintable(id), native.width(),
                  native.height(), browser.width(), browser.height(), iou, rgba);
-    require(iou >= 0.86, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.82, id + QStringLiteral(": foreground RGBA regressed"));
+    require(iou >= 0.97, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA regressed"));
   }
   return 0;
 }

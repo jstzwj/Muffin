@@ -106,8 +106,8 @@ int main(int argc, char** argv) {
     const qreal alphaIou = iou(actual, expected);
     const qreal score = rgbaScore(actual, expected);
     std::fprintf(stderr, "%s IoU %.5f RGBA %.5f\n", qPrintable(id), alphaIou, score);
-    require(alphaIou >= 0.90, id + QStringLiteral("/IoU"));
-    require(score >= 0.92, id + QStringLiteral("/RGBA"));
+    require(alphaIou >= 0.95, id + QStringLiteral("/IoU"));
+    require(score >= 0.94, id + QStringLiteral("/RGBA"));
   }
 
   std::puts("MermaidSwimlanePixelTest: 5/5 passed");

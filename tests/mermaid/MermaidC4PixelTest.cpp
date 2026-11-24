@@ -153,8 +153,8 @@ int main(int argc, char** argv) {
     const qreal iou = alphaIou(native, browser);
     const qreal rgba = foregroundRgba(native, browser);
     std::fprintf(stderr, "%s IoU %.6f RGBA %.6f\n", qPrintable(id), iou, rgba);
-    require(iou >= 0.80, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.80, id + QStringLiteral(": foreground RGBA regressed"));
+    require(iou >= 0.90, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.95, id + QStringLiteral(": foreground RGBA regressed"));
     if (id == QLatin1String("dash-width-4")) {
       const QJsonArray styles = fixture.value(QStringLiteral("dashStyles")).toArray();
       require(styles.size() == 1, id + QStringLiteral(": one dashed boundary expected"));

@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
     const qreal rgba = rgbaSimilarity(native, reference);
     std::fprintf(stderr, "%s alphaIoU=%.6f rgba=%.6f\n", qPrintable(id), iou, rgba);
     const bool iconCase = id == QLatin1String("built-in-icons");
-    const qreal minimumIou = iconCase ? 0.82 : 0.95;
+    const qreal minimumIou = iconCase ? 0.83 : 0.95;
     require(iou >= minimumIou, id + QStringLiteral("/alpha IoU"));
     require(rgba >= 0.96, id + QStringLiteral("/foreground RGBA"));
     if (iconCase) {

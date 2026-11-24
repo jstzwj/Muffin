@@ -1,6 +1,6 @@
 // quadrantChart pixel-parity golden via the production PNG path. Mirrors
-// MermaidPiePixelTest. Canvas is the fixed 500x500 viewBox; alpha IoU absorbs
-// the Noto-Sans-vs-trebuchet font difference. The point fill is the
+// MermaidPiePixelTest: the native image must be the golden's size to the
+// pixel and is compared to it directly, never scaled to fit. The point fill is the
 // upstream-invalid hsl(NaN), which both sides render as black.
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
@@ -44,11 +44,10 @@ QImage decodePng(const QString& url) {
   return img;
 }
 qreal alphaIou(const QImage& n, const QImage& ref) {
-  const QImage l = n.scaled(ref.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   int inter = 0, uni = 0;
   for (int y = 0; y < ref.height(); ++y)
     for (int x = 0; x < ref.width(); ++x) {
-      const bool a = l.pixelColor(x, y).alpha() >= 32, b = ref.pixelColor(x, y).alpha() >= 32;
+      const bool a = n.pixelColor(x, y).alpha() >= 32, b = ref.pixelColor(x, y).alpha() >= 32;
       inter += a && b;
       uni += a || b;
     }
@@ -58,13 +57,12 @@ qreal alphaIou(const QImage& n, const QImage& ref) {
 // misses (theme fills, classDef point colors). Both sides use the exact
 // upstream theme palette, so this sits well above the threshold.
 qreal foregroundRgba(const QImage& n, const QImage& ref) {
-  const QImage l = n.scaled(ref.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   qreal diff = 0.0;
   int uni = 0;
   const auto pm = [](int c, int a) { return c * a / 255; };
   for (int y = 0; y < ref.height(); ++y)
     for (int x = 0; x < ref.width(); ++x) {
-      const QColor a = l.pixelColor(x, y), b = ref.pixelColor(x, y);
+      const QColor a = n.pixelColor(x, y), b = ref.pixelColor(x, y);
       if (a.alpha() < 32 && b.alpha() < 32)
         continue;
       ++uni;
@@ -110,11 +108,13 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "%s native=%dx%d browser=%dx%d iou=%.3f rgba=%.3f\n", qPrintable(id), native.width(),
                  native.height(), browser.width(), browser.height(), iou, rgba);
     std::fflush(stderr);
-    require(std::abs(native.width() - browser.width()) <= 0.03 * browser.width() &&
-                std::abs(native.height() - browser.height()) <= 0.03 * browser.height(),
-            id + QStringLiteral(": canvas differs"));
-    require(iou >= 0.90, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA regressed"));
+    // Upstream's viewBox is fractional and the browser screenshots it to the
+    // nearest pixel; the port rounds its extent the same way.
+    require(native.size() == browser.size(),
+            id + QStringLiteral(": canvas %1x%2, browser %3x%4")
+                    .arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
+    require(iou >= 0.97, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA regressed"));
     minIou = std::min(minIou, iou);
   }
   // Theme axis: all 11 built-in themes are pinned at pixel level (mirrors the

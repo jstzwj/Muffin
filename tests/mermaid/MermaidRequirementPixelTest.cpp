@@ -1,11 +1,8 @@
 // Requirement pixel-parity golden via the REAL production PNG path
 // (MermaidRenderCache::renderMermaidSourceToPng), not a family-specific
-// rasterizer. The native PNG is scaled ONCE into the Chrome golden's coordinate
-// system (no per-image IgnoreAspectRatio stretch that would mask canvas/aspect
-// regressions), and the canvas size is asserted within a tolerance so a padding
-// or viewport regression is caught. Mirrors the intent of MermaidStatePixelTest
-// but compares in one shared coordinate system. IoU/RGBA absorb the residual
-// Qt/Chrome font shaping difference.
+// rasterizer. The native PNG must be the Chrome golden's size to the pixel and is
+// compared to it directly: scaling it to fit would hide a canvas that is a
+// pixel off and blur the strokes the comparison is for.
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 
@@ -47,14 +44,12 @@ QImage decodePng(const QString& dataUrl) {
   img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
   return img;
 }
-// Scales `native` into `reference`'s exact size (ONE transform — the native ->
-// reference mapping), then computes alpha-mask IoU in reference coordinates.
+// Both images have the same size.
 qreal alphaIou(const QImage& native, const QImage& reference) {
-  const QImage left = native.scaled(reference.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   int intersection = 0, united = 0;
   for (int y = 0; y < reference.height(); ++y)
     for (int x = 0; x < reference.width(); ++x) {
-      const bool a = left.pixelColor(x, y).alpha() >= 32;
+      const bool a = native.pixelColor(x, y).alpha() >= 32;
       const bool b = reference.pixelColor(x, y).alpha() >= 32;
       intersection += a && b;
       united += a || b;
@@ -62,13 +57,12 @@ qreal alphaIou(const QImage& native, const QImage& reference) {
   return united ? qreal(intersection) / united : 1.0;
 }
 qreal foregroundRgbaSimilarity(const QImage& native, const QImage& reference) {
-  const QImage left = native.scaled(reference.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
   qreal difference = 0.0;
   int united = 0;
   const auto pm = [](int channel, int alpha) { return channel * alpha / 255; };
   for (int y = 0; y < reference.height(); ++y)
     for (int x = 0; x < reference.width(); ++x) {
-      const QColor a = left.pixelColor(x, y);
+      const QColor a = native.pixelColor(x, y);
       const QColor b = reference.pixelColor(x, y);
       if (a.alpha() < 32 && b.alpha() < 32)
         continue;
@@ -140,16 +134,13 @@ int main(int argc, char** argv) {
                  qPrintable(id), native.width(), native.height(), browser.width(), browser.height(), widthDiff,
                  heightDiff, iou, rgbaSimilarity);
     std::fflush(stderr);
-    // Canvas tolerance: catches a padding/viewport regression (the case scores an
-    // exact 253x668 match here; 3% allows cross-platform font-shape variation
-    // while still flagging an ~8px padding shift).
-    require(widthDiff <= 0.03 * browser.width() && heightDiff <= 0.03 * browser.height(),
-            QStringLiteral("%1: native/browser canvas differs by %2 x %3 (tolerance 3%)")
-                .arg(id)
-                .arg(widthDiff, 0, 'f', 0)
-                .arg(heightDiff, 0, 'f', 0));
-    require(iou >= 0.90, id + QStringLiteral(": native/browser alpha IoU regressed"));
-    require(rgbaSimilarity >= 0.85, id + QStringLiteral(": native/browser foreground RGBA regressed"));
+    // Upstream's viewBox is fractional and the browser screenshots it to the
+    // nearest pixel; the port rounds its extent the same way.
+    require(widthDiff == 0 && heightDiff == 0,
+            QStringLiteral("%1: canvas %2x%3, browser %4x%5")
+                .arg(id).arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
+    require(iou >= 0.97, id + QStringLiteral(": native/browser alpha IoU regressed"));
+    require(rgbaSimilarity >= 0.95, id + QStringLiteral(": native/browser foreground RGBA regressed"));
     if (id == QLatin1String("dash-width-4")) {
       const QJsonArray edgeStyles = fixture.value(QStringLiteral("edgeStyles")).toArray();
       require(edgeStyles.size() == 1, QStringLiteral("dash-width-4: browser edge capture missing"));

@@ -153,8 +153,8 @@ int main(int argc, char** argv) {
     // Geometry is independently locked by the 16-case SVG oracle. These
     // thresholds retain cross-platform rasterization headroom while still
     // rejecting a wrong palette, background, or materially shifted chart.
-    require(iou >= 0.90, id + QStringLiteral(": foreground IoU regressed"));
-    require(rgba >= 0.90, id + QStringLiteral(": foreground RGBA similarity regressed"));
+    require(iou >= 0.92, id + QStringLiteral(": foreground IoU regressed"));
+    require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA similarity regressed"));
     minimumIou = std::min(minimumIou, iou);
     minimumRgba = std::min(minimumRgba, rgba);
   }

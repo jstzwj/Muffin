@@ -100,8 +100,8 @@ int main(int argc, char** argv) {
     const double iou = alphaIou(actual, reference);
     const double rgba = rgbaScore(actual, reference);
     std::fprintf(stderr, "%s IoU %.5f RGBA %.5f\n", qPrintable(id), iou, rgba);
-    require(iou >= .88, id + QStringLiteral("/alpha IoU"));
-    require(rgba >= .92, id + QStringLiteral("/RGBA"));
+    require(iou >= .97, id + QStringLiteral("/alpha IoU"));
+    require(rgba >= .97, id + QStringLiteral("/RGBA"));
   }
   return 0;
 }

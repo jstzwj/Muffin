@@ -202,12 +202,12 @@ int main(int argc, char** argv) {
                 .arg(native.height())
                 .arg(expectedWidth)
                 .arg(expectedHeight));
-    // Measured baselines (Noto fixture, 2026-08-10): default 0.923640 /
-    // 0.957252, dark 0.923497 / 0.930508 (IoU / RGBA). These thresholds retain
-    // rasterization headroom while rejecting an empty render, a wrong theme,
-    // or a material layout/geometry shift.
-    require(iou >= 0.90, id + QStringLiteral(": alpha IoU regressed"));
-    require(rgba >= 0.90, id + QStringLiteral(": foreground RGBA regressed"));
+    // Measured floors (Noto fixture, 2026-11-25): the closest image scores
+    // 0.990 IoU and 0.989 RGBA. The thresholds sit just under that, leaving
+    // room for the rasterizers to differ while rejecting a wrong theme or a
+    // material layout shift.
+    require(iou >= 0.96, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA regressed"));
     if (id == QLatin1String("dash-width-4")) {
       const QJsonArray styles = fixture.value(QStringLiteral("dashStyles")).toArray();
       require(styles.size() == 1, id + QStringLiteral(": one task-line expected"));
