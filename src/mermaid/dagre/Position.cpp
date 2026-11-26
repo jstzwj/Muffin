@@ -277,20 +277,30 @@ const QString& widthOf(const DagreGraph& g, const QString& v) {
 
 QHash<QString, qreal> findSmallestWidthAlignment(const DagreGraph& g,
                                                  const QHash<QString, QHash<QString, qreal>>& xss) {
+  // lodash's minBy keeps the first of equal widths, and `_.values(xss)`
+  // lists the alignments as they were inserted: ul, ur, dl, dr. Two branches
+  // of a graph often tie, so a QHash's order here would make the layout depend
+  // on the process's hash seed.
   QString bestKey;
   qreal bestWidth = std::numeric_limits<qreal>::max();
-  for (auto it = xss.cbegin(); it != xss.cend(); ++it) {
-    qreal mx = -std::numeric_limits<qreal>::infinity();
-    qreal mn = std::numeric_limits<qreal>::infinity();
-    for (auto xit = it.value().cbegin(); xit != it.value().cend(); ++xit) {
-      const qreal half = g.node(xit.key())->width / 2.0;
-      mx = std::max(mx, xit.value() + half);
-      mn = std::min(mn, xit.value() - half);
-    }
-    const qreal w = mx - mn;
-    if (w < bestWidth) {
-      bestWidth = w;
-      bestKey = it.key();
+  for (const QString& vert : {QStringLiteral("u"), QStringLiteral("d")}) {
+    for (const QString& horiz : {QStringLiteral("l"), QStringLiteral("r")}) {
+      const QString key = vert + horiz;
+      const auto it = xss.constFind(key);
+      if (it == xss.cend())
+        continue;
+      qreal mx = -std::numeric_limits<qreal>::infinity();
+      qreal mn = std::numeric_limits<qreal>::infinity();
+      for (auto xit = it->cbegin(); xit != it->cend(); ++xit) {
+        const qreal half = g.node(xit.key())->width / 2.0;
+        mx = std::max(mx, xit.value() + half);
+        mn = std::min(mn, xit.value() - half);
+      }
+      const qreal w = mx - mn;
+      if (w < bestWidth) {
+        bestWidth = w;
+        bestKey = key;
+      }
     }
   }
   return bestKey.isEmpty() ? QHash<QString, qreal>() : xss.value(bestKey);
