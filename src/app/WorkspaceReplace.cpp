@@ -1,4 +1,5 @@
 #include "app/WorkspaceReplace.h"
+#include "io/AtomicWrite.h"
 #include "io/FileController.h"
 #include <QCryptographicHash>
 #include <QDir>
@@ -8,7 +9,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLockFile>
-#include <QSaveFile>
 #include <QUuid>
 #include <QDateTime>
 #include <QCoreApplication>
@@ -45,12 +45,7 @@ QByteArray digest(const QByteArray& bytes) {
   return QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex();
 }
 bool writeAtomic(const QString& path, const QByteArray& bytes, QString* error) {
-  QSaveFile file(path);
-  if (!file.open(QIODevice::WriteOnly) || file.write(bytes) != bytes.size() || !file.commit()) {
-    *error = file.errorString();
-    return false;
-  }
-  return true;
+  return muffin::AtomicWrite::write(path, bytes, error) == muffin::AtomicWrite::Result::Written;
 }
 bool readExact(const QString& path, const QByteArray& expected) {
   QFile file(path);
@@ -206,6 +201,7 @@ muffin::WorkspaceReplaceReport muffin::WorkspaceReplace::apply(const QString& ro
   }
   if (!writeAtomic(manifest, QJsonDocument(journal).toJson(), &report.error))
     return report;
+  AtomicWrite::Budget refusals; // the files of the folder wait out the system together
   for (qsizetype i = 0; i < changes.size(); ++i) {
     const auto& change = changes[i];
     if (cancel && cancel->load())
@@ -216,25 +212,27 @@ muffin::WorkspaceReplaceReport muffin::WorkspaceReplace::apply(const QString& ro
       continue;
     }
     auto entry = entries[i].toObject();
-    entry.insert("state", "pending");
-    entries[i] = entry;
-    journal.insert("files", entries);
-    if (!writeAtomic(manifest, QJsonDocument(journal).toJson(), &report.error))
-      break;
-    QSaveFile output(change.path);
-    if (!output.open(QIODevice::WriteOnly) || output.write(change.after) != change.after.size()) {
-      report.skipped.append(change.path);
-      entry.insert("state", "skipped");
+    bool journaled = true;
+    QString refusal;
+    const auto outcome = AtomicWrite::write(change.path, change.after, &refusal, &refusals, [&] {
+      // The journal says the file is being changed before the rename changes it.
+      entry.insert("state", "pending");
       entries[i] = entry;
       journal.insert("files", entries);
-      if (!writeAtomic(manifest, QJsonDocument(journal).toJson(), &report.error))
-        break;
-      continue;
-    }
-    // Recheck after staging the new bytes, before the atomic rename.
-    if (!ordinaryPath(root, change.path) || !readExact(change.path, change.before) || !output.commit()) {
+      journaled = writeAtomic(manifest, QJsonDocument(journal).toJson(), &report.error);
+      if (!journaled)
+        return false;
+      // Recheck after staging the new bytes, before the atomic rename.
+      return ordinaryPath(root, change.path) && readExact(change.path, change.before);
+    });
+    if (!journaled)
+      break;
+    if (outcome != AtomicWrite::Result::Written) {
       report.skipped.append(change.path);
       entry.insert("state", "skipped");
+      // A file the system would not give up is said, not only counted.
+      if (outcome == AtomicWrite::Result::Refused && report.error.isEmpty())
+        report.error = refusal;
     } else {
       report.changed.append(change.path);
       entry.insert("state", "applied");
@@ -293,6 +291,7 @@ muffin::WorkspaceReplaceReport muffin::WorkspaceReplace::restore(const QString& 
   }
   const auto root = journal.value("root").toString();
   bool complete = true;
+  AtomicWrite::Budget refusals; // the files wait out the system together
   for (const auto& item : journal.value("files").toArray()) {
     if (cancel && cancel->load()) {
       complete = false;
@@ -341,12 +340,20 @@ muffin::WorkspaceReplaceReport muffin::WorkspaceReplace::restore(const QString& 
         continue;
       }
     }
-    QSaveFile output(path);
-    if (!ordinaryPath(root, path) || !QFileInfo(path).isWritable() || !output.open(QIODevice::WriteOnly) ||
-        output.write(before) != before.size() || !readExact(path, now) || !ordinaryPath(root, path) ||
-        !output.commit()) {
+    if (!ordinaryPath(root, path) || !QFileInfo(path).isWritable()) {
       report.skipped.append(path);
       complete = false;
+      continue;
+    }
+    // The file is restored only while it still holds what was read of it.
+    QString refusal;
+    const auto outcome = AtomicWrite::write(path, before, &refusal, &refusals,
+                                            [&] { return readExact(path, now) && ordinaryPath(root, path); });
+    if (outcome != AtomicWrite::Result::Written) {
+      report.skipped.append(path);
+      complete = false;
+      if (outcome == AtomicWrite::Result::Refused && report.error.isEmpty())
+        report.error = refusal;
       continue;
     }
     report.changed.append(path);

@@ -954,6 +954,8 @@ set(MUFFIN_CORE_SOURCES
   src/io/TextFileFormat.h
   src/io/ApplicationPaths.cpp
   src/io/ApplicationPaths.h
+  src/io/AtomicWrite.cpp
+  src/io/AtomicWrite.h
   src/document/ImageSyntaxOps.cpp
   src/document/ImageSyntaxOps.h
   src/document/LinkSyntaxOps.h
@@ -1927,3 +1929,15 @@ if(APPLE)
 endif()
 muffin_use_theme_fonts(Muffin)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTests.cmake)
+
+# A hung test holds the whole run until someone kills it: ctest gives a test
+# no timeout of its own. Thirty minutes is far past the slowest test, and a
+# test's own TIMEOUT stays as it is.
+get_property(MUFFIN_TESTS DIRECTORY PROPERTY TESTS)
+foreach(test IN LISTS MUFFIN_TESTS)
+  get_test_property(${test} TIMEOUT timeout)
+  if(NOT timeout)
+    set_tests_properties(${test} PROPERTIES TIMEOUT 1800)
+  endif()
+endforeach()
+unset(MUFFIN_TESTS)

@@ -1,6 +1,7 @@
 #include "app/DraftRecovery.h"
 #include "diagnostics/ScopedPerfProbe.h"
 #include "document/DocumentSession.h"
+#include "io/AtomicWrite.h"
 
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -118,9 +119,10 @@ bool DraftRecovery::snapshot(const QString& markdownText, const QString& sourceF
   const QByteArray metadata = QJsonDocument(meta).toJson(QJsonDocument::Compact) + '\n';
   if (metadata.size() > 65536)
     return false;
-  QSaveFile snapshot(snapshotPath(key));
-  if (!snapshot.open(QIODevice::WriteOnly) || snapshot.write(snapshotMagic) != snapshotMagic.size() ||
-      snapshot.write(metadata) != metadata.size() || snapshot.write(bytes) != bytes.size() || !snapshot.commit())
+  if (AtomicWrite::write(snapshotPath(key), [&metadata, &bytes](QSaveFile& snapshot) {
+        return snapshot.write(snapshotMagic) == snapshotMagic.size() &&
+               snapshot.write(metadata) == metadata.size() && snapshot.write(bytes) == bytes.size();
+      }) != AtomicWrite::Result::Written)
     return false;
   // Migrate only after the replacement is durable. A crash before commit
   // leaves the previous snapshot (or legacy pair) intact.

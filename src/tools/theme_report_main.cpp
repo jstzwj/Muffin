@@ -1,3 +1,4 @@
+#include "io/AtomicWrite.h"
 #include "theme/CssCompatibilityReport.h"
 
 #include <QCommandLineParser>
@@ -5,7 +6,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
-#include <QSaveFile>
 #include <QTextStream>
 
 #include <cmath>
@@ -51,9 +51,9 @@ int main(int argc, char** argv) {
   const auto report = muffin::CssCompatibilityReport::analyze(sheet, source.absolutePath(), environment);
   const auto json = QJsonDocument(report.toJson()).toJson(QJsonDocument::Indented);
   if (parser.isSet(output)) {
-    QSaveFile file(parser.value(output));
-    if (!file.open(QIODevice::WriteOnly) || file.write(json) != json.size() || !file.commit()) {
-      QTextStream(stderr) << "Cannot write report: " << file.errorString() << '\n';
+    QString error;
+    if (muffin::AtomicWrite::write(parser.value(output), json, &error) != muffin::AtomicWrite::Result::Written) {
+      QTextStream(stderr) << "Cannot write report: " << error << '\n';
       return 2;
     }
   } else {

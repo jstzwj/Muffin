@@ -3,6 +3,7 @@
 #include "document/MarkdownDocument.h"
 #include "editor/CursorPosition.h"
 #include "editor/EditorView.h"
+#include "io/AtomicWrite.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "spellcheck/SpellChecker.h"
 #include "unicode/WordBoundary.h"
@@ -16,7 +17,6 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QPointer>
-#include <QSaveFile>
 #include <QStatusBar>
 #include <QString>
 #include <QStringList>
@@ -273,12 +273,9 @@ void muffin::MainWindow::exportMermaidDiagram(NodeId blockId) {
   if (rendered.svg.isEmpty())
     return;
 
-  QSaveFile file(path);
-  const bool opened = file.open(QIODevice::WriteOnly);
-  const bool written = opened && file.write(rendered.svg) == rendered.svg.size();
-  const bool committed = written && file.commit();
-  if (!committed) {
-    QMessageBox::warning(this, tr("Export Failed"), file.errorString());
+  QString error;
+  if (AtomicWrite::write(path, rendered.svg, &error) != AtomicWrite::Result::Written) {
+    QMessageBox::warning(this, tr("Export Failed"), error);
     return;
   }
   statusBar()->showMessage(tr("Exported to %1").arg(QDir::toNativeSeparators(path)), 5000);
@@ -311,12 +308,9 @@ void muffin::MainWindow::exportMermaidDiagramPng(NodeId blockId) {
     return;
   const QByteArray png = QByteArray::fromBase64(rendered.dataUrl.mid(kPngDataUrlPrefix.size()).toLatin1());
 
-  QSaveFile file(path);
-  const bool opened = file.open(QIODevice::WriteOnly);
-  const bool written = opened && file.write(png) == png.size();
-  const bool committed = written && file.commit();
-  if (!committed) {
-    QMessageBox::warning(this, tr("Export Failed"), file.errorString());
+  QString error;
+  if (AtomicWrite::write(path, png, &error) != AtomicWrite::Result::Written) {
+    QMessageBox::warning(this, tr("Export Failed"), error);
     return;
   }
   statusBar()->showMessage(tr("Exported to %1").arg(QDir::toNativeSeparators(path)), 5000);

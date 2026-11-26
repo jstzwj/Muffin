@@ -4,6 +4,7 @@
 #include "export/HtmlExporter.h"
 #include "export/NativeExporter.h"
 #include "export/PandocRunner.h"
+#include "io/AtomicWrite.h"
 #include <QAction>
 #include <QApplication>
 #include <QDesktopServices>
@@ -21,12 +22,7 @@
 
 namespace {
 bool writeBytes(const QString& path, const QByteArray& bytes, QString* error) {
-  QSaveFile file(path);
-  file.setDirectWriteFallback(false);
-  if (file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size() && file.commit())
-    return true;
-  *error = file.errorString();
-  return false;
+  return muffin::AtomicWrite::write(path, bytes, error) == muffin::AtomicWrite::Result::Written;
 }
 
 QString suggestedDirectory(const QString& path) {
@@ -217,25 +213,25 @@ void muffin::MainWindow::runExport(ExportRecord record, bool chooseTarget) {
   }
   if (ok) {
     QFile input(staged);
-    QSaveFile output(record.target);
-    output.setDirectWriteFallback(false);
     ok = input.open(QIODevice::ReadOnly);
     if (!ok)
       error = input.errorString();
-    else if (!(ok = output.open(QIODevice::WriteOnly)))
-      error = output.errorString();
-    while (ok && !input.atEnd()) {
-      const auto bytes = input.read(64 * 1024);
-      if (bytes.isEmpty()) {
-        ok = false;
-        error = input.errorString();
-      } else if (output.write(bytes) != bytes.size()) {
-        ok = false;
-        error = output.errorString();
-      }
+    else {
+      ok = AtomicWrite::write(record.target, [&input, &error](QSaveFile& output) {
+        while (!input.atEnd()) {
+          const auto bytes = input.read(64 * 1024);
+          if (bytes.isEmpty()) {
+            error = input.errorString();
+            return false;
+          }
+          if (output.write(bytes) != bytes.size()) {
+            error = output.errorString();
+            return false;
+          }
+        }
+        return true;
+      }, &error) == AtomicWrite::Result::Written;
     }
-    if (ok && !(ok = output.commit()))
-      error = output.errorString();
   }
   if (!ok) {
     QMessageBox::critical(this, tr("Export Failed"), error);

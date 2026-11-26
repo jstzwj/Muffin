@@ -1,5 +1,6 @@
 #include "app/MainWindow.h"
 #include "app/NoteLinks.h"
+#include "io/AtomicWrite.h"
 #include "io/FilePathOps.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
@@ -18,7 +19,6 @@
 #include <QPlainTextEdit>
 #include <QProgressDialog>
 #include <QPushButton>
-#include <QSaveFile>
 #include <QSplitter>
 #include <QStandardPaths>
 #include "io/ApplicationPaths.h"
@@ -187,16 +187,17 @@ bool muffin::MainWindow::renameOrMoveWithLinks(const QString& oldPath, const QSt
       result.changed.removeIf([&](const QString& path) { return restored.changed.contains(path); });
     };
     if (!result.error.isEmpty() || result.changed.size() != disk.size() || writeCancel->load()) {
-      if (result.error.isEmpty())
-        result.error = tr("Link updates could not be completed. The path was not changed.");
+      // Say what came of it and, when a link could not be updated or the
+      // journal would not be written, why as well.
+      result.error = tr("Link updates could not be completed. The path was not changed.") +
+                     (result.error.isEmpty() ? QString() : QLatin1Char('\n') + result.error);
       rollback();
       return result;
     }
     if (!result.backupDirectory.isEmpty()) {
-      QSaveFile journal(QDir(result.backupDirectory).filePath("rename.json"));
       const auto metadata = QJsonDocument(QJsonObject{{"oldPath", oldPath}, {"newPath", newPath}}).toJson();
-      if (!journal.open(QIODevice::WriteOnly) || journal.write(metadata) != metadata.size() || !journal.commit()) {
-        result.error = journal.errorString();
+      if (AtomicWrite::write(QDir(result.backupDirectory).filePath("rename.json"), metadata, &result.error) !=
+          AtomicWrite::Result::Written) {
         rollback();
         return result;
       }
