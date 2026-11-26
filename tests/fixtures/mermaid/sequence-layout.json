@@ -1394,6 +1394,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 4,
             "sectionLineCount": 0,
@@ -1434,6 +1435,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 4,
             "sectionLineCount": 0,
@@ -1481,6 +1483,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 5,
             "sectionLineCount": 1,
@@ -2006,6 +2009,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 5,
             "sectionLineCount": 1,
@@ -2047,6 +2051,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 4,
             "sectionLineCount": 0,
@@ -2094,6 +2099,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 5,
             "sectionLineCount": 1,
@@ -7285,6 +7291,7 @@
               "height": 22
             }
           ],
+          "labelBox": null,
           "structure": {
             "lineCount": 4,
             "sectionLineCount": 0,
@@ -8377,5 +8384,5 @@
       }
     }
   ],
-  "fixtureSha256": "74e40fd0226142a7c572aa607619fdb7668718c2d415ac2e5f4dae301e660c53"
+  "fixtureSha256": "bcd05028d399a6ec2e36e11e7e6fedea865b44a9228ff0c65407bc79b643c577"
 }

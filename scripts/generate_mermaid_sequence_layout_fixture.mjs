@@ -479,6 +479,11 @@ try {
           outline: lines.length ? { x: Math.min(...xs), y: Math.min(...ys),
             width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) } : box(element),
           labels: [...element.querySelectorAll("text")].map(text),
+          labelBox: (() => {
+            const rect = element.querySelector("rect.labelBox");
+            return rect ? { x: number(rect, "x"), y: number(rect, "y"),
+              width: number(rect, "width"), height: number(rect, "height") } : null;
+          })(),
           structure: {
             lineCount: lines.length,
             sectionLineCount: lines.filter((line) => (line.getAttribute("style") ?? "").includes("stroke-dasharray")).length,

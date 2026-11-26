@@ -233,7 +233,7 @@ struct ParticipantPaintGeometry {
 };
 
 ParticipantPaintGeometry participantGeometry(const SequenceLayoutParticipant& actor, qreal y, bool footer,
-                                             QSizeF labelSize) {
+                                             QSizeF labelSize, qreal labelBoxHeight) {
   ParticipantPaintGeometry result;
   const QRectF rect(actor.logicalRect.x(), y, actor.logicalRect.width(), actor.logicalRect.height());
   const qreal cx = actor.anchorX;
@@ -282,7 +282,12 @@ ParticipantPaintGeometry participantGeometry(const SequenceLayoutParticipant& ac
     path.lineTo(cx + 8.0, y + 3.0);
     add(path);
     result.bounds = QRectF(cx - 22.0, y + 10.0, 44.0, 44.0);
-    result.labelRect = QRectF(rect.x(), y + (footer ? 48.5 : 55.5), rect.width(), labelSize.height());
+    // drawActorTypeControl() draws the text in a box as tall as the actor: as
+    // laid out for the top, and for the footer as the top's drawing left it
+    // (the shape's height grown by two label boxes).
+    const qreal textCentre =
+        y + 22.0 + (footer ? 5.0 : 12.0) + (footer ? 44.0 + 2.0 * labelBoxHeight : actor.logicalRect.height()) / 2.0;
+    result.labelRect = QRectF(rect.x(), textCentre - labelSize.height() / 2.0, rect.width(), labelSize.height());
   } else if (actor.type == QLatin1String("entity")) {
     const qreal cy = y + (footer ? 10.0 : 25.0) + (footer ? 22.0 : 6.0);
     path.addEllipse(QPointF(cx, cy), 22.0, 22.0);
@@ -895,8 +900,10 @@ SequenceLayoutResult layoutSequence(const SequenceData& data, const SequenceLayo
         participant.lifelineStopY += 2.5;
     }
     const QSizeF labelSize = measurements.participants.value(participant.id, QSizeF(0.0, defaultTextHeight));
-    const ParticipantPaintGeometry top = participantGeometry(participant, participant.topY, false, labelSize);
-    const ParticipantPaintGeometry bottom = participantGeometry(participant, participant.bottomY, true, labelSize);
+    const ParticipantPaintGeometry top =
+        participantGeometry(participant, participant.topY, false, labelSize, options.labelBoxHeight);
+    const ParticipantPaintGeometry bottom =
+        participantGeometry(participant, participant.bottomY, true, labelSize, options.labelBoxHeight);
     participant.topShapePaths = top.paths;
     participant.bottomShapePaths = participant.drawBottom ? bottom.paths : QVector<QPainterPath>{};
     participant.topLabelRect = top.labelRect;

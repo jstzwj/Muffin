@@ -61,6 +61,15 @@ QString markerName(const QString& url) {
   return dash >= 0 && end > dash ? url.mid(dash + 1, end - dash - 1) : QString{};
 }
 
+// A text's ink is centred where its line box is; the two are apart by the
+// bearings of its first and last glyphs (and of every line's, where the text
+// wraps), which is a pixel or two at 16px: the centre is held to that.
+void requireCentreX(const QRectF& native, const QJsonObject& ink, const QString& context) {
+  const qreal expected = centerX(ink);
+  require(std::abs(native.center().x() - expected) <= 2.0,
+          QStringLiteral("%1 centre x: native=%2 upstream=%3").arg(context).arg(native.center().x()).arg(expected));
+}
+
 void requireRectNear(const QRectF& actual, const QJsonObject& expected, qreal tolerance, const QString& context) {
   const QRectF wanted(expected.value(QStringLiteral("x")).toDouble(), expected.value(QStringLiteral("y")).toDouble(),
                       expected.value(QStringLiteral("width")).toDouble(),
@@ -92,7 +101,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("74e40fd0226142a7c572aa607619fdb7668718c2d415ac2e5f4dae301e660c53"),
+              QLatin1String("bcd05028d399a6ec2e36e11e7e6fedea865b44a9228ff0c65407bc79b643c577"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonObject configContract = root.value(QStringLiteral("configContract")).toObject();
@@ -274,10 +283,13 @@ int main(int argc, char** argv) {
               participant.value(QStringLiteral("structure")).toObject().value(QStringLiteral("dataType")).toString() ==
                   native->type,
           QStringLiteral("%1/%2 participant SVG type mismatch").arg(id, actorId));
-      if (fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-painted-bounds")) ||
-          fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-lifecycle")))
-        requireRectNear(native->topPaintedBounds, participant.value(QStringLiteral("paintedBox")).toObject(), 1.0,
-                        QStringLiteral("%1/%2 painted bbox").arg(id, actorId));
+      // The actor's drawn box, shape and label ink together, as the SVG lays
+      // it out (its text is ink, so a pixel either way is the text's).
+      requireRectNear(native->topPaintedBounds, participant.value(QStringLiteral("paintedBox")).toObject(), 1.0,
+                      QStringLiteral("%1/%2 painted bbox").arg(id, actorId));
+      const QJsonObject topLabel = participant.value(QStringLiteral("label")).toObject();
+      if (topLabel.contains(QStringLiteral("x")))
+        requireCentreX(native->topLabelRect, topLabel, QStringLiteral("%1/%2 top label").arg(id, actorId));
       require(native->created == data.createdActors.contains(actorId) &&
                   native->destroyed == data.destroyedActors.contains(actorId),
               QStringLiteral("%1/%2 lifecycle flags mismatch").arg(id, actorId));
@@ -294,17 +306,21 @@ int main(int argc, char** argv) {
                   native.label ==
                       box.value(QStringLiteral("label")).toObject().value(QStringLiteral("text")).toString(),
               QStringLiteral("%1 participant box %2 style/label mismatch").arg(id).arg(position));
+      const QJsonObject boxLabel = box.value(QStringLiteral("label")).toObject();
+      if (boxLabel.contains(QStringLiteral("x")))
+        requireCentreX(native.labelRect, boxLabel, QStringLiteral("%1 participant box %2 label").arg(id).arg(position));
     }
-    if (fixture.value(QStringLiteral("axes")).toArray().contains(QStringLiteral("participant-lifecycle"))) {
-      for (const QJsonValue& footerValue : footers) {
-        const QJsonObject footer = footerValue.toObject();
-        const QString actorId = footer.value(QStringLiteral("id")).toString();
-        const auto native = std::find_if(layout.participants.cbegin(), layout.participants.cend(),
-                                         [&](const auto& item) { return item.id == actorId; });
-        require(native != layout.participants.cend(), QStringLiteral("%1 orphan footer %2").arg(id, actorId));
-        requireRectNear(native->bottomPaintedBounds, footer.value(QStringLiteral("paintedBox")).toObject(), 1.0,
-                        QStringLiteral("%1/%2 footer painted bbox").arg(id, actorId));
-      }
+    for (const QJsonValue& footerValue : footers) {
+      const QJsonObject footer = footerValue.toObject();
+      const QString actorId = footer.value(QStringLiteral("id")).toString();
+      // A footer the SVG does not name cannot be told from the others.
+      if (actorId.isEmpty())
+        continue;
+      const auto native = std::find_if(layout.participants.cbegin(), layout.participants.cend(),
+                                       [&](const auto& item) { return item.id == actorId; });
+      require(native != layout.participants.cend(), QStringLiteral("%1 orphan footer %2").arg(id, actorId));
+      requireRectNear(native->bottomPaintedBounds, footer.value(QStringLiteral("paintedBox")).toObject(), 1.0,
+                      QStringLiteral("%1/%2 footer painted bbox").arg(id, actorId));
     }
     for (const QJsonValue& lineValue : lifelines) {
       const QJsonObject line = lineValue.toObject();
@@ -354,6 +370,10 @@ int main(int argc, char** argv) {
                     .arg(position)
                     .arg(native.path, message.value(QStringLiteral("path")).toString()));
       }
+      // The label's text, ink against its box: where the message puts it.
+      const QJsonObject messageLabel = message.value(QStringLiteral("label")).toObject();
+      if (messageLabel.contains(QStringLiteral("x")))
+        requireCentreX(native.labelRect, messageLabel, QStringLiteral("%1 message %2 label").arg(id).arg(position));
       const QJsonObject structure = message.value(QStringLiteral("structure")).toObject();
       require(structure.value(QStringLiteral("className")).toString() ==
                   (native.dashed ? QLatin1String("messageLine1") : QLatin1String("messageLine0")),
@@ -453,6 +473,21 @@ int main(int argc, char** argv) {
                   QStringLiteral("%1 fragment %2 width").arg(id).arg(position));
       requireNear(native.height(), expected.value(QStringLiteral("height")).toDouble(),
                   QStringLiteral("%1 fragment %2 height").arg(id).arg(position));
+      // A loop's label box at the corner, and its two texts: the kind in the
+      // box, the title beside it.
+      const QJsonObject labelBox = fragmentValue.toObject().value(QStringLiteral("labelBox")).toObject();
+      if (!labelBox.isEmpty()) {
+        const QRectF tag(nativeFragment.rect.x(), nativeFragment.rect.y(), 50.0, 20.0);
+        requireRectNear(tag, labelBox, 0.001, QStringLiteral("%1 fragment %2 label box").arg(id).arg(position));
+        const QJsonArray labels = fragmentValue.toObject().value(QStringLiteral("labels")).toArray();
+        if (labels.size() > 0 && labels.at(0).toObject().contains(QStringLiteral("x")))
+          requireCentreX(tag, labels.at(0).toObject(),
+                         QStringLiteral("%1 fragment %2 kind label").arg(id).arg(position));
+        if (labels.size() > 1 && labels.at(1).toObject().contains(QStringLiteral("x")))
+          requireCentreX(
+              QRectF(nativeFragment.rect.x() + 50.0, nativeFragment.rect.y(), nativeFragment.rect.width() - 50.0, 30.0),
+              labels.at(1).toObject(), QStringLiteral("%1 fragment %2 label").arg(id).arg(position));
+      }
       const QJsonObject structure = fragmentValue.toObject().value(QStringLiteral("structure")).toObject();
       require(structure.value(QStringLiteral("lineCount")).toInt() == 4 + nativeFragment.sectionY.size() &&
                   structure.value(QStringLiteral("sectionLineCount")).toInt() == nativeFragment.sectionY.size(),
