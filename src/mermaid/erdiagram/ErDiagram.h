@@ -1,32 +1,26 @@
 #pragma once
 
 #include <QHash>
-#include <QJsonObject>
 #include <QString>
 #include <QStringList>
 #include <QVector>
 
 #include "mermaid/DiagramError.h"
-#include <stdexcept>
 
 namespace muffin::mermaid::er {
 
-// Error taxonomy mirrors muffin::mermaid::classdiagram (ClassDiagram.h). The
-// stage identifies which pipeline phase raised; the code is machine-readable
-// for test assertions. ErSourceSpan is 1-based line / 0-based column to match
-// ClassSourceSpan, so token spans map directly onto diagnostic spans.
-enum class ErErrorStage { Detector, Lexer, Parser, Semantic, Resource };
+// Error taxonomy of the erDiagram parser. The stage tells which step raised;
+// the code is machine-readable.
+enum class ErErrorStage { Detector, Lexer, Parser, Resource };
 
 enum class ErErrorCode {
-  MissingHeader,
-  UnexpectedToken,
-  MissingClosingBrace,
-  MissingRelationTarget,
-  InvalidCardinality,
-  InvalidAttribute,
-  LimitExceeded,
+  MissingHeader,   // the text does not begin with erDiagram
+  UnexpectedToken, // a token the grammar does not allow here, or a character no lexer rule takes
+  LimitExceeded,   // an ErLimits bound
 };
 
+// A source range. Line is 1-based, column 0-based in UTF-16 units: Mermaid's
+// own counting, so a diagnostic can be compared with its.
 struct ErSourceSpan {
   qsizetype offset = -1;
   qsizetype length = 0;
@@ -54,70 +48,62 @@ private:
   ErDiagnostic diagnostic_;
 };
 
-// A single attribute key marker. The upstream `Attribute.keys` is an array, but
-// the documented erDiagram subset uses one key per attribute line; the parser
-// captures the first key token and a later extension can widen this to a list.
-enum class ErAttributeKeyType { None, PrimaryKey, ForeignKey, UniqueKey };
-
+// One attribute row of an entity.
 struct ErAttribute {
   QString attributeType;
   QString attributeName;
+  QStringList keys; // PK, FK and UK in the order written, as written ("pk", "Pk")
   QString comment;
-  ErAttributeKeyType keyType = ErAttributeKeyType::None;
 };
 
-// `id` is the identifier used in relationships (e.g. CUSTOMER). `name` is the
-// display label: equals `id` unless an alias `ENTITY "Display Name"` is given,
-// in which case id="ENTITY", name="Display Name" (matches upstream
-// EntityNode.id / .alias semantics).
+// An entity. `id` is the name relationships use. `alias` is what the table
+// shows in its place: `a[Customer]` gives id "a" and alias "Customer".
 struct ErEntity {
-  QString id;
+  QString id;   // entity-<name>-<n>: what the relationships and the drawing call it
   QString name;
+  QString alias;
   QVector<ErAttribute> attributes;
   QString link;
   QString linkTarget;
   QString tooltip;
   bool haveCallback = false;
-  QString cssClasses; // space-joined classDef names applied via class/cssClass
-  QStringList styles; // inline `style` declarations (key:value)
+  QString cssClasses; // space-separated; empty when the entity has no class
+  QStringList styles; // the declarations of a `style` statement
+
+  QString label() const { return alias.isEmpty() ? name : alias; }
 };
 
-// Crow's-foot cardinality. ExactlyOne => "||" (two ticks), ZeroOrOne => "|o"/"o|"
-// (circle + tick), OneOrMore => "}|"/"|{" (fork + tick), ZeroOrMore =>
-// "}o"/"o{" (circle + fork). MD_PARENT (markdown parent, token 70 in the jison
-// grammar) is a markdown-specific edge case and is intentionally deferred.
-enum class ErCardinality { ExactlyOne, ZeroOrOne, OneOrMore, ZeroOrMore };
+// Crow's-foot cardinality at one end of a relationship.
+// ExactlyOne "||" (two ticks), ZeroOrOne "|o" / "o|" (circle and tick),
+// OneOrMore "}|" / "|{" (fork and tick), ZeroOrMore "}o" / "o{" (circle and fork).
+// MdParent is `u` before the connector, the marker of a Markdown parent; it
+// parses only in one accidental form and Mermaid draws no marker for it.
+enum class ErCardinality { ExactlyOne, ZeroOrOne, OneOrMore, ZeroOrMore, MdParent };
 
-// `identifying` mirrors upstream Identification: true  => "--" solid
-// (IDENTIFYING), false => ".." dotted (NON_IDENTIFYING). roleA/roleB are the
-// optional quoted role strings adjacent to entityA/entityB
-// (`A "roleA" }o--o{ "roleB" B : label`). `label` is the text after `:`. If a
-// trailing quoted "comment" follows the label it is captured in `comment`.
+// A relationship `A <cardA> -- or .. <cardB> B : label`. `identifying` is true
+// for the solid `--` line and false for the dotted `..` line.
+// Both ends are entity ids. Mermaid numbers the relationships into edge ids
+// only when it hands them to the layout (buildErLayoutInput).
 struct ErRelationship {
-  QString id;
   QString entityA;
   QString entityB;
-  ErCardinality cardA = ErCardinality::ExactlyOne;
-  ErCardinality cardB = ErCardinality::ExactlyOne;
+  ErCardinality cardA = ErCardinality::ExactlyOne; // at entityA
+  ErCardinality cardB = ErCardinality::ExactlyOne; // at entityB
   bool identifying = true;
-  QString roleA;
-  QString roleB;
-  QString label;
-  QString comment;
+  QString label; // the role: the text after the colon
 };
 
 struct ErDiagramData {
-  QString title;
   QString accTitle;
   QString accDescription;
+  QString direction = QStringLiteral("TB"); // TB, BT, RL or LR
   QVector<ErEntity> entities;
   QVector<ErRelationship> relationships;
-  // classDef table (id -> declarations), exposed for the runtime style cascade.
+  // classDef table: class id -> its accumulated declarations.
   QHash<QString, QStringList> classDefs;
 };
 
-// Resource caps checked during parse, mirroring ClassLimits. Defaults are the
-// documented mermaid hard limits scaled for the native subset.
+// Resource bounds checked while parsing.
 struct ErLimits {
   int maxEntities = 100;
   int maxRelationships = 500;
@@ -125,11 +111,15 @@ struct ErLimits {
   int maxTextSize = 100000;
 };
 
+// Mermaid's erDiagram grammar (src/diagrams/er/parser/erDiagram.jison, as built
+// in mermaid 11.16.0) and the database its actions fill.
+//
+// `source` is the text Mermaid hands the parser: the preprocessed diagram,
+// with Diagram.fromText's preparation applied (see parse()).
 class ErDiagram {
 public:
   static ErDiagram parse(const QString& source, ErLimits limits = {});
   const ErDiagramData& data() const { return data_; }
-  QJsonObject toJson() const;
 
 private:
   ErDiagramData data_;

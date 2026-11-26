@@ -16,6 +16,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -23,6 +24,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -32,9 +34,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -90,6 +93,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -97,6 +101,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -104,6 +109,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-many-2",
             "name": "many",
             "alias": "",
             "attributes": [],
@@ -113,9 +119,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "has",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -147,6 +154,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -154,6 +162,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -163,9 +172,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -185,6 +195,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -192,6 +203,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -201,9 +213,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "has many",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -223,6 +236,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -230,6 +244,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -239,9 +254,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "a#b",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -273,6 +289,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -280,6 +297,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -289,9 +307,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "拥有",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -311,6 +330,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -318,6 +338,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -327,9 +348,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "belongs-to",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -349,6 +371,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -356,6 +379,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -365,9 +389,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "a.b",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -435,6 +460,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -442,6 +468,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -451,9 +478,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "C",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -497,6 +525,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -504,6 +533,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -511,6 +541,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-extra-2",
             "name": "extra",
             "alias": "",
             "attributes": [],
@@ -520,9 +551,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -542,6 +574,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -549,6 +582,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -556,6 +590,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-C-2",
             "name": "C",
             "alias": "",
             "attributes": [],
@@ -565,17 +600,19 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
           },
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-C-2_1",
+            "entityA": "entity-A-0",
             "roleA": "y",
-            "entityB": "C",
+            "entityB": "entity-C-2",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -595,6 +632,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -602,6 +640,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -611,17 +650,19 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
           },
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_1",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -641,6 +682,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -650,9 +692,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-A-0_0",
+            "entityA": "entity-A-0",
             "roleA": "self",
-            "entityB": "A",
+            "entityB": "entity-A-0",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -672,6 +715,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -679,6 +723,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -688,9 +733,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -710,6 +756,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -717,6 +764,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [
@@ -735,9 +783,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -757,6 +806,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -773,6 +823,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [
@@ -789,9 +840,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -811,6 +863,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -818,6 +871,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -825,6 +879,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-C-2",
             "name": "C",
             "alias": "",
             "attributes": [],
@@ -834,17 +889,19 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
           },
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-C-2_1",
+            "entityA": "entity-A-0",
             "roleA": "y",
-            "entityB": "C",
+            "entityB": "entity-C-2",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -864,6 +921,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -871,6 +929,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -880,9 +939,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -917,6 +977,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -924,6 +985,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -933,9 +995,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -963,6 +1026,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -970,6 +1034,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -979,9 +1044,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1009,6 +1075,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1016,6 +1083,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1025,9 +1093,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1047,6 +1116,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1054,6 +1124,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1061,6 +1132,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-C-2",
             "name": "C",
             "alias": "",
             "attributes": [],
@@ -1068,6 +1140,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-D-3",
             "name": "D",
             "alias": "",
             "attributes": [],
@@ -1075,6 +1148,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-E-4",
             "name": "E",
             "alias": "",
             "attributes": [],
@@ -1082,6 +1156,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-F-5",
             "name": "F",
             "alias": "",
             "attributes": [],
@@ -1089,6 +1164,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-G-6",
             "name": "G",
             "alias": "",
             "attributes": [],
@@ -1096,6 +1172,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-H-7",
             "name": "H",
             "alias": "",
             "attributes": [],
@@ -1103,6 +1180,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-I-8",
             "name": "I",
             "alias": "",
             "attributes": [],
@@ -1110,6 +1188,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-J-9",
             "name": "J",
             "alias": "",
             "attributes": [],
@@ -1117,6 +1196,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-K-10",
             "name": "K",
             "alias": "",
             "attributes": [],
@@ -1124,6 +1204,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-L-11",
             "name": "L",
             "alias": "",
             "attributes": [],
@@ -1133,49 +1214,55 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "r1",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
           },
           {
-            "entityA": "C",
+            "id": "id_entity-C-2_entity-D-3_1",
+            "entityA": "entity-C-2",
             "roleA": "r2",
-            "entityB": "D",
+            "entityB": "entity-D-3",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ONLY_ONE"
           },
           {
-            "entityA": "E",
+            "id": "id_entity-E-4_entity-F-5_2",
+            "entityA": "entity-E-4",
             "roleA": "r3",
-            "entityB": "F",
+            "entityB": "entity-F-5",
             "startCard": "ONE_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ONE_OR_MORE"
           },
           {
-            "entityA": "G",
+            "id": "id_entity-G-6_entity-H-7_3",
+            "entityA": "entity-G-6",
             "roleA": "r4",
-            "entityB": "H",
+            "entityB": "entity-H-7",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
           },
           {
-            "entityA": "I",
+            "id": "id_entity-I-8_entity-J-9_4",
+            "entityA": "entity-I-8",
             "roleA": "r5",
-            "entityB": "J",
+            "entityB": "entity-J-9",
             "startCard": "ZERO_OR_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ONLY_ONE"
           },
           {
-            "entityA": "K",
+            "id": "id_entity-K-10_entity-L-11_5",
+            "entityA": "entity-K-10",
             "roleA": "r6",
-            "entityB": "L",
+            "entityB": "entity-L-11",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
@@ -1195,6 +1282,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1202,6 +1290,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1211,9 +1300,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
@@ -1233,6 +1323,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1240,6 +1331,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1249,9 +1341,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
@@ -1271,6 +1364,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1278,6 +1372,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1287,9 +1382,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONE_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ONE_OR_MORE"
@@ -1309,6 +1405,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1316,6 +1413,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1325,9 +1423,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONE_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ONE_OR_MORE"
@@ -1347,6 +1446,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1354,6 +1454,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1363,9 +1464,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1385,6 +1487,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1392,6 +1495,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1401,9 +1505,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1423,6 +1528,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1430,6 +1536,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1439,9 +1546,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1461,6 +1569,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1468,6 +1577,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1477,9 +1587,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1499,6 +1610,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1506,6 +1618,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1515,9 +1628,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONE_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ONE_OR_MORE"
@@ -1537,6 +1651,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1544,6 +1659,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1553,9 +1669,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ONLY_ONE"
@@ -1575,6 +1692,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1582,6 +1700,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1591,9 +1710,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONE_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ONE_OR_MORE"
@@ -1613,6 +1733,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1620,6 +1741,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1629,9 +1751,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1651,6 +1774,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1658,6 +1782,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1667,9 +1792,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ONLY_ONE"
@@ -1689,6 +1815,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1696,6 +1823,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1705,9 +1833,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
@@ -1727,6 +1856,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1734,6 +1864,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1743,9 +1874,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1765,6 +1897,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1772,6 +1905,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1781,9 +1915,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ZERO_OR_MORE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_ONE"
@@ -1803,6 +1938,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-1-0",
             "name": "1",
             "alias": "",
             "attributes": [],
@@ -1810,6 +1946,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1819,9 +1956,10 @@
         ],
         "relationships": [
           {
-            "entityA": "1",
+            "id": "id_entity-1-0_entity-B-1_0",
+            "entityA": "entity-1-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1841,6 +1979,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -1848,6 +1987,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-1-1",
             "name": "1",
             "alias": "",
             "attributes": [],
@@ -1857,9 +1997,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-1-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "1",
+            "entityB": "entity-1-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -1879,6 +2020,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-1.5-0",
             "name": "1.5",
             "alias": "",
             "attributes": [],
@@ -1886,6 +2028,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -1895,9 +2038,10 @@
         ],
         "relationships": [
           {
-            "entityA": "1.5",
+            "id": "id_entity-1.5-0_entity-B-1_0",
+            "entityA": "entity-1.5-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2049,6 +2193,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2056,6 +2201,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2065,9 +2211,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2087,6 +2234,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2094,6 +2242,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2103,9 +2252,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "NON_IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2125,6 +2275,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2132,6 +2283,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2141,9 +2293,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "NON_IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2163,6 +2316,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2170,6 +2324,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2179,9 +2334,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "NON_IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2201,6 +2357,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2208,6 +2365,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2217,9 +2375,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2239,6 +2398,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -2246,6 +2406,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -2255,9 +2416,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "NON_IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -2325,6 +2487,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2354,6 +2517,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-CUSTOMER-0",
             "name": "CUSTOMER",
             "alias": "",
             "attributes": [
@@ -2407,6 +2571,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2436,6 +2601,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2468,6 +2634,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2500,6 +2667,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2545,6 +2713,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2577,6 +2746,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2609,6 +2779,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2640,6 +2811,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2707,6 +2879,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2748,6 +2921,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2795,6 +2969,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2824,6 +2999,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2871,6 +3047,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2900,6 +3077,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -2929,6 +3107,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3002,6 +3181,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3031,6 +3211,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3060,6 +3241,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3113,6 +3295,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3144,6 +3327,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -3166,6 +3350,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -3188,6 +3373,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3219,6 +3405,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3256,6 +3443,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3272,6 +3460,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -3279,6 +3468,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-C-2",
             "name": "C",
             "alias": "",
             "attributes": [],
@@ -3288,9 +3478,10 @@
         ],
         "relationships": [
           {
-            "entityA": "B",
+            "id": "id_entity-B-1_entity-C-2_0",
+            "entityA": "entity-B-1",
             "roleA": "x",
-            "entityB": "C",
+            "entityB": "entity-C-2",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -3346,6 +3537,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3375,6 +3567,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3412,6 +3605,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -3443,6 +3637,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-CUSTOMER-0",
             "name": "CUSTOMER",
             "alias": "",
             "attributes": [],
@@ -3465,6 +3660,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-CUSTOMER-0",
             "name": "CUSTOMER",
             "alias": "",
             "attributes": [
@@ -3496,6 +3692,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-CUSTOMER-0",
             "name": "CUSTOMER",
             "alias": "",
             "attributes": [
@@ -3527,6 +3724,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -3534,6 +3732,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -3556,6 +3755,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-C-0",
             "name": "C",
             "alias": "",
             "attributes": [],
@@ -3563,6 +3763,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-A-1",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -3570,6 +3771,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-2",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -3579,9 +3781,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-1_entity-B-2_0",
+            "entityA": "entity-A-1",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-2",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -3601,6 +3804,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-ORDER-LINE-ITEM-0",
             "name": "ORDER-LINE-ITEM",
             "alias": "",
             "attributes": [],
@@ -3623,6 +3827,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a.b.c-0",
             "name": "a.b.c",
             "alias": "",
             "attributes": [],
@@ -3645,6 +3850,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-Order_Line_2-0",
             "name": "Order_Line_2",
             "alias": "",
             "attributes": [],
@@ -3667,6 +3873,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-客户-0",
             "name": "客户",
             "alias": "",
             "attributes": [],
@@ -3689,6 +3896,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-Café-0",
             "name": "Café",
             "alias": "",
             "attributes": [],
@@ -3711,6 +3919,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-123-0",
             "name": "123",
             "alias": "",
             "attributes": [],
@@ -3733,6 +3942,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-1.5-0",
             "name": "1.5",
             "alias": "",
             "attributes": [],
@@ -3755,6 +3965,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-1-0",
             "name": "1",
             "alias": "",
             "attributes": [],
@@ -3777,6 +3988,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-*-0",
             "name": "*",
             "alias": "",
             "attributes": [],
@@ -3799,6 +4011,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-*ABC-0",
             "name": "*ABC",
             "alias": "",
             "attributes": [],
@@ -3821,6 +4034,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-1-0",
             "name": "1",
             "alias": "",
             "attributes": [],
@@ -3828,6 +4042,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-abc-1",
             "name": "abc",
             "alias": "",
             "attributes": [],
@@ -3874,6 +4089,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity--a-0",
             "name": "-a",
             "alias": "",
             "attributes": [],
@@ -3920,6 +4136,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-Quoted Entity-0",
             "name": "Quoted Entity",
             "alias": "",
             "attributes": [],
@@ -3942,6 +4159,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-Quoted Entity-0",
             "name": "Quoted Entity",
             "alias": "",
             "attributes": [
@@ -4021,6 +4239,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-ENTITY-0",
             "name": "ENTITY",
             "alias": "",
             "attributes": [],
@@ -4028,6 +4247,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-Display Name-1",
             "name": "Display Name",
             "alias": "",
             "attributes": [],
@@ -4050,6 +4270,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-USER-0",
             "name": "USER",
             "alias": "",
             "attributes": [],
@@ -4057,6 +4278,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-Application User-1",
             "name": "Application User",
             "alias": "",
             "attributes": [
@@ -4088,6 +4310,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4110,6 +4333,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4132,6 +4356,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person Name",
             "attributes": [],
@@ -4154,6 +4379,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Per[son]",
             "attributes": [],
@@ -4176,6 +4402,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4207,6 +4434,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4238,6 +4466,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4277,6 +4506,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4307,6 +4537,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4353,6 +4584,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4384,6 +4616,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [
@@ -4415,6 +4648,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4422,6 +4656,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-b-1",
             "name": "b",
             "alias": "",
             "attributes": [],
@@ -4431,9 +4666,10 @@
         ],
         "relationships": [
           {
-            "entityA": "a",
+            "id": "id_entity-a-0_entity-b-1_0",
+            "entityA": "entity-a-0",
             "roleA": "x",
-            "entityB": "b",
+            "entityB": "entity-b-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -4453,6 +4689,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4460,6 +4697,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-b-1",
             "name": "b",
             "alias": "Company",
             "attributes": [],
@@ -4469,9 +4707,10 @@
         ],
         "relationships": [
           {
-            "entityA": "a",
+            "id": "id_entity-a-0_entity-b-1_0",
+            "entityA": "entity-a-0",
             "roleA": "works",
-            "entityB": "b",
+            "entityB": "entity-b-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -4611,6 +4850,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4618,6 +4858,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-x-1",
             "name": "x",
             "alias": "Other",
             "attributes": [],
@@ -4640,6 +4881,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4647,6 +4889,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-x-1",
             "name": "x",
             "alias": "",
             "attributes": [],
@@ -4669,6 +4912,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person",
             "attributes": [],
@@ -4676,6 +4920,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-Display-1",
             "name": "Display",
             "alias": "",
             "attributes": [],
@@ -4746,6 +4991,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "two",
             "attributes": [],
@@ -4804,6 +5050,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "1",
             "attributes": [],
@@ -4850,6 +5097,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "123",
             "attributes": [],
@@ -4872,6 +5120,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "1.5",
             "attributes": [],
@@ -4894,6 +5143,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "*",
             "attributes": [],
@@ -4916,6 +5166,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person*",
             "attributes": [],
@@ -4938,6 +5189,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "person_info",
             "attributes": [],
@@ -4960,6 +5212,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Person-Info",
             "attributes": [],
@@ -4982,6 +5235,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "per.son-name",
             "attributes": [],
@@ -5004,6 +5258,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "客户信息",
             "attributes": [],
@@ -5026,6 +5281,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "Café",
             "attributes": [],
@@ -5072,6 +5328,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-b-0",
             "name": "a-b",
             "alias": "Person",
             "attributes": [],
@@ -5094,6 +5351,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a.b-0",
             "name": "a.b",
             "alias": "Person",
             "attributes": [],
@@ -5116,6 +5374,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a b-0",
             "name": "a b",
             "alias": "Alias",
             "attributes": [],
@@ -5138,6 +5397,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a b-0",
             "name": "a b",
             "alias": "Alias",
             "attributes": [],
@@ -5160,6 +5420,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5190,6 +5451,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [
@@ -5229,6 +5491,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [
@@ -5323,6 +5586,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5345,6 +5609,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [
@@ -5406,6 +5671,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [
@@ -5445,6 +5711,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5452,6 +5719,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-b-1",
             "name": "b",
             "alias": "",
             "attributes": [],
@@ -5482,6 +5750,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5519,6 +5788,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5573,6 +5843,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5605,6 +5876,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5635,6 +5907,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5677,6 +5950,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5708,6 +5982,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5741,6 +6016,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5800,6 +6076,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [
@@ -5834,6 +6111,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5843,6 +6121,7 @@
             ]
           },
           {
+            "id": "entity-b-1",
             "name": "b",
             "alias": "",
             "attributes": [],
@@ -5905,6 +6184,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5927,6 +6207,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5951,6 +6232,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-a-0",
             "name": "a",
             "alias": "",
             "attributes": [],
@@ -5983,6 +6265,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6005,6 +6288,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6041,6 +6325,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6063,6 +6348,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6085,6 +6371,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6107,6 +6394,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6129,6 +6417,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6151,6 +6440,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6173,6 +6463,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6209,6 +6500,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6231,6 +6523,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6238,6 +6531,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6247,9 +6541,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6269,6 +6564,7 @@
         "direction": "BT",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6276,6 +6572,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6285,9 +6582,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6307,6 +6605,7 @@
         "direction": "RL",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6314,6 +6613,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6323,9 +6623,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6345,6 +6646,7 @@
         "direction": "LR",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6352,6 +6654,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6361,9 +6664,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6383,6 +6687,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6390,6 +6695,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6399,9 +6705,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6421,6 +6728,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6443,6 +6751,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-direction-0",
             "name": "direction",
             "alias": "",
             "attributes": [],
@@ -6450,6 +6759,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-XX-1",
             "name": "XX",
             "alias": "",
             "attributes": [],
@@ -6457,6 +6767,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-A-2",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6479,6 +6790,7 @@
         "direction": "LR",
         "entities": [
           {
+            "id": "entity-B-0",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6501,6 +6813,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6537,6 +6850,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6621,6 +6935,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6715,6 +7030,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6722,6 +7038,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6731,9 +7048,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6753,6 +7071,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6760,6 +7079,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6769,9 +7089,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6791,6 +7112,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6798,6 +7120,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6807,9 +7130,10 @@
         ],
         "relationships": [
           {
-            "entityA": "B",
+            "id": "id_entity-B-1_entity-A-0_0",
+            "entityA": "entity-B-1",
             "roleA": "x",
-            "entityB": "A",
+            "entityB": "entity-A-0",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6829,6 +7153,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6851,6 +7176,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [
@@ -6867,6 +7193,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6876,9 +7203,10 @@
         ],
         "relationships": [
           {
-            "entityA": "B",
+            "id": "id_entity-B-1_entity-A-0_0",
+            "entityA": "entity-B-1",
             "roleA": "x",
-            "entityB": "A",
+            "entityB": "entity-A-0",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6898,6 +7226,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6905,6 +7234,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6914,9 +7244,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6936,6 +7267,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6943,6 +7275,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6952,9 +7285,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -6974,6 +7308,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -6981,6 +7316,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -6990,9 +7326,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -7012,6 +7349,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -7019,6 +7357,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -7028,9 +7367,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -7050,6 +7390,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-A-0",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -7057,6 +7398,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-B-1",
             "name": "B",
             "alias": "",
             "attributes": [],
@@ -7066,9 +7408,10 @@
         ],
         "relationships": [
           {
-            "entityA": "A",
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
             "roleA": "x",
-            "entityB": "B",
+            "entityB": "entity-B-1",
             "startCard": "ONLY_ONE",
             "relType": "IDENTIFYING",
             "endCard": "ZERO_OR_MORE"
@@ -7355,6 +7698,374 @@
       }
     },
     {
+      "id": "classdef-semi-joins",
+      "source": "erDiagram\nclassDef hot fill:#f96;fill:#00f",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f96fill:#00f"
+            ],
+            "textStyles": []
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "classdef-semi-then-class",
+      "source": "erDiagram\nclassDef hot fill:#f96;a:::hot",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f96a:::hot"
+            ],
+            "textStyles": []
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "classdef-semi-newline",
+      "source": "erDiagram\nclassDef hot fill:#f96;\na:::hot",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-a-0",
+            "name": "a",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default hot",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f96"
+            ],
+            "textStyles": []
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "style-semi-joins",
+      "source": "erDiagram\na {\nstring id\n}\nstyle a fill:#f00;stroke:#00f",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-a-0",
+            "name": "a",
+            "alias": "",
+            "attributes": [
+              {
+                "type": "string",
+                "name": "id",
+                "keys": [],
+                "comment": ""
+              }
+            ],
+            "cssClasses": "default",
+            "cssStyles": [
+              "fill:#f00stroke:#00f"
+            ]
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "label-entity-reference-number",
+      "source": "erDiagram\nA ||--o{ B : \"x #35; y\"",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          },
+          {
+            "id": "entity-B-1",
+            "name": "B",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [
+          {
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
+            "roleA": "x ﬂ°°35¶ß y",
+            "entityB": "entity-B-1",
+            "startCard": "ONLY_ONE",
+            "relType": "IDENTIFYING",
+            "endCard": "ZERO_OR_MORE"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "label-entity-reference-name",
+      "source": "erDiagram\nA ||--o{ B : \"x #abc; y\"",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          },
+          {
+            "id": "entity-B-1",
+            "name": "B",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [
+          {
+            "id": "id_entity-A-0_entity-B-1_0",
+            "entityA": "entity-A-0",
+            "roleA": "x ﬂ°abc¶ß y",
+            "entityB": "entity-B-1",
+            "startCard": "ONLY_ONE",
+            "relType": "IDENTIFYING",
+            "endCard": "ZERO_OR_MORE"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "classdef-crlf",
+      "source": "erDiagram\r\na:::hot\r\nclassDef hot fill:#f96\r\n",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-a-0",
+            "name": "a",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default hot",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f96"
+            ],
+            "textStyles": []
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "md-parent-colon",
+      "source": "erDiagram\nA |o--u- : x",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          },
+          {
+            "id": "entity---1",
+            "name": "-",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [
+          {
+            "id": "id_entity-A-0_entity---1_0",
+            "entityA": "entity-A-0",
+            "roleA": "x",
+            "entityB": "entity---1",
+            "startCard": "ZERO_OR_ONE",
+            "relType": "IDENTIFYING",
+            "endCard": "MD_PARENT"
+          }
+        ],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reject-md-parent-then-name",
+      "source": "erDiagram\nA |o--u. B : x",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nerDiagramA |o--u. B : x\n------------------^\nExpecting 'COLON', 'STYLE_SEPARATOR', got 'UNICODE_TEXT'",
+        "messageLine": 2,
+        "line": 2,
+        "column": 8
+      }
+    },
+    {
+      "id": "tilde-in-type",
+      "source": "erDiagram\nA {\nstring~comment~ id\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [
+              {
+                "type": "string~comment~",
+                "name": "id",
+                "keys": [],
+                "comment": ""
+              }
+            ],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "tilde-in-name",
+      "source": "erDiagram\nA {\nstring id~note~\n}",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [
+              {
+                "type": "string",
+                "name": "id~note~",
+                "keys": [],
+                "comment": ""
+              }
+            ],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reject-acc-descr-open-at-end",
+      "source": "erDiagram\naccDescr {",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...rDiagramaccDescr {\n---------------------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'CLASSDEF', 'UNICODE_TEXT', 'CLASS', 'STYLE', 'NUM', 'ENTITY_NAME', 'DECIMAL_NUM', 'ENTITY_ONE', got '1'",
+        "messageLine": 3,
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "acc-descr-spaced-block",
+      "source": "erDiagram\naccDescr  {  x  }  \nA",
+      "accept": true,
+      "expectedDb": {
+        "accTitle": "",
+        "accDescription": "x",
+        "direction": "TB",
+        "entities": [
+          {
+            "id": "entity-A-0",
+            "name": "A",
+            "alias": "",
+            "attributes": [],
+            "cssClasses": "default",
+            "cssStyles": []
+          }
+        ],
+        "relationships": [],
+        "classes": []
+      },
+      "renderAccept": true
+    },
+    {
       "id": "stray-open-parenthesis",
       "source": "erDiagram\n(",
       "accept": false,
@@ -7376,6 +8087,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-something-0",
             "name": "something",
             "alias": "",
             "attributes": [],
@@ -7383,6 +8095,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-else-1",
             "name": "else",
             "alias": "",
             "attributes": [],
@@ -7390,6 +8103,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-here-2",
             "name": "here",
             "alias": "",
             "attributes": [],
@@ -7412,6 +8126,7 @@
         "direction": "TB",
         "entities": [
           {
+            "id": "entity-title-0",
             "name": "title",
             "alias": "",
             "attributes": [],
@@ -7419,6 +8134,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-My-1",
             "name": "My",
             "alias": "",
             "attributes": [],
@@ -7426,6 +8142,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-ER-2",
             "name": "ER",
             "alias": "",
             "attributes": [],
@@ -7433,6 +8150,7 @@
             "cssStyles": []
           },
           {
+            "id": "entity-A-3",
             "name": "A",
             "alias": "",
             "attributes": [],
@@ -7458,5 +8176,5 @@
       }
     }
   ],
-  "fixtureSha256": "f6a2d783c1f5f8cd0f7737c5f63e88ebd8a9d6fd8da234c9257342d38734a135"
+  "fixtureSha256": "546a0f56a01597ffeaa0dc02e4f98eb86bdf4fe273aeadf7881a19e28c45c784"
 }

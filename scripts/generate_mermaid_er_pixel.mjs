@@ -8,7 +8,9 @@ import { PNG } from "pngjs";
 // 11.16.0 in headless Chrome, mirroring generate_mermaid_pie_pixel.mjs.
 // Bundled Noto fonts (including CJK) pin text metrics for cross-host parity.
 // A FIXED render id per case keeps the SVG deterministic (the id is the only
-// byte that would otherwise vary between runs).
+// byte that would otherwise vary between runs). The classic look covers the
+// canonical example in all eleven themes and fifteen structures; the neo and
+// the handDrawn looks cover the themes and structures they change.
 //
 //   node scripts/generate_mermaid_er_pixel.mjs \
 //     [mermaid-root] [out-dir] [chrome-exe]
@@ -43,10 +45,7 @@ const canonical = [
   "    }",
 ].join("\n");
 
-// Structures of the family, one per case, all in the default theme. They stay
-// inside the part of the grammar the port reads like upstream: no aliases, no
-// `direction`, no quoted relationship labels, and no ring or self-relationship
-// (whose layout still differs; MermaidErGeometryOracleTest lists those).
+// Structures of the family, one per case, all in the default theme.
 const structures = {
   "attributes-keys-comments":
     'erDiagram\n    CUSTOMER {\n        string name PK "primary key"\n        int age\n        bigint account_id FK\n        string email UK "unique"\n    }',
@@ -64,15 +63,16 @@ const structures = {
   "wide-attributes":
     'erDiagram\n    SHIPMENT {\n        string tracking_number PK "carrier tracking id"\n        date shipped_on\n        text notes "free form remarks"\n    }\n    ITEM {\n        string sku PK\n        int quantity\n    }\n    SHIPMENT ||--|{ ITEM : contains',
   "cjk-labels": "erDiagram\n    客户 ||--o{ 订单 : 下单\n    订单 ||--|{ 明细 : 包含\n    订单 {\n        string 编号 PK\n    }",
-};
-
-// A canvas the port sizes differently from the browser, in pixels (native
-// minus browser). The port measures this diagram's widest label 0.04 px
-// narrower than Chrome; the extent lands on a half pixel and rounds one pixel
-// smaller. The test compares the common area and fails if the difference
-// grows, changes or disappears.
-const canvasDelta = {
-  "structure-cjk-labels": { width: -1, height: 0 },
+  // A relationship from an entity to itself is drawn as a loop of three paths.
+  "self-relationship":
+    "erDiagram\n    EMPLOYEE {\n        string id PK\n        string manager_id FK\n    }\n    EMPLOYEE |o--o{ EMPLOYEE : manages\n    EMPLOYEE ||--|| DEPARTMENT : belongs",
+  ring: "erDiagram\n    A ||--o{ B : ab\n    B ||--o{ C : bc\n    C ||--o{ D : cd\n    D ||--o{ E : de\n    E ||--o{ A : ea",
+  aliases:
+    'erDiagram\n    customer-account["Customer Account"]\n    sales-order["Sales Order"] {\n        date placed_on\n        string status\n    }\n    customer-account ||--o{ sales-order : places',
+  "direction-lr":
+    "erDiagram\n    direction LR\n    A ||--o{ B : r1\n    B ||--o{ C : r2\n    A |o--o{ D : r3",
+  styles:
+    "erDiagram\n    ORDER {\n        string number PK\n        date placed\n    }\n    CUSTOMER ||--o{ ORDER : places\n    classDef highlighted fill:#ff0000,stroke:#00ff00,stroke-width:3px,color:#0000ff\n    class ORDER highlighted\n    style CUSTOMER fill:#00ff00,stroke:#ff00ff",
 };
 
 // All 11 built-in themes on the canonical source (mirroring the pie oracle).
@@ -80,17 +80,58 @@ const themes = [
   "default", "base", "dark", "forest", "neutral",
   "neo", "neo-dark", "redux", "redux-dark", "redux-color", "redux-dark-color",
 ];
-const themed = (id, theme, source) => ({
+const themed = (id, theme, source, look = "classic") => ({
   id,
   dpr: 1,
   theme,
+  look,
   renderId: `er-pixel-${id}`,
-  source: theme === "default" ? source : `%%{init: {"theme":"${theme}"}}%%\n${source}`,
-  ...(canvasDelta[id] ? { canvasDelta: canvasDelta[id] } : {}),
+  source:
+    theme === "default" && look === "classic"
+      ? source
+      : `%%{init: ${JSON.stringify(initOf(theme, look))}}%%\n${source}`,
 });
+// A case's configuration as its directive writes it. The handDrawn look pins
+// its seed: Mermaid's default, 0, makes rough.js draw at random, so no two
+// renders of a diagram agree and there is no image to compare against.
+function initOf(theme, look) {
+  const init = theme === "default" ? {} : { theme };
+  if (look !== "classic")
+    init.look = look;
+  if (look === "handDrawn")
+    init.handDrawnSeed = 17;
+  return init;
+}
+// The neo look: over the themes whose shadow and strokes differ, and over the
+// structures whose lines and markers it changes.
+const neoLooks = [
+  ["look-neo", "default", canonical],
+  ["look-neo-neo", "neo", canonical],
+  ["look-neo-neo-dark", "neo-dark", canonical],
+  ["look-neo-redux-dark", "redux-dark", canonical],
+  ["look-neo-forest", "forest", canonical],
+  ["look-neo-non-identifying", "default", structures["non-identifying"]],
+  ["look-neo-cardinality-types", "neo", structures["cardinality-types"]],
+  ["look-neo-self-relationship", "default", structures["self-relationship"]],
+  ["look-neo-styles", "default", structures["styles"]],
+];
+// The handDrawn look: the themes whose copy behind the shapes shows, and the
+// structures whose paths and markers it changes.
+const handDrawn = [
+  ["look-hand-drawn", "default", canonical],
+  ["look-hand-drawn-dark", "dark", canonical],
+  ["look-hand-drawn-neo", "neo", canonical],
+  ["look-hand-drawn-attributeless", "default", structures["single-entity"]],
+  ["look-hand-drawn-cardinality-types", "default", structures["cardinality-types"]],
+  ["look-hand-drawn-non-identifying", "default", structures["non-identifying"]],
+  ["look-hand-drawn-self-relationship", "default", structures["self-relationship"]],
+  ["look-hand-drawn-styles", "default", structures["styles"]],
+];
 const cases = [
   ...themes.map((theme) => themed(theme, theme, canonical)),
   ...Object.entries(structures).map(([id, source]) => themed(`structure-${id}`, "default", source)),
+  ...neoLooks.map(([id, theme, source]) => themed(id, theme, source, "neo")),
+  ...handDrawn.map(([id, theme, source]) => themed(id, theme, source, "handDrawn")),
 ];
 
 const notoDir = path.resolve("third_party", "noto", "fonts");
@@ -158,7 +199,15 @@ try {
         const style = document.createElement("style");
         style.textContent = faces;
         document.head.appendChild(style);
-        await document.fonts.load('16px "Noto Sans"', "CUSTOMER");
+        // Chrome loads a face when a text first needs it, and measures that
+        // text in the fallback font until then: load each face first.
+        for (const [family, sample] of [
+          ["Noto Sans", "CUSTOMER"],
+          ["Noto Sans CJK SC", "编号"],
+          ["Noto Sans Arabic", "مرحبا"],
+          ["Noto Sans Hebrew", "שלום"],
+        ])
+          await document.fonts.load(`16px "${family}"`, sample);
         await document.fonts.ready;
         mermaid.initialize({
           startOnLoad: false,
@@ -189,13 +238,13 @@ try {
       id: fixture.id,
       dpr: fixture.dpr,
       theme: fixture.theme,
+      look: fixture.look,
       renderId: fixture.renderId,
       source: fixture.source,
       file,
       width,
       height,
       sha256: createHash("sha256").update(png).digest("hex"),
-      ...(fixture.canvasDelta ? { canvasDelta: fixture.canvasDelta } : {}),
     });
     await page.close();
   }

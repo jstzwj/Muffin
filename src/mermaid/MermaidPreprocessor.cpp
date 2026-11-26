@@ -10,6 +10,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <cmath>
+#include <functional>
 #include <stdexcept>
 
 namespace muffin::mermaid {
@@ -563,6 +564,92 @@ MermaidPreprocessResult preprocessDiagram(const QString& source) {
                                    ? source.size()
                                    : qMin<qsizetype>(source.size(), result.codeSourceOffsets.back() + 1);
   return result;
+}
+
+namespace {
+
+// JavaScript's \S: the negation of its \s, which reaches beyond ASCII.
+constexpr char16_t kJsNotSpace[] =
+    u"[^\\t\\n\\v\\f\\r \\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]";
+// JavaScript's `.`: anything but a line terminator.
+constexpr char16_t kJsDot[] = u"[^\\n\\r\\x{2028}\\x{2029}]";
+
+// Rewrites `mapped` with `replace`, which gets each match with the source
+// offset of each of its characters and returns the text put in its place,
+// with in `origins` the source offset of each character of that text.
+void replaceMatches(MappedText& mapped, const QRegularExpression& expression,
+                    const std::function<QString(const QString&, const QVector<qsizetype>&, QVector<qsizetype>&)>& replace) {
+  QString text;
+  QVector<qsizetype> offsets;
+  qsizetype at = 0;
+  for (auto it = expression.globalMatch(mapped.text); it.hasNext();) {
+    const QRegularExpressionMatch match = it.next();
+    const qsizetype start = match.capturedStart();
+    const QString matched = match.captured(0);
+    text += mapped.text.mid(at, start - at);
+    offsets += mapped.sourceOffsets.mid(at, start - at);
+    QVector<qsizetype> origins;
+    text += replace(matched, mapped.sourceOffsets.mid(start, matched.size()), origins);
+    offsets += origins;
+    at = start + matched.size();
+  }
+  text += mapped.text.mid(at);
+  offsets += mapped.sourceOffsets.mid(at);
+  mapped.text = std::move(text);
+  mapped.sourceOffsets = std::move(offsets);
+}
+
+} // namespace
+
+QString encodeMermaidEntities(const QString& code, QVector<qsizetype>* offsets) {
+  MappedText mapped{code, {}};
+  mapped.sourceOffsets.resize(code.size());
+  for (qsizetype i = 0; i < code.size(); ++i)
+    mapped.sourceOffsets[i] = i;
+
+  // A style or classDef declaration that carries a `#` loses the semicolon
+  // that ends Mermaid's match for it. Written for a closing semicolon, it also
+  // swallows the one between two declarations of a classDef.
+  for (const char16_t* keyword : {u"style", u"classDef"}) {
+    const QRegularExpression expression(QString::fromUtf16(keyword) + QString::fromUtf16(kJsDot) + QStringLiteral(".*:") +
+                                        QString::fromUtf16(kJsNotSpace) + QStringLiteral("*#") + QString::fromUtf16(kJsDot) +
+                                        QStringLiteral("*;"));
+    replaceMatches(mapped, expression, [](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
+      out = origins;
+      out.removeLast();
+      return matched.chopped(1);
+    });
+  }
+  // `#name;` reads as an HTML entity to a browser; it is hidden behind letters
+  // no diagram uses and put back when a label is drawn (decodeMermaidEntities).
+  static const QRegularExpression entity(QStringLiteral("#\\w+;"));
+  static const QRegularExpression integer(QStringLiteral("^\\+?\\d+$"));
+  const QString degree(1, QChar(0x00B0));
+  replaceMatches(mapped, entity, [&](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
+    const QString inner = matched.mid(1, matched.size() - 2);
+    QString replacement = QChar(0xFB02) + degree;
+    if (integer.match(inner).hasMatch())
+      replacement += degree;
+    const qsizetype prefix = replacement.size();
+    replacement += inner + QChar(0x00B6) + QChar(0xDF);
+    out.fill(origins.first(), static_cast<qsizetype>(prefix));
+    out += origins.mid(1, inner.size());
+    out.append(origins.last());
+    return replacement;
+  });
+
+  if (offsets)
+    *offsets = mapped.sourceOffsets;
+  return mapped.text;
+}
+
+QString decodeMermaidEntities(const QString& text) {
+  QString decoded = text;
+  const QString degree(1, QChar(0x00B0));
+  decoded.replace(QChar(0xFB02) + degree + degree, QStringLiteral("&#"));
+  decoded.replace(QChar(0xFB02) + degree, QStringLiteral("&"));
+  decoded.replace(QString(QChar(0x00B6)) + QChar(0xDF), QStringLiteral(";"));
+  return decoded;
 }
 
 QJsonObject mermaidRenderConfig(const QJsonObject& preprocessedConfig) {

@@ -360,6 +360,26 @@ const cases = [
   ["stray-less-than", er(["<"]), "reject"],
   ["stray-greater-than", er([">"]), "reject"],
   ["stray-quoted-unterminated", er(['"x']), "reject"],
+  // ---- Mermaid's text preparation and lexer corners
+  // Before parsing, Mermaid drops the semicolon that ends a `style`/`classDef`
+  // line that carries a `#`, hides `#name;` behind marker letters, and appends
+  // a newline.
+  ["classdef-semi-joins", er(["classDef hot fill:#f96;fill:#00f"]), "ok"],
+  ["classdef-semi-then-class", er(["classDef hot fill:#f96;a:::hot"]), "ok"],
+  ["classdef-semi-newline", er(["classDef hot fill:#f96;", "a:::hot"]), "ok"],
+  ["style-semi-joins", er([block("a", ["string id"]), "style a fill:#f00;stroke:#00f"]), "ok"],
+  ["label-entity-reference-number", er(['A ||--o{ B : "x #35; y"']), "ok"],
+  ["label-entity-reference-name", er(['A ||--o{ B : "x #abc; y"']), "ok"],
+  ["classdef-crlf", "erDiagram\r\na:::hot\r\nclassDef hot fill:#f96\r\n", "ok"],
+  // The Markdown-parent cardinality `u` only parses when the connector
+  // character after it becomes an entity name of its own.
+  ["md-parent-colon", er(["A |o--u- : x"]), "ok"],
+  ["reject-md-parent-then-name", er(["A |o--u. B : x"]), "reject"],
+  // A `~` pair makes one attribute word of everything between its runs.
+  ["tilde-in-type", er([block("A", ["string~comment~ id"])]), "ok"],
+  ["tilde-in-name", er([block("A", ["string id~note~"])]), "ok"],
+  ["reject-acc-descr-open-at-end", "erDiagram\naccDescr {", "reject"],
+  ["acc-descr-spaced-block", "erDiagram\naccDescr  {  x  }  \nA", "ok"],
   ["stray-open-parenthesis", er(["("]), "reject"],
   ["unknown-words-are-entities", er(["something else here"]), "ok"],
   ["title-line-is-entities", er(["title My ER", "A"]), "ok"],
@@ -413,23 +433,27 @@ for (const [id, source, verdict] of cases) {
       if (diagram.type !== "er") return { id, source, accept: false, reject: { class: `other-diagram:${diagram.type}` } };
 
       const db = diagram.db;
-      const names = new Map([...db.getEntities()].map(([name, node]) => [node.id, name]));
+      // getData numbers the relationships into the edge ids the layout knows.
+      const edgeIds = db.getData().edges.map((edge) => edge.id);
       const data = {
         accTitle: db.getAccTitle(),
         accDescription: db.getAccDescription(),
         direction: db.getDirection(),
         // Map order is declaration order; the renderer positions nodes in it.
         entities: [...db.getEntities()].map(([name, node]) => ({
+          id: node.id,
           name,
           alias: node.alias,
           attributes: (node.attributes ?? []).map((a) => ({ type: a.type, name: a.name, keys: a.keys ?? [], comment: a.comment ?? "" })),
           cssClasses: node.cssClasses,
           cssStyles: node.cssStyles ?? [],
         })),
-        relationships: db.getRelationships().map((r) => ({
-          entityA: names.get(r.entityA),
+        // Both ends are entity ids.
+        relationships: db.getRelationships().map((r, index) => ({
+          id: edgeIds[index],
+          entityA: r.entityA,
           roleA: r.roleA,
-          entityB: names.get(r.entityB),
+          entityB: r.entityB,
           // Upstream names the cardinalities from the relationship's point of
           // view: relSpec.cardA is the one next to entityB (arrowTypeEnd).
           startCard: r.relSpec.cardB,

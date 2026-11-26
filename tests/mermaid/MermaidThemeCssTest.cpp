@@ -401,15 +401,65 @@ void compareEr(const QJsonObject& fixture) {
   editor::MermaidRenderEntry entry;
   const auto scene = renderScene<er::ErScene>(fixture, entry);
   compareRoundedClient(fixture, entry);
-  const QJsonObject line = fixture.value(QStringLiteral("matches"))
-                               .toObject()
-                               .value(QStringLiteral(".relationshipLine"))
-                               .toArray()
-                               .first()
-                               .toObject();
-  sameColor(scene->style.relationshipColor, computed(line, "stroke"), id + QStringLiteral("/relationship/stroke"));
-  near(scene->style.relationshipStrokeWidth, computed(line, "strokeWidth").chopped(2).toDouble(),
+  const QJsonObject matches = fixture.value(QStringLiteral("matches")).toObject();
+  const auto first = [&](const char* selector) {
+    return matches.value(QLatin1String(selector)).toArray().first().toObject();
+  };
+  require(!scene->relationships.isEmpty(), id + QStringLiteral(": missing relationships"));
+  const er::ErSceneRelationship& relationship = scene->relationships.first();
+  // The line and the label over it: the paint each resolved to.
+  const QJsonObject line = first(".relationshipLine");
+  sameColor(relationship.line.stroke, computed(line, "stroke"), id + QStringLiteral("/relationship/stroke"));
+  near(relationship.line.strokeWidth, computed(line, "strokeWidth").chopped(2).toDouble(),
        id + QStringLiteral("/relationship/strokeWidth"), 0.001);
+  const QJsonObject label = first("span.edgeLabel");
+  sameColor(relationship.labelText.style.color, computed(label, "color"), id + QStringLiteral("/label/color"));
+  near(relationship.labelText.style.fontSize, computed(label, "fontSize").chopped(2).toDouble(),
+       id + QStringLiteral("/label/fontSize"), 0.001);
+  sameColor(relationship.labelBackground, computed(first("div.labelBkg"), "backgroundColor"),
+            id + QStringLiteral("/label/background"));
+
+  // Each entity's box and the name in it, in the order of the document.
+  const QJsonArray boxes = matches.value(QStringLiteral(".node .label-container")).toArray();
+  const QJsonArray names = matches.value(QStringLiteral(".nodeLabel")).toArray();
+  require(!scene->entities.isEmpty() && scene->entities.size() == boxes.size() && scene->entities.size() == names.size(),
+          id + QStringLiteral(": the entities do not line up with the document's"));
+  for (qsizetype index = 0; index < scene->entities.size(); ++index) {
+    const er::ErSceneEntity& entity = scene->entities.at(index);
+    const QString path = id + QStringLiteral("/entity") + QString::number(index);
+    const QJsonObject box = boxes.at(index).toObject();
+    sameColor(entity.table.fill, computed(box, "fill"), path + QStringLiteral("/fill"));
+    sameColor(entity.table.stroke, computed(box, "stroke"), path + QStringLiteral("/stroke"));
+    near(entity.table.strokeWidth, computed(box, "strokeWidth").chopped(2).toDouble(),
+         path + QStringLiteral("/strokeWidth"), 0.001);
+    const QJsonObject name = names.at(index).toObject();
+    sameColor(entity.name.style.color, computed(name, "color"), path + QStringLiteral("/name/color"));
+    near(entity.name.style.fontSize, computed(name, "fontSize").chopped(2).toDouble(),
+         path + QStringLiteral("/name/fontSize"), 0.001);
+  }
+
+  // The markers, in the order of their definitions: what strokes each, and
+  // for the ones with a ring, what paints it.
+  const QJsonArray markerPaths = matches.value(QStringLiteral("marker path")).toArray();
+  const QJsonArray markerRings = matches.value(QStringLiteral("marker circle")).toArray();
+  require(markerPaths.size() == scene->markerOrder.size(),
+          id + QStringLiteral(": the markers do not line up with the document's"));
+  qsizetype ring = 0;
+  for (qsizetype index = 0; index < scene->markerOrder.size(); ++index) {
+    const auto& [card, start] = scene->markerOrder.at(index);
+    const er::ErMarkerPaint& paint = scene->markerPaint.value(er::erMarkerKey(card, start));
+    const QString path = id + QStringLiteral("/marker") + QString::number(index);
+    const QJsonObject element = markerPaths.at(index).toObject();
+    sameColor(paint.stroke, computed(element, "stroke"), path + QStringLiteral("/stroke"));
+    near(paint.strokeWidth, computed(element, "strokeWidth").chopped(2).toDouble(),
+         path + QStringLiteral("/strokeWidth"), 0.001);
+    if (!er::erMarker(card, start)->hasRing)
+      continue;
+    require(ring < markerRings.size(), id + QStringLiteral(": a marker ring is missing"));
+    const QJsonObject circle = markerRings.at(ring++).toObject();
+    sameColor(paint.ringFill, computed(circle, "fill"), path + QStringLiteral("/ring/fill"));
+    sameColor(paint.ringStroke, computed(circle, "stroke"), path + QStringLiteral("/ring/stroke"));
+  }
 }
 
 void compareClass(const QJsonObject& fixture) {

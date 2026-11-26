@@ -1,0 +1,1902 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 erDiagram text widths, captured in headless Chrome with the bundled Noto fonts at 16px: the HTML inline box of a table-cell div, and SVGTextElement.getBBox() as erBox measures it (insert) and after the layout (drawn). Compare against er::measureErText and er::measureErSvgTextDrawnBox."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "bundled-noto-2.13b171",
+  "fontSize": 16,
+  "oracle": "erDiagram text widths: HTML inline box, SVG text box at insert and after layout",
+  "cases": [
+    {
+      "text": "ORDER",
+      "html": 52.984375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 53.02397155761719,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 53.02397155761719,
+        "height": 22
+      }
+    },
+    {
+      "text": "CUSTOMER",
+      "html": 85.03125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 85.07196044921875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 85.07196044921875,
+        "height": 22
+      }
+    },
+    {
+      "text": "LINE-ITEM",
+      "html": 77.75,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 77.75,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 77.75,
+        "height": 22
+      }
+    },
+    {
+      "text": "DELIVERY-ADDRESS",
+      "html": 147.046875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 147.25592041015625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 147.25592041015625,
+        "height": 22
+      }
+    },
+    {
+      "text": "string",
+      "html": 43.90625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 43.90625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 43.90625,
+        "height": 22
+      }
+    },
+    {
+      "text": "number",
+      "html": 60.21875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 60.599945068359375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 60.599945068359375,
+        "height": 22
+      }
+    },
+    {
+      "text": "order number",
+      "html": 105.8125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 106.21305847167969,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 106.21305847167969,
+        "height": 22
+      }
+    },
+    {
+      "text": "date",
+      "html": 33.625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 33.625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 33.625,
+        "height": 22
+      }
+    },
+    {
+      "text": "placed",
+      "html": 49.5,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 49.5,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 49.5,
+        "height": 22
+      }
+    },
+    {
+      "text": "status",
+      "html": 45.75,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 46.07994079589844,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 46.07994079589844,
+        "height": 22
+      }
+    },
+    {
+      "text": "total",
+      "html": 34.34375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 35.34375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 35.34375,
+        "height": 22
+      }
+    },
+    {
+      "text": "decimal",
+      "html": 58.75,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 58.75,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 58.75,
+        "height": 22
+      }
+    },
+    {
+      "text": "name",
+      "html": 42.859375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 42.859375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 42.859375,
+        "height": 22
+      }
+    },
+    {
+      "text": "int",
+      "html": 19.796875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 20.015975952148438,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 20.015975952148438,
+        "height": 22
+      }
+    },
+    {
+      "text": "quantity",
+      "html": 62.4375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 63.27192687988281,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 63.27192687988281,
+        "height": 22
+      }
+    },
+    {
+      "text": "sku",
+      "html": 26.109375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 26.109375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 26.109375,
+        "height": 22
+      }
+    },
+    {
+      "text": "custNumber",
+      "html": 93.5,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 93.87989807128906,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 93.87989807128906,
+        "height": 22
+      }
+    },
+    {
+      "text": "account_id",
+      "html": 80.640625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 80.640625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 80.640625,
+        "height": 22
+      }
+    },
+    {
+      "text": "email",
+      "html": 41.21875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 41.21875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 41.21875,
+        "height": 22
+      }
+    },
+    {
+      "text": "places",
+      "html": 47.3125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 47.64796447753906,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 47.64796447753906,
+        "height": 22
+      }
+    },
+    {
+      "text": "contains",
+      "html": 63.6875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 64.01593017578125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 64.01593017578125,
+        "height": 22
+      }
+    },
+    {
+      "text": "uses",
+      "html": 34.25,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 34.575958251953125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 34.575958251953125,
+        "height": 22
+      }
+    },
+    {
+      "text": "has",
+      "html": 26.53125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 26.863983154296875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 26.863983154296875,
+        "height": 22
+      }
+    },
+    {
+      "text": "a",
+      "html": 8.984375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 8.984375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 8.984375,
+        "height": 22
+      }
+    },
+    {
+      "text": "x",
+      "html": 8.46875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "AV",
+      "html": 19.1875,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 20.583999633789062,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 20.583999633789062,
+        "height": 22
+      }
+    },
+    {
+      "text": "VA",
+      "html": 19.1875,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 20.959991455078125,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 20.959991455078125,
+        "height": 22
+      }
+    },
+    {
+      "text": "LT",
+      "html": 16.96875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 17.063980102539062,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 17.063980102539062,
+        "height": 22
+      }
+    },
+    {
+      "text": "TO",
+      "html": 21.078125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 22.078125,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 22.078125,
+        "height": 22
+      }
+    },
+    {
+      "text": "Yo",
+      "html": 17.9375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 19.255996704101562,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 19.255996704101562,
+        "height": 22
+      }
+    },
+    {
+      "text": "AW",
+      "html": 24.46875,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 25.583999633789062,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 25.583999633789062,
+        "height": 22
+      }
+    },
+    {
+      "text": "WAY",
+      "html": 32.5625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 34.50398254394531,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 34.50398254394531,
+        "height": 22
+      }
+    },
+    {
+      "text": "Tu",
+      "html": 17.984375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 18.984375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 18.984375,
+        "height": 22
+      }
+    },
+    {
+      "text": "FF",
+      "html": 16.609375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 17.303985595703125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 17.303985595703125,
+        "height": 22
+      }
+    },
+    {
+      "text": "YE",
+      "html": 17.953125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 19.055999755859375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 19.055999755859375,
+        "height": 22
+      }
+    },
+    {
+      "text": "PE",
+      "html": 18.578125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 18.67999267578125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 18.67999267578125,
+        "height": 22
+      }
+    },
+    {
+      "text": "LU",
+      "html": 19.921875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 19.921875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 19.921875,
+        "height": 22
+      }
+    },
+    {
+      "text": "rl",
+      "html": 10.75,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10.75,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10.75,
+        "height": 22
+      }
+    },
+    {
+      "text": "lo",
+      "html": 13.8125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 14.12799072265625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 14.12799072265625,
+        "height": 22
+      }
+    },
+    {
+      "text": "Al",
+      "html": 14.359375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 15.359375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 15.359375,
+        "height": 22
+      }
+    },
+    {
+      "text": "MA",
+      "html": 24.75,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 25.511993408203125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 25.511993408203125,
+        "height": 22
+      }
+    },
+    {
+      "text": "Noto",
+      "html": 37.296875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 37.615966796875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 37.615966796875,
+        "height": 22
+      }
+    },
+    {
+      "text": "Muffin",
+      "html": 49.4375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 49.4375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 49.4375,
+        "height": 22
+      }
+    },
+    {
+      "text": "Ily",
+      "html": 17.71875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 18.551986694335938,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 18.551986694335938,
+        "height": 22
+      }
+    },
+    {
+      "text": "WAV",
+      "html": 33.4375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 34.82398986816406,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 34.82398986816406,
+        "height": 22
+      }
+    },
+    {
+      "text": "TT",
+      "html": 18.125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 19.21600341796875,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 19.21600341796875,
+        "height": 22
+      }
+    },
+    {
+      "text": "rr",
+      "html": 13.21875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 13.607986450195312,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 13.607986450195312,
+        "height": 22
+      }
+    },
+    {
+      "text": "ft",
+      "html": 11.28125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 12.503997802734375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 12.503997802734375,
+        "height": 22
+      }
+    },
+    {
+      "text": "ry",
+      "html": 14.78125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 15.607986450195312,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 15.607986450195312,
+        "height": 22
+      }
+    },
+    {
+      "text": "kP",
+      "html": 18.234375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 18.543991088867188,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 18.543991088867188,
+        "height": 22
+      }
+    },
+    {
+      "text": "e-mail",
+      "html": 46.375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 46.375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 46.375,
+        "height": 22
+      }
+    },
+    {
+      "text": "co-operate",
+      "html": 81.125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 81.125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 81.125,
+        "height": 22
+      }
+    },
+    {
+      "text": "AVAWA",
+      "html": 52.59375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 54.36798095703125,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 54.36798095703125,
+        "height": 22
+      }
+    },
+    {
+      "text": "Do",
+      "html": 21.375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 21.67999267578125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 21.67999267578125,
+        "height": 22
+      }
+    },
+    {
+      "text": "OD",
+      "html": 24.1875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 24.1875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 24.1875,
+        "height": 22
+      }
+    },
+    {
+      "text": "LASER",
+      "html": 46.25,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 46.28797912597656,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 46.28797912597656,
+        "height": 22
+      }
+    },
+    {
+      "text": "café",
+      "html": 31.1875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 31.1875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 31.1875,
+        "height": 22
+      }
+    },
+    {
+      "text": "naïve",
+      "html": 40.15625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 40.15625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 40.15625,
+        "height": 22
+      }
+    },
+    {
+      "text": "编号",
+      "html": 32,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      }
+    },
+    {
+      "text": "客户",
+      "html": 32,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      }
+    },
+    {
+      "text": "订单",
+      "html": 32,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 33,
+        "height": 22
+      }
+    },
+    {
+      "text": "备注",
+      "html": 32,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 34,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 34,
+        "height": 22
+      }
+    },
+    {
+      "text": "مرحبا",
+      "html": 33.671875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 33.671875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 33.671875,
+        "height": 22
+      }
+    },
+    {
+      "text": "שלום",
+      "html": 35.640625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 35.640625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 35.640625,
+        "height": 22
+      }
+    },
+    {
+      "text": "PK FK",
+      "html": 41.953125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 43.05772399902344,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 43.05772399902344,
+        "height": 22
+      }
+    },
+    {
+      "text": "a comment long enough to be noticed",
+      "html": 287.984375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 288.046875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 288.046875,
+        "height": 22
+      }
+    },
+    {
+      "text": "places orders for customers across regions",
+      "html": 322.421875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 322.7735290527344,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 322.7735290527344,
+        "height": 22
+      }
+    },
+    {
+      "text": "b",
+      "html": 9.84375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "c",
+      "html": 7.6875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      }
+    },
+    {
+      "text": "d",
+      "html": 9.84375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      }
+    },
+    {
+      "text": "e",
+      "html": 9.03125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.03125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.03125,
+        "height": 22
+      }
+    },
+    {
+      "text": "f",
+      "html": 5.515625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      }
+    },
+    {
+      "text": "g",
+      "html": 9.84375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      }
+    },
+    {
+      "text": "h",
+      "html": 9.890625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      }
+    },
+    {
+      "text": "i",
+      "html": 4.140625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 4.140625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 4.140625,
+        "height": 22
+      }
+    },
+    {
+      "text": "j",
+      "html": 4.140625,
+      "insert": {
+        "x": -2,
+        "y": -1,
+        "width": 6.140625,
+        "height": 22
+      },
+      "drawn": {
+        "x": -2,
+        "y": -1,
+        "width": 6.140625,
+        "height": 22
+      }
+    },
+    {
+      "text": "k",
+      "html": 8.546875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "l",
+      "html": 4.140625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 4.140625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 4.140625,
+        "height": 22
+      }
+    },
+    {
+      "text": "m",
+      "html": 14.96875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 14.96875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 14.96875,
+        "height": 22
+      }
+    },
+    {
+      "text": "n",
+      "html": 9.890625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      }
+    },
+    {
+      "text": "o",
+      "html": 9.6875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "p",
+      "html": 9.84375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "q",
+      "html": 9.84375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.84375,
+        "height": 22
+      }
+    },
+    {
+      "text": "r",
+      "html": 6.609375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 7,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 7,
+        "height": 22
+      }
+    },
+    {
+      "text": "s",
+      "html": 7.671875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      }
+    },
+    {
+      "text": "t",
+      "html": 5.78125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 7,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 7,
+        "height": 22
+      }
+    },
+    {
+      "text": "u",
+      "html": 9.890625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.890625,
+        "height": 22
+      }
+    },
+    {
+      "text": "v",
+      "html": 8.140625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "w",
+      "html": 12.578125,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 14,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 14,
+        "height": 22
+      }
+    },
+    {
+      "text": "z",
+      "html": 7.53125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 8,
+        "height": 22
+      }
+    },
+    {
+      "text": "A",
+      "html": 10.234375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 12,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 12,
+        "height": 22
+      }
+    },
+    {
+      "text": "B",
+      "html": 10.40625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10.40625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10.40625,
+        "height": 22
+      }
+    },
+    {
+      "text": "C",
+      "html": 10.125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10.125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10.125,
+        "height": 22
+      }
+    },
+    {
+      "text": "D",
+      "html": 11.6875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 11.6875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 11.6875,
+        "height": 22
+      }
+    },
+    {
+      "text": "E",
+      "html": 8.90625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "F",
+      "html": 8.3125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "G",
+      "html": 11.65625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 11.65625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 11.65625,
+        "height": 22
+      }
+    },
+    {
+      "text": "H",
+      "html": 11.859375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 11.859375,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 11.859375,
+        "height": 22
+      }
+    },
+    {
+      "text": "I",
+      "html": 5.4375,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 6,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 6,
+        "height": 22
+      }
+    },
+    {
+      "text": "J",
+      "html": 4.375,
+      "insert": {
+        "x": -2,
+        "y": -1,
+        "width": 6.375,
+        "height": 22
+      },
+      "drawn": {
+        "x": -2,
+        "y": -1,
+        "width": 6.375,
+        "height": 22
+      }
+    },
+    {
+      "text": "K",
+      "html": 9.90625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      }
+    },
+    {
+      "text": "L",
+      "html": 8.390625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "M",
+      "html": 14.515625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 14.515625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 14.515625,
+        "height": 22
+      }
+    },
+    {
+      "text": "N",
+      "html": 12.171875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 12.171875,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 12.171875,
+        "height": 22
+      }
+    },
+    {
+      "text": "O",
+      "html": 12.5,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 12.5,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 12.5,
+        "height": 22
+      }
+    },
+    {
+      "text": "P",
+      "html": 9.6875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "Q",
+      "html": 12.5,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 12.5,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 12.5,
+        "height": 22
+      }
+    },
+    {
+      "text": "R",
+      "html": 9.953125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "S",
+      "html": 8.796875,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9,
+        "height": 22
+      }
+    },
+    {
+      "text": "T",
+      "html": 8.90625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 10,
+        "height": 22
+      }
+    },
+    {
+      "text": "U",
+      "html": 11.703125,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 11.703125,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 11.703125,
+        "height": 22
+      }
+    },
+    {
+      "text": "V",
+      "html": 9.609375,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      }
+    },
+    {
+      "text": "W",
+      "html": 14.890625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 16,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 16,
+        "height": 22
+      }
+    },
+    {
+      "text": "X",
+      "html": 9.390625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      }
+    },
+    {
+      "text": "Y",
+      "html": 9.0625,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 11,
+        "height": 22
+      }
+    },
+    {
+      "text": "Z",
+      "html": 9.15625,
+      "insert": {
+        "x": 0,
+        "y": -1,
+        "width": 9.15625,
+        "height": 22
+      },
+      "drawn": {
+        "x": 0,
+        "y": -1,
+        "width": 9.15625,
+        "height": 22
+      }
+    },
+    {
+      "text": "编",
+      "html": 16,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 17,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 17,
+        "height": 22
+      }
+    },
+    {
+      "text": "客",
+      "html": 16,
+      "insert": {
+        "x": -1,
+        "y": -1,
+        "width": 18,
+        "height": 22
+      },
+      "drawn": {
+        "x": -1,
+        "y": -1,
+        "width": 18,
+        "height": 22
+      }
+    }
+  ],
+  "fixtureSha256": "ffa17db0e257437a331b43c93a2791a59c70c7516b587d733b1a10de86c32c3d"
+}

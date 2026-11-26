@@ -1,155 +1,334 @@
-// erDiagram scene painter. Mirrors the rendering idiom of
-// src/mermaid/classdiagram/ClassScenePainter.cpp and
-// src/mermaid/state/StateScenePainter.cpp: Antialiasing on, setPen/setBrush,
-// mermaidPrimitiveIsVisible culling per primitive, a DPR-aware
-// renderXToImage helper. Per IMPLEMENTATION_SPEC.md §5–§7 this module has no
-// tr() calls; to honour the project lupdate convention the file defines its
-// functions with fully-qualified names and keeps helpers in an anonymous
-// namespace at file scope rather than wrapping a `namespace muffin {}` block.
+// erDiagram's painter: the tables erBox draws, the relationship lines with
+// their crow's-foot markers, and the labels over them, in the order Mermaid's
+// document holds them, each in the paint its style resolved to. Per
+// IMPLEMENTATION_SPEC.md this .cpp defines its free function with a
+// fully-qualified name and keeps its helpers in an anonymous namespace.
 
 #include "mermaid/erdiagram/ErScenePainter.h"
 
-#include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/rough/RoughOps.h"
 #include "mermaid/scene/EdgeMarkerPaint.h"
+#include "mermaid/scene/NeoShadow.h"
 #include "mermaid/scene/SvgPathParse.h"
-#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
-#include <QImage>
+#include <QLinearGradient>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPen>
 #include <QPointF>
 #include <QRectF>
-#include <QSizeF>
-#include <QString>
-#include <QVector>
+#include <QRegularExpression>
+#include <QStringList>
 
 #include <algorithm>
-#include <cmath>
+#include <optional>
 
 namespace er = muffin::mermaid::er;
 namespace flowchart = muffin::mermaid::flowchart;
+namespace rough = muffin::mermaid::rough;
 namespace scene = muffin::mermaid::scene;
 
 namespace {
 
-QColor resolveColor(const QString& value) {
+// The pen an SVG element has before any stylesheet: flat caps, and miter
+// joins up to four times the stroke width.
+QPen svgPen(const QColor& color, qreal width) {
+  QPen pen(color, width);
+  pen.setCapStyle(Qt::FlatCap);
+  pen.setJoinStyle(Qt::MiterJoin);
+  pen.setMiterLimit(4.0);
+  return pen;
+}
+
+// A paint the scene resolved, as Chrome computes it: nothing where the value
+// is empty, `none`, or no color.
+std::optional<QColor> colorOf(const QString& value) {
+  if (value.isEmpty() || value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0 ||
+      !muffin::mermaid::color::isParsableColor(value))
+    return std::nullopt;
   return muffin::mermaid::color::toQColor(value);
 }
 
-// Crow's-foot marker geometry (IMPLEMENTATION_SPEC.md §5). `refX`/`refY` is the
-// anchor placed at the endpoint; `path` is the exact upstream SVG `d` string;
-// `hasCircle`/`circleCx`/`circleCy`/`circleR` describe the optional white-filled
-// zero marker. `start` selects the entityA (Start) vs entityB (End) variant.
-struct ErMarkerDef {
-  qreal refX = 0.0;
-  qreal refY = 0.0;
-  QString path;
-  bool hasCircle = false;
-  qreal circleCx = 0.0;
-  qreal circleCy = 0.0;
-  qreal circleR = 0.0;
-};
-
-ErMarkerDef erMarkerDef(er::ErCardinality card, bool start) {
-  using C = er::ErCardinality;
-  switch (card) {
-  case C::ExactlyOne:
-    // box 18x18, two perpendicular ticks.
-    return start ? ErMarkerDef{0.0, 9.0, QStringLiteral("M9,0 L9,18 M15,0 L15,18")}
-                 : ErMarkerDef{18.0, 9.0, QStringLiteral("M3,0 L3,18 M9,0 L9,18")};
-  case C::ZeroOrOne:
-    // box 30x18, one tick + white circle.
-    return start ? ErMarkerDef{0.0, 9.0, QStringLiteral("M9,0 L9,18"), true, 21.0, 9.0, 6.0}
-                 : ErMarkerDef{30.0, 9.0, QStringLiteral("M21,0 L21,18"), true, 9.0, 9.0, 6.0};
-  case C::OneOrMore:
-    // box 45x36, quadratic crow's-foot leaf + one tick.
-    return start ? ErMarkerDef{18.0, 18.0, QStringLiteral("M0,18 Q18,0 36,18 Q18,36 0,18 M42,9 L42,27")}
-                 : ErMarkerDef{27.0, 18.0, QStringLiteral("M3,9 L3,27 M9,18 Q27,0 45,18 Q27,36 9,18")};
-  case C::ZeroOrMore:
-    // box 57x36, quadratic crow's-foot leaf + white circle.
-    return start ? ErMarkerDef{18.0, 18.0, QStringLiteral("M0,18 Q18,0 36,18 Q18,36 0,18"), true, 48.0, 18.0, 6.0}
-                 : ErMarkerDef{39.0, 18.0, QStringLiteral("M21,18 Q39,0 57,18 Q39,36 21,18"), true, 9.0, 18.0, 6.0};
-  }
-  return {};
+// Whether a stroke is the gradient the neo look names.
+bool isGradient(const QString& paint) {
+  const QString value = paint.trimmed();
+  return value.startsWith(QLatin1String("url(")) && value.contains(QLatin1String("er-gradient"));
 }
 
-// Draws a crow's-foot marker at `endpoint` rotated so its local +X axis aligns
-// with `segDir` (the direction from this entity toward the opposite entity along
-// the touching segment — see IMPLEMENTATION_SPEC.md §5.5). The local
-// (refX, refY) anchor lands on the endpoint. The optional zero circle is drawn
-// first with a white fill so the tick/fork stroke renders on top of it.
-void drawErMarker(QPainter& painter, er::ErCardinality card, bool start, const QPointF& endpoint, const QPointF& segDir,
-                  const QColor& stroke, qreal strokeWidth) {
-  const ErMarkerDef def = erMarkerDef(card, start);
-  if (def.path.isEmpty() && !def.hasCircle)
-    return;
-  painter.save();
-  scene::applyMarkerTransform(painter, endpoint, scene::tangentAngleDeg(segDir), def.refX, def.refY);
-  painter.setPen(QPen(stroke, strokeWidth));
-  if (def.hasCircle) {
-    painter.setBrush(QColor(Qt::white));
-    painter.drawEllipse(QPointF(def.circleCx, def.circleCy), def.circleR, def.circleR);
+// The gradient over a shape's own box, from its left edge to its right. A box
+// with no width of its own, a vertical divider's, lies past the gradient's
+// end: everything of it is the last color.
+QBrush gradientBrush(const er::ErGradient& gradient, const QRectF& box) {
+  QLinearGradient brush(box.left(), 0.0, box.right(), 0.0);
+  const QColor start = colorOf(gradient.start).value_or(QColor(Qt::transparent));
+  const QColor stop = colorOf(gradient.stop).value_or(QColor(Qt::transparent));
+  brush.setColorAt(0.0, box.width() > 0.0 ? start : stop);
+  brush.setColorAt(1.0, stop);
+  return QBrush(brush);
+}
+
+// What a stroke-dasharray paints, in lengths of the stroke's own width as
+// QPen takes them; empty where the stroke is solid.
+QVector<qreal> dashPattern(const QString& dasharray, qreal strokeWidth) {
+  const QString value = dasharray.trimmed();
+  if (value.isEmpty() || value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0 || !(strokeWidth > 0.0))
+    return {};
+  QVector<qreal> lengths;
+  static const QRegularExpression separators(QStringLiteral("[\\s,]+"));
+  for (QString token : value.split(separators, Qt::SkipEmptyParts)) {
+    if (token.endsWith(QLatin1String("px"), Qt::CaseInsensitive))
+      token.chop(2);
+    bool ok = false;
+    const qreal length = token.toDouble(&ok);
+    if (!ok)
+      return {};
+    lengths.append(length);
   }
+  // The dash the neo look writes along a dashed line: "0 0", then as many
+  // "2 2" as fit in its length, then "0". SVG repeats a list of an odd
+  // length, which turns the phase of its second half: the dashes run from
+  // the start of the line, a gap of 4 follows the last whole pair, and the
+  // line, shorter than that half, ends inside the gap.
+  if (lengths.size() >= 5 && lengths.size() % 2 == 1 && lengths.first() == 0.0 && lengths.at(1) == 0.0 &&
+      lengths.last() == 0.0) {
+    const int pairs = (lengths.size() - 3) / 2;
+    const bool generated = std::all_of(lengths.cbegin() + 2, lengths.cend() - 1, [](qreal length) { return length == 2.0; });
+    if (generated) {
+      QVector<qreal> pattern;
+      for (int dash = 0; dash < pairs - 1; ++dash)
+        pattern << 2.0 << 2.0;
+      // The last dash before the gap, and the gap of 4.
+      pattern << 2.0 << 4.0;
+      for (qreal& length : pattern)
+        length /= strokeWidth;
+      return pattern;
+    }
+  }
+  if (lengths.size() % 2 != 0)
+    lengths += lengths;
+  // A list with no gap in it is a solid line, as one of zeros only is.
+  bool gap = false;
+  for (int index = 1; index < lengths.size(); index += 2)
+    gap = gap || lengths.at(index) > 0.0;
+  if (!gap)
+    return {};
+  for (qreal& length : lengths)
+    length /= strokeWidth;
+  return lengths;
+}
+
+// The stroke of an element: nothing where its style leaves it unstroked. A
+// gradient is laid over `box`, the box of the shape that takes it.
+std::optional<QPen> strokePen(const er::ErPaint& paint, const QRectF& box, const er::ErSceneStyle& style) {
+  if (!(paint.strokeWidth > 0.0))
+    return std::nullopt;
+  QPen pen;
+  if (isGradient(paint.stroke)) {
+    // A gradient nothing defines paints nothing, as a reference to no
+    // element does.
+    if (style.gradient.start.isEmpty() || style.gradient.stop.isEmpty())
+      return std::nullopt;
+    pen = svgPen(QColor(Qt::black), paint.strokeWidth);
+    pen.setBrush(gradientBrush(style.gradient, box));
+  } else {
+    const std::optional<QColor> color = colorOf(paint.stroke);
+    if (!color)
+      return std::nullopt;
+    pen = svgPen(*color, paint.strokeWidth);
+  }
+  const QVector<qreal> dash = dashPattern(paint.strokeDasharray, paint.strokeWidth);
+  if (!dash.isEmpty())
+    pen.setDashPattern(dash);
+  return pen;
+}
+
+// rough.js strokes a rectangle as four separate edges, so its corners have no
+// join: the flat ends of the edges leave a notch in each outer corner.
+void strokeRectEdges(QPainter& painter, const QRectF& rect) {
+  painter.drawLine(rect.topLeft(), rect.topRight());
+  painter.drawLine(rect.topRight(), rect.bottomRight());
+  painter.drawLine(rect.bottomRight(), rect.bottomLeft());
+  painter.drawLine(rect.bottomLeft(), rect.topLeft());
+}
+
+// A rectangle as Mermaid draws it for an entity: filled, then stroked, each
+// with the paint the element's style resolved to. A table's is rough.js's:
+// one path fills and another strokes its four edges, each painted once, with
+// no join at the corners. Where the stylesheet strokes the filling path too,
+// its outline is a second stroke over them, corners included.
+void paintRect(QPainter& painter, const QRectF& rect, const er::ErPaint& paint, const er::ErSceneStyle& style,
+               bool rough) {
+  if (const std::optional<QColor> color = colorOf(paint.fill))
+    painter.fillRect(rect, *color);
   painter.setBrush(Qt::NoBrush);
-  if (!def.path.isEmpty())
-    painter.drawPath(scene::parseSvgPath(def.path));
-  painter.restore();
-}
-
-// NOTE: unlike requirement's edgePath, this deliberately draws only the FIRST segment when
-// `points` is empty (historical er behavior); the shared stitchEdgePolyline (used for marker
-// tangents) would span all segments.
-QPainterPath edgePath(const er::ErSceneRelationship& rel) {
-  if (!rel.path.isEmpty())
-    return scene::parseSvgPath(rel.path);
-  const QVector<QPointF> points =
-      !rel.points.isEmpty() ? rel.points : (rel.segments.isEmpty() ? QVector<QPointF>{} : rel.segments.first());
-  QPainterPath path;
-  if (points.isEmpty())
-    return path;
-  path.moveTo(points.first());
-  for (qsizetype i = 1; i < points.size(); ++i)
-    path.lineTo(points.at(i));
-  return path;
-}
-
-// Continuous polyline for marker tangent estimation (shared stitching).
-QVector<QPointF> edgePolyline(const er::ErSceneRelationship& rel) {
-  return scene::stitchEdgePolyline(rel.points, rel.segments);
-}
-
-void paintLabel(QPainter& painter, const flowchart::FlowLabelDocument& document, const QRectF& rect,
-                const er::ErSceneStyle& style, const QColor& textColor) {
-  if (document.text.isEmpty())
+  const std::optional<QPen> pen = strokePen(paint, rect, style);
+  if (!pen)
     return;
+  painter.setPen(*pen);
+  if (!rough) {
+    painter.drawRect(rect);
+    return;
+  }
+  strokeRectEdges(painter, rect);
+  if (paint.joined)
+    painter.drawRect(rect);
+}
+
+// A text in its own style and color. An HTML label is as many line boxes as
+// it has lines, each as high as its line height. An SVG text has its first
+// baseline a font size below the top of its box, and takes the box as it is.
+void paintText(QPainter& painter, const er::ErSceneText& text, flowchart::FlowLabelAlign align,
+               bool centerVertically = true) {
+  if (text.document.text.isEmpty())
+    return;
+  const er::ErTextStyle& style = text.style;
+  qreal lineHeight = style.lineHeight();
+  if (text.svgText) {
+    lineHeight = flowchart::flowLabelFontBoundingMetrics(style.fontFamily, style.fontSize, style.fontWeight,
+                                                         style.italic ? QFont::StyleItalic : QFont::StyleNormal)
+                     .height();
+    centerVertically = false;
+  }
+  flowchart::paintFlowLabel(painter, text.document, text.textBox, style.fontFamily, style.fontSize, lineHeight,
+                            colorOf(style.color).value_or(QColor(Qt::transparent)), centerVertically, align);
+}
+
+// The shadow the neo look's filter casts of a table: what its rectangle
+// paints, fill and stroke, blurred and offset.
+void paintTableShadow(QPainter& painter, const er::ErSceneEntity& entity) {
+  const scene::NeoShadow shadow = scene::parseNeoShadow(entity.filter);
+  if (!shadow.valid)
+    return;
+  const std::optional<QColor> stroke = colorOf(entity.table.stroke);
+  scene::ShadowChannels channels;
+  channels.fillAlpha = colorOf(entity.table.fill).value_or(QColor(Qt::transparent)).alphaF();
+  channels.strokeAlpha =
+      (stroke || isGradient(entity.table.stroke)) ? stroke.value_or(QColor(Qt::black)).alphaF() : 0.0;
+  QPainterPath outline;
+  outline.addRect(entity.bounds);
+  scene::paintNeoShadow(painter, {{outline, entity.table.strokeWidth, channels}}, shadow);
+}
+
+// A shape as rough.js draws it under the handDrawn look: the sketch of its
+// fill, lines in the fill's color as wide as rough.js's fillWeight, and its
+// outline.
+void paintRoughShape(QPainter& painter, const er::ErRoughShape& shape, const er::ErPaint& paint,
+                     const er::ErSceneStyle& style) {
+  QPen sketch(Qt::NoPen);
+  if (paint.fillWidth > 0.0) {
+    if (const std::optional<QColor> color = colorOf(paint.fill))
+      sketch = svgPen(*color, paint.fillWidth);
+  }
+  const std::optional<QPen> outline = strokePen(paint, shape.bounds, style);
+  painter.setBrush(Qt::NoBrush);
+  for (const rough::OpSet& set : shape.drawable.sets) {
+    if (set.type == rough::OpSetType::FillSketch && sketch.style() != Qt::NoPen) {
+      painter.setPen(sketch);
+      painter.drawPath(rough::toPainterPath(set));
+    } else if (set.type == rough::OpSetType::Path && outline) {
+      painter.setPen(*outline);
+      painter.drawPath(rough::toPainterPath(set));
+    }
+  }
+}
+
+void paintEntity(QPainter& painter, const er::ErSceneEntity& entity, const er::ErSceneStyle& style) {
+  paintTableShadow(painter, entity);
+  if (entity.rough) {
+    // In the order the drawn shapes lie in the document: the table, its
+    // rows, their texts, and the dividers over them.
+    paintRoughShape(painter, entity.rough->table, entity.table, style);
+    if (entity.rows.isEmpty()) {
+      paintText(painter, entity.name, flowchart::FlowLabelAlign::Center);
+      return;
+    }
+    for (qsizetype index = 0; index < entity.rows.size(); ++index)
+      paintRoughShape(painter, entity.rough->rows.at(index), entity.rows.at(index).paint, style);
+    for (const er::ErSceneRow& row : entity.rows) {
+      for (const er::ErSceneText* cell : {&row.type, &row.name, &row.keys, &row.comment})
+        paintText(painter, *cell, flowchart::FlowLabelAlign::Left);
+    }
+    // erBox appends the line under the name twice, as two elements of the
+    // document: the same drawing twice, whose antialiasing adds up.
+    for (qsizetype index = 0; index < entity.rough->dividers.size(); ++index) {
+      for (int pass = 0; pass < (index == 0 ? entity.nameDividerPasses : 1); ++pass)
+        paintRoughShape(painter, entity.rough->dividers.at(index), entity.dividerPaint, style);
+    }
+    return;
+  }
+  // An entity without attributes: a `.node rect`, with its name centered.
+  if (entity.rows.isEmpty()) {
+    paintRect(painter, entity.bounds, entity.table, style, false);
+    paintText(painter, entity.name, flowchart::FlowLabelAlign::Center);
+    return;
+  }
+
+  // A table, in the order erBox appends it: the table, its rows, their texts,
+  // and the dividers over them.
+  paintRect(painter, entity.bounds, entity.table, style, true);
+  for (const er::ErSceneRow& row : entity.rows)
+    paintRect(painter, row.rect, row.paint, style, true);
+  for (const er::ErSceneRow& row : entity.rows) {
+    for (const er::ErSceneText* cell : {&row.type, &row.name, &row.keys, &row.comment})
+      paintText(painter, *cell, flowchart::FlowLabelAlign::Left);
+  }
+  // A divider is a polygon a hundredth of a pixel thick. Where the stylesheet
+  // strokes the filling path too, the stroke runs round its ends, half a
+  // stroke beyond the line on either side.
+  painter.setBrush(Qt::NoBrush);
+  for (int index = 0; index < entity.dividers.size(); ++index) {
+    const QLineF divider = entity.dividers.at(index);
+    QRectF box = QRectF(divider.p1(), divider.p2()).normalized();
+    if (box.width() <= 0.0)
+      box.setWidth(0.0001);
+    if (box.height() <= 0.0)
+      box.setHeight(0.0001);
+    const std::optional<QPen> pen = strokePen(entity.dividerPaint, box, style);
+    if (!pen)
+      continue;
+    QPen linePen = *pen;
+    const int passes = index == 0 ? entity.nameDividerPasses : 1;
+    for (int pass = 0; pass < passes; ++pass) {
+      linePen.setCapStyle(Qt::FlatCap);
+      painter.setPen(linePen);
+      painter.drawLine(divider);
+      if (entity.dividerPaint.joined) {
+        linePen.setCapStyle(Qt::SquareCap);
+        painter.setPen(linePen);
+        painter.drawLine(divider);
+      }
+    }
+  }
+}
+
+// A crow's-foot marker on a line end: the marker's reference point on the
+// end, its x axis along the line, and cut off at its viewport, which is as
+// many stroke widths wide and high as the marker is declared, or in user
+// units under the neo look.
+void paintMarker(QPainter& painter, const er::ErMarker& marker, const QPointF& at, qreal angle,
+                 const er::ErMarkerPaint& paint, std::optional<qreal> lineWidth) {
   painter.save();
-  painter.setClipRect(rect);
-  flowchart::paintFlowLabel(painter, document, rect, style.fontFamily, style.fontSize, style.lineHeight, textColor,
-                            true);
+  scene::applyMarkerTransform(painter, at, angle, marker.refX, marker.refY);
+  const qreal scale = lineWidth ? *lineWidth : 1.0;
+  painter.setClipRect(QRectF(0.0, 0.0, marker.width * scale, marker.height * scale), Qt::IntersectClip);
+  // The ring of the "zero" markers is filled over the end of the line, and
+  // stroked like the rest of the marker.
+  if (marker.hasRing) {
+    const std::optional<QColor> ringStroke = colorOf(paint.ringStroke);
+    painter.setPen(ringStroke ? svgPen(*ringStroke, paint.strokeWidth) : QPen(Qt::NoPen));
+    painter.setBrush(colorOf(paint.ringFill).value_or(QColor(Qt::transparent)));
+    painter.drawEllipse(QPointF(marker.ringX, marker.ringY), marker.ringRadius, marker.ringRadius);
+  }
+  // `.marker`: a stroke in the line's color, whatever the line's own.
+  const std::optional<QColor> stroke = colorOf(paint.stroke);
+  painter.setPen(stroke ? svgPen(*stroke, paint.strokeWidth) : QPen(Qt::NoPen));
+  painter.setBrush(Qt::NoBrush);
+  painter.drawPath(scene::parseSvgPath(marker.path));
   painter.restore();
-}
-
-// Minimal role placement (IMPLEMENTATION_SPEC.md §7 / §9): centered text offset
-// perpendicular to the touching segment so the role sits beside the crow's foot
-// without overlapping the edge line.
-void paintRole(QPainter& painter, const QString& role, const QPointF& endpoint, const QPointF& segDir,
-               const er::ErSceneStyle& style) {
-  if (role.isEmpty())
-    return;
-  const qreal len = std::hypot(segDir.x(), segDir.y());
-  if (len < 1e-6)
-    return;
-  const QPointF unit(segDir.x() / len, segDir.y() / len);
-  const QPointF perp(-unit.y(), unit.x());
-  const QPointF anchor = endpoint + perp * 14.0 - unit * 6.0;
-  const flowchart::FlowLabelDocument document = flowchart::parseFlowLabel(role, QStringLiteral("text"));
-  const QSizeF size = flowchart::measureFlowLabel(document, style.fontFamily, style.fontSize, style.lineHeight);
-  const QRectF rect(anchor.x() - size.width() / 2.0, anchor.y() - size.height() / 2.0, size.width(), size.height());
-  paintLabel(painter, document, rect, style, resolveColor(style.relationshipLabelColor));
 }
 
 } // namespace
@@ -158,112 +337,73 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter, 
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
-  const QColor relationshipColor = resolveColor(scene.style.relationshipColor);
-
-  // (1) Relationship paths + crow's-foot markers + roles. Drawn before entities
-  // so the table boxes paint over the line ends where they meet the entity.
-  for (const ErSceneRelationship& rel : scene.relationships) {
-    const QRectF pathCull = rel.pathBounds.isValid() ? rel.pathBounds : scene.bounds;
-    if (!mermaidPrimitiveIsVisible(pathCull, options))
+  // Lines first, so the tables cover them where they meet.
+  for (const ErSceneRelationship& relationship : scene.relationships) {
+    // The handDrawn look draws the path by rough.js, and its markers sit on
+    // the drawn path's own ends.
+    const QPainterPath path = scene::parseSvgPath(relationship.path);
+    const QRectF drawn =
+        relationship.rough ? QRectF(relationship.rough->bounds) : QRectF(path.boundingRect());
+    if ((!relationship.rough && path.elementCount() < 2) || drawn.isNull() ||
+        !mermaidPrimitiveIsVisible(drawn, options))
       continue;
-
-    QPen pen(relationshipColor, scene.style.relationshipStrokeWidth);
-    if (!rel.identifying) {
-      // Chrome computes stroke-dasharray "8px, 8px" on .edge-pattern-dashed:
-      // the er stylesheet's own 8,8 rule overrides the common sheet's `3`
-      // (equal specificity, later rule wins) — er-geometry.json pins the
-      // probed value. QPen entries are pen-width multiples, so normalize.
-      pen.setDashPattern(
-          scene::parseAndNormalizeSvgDashPattern(QStringLiteral("8,8"), scene.style.relationshipStrokeWidth));
-    }
-    painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
-    painter.drawPath(edgePath(rel));
-
-    const QVector<QPointF> pts = edgePolyline(rel);
-    if (pts.size() >= 2) {
-      const QPointF startDir = pts.at(1) - pts.first();
-      const QPointF endDir = pts.at(pts.size() - 2) - pts.last();
-      if (options.paintEdgeMarkers) {
-        drawErMarker(painter, rel.cardA, true, pts.first(), startDir, relationshipColor,
-                     scene.style.relationshipStrokeWidth);
-        drawErMarker(painter, rel.cardB, false, pts.last(), endDir, relationshipColor,
-                     scene.style.relationshipStrokeWidth);
+    if (const std::optional<QPen> pen = strokePen(relationship.line, drawn, scene.style)) {
+      painter.setPen(*pen);
+      if (relationship.rough) {
+        for (const rough::OpSet& set : relationship.rough->drawable.sets)
+          if (set.type == rough::OpSetType::Path)
+            painter.drawPath(rough::toPainterPath(set));
+      } else {
+        painter.drawPath(path);
       }
-      paintRole(painter, rel.roleA, pts.first(), startDir, scene.style);
-      paintRole(painter, rel.roleB, pts.last(), endDir, scene.style);
+    }
+    if (!options.paintEdgeMarkers)
+      continue;
+    // The marker at the start is turned the way the path leaves it; the one
+    // at the end the way the path arrives.
+    const ErPathAnchor start =
+        relationship.rough ? er::roughPathStart(*relationship.rough)
+                           : ErPathAnchor{path.elementAt(0), scene::tangentAngleDeg(scene::pathStartTangent(path))};
+    const ErPathAnchor end =
+        relationship.rough ? er::roughPathEnd(*relationship.rough)
+                           : ErPathAnchor{path.elementAt(path.elementCount() - 1),
+                                          scene::tangentAngleDeg(scene::pathEndTangent(path))};
+    // A marker's viewport is scaled by the line's stroke width, as a marker's
+    // is, unless the neo look sizes it in user units.
+    const std::optional<qreal> lineWidth =
+        scene.style.neo ? std::nullopt : std::optional<qreal>(relationship.line.strokeWidth);
+    if (relationship.cardA) {
+      if (const std::optional<ErMarker> marker = erMarker(*relationship.cardA, true, scene.style.neo))
+        paintMarker(painter, *marker, start.point, start.angleDeg,
+                    scene.markerPaint.value(erMarkerKey(*relationship.cardA, true)), lineWidth);
+    }
+    if (relationship.cardB) {
+      if (const std::optional<ErMarker> marker = erMarker(*relationship.cardB, false, scene.style.neo))
+        paintMarker(painter, *marker, end.point, end.angleDeg,
+                    scene.markerPaint.value(erMarkerKey(*relationship.cardB, false)), lineWidth);
     }
   }
 
-  // (2) Relationship labels, painted after the lines so the labelBackground
-  // covers any edge crossing through the label box.
-  for (const ErSceneRelationship& rel : scene.relationships) {
-    if (rel.label.isEmpty() || !rel.labelPosition)
+  // The labels over the lines.
+  for (const ErSceneRelationship& relationship : scene.relationships) {
+    if (relationship.labelText.document.text.isEmpty() ||
+        !mermaidPrimitiveIsVisible(relationship.labelText.rect, options))
       continue;
-    const QSizeF size = rel.labelSize.isValid()
-                            ? rel.labelSize
-                            : flowchart::measureFlowLabel(rel.labelDocument, scene.style.fontFamily,
-                                                          scene.style.fontSize, scene.style.lineHeight);
-    const QRectF rect(rel.labelPosition->x() - size.width() / 2.0, rel.labelPosition->y() - size.height() / 2.0,
-                      size.width(), size.height());
-    const QRectF labelCull = rel.labelBounds.isValid() ? rel.labelBounds : rect;
-    if (!mermaidPrimitiveIsVisible(labelCull, options))
-      continue;
-    painter.fillRect(rect, resolveColor(scene.style.labelBackground));
-    paintLabel(painter, rel.labelDocument, rect, scene.style, resolveColor(scene.style.relationshipLabelColor));
+    painter.fillRect(relationship.labelText.rect, relationship.labelBackground);
+    paintText(painter, relationship.labelText, flowchart::FlowLabelAlign::Center);
   }
 
-  // (3) Entity tables, drawn last.
+  // The handDrawn look draws a copy of every entity behind its shapes.
+  for (const ErSceneEntity& background : scene.backgrounds) {
+    if (mermaidPrimitiveIsVisible(background.bounds, options))
+      paintEntity(painter, background, scene.style);
+  }
+
   for (const ErSceneEntity& entity : scene.entities) {
-    if (!mermaidPrimitiveIsVisible(entity.bounds, options))
-      continue;
-    const QColor fill = resolveColor(entity.fill.isEmpty() ? scene.style.entityFill : entity.fill);
-    const QColor stroke = resolveColor(entity.stroke.isEmpty() ? scene.style.entityStroke : entity.stroke);
-    painter.setPen(QPen(stroke, scene.style.strokeWidth));
-    painter.setBrush(fill);
-    painter.drawRoundedRect(entity.bounds, 6.0, 6.0);
-
-    // Thin divider beneath the header and between attribute rows. The top of
-    // attributeRects[0] coincides with the header bottom, so one pass yields
-    // both the header divider and the inter-row dividers.
-    if (!entity.attributeRects.isEmpty()) {
-      painter.setPen(QPen(stroke, 1.0));
-      for (const QRectF& row : entity.attributeRects)
-        painter.drawLine(row.topLeft(), row.topRight());
-    }
-
-    // Entity name centered in the header band.
-    paintLabel(painter, entity.nameDocument, entity.headerRect, scene.style, resolveColor(scene.style.entityTitle1));
-
-    // Attribute rows, left-aligned. paintFlowLabel centers horizontally within
-    // the supplied rect, so the rect is sized to the measured text width and
-    // offset by a small left padding to produce a left-aligned table cell.
-    constexpr qreal kAttributeHPad = 8.0;
-    for (qsizetype i = 0; i < entity.attributeDocuments.size(); ++i) {
-      const flowchart::FlowLabelDocument& document = entity.attributeDocuments.at(i);
-      if (document.text.isEmpty())
-        continue;
-      const QRectF row = entity.attributeRects.value(i, entity.bounds);
-      const QSizeF measured =
-          flowchart::measureFlowLabel(document, scene.style.fontFamily, scene.style.fontSize, scene.style.lineHeight);
-      const QRectF textRect(row.left() + kAttributeHPad, row.top(), measured.width(), row.height());
-      paintLabel(painter, document, textRect, scene.style, resolveColor(scene.style.attributeColor));
-    }
+    if (mermaidPrimitiveIsVisible(entity.bounds, options))
+      paintEntity(painter, entity, scene.style);
   }
-}
-
-QImage muffin::mermaid::er::renderErSceneToImage(const ErScene& scene, qreal dpr, qreal padding) {
-  const qreal width = std::max(1.0, scene.bounds.width() + 2.0 * padding);
-  const qreal height = std::max(1.0, scene.bounds.height() + 2.0 * padding);
-  QImage image(qCeil(width * dpr), qCeil(height * dpr), QImage::Format_ARGB32_Premultiplied);
-  image.fill(Qt::transparent);
-  QPainter painter(&image);
-  painter.scale(dpr, dpr);
-  painter.translate(padding - scene.bounds.left(), padding - scene.bounds.top());
-  paintErScene(scene, painter);
-  painter.end();
-  image.setDevicePixelRatio(dpr);
-  return image;
 }
 
 void muffin::mermaid::er::ErScene::paint(QPainter& painter, const MermaidPaintOptions& options) const {

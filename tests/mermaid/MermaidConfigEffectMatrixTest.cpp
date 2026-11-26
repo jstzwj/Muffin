@@ -132,13 +132,19 @@ QPointF stateCenter(const MermaidRenderEntry& entry, const QString& id) {
   fail(QStringLiteral("Missing state node %1").arg(id));
 }
 
-QPointF erCenter(const MermaidRenderEntry& entry, const QString& id) {
+QPointF erCenter(const MermaidRenderEntry& entry, const QString& name) {
   const auto* erScene = dynamic_cast<const muffin::mermaid::er::ErScene*>(entry.scene.get());
-  require(erScene != nullptr, QStringLiteral("Missing ER scene while looking for %1").arg(id));
-  for (const auto& entity : erScene->entities)
-    if (entity.id == id)
+  require(erScene != nullptr, QStringLiteral("Missing ER scene while looking for %1").arg(name));
+  // erDB numbers an entity as it is declared: entity-<name>-<n>.
+  const QString prefix = QStringLiteral("entity-") + name + QLatin1Char('-');
+  for (const auto& entity : erScene->entities) {
+    if (!entity.id.startsWith(prefix))
+      continue;
+    const QString number = entity.id.mid(prefix.size());
+    if (!number.isEmpty() && std::all_of(number.cbegin(), number.cend(), [](QChar c) { return c.isDigit(); }))
       return entity.bounds.center();
-  fail(QStringLiteral("Missing ER entity %1").arg(id));
+  }
+  fail(QStringLiteral("Missing ER entity %1").arg(name));
 }
 
 } // namespace

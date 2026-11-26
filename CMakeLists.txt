@@ -912,6 +912,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/erdiagram/ErScene.h
   src/mermaid/erdiagram/ErScenePainter.cpp
   src/mermaid/erdiagram/ErScenePainter.h
+  src/mermaid/erdiagram/ErStyles.cpp
+  src/mermaid/erdiagram/ErStyles.h
+  src/mermaid/erdiagram/ErRough.cpp
+  src/mermaid/erdiagram/ErRough.h
   src/mermaid/erdiagram/ErTokenizer.cpp
   src/mermaid/erdiagram/ErTokenizer.h
   src/mermaid/sequence/SequenceDiagram.cpp

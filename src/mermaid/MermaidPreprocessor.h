@@ -23,6 +23,15 @@ struct MermaidPreprocessResult {
 // matching the upstream preprocessing failure boundary.
 MermaidPreprocessResult preprocessDiagram(const QString& source);
 
+// Mermaid's encodeEntities, the last change Diagram.fromText makes to a
+// diagram's text before its parser reads it. With `offsets`, the result also
+// says for each of its characters which character of `code` it stands for.
+QString encodeMermaidEntities(const QString& code, QVector<qsizetype>* offsets = nullptr);
+
+// Mermaid's decodeEntities, the inverse of encodeMermaidEntities. It is applied
+// to a node or edge label when the label is drawn.
+QString decodeMermaidEntities(const QString& text);
+
 // Applies the second configuration phase used by Mermaid's render/parse entry
 // point after preprocessDiagram(): addDirective() sanitizes the directive
 // object unconditionally, mirrors a top-level fontFamily into themeVariables,
