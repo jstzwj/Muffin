@@ -51,6 +51,14 @@ qsizetype hitAt(const InlineLayout& layout, qreal x, qreal y) {
   return layout.hitTestTextOffset(QPointF(x, y));
 }
 
+// offset@x, in visual order: what a failure message needs to say where every caret is.
+QString caretTable(const QVector<Caret>& carets) {
+  QStringList entries;
+  for (const Caret& caret : carets)
+    entries.append(QStringLiteral("%1@%2").arg(caret.offset).arg(caret.x, 0, 'f', 2));
+  return entries.join(QLatin1Char(' '));
+}
+
 // Clicking exactly where a caret is drawn places the caret there. Two logical carets can share
 // one x position (the boundary between runs of opposite direction); either is then correct.
 void requireCaretsRoundTrip(const InlineLayout& layout, const QString& label) {
@@ -83,16 +91,24 @@ void requireNearestCaretWins(const InlineLayout& layout, const QString& label) {
     if (right.x - left.x < 1.0)
       continue;
     const qreal width = right.x - left.x;
-    require(landsOn(hitAt(layout, left.x + width * 0.25, left.y), left),
-            QStringLiteral("%1: a click left of the midpoint between carets %2 and %3 should land on %2")
-                .arg(label)
-                .arg(left.offset)
-                .arg(right.offset));
-    require(landsOn(hitAt(layout, left.x + width * 0.75, left.y), right),
-            QStringLiteral("%1: a click right of the midpoint between carets %2 and %3 should land on %3")
-                .arg(label)
-                .arg(left.offset)
-                .arg(right.offset));
+    // At the quarters of the cell and near both of its ends: wherever the click falls, the
+    // nearer caret must be found.
+    for (const qreal fraction : {0.1, 0.25, 0.4, 0.6, 0.75, 0.9}) {
+      const Caret& expected = fraction < 0.5 ? left : right;
+      const qreal click = left.x + width * fraction;
+      const qsizetype hit = hitAt(layout, click, left.y);
+      require(landsOn(hit, expected),
+              QStringLiteral("%1: a click %2 of the way from caret %3 to %4 (x=%5) should land on %6, hit %7; "
+                             "carets %8")
+                  .arg(label)
+                  .arg(fraction)
+                  .arg(left.offset)
+                  .arg(right.offset)
+                  .arg(click, 0, 'f', 2)
+                  .arg(expected.offset)
+                  .arg(hit)
+                  .arg(caretTable(carets)));
+    }
     const qsizetype middle = hitAt(layout, left.x + width * 0.5, left.y);
     require(landsOn(middle, left) || landsOn(middle, right),
             QStringLiteral("%1: the midpoint between carets %2 and %3 hit %4")

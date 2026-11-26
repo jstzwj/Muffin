@@ -2734,16 +2734,23 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     // xToCursor leaves the end of a soft-wrapped line out, and at the edge of a right-to-left
     // run it follows the run's own direction: clicking the right edge of an embedded Hebrew
     // word is "before its first letter" to Qt, although that caret is painted at the word's
-    // left edge. So compare its answer with the neighbouring carets, both line edges (as
-    // LiteralTextLayout::offsetAtLineX does) and the first and last position of every glyph
-    // run. On a tie the caret further along the line wins, which keeps the established rule
+    // left edge. Its answer is a hint, and no more: on macOS the nearest caret to a click in a
+    // letter that follows a decomposed one was more than one position away from it. So compare
+    // its answer with the neighbouring carets,
+    // both line edges (as LiteralTextLayout::offsetAtLineX does) and the first and last
+    // position of every glyph run; and where every run of the line runs left to right, find by
+    // halving the two carets the click lies between: there a caret never stands left of the
+    // one before it, which is all a halving search needs. (The halving cannot be narrowed to a
+    // run: Qt reports 0 as the string index of every glyph in a run that does not start its
+    // item.) On a tie the caret further along the line wins, which keeps the established rule
     // that the second half of a character belongs to the caret after it.
     const qreal x = localPos.x();
     const auto caretX = [&](int offset) { return line.cursorToX(offset); };
+    const auto valid = [&](int offset) { return textLayout_->isValidCursorPosition(offset); };
     int caret = qBound(lineStart, line.xToCursor(x - line.x()), lineEnd);
     qreal best = qAbs(x - caretX(caret));
     const auto consider = [&](int candidate) {
-      if (candidate < lineStart || candidate > lineEnd || !textLayout_->isValidCursorPosition(candidate))
+      if (candidate < lineStart || candidate > lineEnd || !valid(candidate))
         return;
       const qreal distance = qAbs(x - caretX(candidate));
       if (distance < best || (distance == best && candidate > caret)) {
@@ -2755,8 +2762,10 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     consider(lineEnd);
     consider(textLayout_->previousCursorPosition(caret));
     consider(textLayout_->nextCursorPosition(caret));
+    bool rightToLeft = false;
     for (const QGlyphRun& run : line.glyphRuns(-1, -1, QTextLayout::RetrieveStringIndexes)) {
-      // Glyphs without a source position (object replacements) are -1 and bound nothing.
+      rightToLeft = rightToLeft || run.isRightToLeft();
+      // Glyphs without a source position (object replacements) are -1 and bind nothing.
       int first = -1;
       int last = -1;
       for (qsizetype index : run.stringIndexes()) {
@@ -2769,6 +2778,25 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
         continue;
       consider(qBound(lineStart, first, lineEnd));
       consider(qBound(lineStart, last + 1, lineEnd));
+    }
+    if (!rightToLeft) {
+      int before = lineStart;
+      int after = lineEnd;
+      while (after - before > 1) {
+        const int middle = (before + after) / 2;
+        if (caretX(middle) <= x)
+          before = middle;
+        else
+          after = middle;
+      }
+      // A position inside a cluster, a ligature or a base with its marks, is no caret: the
+      // ones at its ends are.
+      for (; before > lineStart && !valid(before); --before)
+        ;
+      for (; after < lineEnd && !valid(after); ++after)
+        ;
+      consider(before);
+      consider(after);
     }
 
     // A click to the left of the caret it resolved to sits after whatever collapsed at that
