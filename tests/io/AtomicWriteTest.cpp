@@ -71,8 +71,10 @@ void failuresAreReportedAtOnce() {
                                           QFileDevice::ReadOther),
           "make the fixture read-only");
 
+  // A budget so long that one wait for any of these would outlast the check below many times
+  // over, and a check generous enough for a loaded machine's handful of file operations.
   QString error;
-  AtomicWrite::Budget budget(1000ms); // the default: long enough for a wait to show
+  AtomicWrite::Budget budget(10s);
   QElapsedTimer elapsed;
   elapsed.start();
   if (!QFileInfo(path).isWritable()) { // root writes read-only files
@@ -93,7 +95,7 @@ void failuresAreReportedAtOnce() {
           "a name the system does not take is reported at once");
 #endif
   require(QFile::setPermissions(path, writable) && readBytes(path) == "original", "nothing was written");
-  require(elapsed.elapsed() < 500, "what will not pass is not waited for");
+  require(elapsed.elapsed() < 2000, "what will not pass is not waited for");
   require(filesIn(directory) == QStringList{QStringLiteral("note.md")}, "nothing is left behind, not even a probe");
 }
 
@@ -104,7 +106,7 @@ void turnedDownWrites() {
   const auto path = directory.filePath(QStringLiteral("note.md"));
   require(AtomicWrite::write(path, "original", nullptr) == AtomicWrite::Result::Written, "write the fixture");
   QString error;
-  AtomicWrite::Budget budget(1000ms);
+  AtomicWrite::Budget budget(10s); // as above: a wait would show, a loaded machine would not
   QElapsedTimer elapsed;
   elapsed.start();
   int checks = 0;
@@ -115,21 +117,25 @@ void turnedDownWrites() {
                              }) == AtomicWrite::Result::Declined &&
               error.isEmpty() && checks == 1,
           "a file that is no longer current turns the write down, once");
-  require(AtomicWrite::write(path,
-                             [](QSaveFile& file) {
-                               file.write("partial");
-                               return false;
-                             }) == AtomicWrite::Result::Declined &&
+  require(AtomicWrite::write(
+              path,
+              [](QSaveFile& file) {
+                file.write("partial");
+                return false;
+              },
+              &error, &budget) == AtomicWrite::Result::Declined &&
               error.isEmpty(),
           "a writer that turns the write down is obeyed");
-  require(AtomicWrite::write(path,
-                             [&error](QSaveFile&) {
-                               error = QStringLiteral("turned down on purpose");
-                               return false;
-                             }) == AtomicWrite::Result::Declined &&
+  require(AtomicWrite::write(
+              path,
+              [&error](QSaveFile&) {
+                error = QStringLiteral("turned down on purpose");
+                return false;
+              },
+              &error, &budget) == AtomicWrite::Result::Declined &&
               error == QStringLiteral("turned down on purpose"),
           "and its reason is the one reported");
-  require(readBytes(path) == "original" && elapsed.elapsed() < 500 &&
+  require(readBytes(path) == "original" && elapsed.elapsed() < 2000 &&
               filesIn(directory) == QStringList{QStringLiteral("note.md")},
           "a turned-down write neither changes the file, nor waits, nor leaves anything behind");
 }
@@ -171,11 +177,13 @@ void heldReplacements() {
     QThread::msleep(100);
     CloseHandle(held);
   });
+  // A budget the reader's hundred milliseconds cannot outlast on a loaded machine.
+  AtomicWrite::Budget roomy(5s);
   // A nested event loop here would run the document's autosave or reload
   // queue in the middle of a write.
   bool eventDispatched = false;
   QTimer::singleShot(0, [&eventDispatched] { eventDispatched = true; });
-  const auto committed = AtomicWrite::write(path, "replacement after release", &error);
+  const auto committed = AtomicWrite::write(path, "replacement after release", &error, &roomy);
   release.join();
   require(committed == AtomicWrite::Result::Written && error.isEmpty() &&
               readBytes(path) == "replacement after release",
@@ -212,21 +220,25 @@ void heldReplacements() {
   require(readBytes(path) == "after a second attempt" && filesIn(directory) == QStringList{name},
           "that leaves the file, and nothing else");
 
-  // The writes of one operation share a budget, counted from the first refusal.
+  // The writes of one operation share a budget, counted from the first refusal, so the second
+  // refused write gets none of its own: it makes one attempt and returns. A budget of its own
+  // would keep it a second; half a second is more than one attempt takes on a loaded machine.
   const auto other = directory.filePath(QStringLiteral("other.md"));
   require(AtomicWrite::write(other, "other original", &error) == AtomicWrite::Result::Written, error);
   HANDLE firstHandle = holdTarget(path), secondHandle = holdTarget(other);
-  AtomicWrite::Budget shared(200ms);
+  AtomicWrite::Budget shared(1000ms);
   elapsed.start();
   const auto first = AtomicWrite::write(path, "x", &error, &shared);
   const qint64 firstDuration = elapsed.elapsed();
+  elapsed.start();
   const auto second = AtomicWrite::write(other, "x", &error, &shared);
-  const qint64 total = elapsed.elapsed();
+  const qint64 secondDuration = elapsed.elapsed();
   CloseHandle(firstHandle);
   CloseHandle(secondHandle);
-  require(first == AtomicWrite::Result::Refused && second == AtomicWrite::Result::Refused && firstDuration >= 200,
+  require(first == AtomicWrite::Result::Refused && second == AtomicWrite::Result::Refused && firstDuration >= 1000,
           "the first refused write uses the shared budget");
-  require(total < 380, "and the next one waits no further: " + QString::number(total));
+  require(secondDuration < 500, "and the next one waits no further: " + QString::number(secondDuration) + " ms after " +
+                                    QString::number(firstDuration) + " ms");
 
   qInstallMessageHandler(previous);
   logged = nullptr;
