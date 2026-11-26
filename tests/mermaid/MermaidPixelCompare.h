@@ -6,9 +6,11 @@
 
 #include <QColor>
 #include <QFile>
+#include <QHash>
 #include <QImage>
 #include <QString>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -87,6 +89,35 @@ inline qreal worstPixelDifference(const QImage& a, const QImage& b) {
   return worst / 255.0;
 }
 
+// 1 minus the mean channel difference over every pixel of one square tile, at
+// the worst tile of a grid over the image. The mean over a whole image lets a
+// region that is uniformly a little wrong — a table row filled with the other
+// row color, a label background a shade off — hide behind all that is right;
+// the worst tile does not.
+inline qreal worstTileSimilarity(const QImage& a, const QImage& b, int tileSize = 32) {
+  const auto premul = [](int channel, int alpha) { return channel * alpha / 255; };
+  qreal worst = 1.0;
+  for (int top = 0; top < b.height(); top += tileSize) {
+    for (int left = 0; left < b.width(); left += tileSize) {
+      long long difference = 0;
+      long long count = 0;
+      const int bottom = std::min(top + tileSize, b.height()), right = std::min(left + tileSize, b.width());
+      for (int y = top; y < bottom; ++y) {
+        for (int x = left; x < right; ++x) {
+          const QColor x1 = a.pixelColor(x, y), x2 = b.pixelColor(x, y);
+          difference += std::abs(premul(x1.red(), x1.alpha()) - premul(x2.red(), x2.alpha()));
+          difference += std::abs(premul(x1.green(), x1.alpha()) - premul(x2.green(), x2.alpha()));
+          difference += std::abs(premul(x1.blue(), x1.alpha()) - premul(x2.blue(), x2.alpha()));
+          difference += std::abs(x1.alpha() - x2.alpha());
+          ++count;
+        }
+      }
+      worst = std::min(worst, count ? 1.0 - qreal(difference) / (count * 1020.0) : 1.0);
+    }
+  }
+  return worst;
+}
+
 // Decodes the data URL the native renderer returns.
 inline QImage decodeDataUrl(const QString& url) {
   QImage image;
@@ -97,16 +128,46 @@ inline QImage decodeDataUrl(const QString& url) {
 }
 
 struct Measures {
-  qreal iou = 0.0;
-  qreal rgba = 0.0;
-  qreal worst = 0.0;
+  qreal iou = 0.0;    // the overlap of the ink of both images
+  qreal rgba = 0.0;   // the mean color similarity over the ink
+  qreal worst = 0.0;  // the largest per-pixel channel distance over the ink
+  qreal tile = 1.0;   // the mean color similarity of the worst 32 px tile
+  qreal area = 0.0;   // the largest area difference of a dominant color
 };
+
+QHash<QRgb, long long> colorCounts(const QImage& image) {
+  QHash<QRgb, long long> counts;
+  for (int y = 0; y < image.height(); ++y)
+    for (int x = 0; x < image.width(); ++x)
+      ++counts[image.pixel(x, y)];
+  return counts;
+}
+
+// The largest difference, as a share of the image, between the area a color
+// covers in both images, over every color that covers a notable part of the
+// reference. The antialiasing of glyphs and a fraction of a pixel of shift
+// barely move a color's area; a table row filled with the other row color, or
+// a label with another background, moves two of them by the area of that part.
+inline qreal dominantColorAreaDifference(const QImage& native, const QImage& reference, qreal minimumShare = 0.005) {
+  const QHash<QRgb, long long> nativeColors = colorCounts(native);
+  const QHash<QRgb, long long> referenceColors = colorCounts(reference);
+  const qreal total = qreal(reference.width()) * reference.height();
+  qreal worst = 0.0;
+  for (auto it = referenceColors.cbegin(); it != referenceColors.cend(); ++it) {
+    const qreal share = it.value() / total;
+    if (share >= minimumShare)
+      worst = std::max(worst, std::abs(share - nativeColors.value(it.key()) / total));
+  }
+  return worst;
+}
 
 inline Measures measure(const QImage& native, const QImage& reference) {
   Measures measures;
   measures.iou = alphaIou(native, reference);
   measures.rgba = rgbaSimilarity(native, reference);
   measures.worst = worstPixelDifference(native, reference);
+  measures.tile = worstTileSimilarity(native, reference);
+  measures.area = dominantColorAreaDifference(native, reference);
   return measures;
 }
 
