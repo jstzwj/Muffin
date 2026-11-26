@@ -724,9 +724,17 @@ QString rgba(const QString& color, double alpha) {
 
 QColor toQColor(const QString& color) {
   MermaidColor m = parse(color);
-  QColor q;
-  q.setRgbF(m.R() / 255.0, m.G() / 255.0, m.B() / 255.0, m.a);
-  return q;
+  // Chrome keeps a CSS color in eight bits per channel, alpha included, and
+  // composites from those. A channel kept fractional would be rounded twice
+  // once it is painted at less than full opacity. A channel that is exactly
+  // half (a theme's derived colors often are) rounds up, as it does in Chrome;
+  // the last bit of the arithmetic must not drop it below the half.
+  const auto byte = [](qreal value, qreal maximum) {
+    const qreal snapped = std::round(value * 1e6) / 1e6;
+    return !(snapped > 0.0) ? 0 : snapped >= maximum ? int(maximum) : int(snapped + 0.5);
+  };
+  return QColor::fromRgb(byte(clampR(m.R()), 255.0), byte(clampG(m.G()), 255.0), byte(clampB(m.B()), 255.0),
+                         byte(clampA(m.a) * 255.0, 255.0));
 }
 
 bool isParsableColor(const QString& color) {
