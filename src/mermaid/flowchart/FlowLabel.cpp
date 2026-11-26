@@ -1284,6 +1284,117 @@ void appendFormatted(FlowLabelDocument& result, const QString& text, const QText
   result.formats.push_back(range);
 }
 
+// marked's emphasis (CommonMark): a run of asterisks opens emphasis only
+// where it is left-flanking and closes it only where it is right-flanking; a
+// closer pairs with the nearest opener before it, two characters making the
+// strong kind; whatever is left over is a character of the text.
+struct EmphasisMark {
+  char role = 0;  // 0 for text, 'o' where a run opens emphasis, 'c' where it closes it
+  int length = 0; // the characters the marker takes: 1 or 2
+};
+
+bool emphasisPunctuation(QChar c) {
+  static const QString ascii = QStringLiteral("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
+  return c.unicode() < 0x80 ? ascii.contains(c) : c.isPunct();
+}
+
+std::vector<EmphasisMark> emphasisMarks(const QString& source) {
+  std::vector<EmphasisMark> marks(source.size());
+  struct Run {
+    qsizetype start;
+    int length;
+    const int original;
+    bool canOpen;
+    bool canClose;
+    // What the run spent as markers, as the text reads it.
+    std::vector<std::pair<char, int>> used;
+  };
+  std::vector<Run> runs;
+  bool inCode = false;
+  for (qsizetype i = 0; i < source.size();) {
+    const QChar c = source.at(i);
+    if (c == QLatin1Char('`')) {
+      inCode = !inCode;
+      ++i;
+      continue;
+    }
+    if (c == QLatin1Char('\\')) {
+      i += 2; // an escaped character
+      continue;
+    }
+    if (c != QLatin1Char('*')) {
+      ++i;
+      continue;
+    }
+    qsizetype end = i;
+    while (end < source.size() && source.at(end) == QLatin1Char('*'))
+      ++end;
+    const bool beforeSpace = i == 0 || source.at(i - 1).isSpace();
+    const bool beforePunctuation = i > 0 && emphasisPunctuation(source.at(i - 1));
+    const bool afterSpace = end == source.size() || source.at(end).isSpace();
+    const bool afterPunctuation = end < source.size() && emphasisPunctuation(source.at(end));
+    const bool leftFlanking = !afterSpace && (!afterPunctuation || beforeSpace || beforePunctuation);
+    const bool rightFlanking = !beforeSpace && (!beforePunctuation || afterSpace || afterPunctuation);
+    if (!inCode)
+      runs.push_back({i, int(end - i), int(end - i), leftFlanking, rightFlanking, {}});
+    i = end;
+  }
+  // The delimiter stack: each run that can close looks back for the nearest
+  // run before it that can open. Nothing at or below `openersBottom` opens.
+  int openersBottom = -1;
+  for (int index = 0; index < static_cast<int>(runs.size());) {
+    Run& closer = runs[index];
+    if (closer.length == 0 || !closer.canClose || openersBottom >= index) {
+      ++index;
+      continue;
+    }
+    int found = -1;
+    for (int opener = index - 1; opener > openersBottom; --opener) {
+      Run& candidate = runs[opener];
+      if (candidate.length == 0 || !candidate.canOpen)
+        continue;
+      // Rule of three: runs that can both open and close pair only when their
+      // lengths together are not a multiple of three, unless both are.
+      const bool eitherBoth = (candidate.canOpen && candidate.canClose) || (closer.canOpen && closer.canClose);
+      if (eitherBoth && (candidate.original + closer.original) % 3 == 0 &&
+          !(candidate.original % 3 == 0 && closer.original % 3 == 0))
+        continue;
+      found = opener;
+      break;
+    }
+    if (found < 0) {
+      // Nothing before it opens this: nor can anything before it open later.
+      openersBottom = index - 1;
+      if (!closer.canOpen)
+        closer.length = 0;
+      ++index;
+      continue;
+    }
+    Run& opener = runs[found];
+    for (int between = found + 1; between < index; ++between) {
+      runs[between].length = 0;
+      runs[between].canOpen = false;
+    }
+    const int length = opener.length >= 2 && closer.length >= 2 ? 2 : 1;
+    // A run spends its inner characters first: an opener reads its outer
+    // marker before the inner one, a closer the other way round.
+    opener.used.insert(opener.used.begin(), {'o', length});
+    opener.length -= length;
+    closer.used.push_back({'c', length});
+    closer.length -= length;
+    if (closer.length == 0)
+      ++index;
+  }
+  for (const Run& run : runs) {
+    qsizetype offset = 0;
+    for (const auto& [role, length] : run.used) {
+      marks[run.start + offset] = {role, length};
+      offset += length;
+    }
+  }
+  return marks;
+}
+
 FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled, bool htmlFormatting = true) {
   FlowLabelDocument result;
   source = normalizeBreaks(std::move(source));
@@ -1308,11 +1419,14 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled, b
     plain.clear();
   };
 
+  const std::vector<EmphasisMark> emphasis = markdown ? emphasisMarks(source) : std::vector<EmphasisMark>();
   for (qsizetype i = 0; i < source.size();) {
     QString token;
     QTextCharFormat format;
     qsizetype consumed = 0;
     bool blockToken = false;
+    // 'o' where an asterisk run opens emphasis, 'c' where it closes it.
+    char emphasisRole = 0;
     const QStringView rest(source.constData() + i, source.size() - i);
     auto htmlToken = [&](QStringView name, bool closing) {
       const QString candidate = closing ? QStringLiteral("</%1>").arg(name) : QStringLiteral("<%1>").arg(name);
@@ -1346,14 +1460,19 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled, b
         continue;
       }
     }
-    if (markdown && rest.startsWith(QStringLiteral("**"))) {
-      token = QStringLiteral("**");
-      consumed = 2;
-      format.setFontWeight(QFont::Bold);
-    } else if (markdown && rest.startsWith(QLatin1Char('*'))) {
-      token = QStringLiteral("*");
-      consumed = 1;
-      format.setFontItalic(true);
+    if (markdown && rest.startsWith(QLatin1Char('*'))) {
+      // A run of asterisks is emphasis only where marked() paired it; what is
+      // left over is a character of the text.
+      const EmphasisMark mark = emphasis.at(i);
+      if (mark.role != 0) {
+        token = QString(mark.length, QLatin1Char('*'));
+        consumed = mark.length;
+        emphasisRole = mark.role;
+        if (mark.length == 1)
+          format.setFontItalic(true);
+        else
+          format.setFontWeight(QFont::Bold);
+      }
     } else if (markdown && rest.startsWith(QLatin1Char('`'))) {
       token = QStringLiteral("`");
       consumed = 1;
@@ -1395,7 +1514,16 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled, b
     flush();
     if (!closing && blockToken && !blockItemStart)
       blockItemStart = result.text.size();
-    if (!stack.isEmpty() && stack.last().token == token) {
+    if (emphasisRole == 'c') {
+      // It closes the nearest emphasis of its kind open; what was opened
+      // after that is unclosed, and ends here as marked ends it.
+      const auto open =
+          std::find_if(stack.crbegin(), stack.crend(), [&](const Marker& marker) { return marker.token == token; });
+      if (open != stack.crend())
+        stack.erase(std::next(open).base());
+    } else if (emphasisRole == 'o') {
+      stack.push_back({token, format, blockToken});
+    } else if (!stack.isEmpty() && stack.last().token == token) {
       stack.removeLast();
     } else if (closing) {
       const QString open = token;
