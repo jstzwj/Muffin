@@ -38,9 +38,13 @@ using namespace muffin::mermaid;
 
 namespace {
 
-qreal chromiumAdvance(const QString& text, const QString& family, qreal pixelSize) {
+// The width of a legend entry or of the title, as the adapter measures it:
+// SVG <text>, so its box is the advance cell grown by the end glyphs' overhangs.
+qreal svgTextWidth(const QString& text, const QString& family, qreal pixelSize) {
   flowchart::FlowLabelDocument document;
   document.text = text;
+  if (const auto box = flowchart::measureChromiumSvgTextBox(document, family, pixelSize))
+    return box->width();
   return flowchart::measureChromiumInlineLayoutWidth(document, family, pixelSize);
 }
 [[noreturn]] void fail(const QString& message) {
@@ -437,8 +441,8 @@ int main(int argc, char** argv) {
         "%%{init: {\"themeVariables\": {\"pieStrokeWidth\": \"10%\"}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50");
     const pie::PieScene* sShort = renderPie(cache, swShort);
     const qreal longestLegend =
-        std::max(chromiumAdvance(QStringLiteral("A"), sShort->style.legendFontFamily, sShort->style.legendFontSize),
-                 chromiumAdvance(QStringLiteral("B"), sShort->style.legendFontFamily, sShort->style.legendFontSize));
+        std::max(svgTextWidth(QStringLiteral("A"), sShort->style.legendFontFamily, sShort->style.legendFontSize),
+                 svgTextWidth(QStringLiteral("B"), sShort->style.legendFontFamily, sShort->style.legendFontSize));
     const qreal chartW =
         sShort->pieWidth + sShort->margin + sShort->legendRectSize + sShort->legendSpacing + longestLegend;
     const qreal expDiagShort = std::sqrt(chartW * chartW + sShort->totalHeight * sShort->totalHeight) / std::sqrt(2.0);
@@ -458,7 +462,7 @@ int main(int argc, char** argv) {
     const QString longSrc = QStringLiteral(
         "pie title An Extremely Long Pie Chart Title That Exceeds The Chart Width\n\"A\" : 50\n\"B\" : 50");
     const pie::PieScene* sLong = renderPie(cache, longSrc);
-    const qreal titleW = chromiumAdvance(sLong->title, sLong->style.titleFontFamily, sLong->style.titleFontSize);
+    const qreal titleW = svgTextWidth(sLong->title, sLong->style.titleFontFamily, sLong->style.titleFontSize);
     const qreal titleLeft = sLong->pieWidth / 2.0 - titleW / 2.0;
     const qreal titleRight = sLong->pieWidth / 2.0 + titleW / 2.0;
     const qreal expX = std::min(0.0, titleLeft);
@@ -564,7 +568,7 @@ int main(int argc, char** argv) {
     const pie::PieScene* s = renderPie(cache, src);
     // Independently confirm the title's natural advance > 800px (else the test
     // would be meaningless -- a <=800px title is never clipped by the old rect).
-    const qreal advance = chromiumAdvance(longTitle, s->style.titleFontFamily, s->style.titleFontSize);
+    const qreal advance = svgTextWidth(longTitle, s->style.titleFontFamily, s->style.titleFontSize);
     require(advance > 800.0, QStringLiteral("test title advance %1 must exceed 800").arg(advance));
     require(s->titleWidth > 800.0, "scene.titleWidth = measured advance (>800)");
     const QImage img = decodePng(editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0).dataUrl);

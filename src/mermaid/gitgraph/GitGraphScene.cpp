@@ -1,6 +1,7 @@
 #include "mermaid/gitgraph/GitGraphScene.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
 
@@ -108,25 +109,23 @@ qreal textAdvance(const TextFont& spec, const QString& text) {
 }
 
 QRectF directTextBounds(const TextFont& spec, const QString& text, bool bold = false, bool expandBoldRight = true) {
-  const editor::CssPixelFont css = font(spec);
-  const QRectF ink = TextFontMetrics(css.font).boundingRect(text);
-  qreal inkLeft = ink.left() * css.scale;
-  qreal inkRight = ink.right() * css.scale;
-  if (const auto hb = textmetrics::harfBuzzInkBounds(text, spec.family, spec.size)) {
-    inkLeft = hb->left();
-    inkRight = hb->right();
+  // The label is SVG <text>: Blink's box for it is its advance cell grown by
+  // the end glyphs' overhangs.
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  const auto box = flowchart::measureChromiumSvgTextBox(document, spec.family, spec.size);
+  qreal left = 0.0;
+  qreal right = 0.0;
+  if (box) {
+    left = box->left;
+    right = box->right;
+  } else {
+    // Not one font of known tables: the same box, from Qt's own outline.
+    const editor::CssPixelFont css = font(spec);
+    const QRectF ink = TextFontMetrics(css.font).boundingRect(text);
+    left = std::min<qreal>(0.0, ink.left() * css.scale);
+    right = std::max(textAdvance(spec, text), ink.right() * css.scale);
   }
-  // Skia's SVG glyph bounds retain a one-pixel antialiasing fringe when the
-  // first outline starts almost exactly on the text origin (notably Noto's
-  // lowercase f and v). HarfBuzz reports design-unit ink bounds, so add the
-  // same fringe before using the box for getBBox-driven layout. The cutoff
-  // is a constant subpixel cell, not a size fraction: Chrome's fringe stays
-  // while the ink left sits below ~17/64 px (Noto 'f', xMin 15/1000 em,
-  // keeps it through 17px and drops it from 18px; 'v', xMin 0, keeps it at
-  // every size; 'd' at xMin 55 never has it).
-  const qreal skiaLeft = inkLeft >= 0.0 && inkLeft < 17.0 / 64.0 ? -1.0 : inkLeft;
-  qreal left = std::min(0.0, skiaLeft);
-  qreal right = std::max(textAdvance(spec, text), inkRight);
   if (bold) {
     left -= 1.0;
     if (expandBoldRight)
@@ -153,11 +152,7 @@ QRectF branchTextBounds(const TextFont& spec, const QStringList& lines) {
   for (const QString& line : lines) {
     const QRectF horizontal = directTextBounds(spec, line, bold);
     left = std::min(left, horizontal.left());
-    // Blink's SVG text getBBox retains one extra LayoutUnit-scale ink fringe
-    // when the label is measured inside the branch wrapper. Qt's unhinted
-    // glyph box omits it; 10/64px keeps layout and CSS viewport rounding in
-    // the same subpixel cell without changing HarfBuzz advances.
-    right = std::max(right, horizontal.right() + 10.0 / 64.0);
+    right = std::max(right, horizontal.right());
   }
   return QRectF(left, -1.0, right - left,
                 std::ceil(spec.size * 1.35) + spec.size * std::max<qsizetype>(0, lines.size() - 1));

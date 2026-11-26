@@ -196,27 +196,36 @@ QSizeF measureLabel(const QString& text, const FlowTextOptions& options) {
   return measureLabel(text, QStringLiteral("text"), options);
 }
 
-QSizeF measureLabel(const QString& text, const QString& labelType, const FlowTextOptions& options) {
+FlowLabelDocument flowLabelDocument(const QString& text, const QString& labelType, const FlowTextOptions& options) {
   FlowLabelDocument document =
       options.htmlLabels ? parseFlowLabel(text, labelType) : parseFlowSvgLabel(text, labelType);
   document.baseWeight = options.fontWeight;
   prepareFlowLabelMath(document, options.fontPixelSize);
   if (options.maximumLineWidth > 0.0)
     document = wrapFlowLabel(document, options.fontFamily, options.fontPixelSize, options.maximumLineWidth);
+  return document;
+}
+
+QSizeF measureLabel(const QString& text, const QString& labelType, const FlowTextOptions& options) {
+  const FlowLabelDocument document = flowLabelDocument(text, labelType, options);
   QSizeF result;
   if (options.htmlLabels) {
     result = measureFlowLabel(document, options.fontFamily, options.fontPixelSize, options.lineHeight);
-    // addHtmlSpan switches to display:table + an explicit CSS width when the
-    // max-width constraint actually wraps the label. The browser therefore
-    // retains the configured container width instead of shrinking to the
-    // longest wrapped line.
-    if (!document.visualLines.isEmpty() && options.maximumLineWidth > 0.0)
+    // addHtmlSpan switches to display: table and an explicit CSS width when
+    // the max-width constraint wraps the label, so the box keeps that width
+    // instead of shrinking to the longest wrapped line.
+    const bool wrapped = !document.visualLines.isEmpty() && options.maximumLineWidth > 0.0;
+    if (document.math.isEmpty()) {
+      // The width of an HTML label is the one Blink gives its inline box:
+      // every run's advance rounded up to 1/64 px, a line at a time.
+      qreal width = measureChromiumInlineLayoutWidth(document, options.fontFamily, options.fontPixelSize);
+      if (wrapped)
+        width = std::max(width, options.maximumLineWidth);
+      result.setWidth(width);
+    } else if (wrapped) {
+      // A label with math is laid out as a row of boxes (layoutFlowLabel),
+      // which keeps its own widths.
       result.setWidth(std::max(result.width(), options.maximumLineWidth));
-    if (options.chromiumInlineWidth) {
-      const qreal inlineWidth = measureChromiumInlineLayoutWidth(document, options.fontFamily, options.fontPixelSize);
-      // Math spans are painted as independent boxes and are not represented
-      // by the plain-text HarfBuzz advance.
-      result.setWidth(document.math.isEmpty() ? inlineWidth : std::max(result.width(), inlineWidth));
     }
   } else {
     const QRectF visual = measureChromiumSvgTextBounds(document, options.fontFamily, options.fontPixelSize,

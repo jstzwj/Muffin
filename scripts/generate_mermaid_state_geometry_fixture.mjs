@@ -4,12 +4,13 @@ import { pathToFileURL } from "node:url";
 import { bundledFontArguments } from "./mermaid_bundled_fonts.mjs";
 
 // Captures real mermaid 11.16.0 stateDiagram-v2 geometry (state node sizes +
-// transition topology) via headless Chrome. Transition from/to is recovered by
-// matching each edge's data-points endpoints (base64 dagre waypoints: first =
-// source, last = target) to the nearest state node centre — state edges do NOT
-// carry a LS-/LE- class encoding (unlike flowchart), so endpoints are matched by
-// position. Node ids line up directly: mermaid's root_start/root_end/<name>
-// match Muffin's StateScene node ids exactly.
+// transition topology) via headless Chrome. A transition's ends are the ones
+// the state DB hands the layout, getData().edges, read by the id its rendered
+// path carries: they are the same logical ends the native StateScene reports.
+// (Matching path endpoints to the nearest node centre instead mistakes a
+// transition into a composite state for one into its own start pseudo-state,
+// which dagre routes it to.) Node ids line up directly: mermaid's
+// root_start/root_end/<name> match Muffin's StateScene node ids.
 //
 // Output schema matches classdiagram::StateScene::toJsonObject's comparable
 // fields. node height is font-independent (asserted downstream); width + the
@@ -110,6 +111,11 @@ try {
         const rootInverse = root.getScreenCTM()?.inverse();
         const prefix = `${svgId}-state-`;
 
+        // The logical transitions, straight from the DB the renderer fed.
+        const diagram = await mermaid.mermaidAPI.getDiagramFromText(fixture.source);
+        diagram.db.extract(diagram.db.getRootDocV2());
+        const logicalById = new Map(diagram.db.getData().edges.map((edge) => [edge.id, edge]));
+
         // State nodes: id (strip the svgId prefix), centre, size. A state's DOM
         // id ends in its layout index, which is not part of its id; a note's
         // ends in its counter (`<state>----note-<count>`), which is.
@@ -133,26 +139,13 @@ try {
           return best ? best.id : null;
         };
 
-        // Edges: data-points (base64 JSON waypoints) first/last → from/to.
+        // Edges: each rendered path by its logical ends.
         const edges = [...root.querySelectorAll('path[data-et="edge"]')].map((edge) => {
-          const dpB64 = edge.getAttribute("data-points");
-          let from = null;
-          let to = null;
-          if (dpB64) {
-            try {
-              const pts = JSON.parse(atob(dpB64));
-              if (pts.length >= 2) {
-                const m = elementMatrix(edge, rootInverse);
-                const a = new DOMPoint(pts[0].x, pts[0].y).matrixTransform(m);
-                const b = new DOMPoint(pts[pts.length - 1].x, pts[pts.length - 1].y).matrixTransform(m);
-                from = nearestNode(a);
-                to = nearestNode(b);
-              }
-            } catch { /* leave null */ }
-          }
+          const logical = logicalById.get(edge.getAttribute("data-id"));
+          if (!logical) throw new Error(`${fixture.id}: path ${edge.getAttribute("data-id")} is no transition`);
           return {
-            from,
-            to,
+            from: logical.start,
+            to: logical.end,
             markerEnd: markerKind(edge.getAttribute("marker-end")),
           };
         });
@@ -181,16 +174,16 @@ try {
       version: "11.16.0",
       notes:
         "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State " +
-        "node sizes + transition topology. Transition from/to recovered by matching " +
-        "each edge's data-points endpoints (first=source, last=target) to the nearest " +
-        "node centre — state edges carry no LS-/LE- class encoding. Node ids match " +
+        "node sizes + transition topology. Transition from/to is getData().edges, " +
+        "the logical ends the renderer hands the layout, read by each rendered " +
+        "path's data-id. Node ids match " +
         "Muffin directly (root_start/root_end/<name>). width/height are font-coupled; " +
         "compare against state::StateScene::toJsonObject (nodes id/height/width, " +
         "edges start/end/markerEnd).",
     },
     mermaidVersion: "11.16.0",
     fontMode: "bundled-noto-2.13b171",
-    oracle: "stateDiagram.render state nodes (size) + transition topology (from/to by endpoint match)",
+    oracle: "stateDiagram.render state nodes (size) + transition topology (logical from/to by path id)",
     cases: results,
   };
   fs.writeFileSync(output, JSON.stringify(root, null, 2) + "\n");

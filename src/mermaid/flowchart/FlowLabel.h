@@ -214,8 +214,58 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label, qsizetype star
 // been rounded by DirectWrite and can differ by one LayoutUnit (1/64 px).
 std::optional<qreal> measureOpenTypeDesignAdvance(const FlowLabelDocument& label, qsizetype start, qsizetype length,
                                                   const QString& fontFamily, qreal fontPixelSize);
+// The horizontal box Blink gives an SVG <text> of one font: `left` is where it
+// starts (0, or the first glyph's overhang before that) and `right` where it
+// ends.
+struct ChromiumSvgTextBox {
+  qreal left = 0.0;
+  qreal right = 0.0;
+  qreal width() const { return right - left; }
+};
+
+// The text's advance cell (every glyph's design advance, the sum rounded up
+// to 1/64 px), grown on the left by the first glyph's overhang and on the
+// right by the last one's, each snapped to whole pixels. nullopt where the
+// text takes a font other than the first of the list, or runs right to left.
+std::optional<ChromiumSvgTextBox> measureChromiumSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily,
+                                                            qreal fontPixelSize);
+
 std::optional<qreal> measureOpenTypeDesignAdvance(const FlowLabelDocument& label, const QString& fontFamily,
                                                   qreal fontPixelSize);
+
+// One glyph of a text as an SVG <text> draws it, in px from the start of its
+// line, all unrounded.
+struct SvgTextGlyph {
+  qreal pen = 0.0;     // where the glyph's advance begins
+  qreal inkLeft = 0.0; // the ink it leaves, from the start of the line too
+  qreal inkRight = 0.0;
+  bool inked = false;
+};
+
+// Mermaid's layout of an SVG text (createFormattedText): a line wider than
+// `width` is broken between its words, greedily from its start, and a word
+// too wide for a line of its own is cut where it stops fitting. The result
+// is the same text, with its lines in `visualLines`.
+FlowLabelDocument wrapSvgText(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize,
+                              qreal width);
+
+// Chromium's SVGTextElement.getBBox() for a text of one or more lines at
+// scale 1, which is how a diagram is drawn: its first baseline is a font size
+// below the top of its box and its lines are 1.1em apart. The box is the
+// union of the advance cell and of every glyph's ink, each edge snapped
+// outward to a whole pixel about the glyph's pen, and a pixel further within
+// a quarter of that edge. It is the box Blink lays the text out by, and the
+// one it keeps: only an SVG scaled off exactly 1 has its texts laid out
+// again, by Skia's own fixed-point scale. nullopt where a run cannot be
+// shaped over its font's tables.
+struct SvgTextLayout {
+  QRectF box;                // the whole text, from the start of its first line
+  QVector<QRectF> lines;     // each line's own box, at its place among the lines
+  QVector<qreal> lineCells;  // each line's advance cell
+};
+std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const QString& fontFamily,
+                                           qreal fontPixelSize);
+std::optional<QRectF> measureSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize);
 
 // Chromium lays out foreignObject labels as DOM inline boxes. Each formatted
 // box is shaped in OpenType design units, scaled to CSS pixels, then rounded

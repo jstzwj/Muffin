@@ -2,11 +2,11 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State node sizes + transition topology. Transition from/to recovered by matching each edge's data-points endpoints (first=source, last=target) to the nearest node centre — state edges carry no LS-/LE- class encoding. Node ids match Muffin directly (root_start/root_end/<name>). width/height are font-coupled; compare against state::StateScene::toJsonObject (nodes id/height/width, edges start/end/markerEnd)."
+    "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State node sizes + transition topology. Transition from/to is getData().edges, the logical ends the renderer hands the layout, read by each rendered path's data-id. Node ids match Muffin directly (root_start/root_end/<name>). width/height are font-coupled; compare against state::StateScene::toJsonObject (nodes id/height/width, edges start/end/markerEnd)."
   },
   "mermaidVersion": "11.16.0",
   "fontMode": "bundled-noto-2.13b171",
-  "oracle": "stateDiagram.render state nodes (size) + transition topology (from/to by endpoint match)",
+  "oracle": "stateDiagram.render state nodes (size) + transition topology (logical from/to by path id)",
   "cases": [
     {
       "id": "linear",
@@ -322,11 +322,11 @@
         "edges": [
           {
             "from": "root_start",
-            "to": "Outer_start",
+            "to": "Outer",
             "markerEnd": "barbEnd"
           },
           {
-            "from": "Outer_end",
+            "from": "Outer",
             "to": "root_end",
             "markerEnd": "barbEnd"
           },

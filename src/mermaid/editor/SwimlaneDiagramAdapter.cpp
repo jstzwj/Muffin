@@ -47,7 +47,6 @@ struct SwimlaneDiagramImpl : Diagram {
     textOptions.horizontalPadding = padding * 2.0;
     textOptions.verticalPadding = padding;
     textOptions.look = look;
-    textOptions.chromiumInlineWidth = true;
     textOptions.chromiumSvgTerminalPhase = true;
     const QJsonValue rawHtmlLabels = pre.config.value(QStringLiteral("htmlLabels"));
     textOptions.htmlLabels =

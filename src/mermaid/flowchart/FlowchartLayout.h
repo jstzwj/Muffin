@@ -61,6 +61,10 @@ struct FlowLayoutEdge {
   qreal labelY = 0.0;
   QSizeF labelSize;
   FlowLabelDocument labelDocument;
+  // A loop from a node to itself is laid out through two invisible 0.1 x 0.1
+  // nodes; these are their centres, in output coordinates. Mermaid leaves the
+  // marks in the canvas, so a consumer that bounds the canvas includes them.
+  QVector<QPointF> loopMarks;
 };
 
 struct FlowEdgeLabelLayout {
@@ -138,10 +142,8 @@ struct FlowTextOptions {
   FlowLook look = FlowLook::Classic;
   bool htmlLabels = true;
   qreal maximumLineWidth = 200.0;
-  // Swimlane's renderer observes the browser's insertion-time inline width
-  // and post-layout SVG terminal fringe. Other Mermaid renderers use their
-  // own DOM/getBBox stage and retain the established shared measurements.
-  bool chromiumInlineWidth = false;
+  // Swimlane's renderer observes the browser's post-layout SVG terminal
+  // fringe; the other Mermaid renderers keep the shared measurements.
   bool chromiumSvgTerminalPhase = false;
   // Swimlane converts labelled edges into `labelRect` dummy nodes before
   // layout. Their 0.1px rect sits inside the text bbox, so the node size is
@@ -154,6 +156,12 @@ struct FlowTextOptions {
 // depends on the label (bang, cloud).
 QSizeF measureLabel(const QString& text, const FlowTextOptions& options = {});
 QSizeF measureLabel(const QString& text, const QString& labelType, const FlowTextOptions& options = {});
+
+// The document measureLabel sizes: parsed, its math prepared and, where
+// maximumLineWidth is set, wrapped the way Mermaid's createText wraps a label.
+// A caller that also paints the label keeps it, so that it draws the lines
+// that were measured.
+FlowLabelDocument flowLabelDocument(const QString& text, const QString& labelType, const FlowTextOptions& options);
 QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& options = {});
 FlowEdgeLabelLayout layoutFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& options = {});
 QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph, const FlowTextOptions& options = {});

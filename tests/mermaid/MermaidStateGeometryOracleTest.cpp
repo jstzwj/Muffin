@@ -9,16 +9,15 @@
 //   - the multiset of transition tuples (from, to). This proves Muffin reproduces
 //     mermaid's state machine exactly — the same transitions between the same
 //     states, including branching, fork/join fan-out and convergence, self-loops,
-//     and start/end ([*]) pseudo-states. (State edges carry no LS-/LE- class
-//     encoding; the fixture recovers from/to by matching each edge's data-points
-//     endpoints to the nearest node — node ids line up directly: root_start/
-//     root_end/<name>.)
+//     and start/end ([*]) pseudo-states. The fixture takes each transition's
+//     ends from the state DB's getData(), the logical ends the renderer hands
+//     the layout, read by the id of the path it drew (node ids line up
+//     directly: root_start/root_end/<name>).
 //   - per-node HEIGHT (start/end circles are a fixed radius; normal-state height
 //     is label-row-driven with font ascent/descent stable across Qt/Chrome, like
 //     the class/ER oracles).
 //   - per-node WIDTH (text measured in the same font).
-// Node positions and edge paths are not captured. kKnownDivergences holds the
-// one structure that still differs; the list may only shrink.
+// Node positions and edge paths are not captured.
 //
 // editor::MermaidRenderCache::getSync -> entry.scene (dynamic_cast to StateScene) -> StateScene::toJsonObject().
 
@@ -27,12 +26,13 @@
 #include "mermaid/scene/ParityDiff.h"
 #include "mermaid/state/StateScene.h"
 
+#include <QCryptographicHash>
 #include <QFile>
 #include <QGuiApplication>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QSet>
 
 #include <algorithm>
 #include <cstdio>
@@ -44,36 +44,13 @@ namespace {
 
 // Tolerances in px.
 constexpr qreal kHeight = 1.5; // state node height: fixed-radius circles + label rows
-constexpr qreal kWidth = 0.05; // state node width: text measured in the same font
+constexpr qreal kWidth = 0.05;  // state node width: text measured in the same font
 
-// Structures whose layout still differs from upstream. A listed case may
-// differ, an unlisted difference fails, and a listed case that stops
-// differing fails too.
-const QSet<QString> kKnownDivergences = {
-    // A transition into or out of a composite state: Mermaid attaches it to the
-    // composite's own start and end pseudo-states, inside the box; the port
-    // attaches it to the composite's border.
-    QStringLiteral("composite"),
-    // A name that is one word longer than the 200 px wrap width (here 250 px):
-    // Mermaid breaks lines between words only, so the name overflows on one
-    // line; the port's wrapFlowLabel breaks inside the word and shows it on
-    // two. Multi-word names wrap at 200 px on both sides.
-    QStringLiteral("long-names"),
-    // A state with a description long enough to wrap: Mermaid lays the rows
-    // out in a container of the 200 px wrap width (node 216 wide); the port
-    // makes the node as wide as its longest wrapped line.
-    QStringLiteral("description"),
-    QStringLiteral("long-description"),
-};
+QStringList failures;
 
-[[noreturn]] void fail(const QString& message) {
-  std::fprintf(stderr, "%s\n", qPrintable(message));
-  std::fflush(stderr);
-  std::exit(1);
-}
 void require(bool condition, const QString& message) {
   if (!condition)
-    fail(message);
+    failures << message;
 }
 
 // Transition tuple key: from -> to (font-independent identity).
@@ -102,17 +79,28 @@ int main(int argc, char** argv) {
   MermaidFontRegistry::ensureLoaded();
 
   require(argc == 2, QStringLiteral("Expected state geometry fixture path"));
+  if (argc != 2) {
+    for (const QString& failure : failures)
+      std::fprintf(stderr, "FAIL: %s\n", qPrintable(failure));
+    return 1;
+  }
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
-  const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+  QByteArray bytes = file.readAll();
+  // The generator emits LF; a CRLF checkout must not change the provenance.
+  bytes.replace("\r\n", "\n");
+  require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
+              QByteArrayLiteral("284986ded2183b5408375d2cef4dc9729a297acd6773bca0400a184751fd91eb"),
+          QStringLiteral("State geometry fixture bytes changed"));
+  const QJsonObject root = QJsonDocument::fromJson(bytes).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString() == QLatin1String("11.16.0"),
           QStringLiteral("State geometry: mermaidVersion drifted"));
   require(root.value(QStringLiteral("oracle")).toString().startsWith(QLatin1String("stateDiagram.render")),
           QStringLiteral("State geometry: oracle contract drifted"));
+  const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
+  require(cases.size() == 15, QStringLiteral("State geometry case count drifted: %1").arg(cases.size()));
 
   editor::MermaidRenderCache cache;
-  const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  QSet<QString> stillDiverging;
   for (const QJsonValue& caseValue : cases) {
     const QJsonObject fixture = caseValue.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -120,12 +108,12 @@ int main(int argc, char** argv) {
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const auto entry = cache.getSync(cache.makeKey(source), source);
     const auto* stateScene = dynamic_cast<const state::StateScene*>(entry.scene.get());
-    require(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr,
-            id + QStringLiteral(": native state render failed: ") + entry.errorMessage);
+    if (!(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr)) {
+      failures << id + QStringLiteral(": native state render failed: ") + entry.errorMessage;
+      continue;
+    }
     const QJsonObject actual = stateScene->toJsonObject();
-
-    QStringList assertErrors;
-
+    QStringList divergences;
 
     const QJsonArray expectedNodes = expected.value(QStringLiteral("nodes")).toArray();
     const QJsonArray actualNodes = actual.value(QStringLiteral("nodes")).toArray();
@@ -134,21 +122,23 @@ int main(int argc, char** argv) {
 
     // Counts (font-independent topology).
     if (actualNodes.size() != expectedNodes.size())
-      assertErrors
-          << id + QStringLiteral(": node count %1 != mermaid %2").arg(actualNodes.size()).arg(expectedNodes.size());
+      divergences << QStringLiteral("%1: %2 nodes, upstream %3")
+                         .arg(id)
+                         .arg(actualNodes.size())
+                         .arg(expectedNodes.size());
     if (actualEdges.size() != expectedEdges.size())
-      assertErrors
-          << id + QStringLiteral(": edge count %1 != mermaid %2").arg(actualEdges.size()).arg(expectedEdges.size());
+      divergences << QStringLiteral("%1: %2 transitions, upstream %3")
+                         .arg(id)
+                         .arg(actualEdges.size())
+                         .arg(expectedEdges.size());
 
     // Transition multiset (font-independent state-machine parity). The fixture
     // uses from/to; Muffin's StateScene uses start/end.
     const QStringList expectedTuples = sortedTuples(expectedEdges, "from", "to");
     const QStringList actualTuples = sortedTuples(actualEdges, "start", "end");
-    if (actualTuples != expectedTuples) {
-      assertErrors << id + QStringLiteral(": transition multiset diverged");
-      assertErrors << QStringLiteral("  mermaid: %1").arg(expectedTuples.join(QStringLiteral(", ")));
-      assertErrors << QStringLiteral("  muffin : %1").arg(actualTuples.join(QStringLiteral(", ")));
-    }
+    if (actualTuples != expectedTuples)
+      divergences << QStringLiteral("%1: transitions differ\n  upstream: %2\n  native : %3")
+                         .arg(id, expectedTuples.join(QStringLiteral(", ")), actualTuples.join(QStringLiteral(", ")));
 
     // Node geometry, matched by id.
     QHash<QString, QJsonValue> expectedNodeById;
@@ -160,36 +150,32 @@ int main(int argc, char** argv) {
       const QJsonObject node = n.toObject();
       const QString nodeId = node.value(QStringLiteral("id")).toString();
       if (!expectedNodeById.contains(nodeId)) {
-        assertErrors << id + QStringLiteral(": node '%1' has no mermaid reference").arg(nodeId);
+        divergences << id + QStringLiteral(": node '%1' has no mermaid reference").arg(nodeId);
         continue;
       }
       const QJsonValue exp = expectedNodeById.value(nodeId);
       const QString prefix = id + QStringLiteral("/node/%1").arg(nodeId);
-      assertErrors += parity::compareNumber(boundsHeight(n), exp.toObject().value(QStringLiteral("height")).toDouble(),
-                                            heightTier, prefix + "/height");
-      assertErrors += parity::compareNumber(
+      divergences += parity::compareNumber(boundsHeight(n), exp.toObject().value(QStringLiteral("height")).toDouble(),
+                                           heightTier, prefix + QStringLiteral("/height"));
+      divergences += parity::compareNumber(
           node.value(QStringLiteral("bounds")).toObject().value(QStringLiteral("width")).toDouble(),
-          exp.toObject().value(QStringLiteral("width")).toDouble(), widthTier, prefix + "/width");
+          exp.toObject().value(QStringLiteral("width")).toDouble(), widthTier, prefix + QStringLiteral("/width"));
     }
 
-    if (!assertErrors.isEmpty()) {
-      if (kKnownDivergences.contains(id)) {
-        stillDiverging << id;
-        for (const QString& e : assertErrors)
-          std::fprintf(stderr, "[known] %s\n", qPrintable(e));
-        continue;
-      }
-      for (const QString& e : assertErrors)
-        std::fprintf(stderr, "%s\n", qPrintable(e));
-      fail(id + QStringLiteral(": state geometry parity regression (topology/transition multiset/size)"));
-    } else if (kKnownDivergences.contains(id)) {
-      fail(id + QStringLiteral(": no longer diverges; remove it from kKnownDivergences"));
+    if (!divergences.isEmpty()) {
+      std::fprintf(stderr, "[%s]\n", qPrintable(id));
+      failures += divergences;
     }
   }
-  for (const QString& id : kKnownDivergences)
-    if (!stillDiverging.contains(id))
-      fail(id + QStringLiteral(": is listed in kKnownDivergences but is not in the fixture"));
-  std::printf("MermaidStateGeometryOracleTest passed: %lld cases, %lld still differ from Mermaid 11.16.0\n",
-              static_cast<long long>(cases.size()), static_cast<long long>(kKnownDivergences.size()));
+
+  for (const QString& failure : failures)
+    std::fprintf(stderr, "FAIL: %s\n", qPrintable(failure));
+  if (!failures.isEmpty()) {
+    std::fprintf(stderr, "MermaidStateGeometryOracleTest: %lld divergence(s) from Mermaid 11.16.0\n",
+                 static_cast<long long>(failures.size()));
+    return 1;
+  }
+  std::printf("MermaidStateGeometryOracleTest passed: %lld cases, every transition and node size within %0.2f px\n",
+              static_cast<long long>(cases.size()), kWidth);
   return 0;
 }

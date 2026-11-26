@@ -267,9 +267,6 @@ StateLayoutMeasurements measureStateLayoutInput(const StateLayoutInput& input, Q
     options.lineHeight = options.fontPixelSize * 1.5;
     options.horizontalPadding = 16.0;
     options.verticalPadding = 16.0;
-    // State labels are foreignObject inline boxes. Use Blink's HarfBuzz /
-    // LayoutUnit contract before RoughJS and Dagre consume their dimensions.
-    options.chromiumInlineWidth = true;
     return options;
   };
   const flowchart::FlowTextOptions defaultOptions = optionsFor(QString(), 0.0);

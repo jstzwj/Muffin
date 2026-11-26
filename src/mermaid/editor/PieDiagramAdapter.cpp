@@ -23,10 +23,14 @@
 namespace muffin::mermaid::editor {
 namespace {
 
+// The width of a legend entry or of the title: SVG <text>, so its box is the
+// advance cell grown by the end glyphs' overhangs.
 qreal chromiumTextAdvance(const QString& text, const QString& family, qreal pixelSize, const QString& weight) {
   flowchart::FlowLabelDocument document;
   document.text = text;
   document.baseWeight = cssFontWeightToQt(QJsonValue(weight), QFont::Normal);
+  if (const auto box = flowchart::measureChromiumSvgTextBox(document, family, pixelSize))
+    return box->width();
   return flowchart::measureChromiumInlineLayoutWidth(document, family, pixelSize);
 }
 

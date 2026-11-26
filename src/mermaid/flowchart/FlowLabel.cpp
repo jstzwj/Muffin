@@ -1739,12 +1739,8 @@ std::optional<ChromiumGlyphBounds> chromiumGlyphBounds(const QRawFont& raw, quin
 }
 #endif
 
-std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& label, qsizetype start, qsizetype length,
-                                                      const QString& fontFamily, qreal fontPixelSize,
-                                                      bool disableKerning, quint32* terminalGlyph = nullptr,
-                                                      qreal* terminalOrigin = nullptr, qreal deviceScale = 0.0) {
-  if (length <= 0)
-    return 0.0;
+// The raw font a label's design metrics are read from.
+QRawFont flowDesignRawFont(const FlowLabelDocument& label, const QString& fontFamily) {
   constexpr qreal kReferenceSize = 16.0;
   QFont font = flowLabelDocumentFont(label, fontFamily, kReferenceSize);
   QRawFont raw = QRawFont::fromFont(font);
@@ -1756,10 +1752,17 @@ std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& l
     font.setItalic(false);
     raw = QRawFont::fromFont(font);
   }
-  if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, start, length)) {
-    return std::nullopt;
-  }
+  return raw;
+}
 
+// Shapes a range of text in one font, over the font's own tables, and returns
+// its design advance in px: every glyph's advance in font units, summed and
+// scaled, not quantized. nullopt when the font has no tables to shape with.
+std::optional<qreal> shapeFlowHarfBuzzAdvance(const QRawFont& raw, const QString& text, qsizetype start, qsizetype length,
+                                              qreal fontPixelSize, bool rightToLeft, bool disableKerning,
+                                              quint32* terminalGlyph, qreal* terminalOrigin, qreal deviceScale) {
+  if (length <= 0)
+    return 0.0;
   auto* source = new FlowHarfBuzzRawFont{raw};
   hb_face_t* face = hb_face_create_for_tables(referenceFlowHarfBuzzTable, source, destroyFlowHarfBuzzFont);
   const unsigned upem = hb_face_get_upem(face);
@@ -1773,9 +1776,9 @@ std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& l
   const int scale = useDeviceScale ? std::max(1, int(std::floor(fontPixelSize * deviceScale * 128.0))) : int(upem);
   hb_font_set_scale(hbFont, scale, scale);
   hb_buffer_t* buffer = hb_buffer_create();
-  const auto* utf16 = reinterpret_cast<const uint16_t*>(label.text.utf16());
-  hb_buffer_add_utf16(buffer, utf16, label.text.size(), unsigned(start), int(length));
-  hb_buffer_set_direction(buffer, label.direction == Qt::RightToLeft ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+  const auto* utf16 = reinterpret_cast<const uint16_t*>(text.utf16());
+  hb_buffer_add_utf16(buffer, utf16, text.size(), unsigned(start), int(length));
+  hb_buffer_set_direction(buffer, rightToLeft ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
   hb_buffer_guess_segment_properties(buffer);
   hb_feature_t feature{};
   const hb_feature_t* features = nullptr;
@@ -1807,13 +1810,31 @@ std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& l
   hb_font_destroy(hbFont);
   hb_face_destroy(face);
 
-  qreal result = useDeviceScale ? std::abs(qreal(designAdvance)) / (128.0 * deviceScale)
-                                : std::abs(qreal(designAdvance)) * fontPixelSize / qreal(upem);
-  const QString segment = label.text.mid(start, length);
+  return useDeviceScale ? std::abs(qreal(designAdvance)) / (128.0 * deviceScale)
+                        : std::abs(qreal(designAdvance)) * fontPixelSize / qreal(upem);
+}
+
+std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& label, qsizetype start, qsizetype length,
+                                                      const QString& fontFamily, qreal fontPixelSize,
+                                                      bool disableKerning, quint32* terminalGlyph = nullptr,
+                                                      qreal* terminalOrigin = nullptr, qreal deviceScale = 0.0,
+                                                      std::optional<bool> rightToLeft = std::nullopt) {
+  if (length <= 0)
+    return 0.0;
+  const QRawFont raw = flowDesignRawFont(label, fontFamily);
+  if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, start, length)) {
+    return std::nullopt;
+  }
+  std::optional<qreal> result = shapeFlowHarfBuzzAdvance(
+      raw, label.text, start, length, fontPixelSize,
+      rightToLeft.value_or(label.direction == Qt::RightToLeft), disableKerning, terminalGlyph, terminalOrigin,
+      deviceScale);
+  if (!result)
+    return std::nullopt;
   if (label.letterSpacingPx != 0.0)
-    result += label.letterSpacingPx * segment.toUcs4().size();
+    *result += label.letterSpacingPx * label.text.mid(start, length).toUcs4().size();
   if (label.wordSpacingPx != 0.0)
-    result += label.wordSpacingPx * segment.count(QLatin1Char(' '));
+    *result += label.wordSpacingPx * label.text.mid(start, length).count(QLatin1Char(' '));
   return result;
 }
 
@@ -1829,9 +1850,241 @@ std::optional<qreal> measureOpenTypeDesignAdvance(const FlowLabelDocument& label
   return measureOpenTypeDesignAdvance(label, 0, label.text.size(), fontFamily, fontPixelSize);
 }
 
+std::optional<ChromiumSvgTextBox> measureChromiumSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily,
+                                                            qreal fontPixelSize) {
+  if (label.text.isEmpty() || !(fontPixelSize > 0.0) || label.direction == Qt::RightToLeft)
+    return std::nullopt;
+  const QRawFont raw = flowDesignRawFont(label, fontFamily);
+  if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, 0, label.text.size()))
+    return std::nullopt;
+
+  auto* source = new FlowHarfBuzzRawFont{raw};
+  hb_face_t* face = hb_face_create_for_tables(referenceFlowHarfBuzzTable, source, destroyFlowHarfBuzzFont);
+  const unsigned upem = hb_face_get_upem(face);
+  if (upem == 0) {
+    hb_face_destroy(face);
+    return std::nullopt;
+  }
+  hb_font_t* font = hb_font_create(face);
+  hb_ot_font_set_funcs(font);
+  // Positions in font units.
+  hb_font_set_scale(font, int(upem), int(upem));
+  hb_buffer_t* buffer = hb_buffer_create();
+  const auto* utf16 = reinterpret_cast<const uint16_t*>(label.text.utf16());
+  hb_buffer_add_utf16(buffer, utf16, label.text.size(), 0, int(label.text.size()));
+  hb_buffer_set_direction(buffer, HB_DIRECTION_LTR);
+  hb_buffer_guess_segment_properties(buffer);
+  hb_shape(font, buffer, nullptr, 0);
+
+  unsigned glyphCount = 0;
+  const hb_glyph_position_t* positions = hb_buffer_get_glyph_positions(buffer, &glyphCount);
+  const hb_glyph_info_t* infos = hb_buffer_get_glyph_infos(buffer, nullptr);
+  // The pen before each glyph, in font units and not quantized, and the ink
+  // of the first and the last glyph that has any, from its own origin.
+  qint64 advance = 0;
+  qint64 firstPen = 0, firstLeft = 0, lastPen = 0, lastRight = 0;
+  bool inked = false;
+  for (unsigned i = 0; i < glyphCount; ++i) {
+    hb_glyph_extents_t extents{};
+    if (hb_font_get_glyph_extents(font, infos[i].codepoint, &extents) && extents.width != 0) {
+      if (!inked) {
+        inked = true;
+        firstPen = advance;
+        firstLeft = extents.x_bearing;
+      }
+      lastPen = advance;
+      lastRight = extents.x_bearing + extents.width;
+    }
+    advance += positions[i].x_advance;
+  }
+  hb_buffer_destroy(buffer);
+  hb_font_destroy(font);
+  hb_face_destroy(face);
+
+  const qreal scale = fontPixelSize / qreal(upem);
+  const auto cell = [](qreal value) { return std::floor(value * 64.0 + 0.5) / 64.0; };
+  ChromiumSvgTextBox box;
+  box.right = std::ceil(advance * scale * 64.0 - 1e-9) / 64.0;
+  if (inked) {
+    // An edge of the ink is snapped to the pixel edge outside it, and reaches
+    // a pixel further when it lies within a quarter of that edge.
+    const qreal leftEdge = cell(firstLeft * scale);
+    qreal leftCells = std::floor(leftEdge);
+    if (leftEdge - leftCells <= 0.25)
+      leftCells -= 1.0;
+    box.left = std::min<qreal>(0.0, firstPen * scale + leftCells);
+    const qreal rightEdge = cell(lastRight * scale);
+    qreal rightCells = std::ceil(rightEdge);
+    if (rightCells - rightEdge <= 0.25)
+      rightCells += 1.0;
+    box.right = std::max(box.right, lastPen * scale + rightCells);
+  }
+  return box;
+}
+
+namespace {
+
+// The fonts a text takes, one after the other: Blink offers each character to
+// the families of the list in turn and shapes what one font takes together.
+// A run no font of the list covers keeps an empty family.
+struct FlowFontRun {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  QString family;
+};
+
+QVector<FlowFontRun> flowFontRuns(const QString& text, qsizetype start, qsizetype length, const QString& fontFamily) {
+  QFont probe(fontFamily);
+  MermaidFontRegistry::configureFont(probe, fontFamily);
+  const QStringList families = probe.families();
+  QVector<QRawFont> fonts;
+  for (const QString& family : families) {
+    QFont single;
+    single.setFamily(family);
+    fonts.append(QRawFont::fromFont(single));
+  }
+  QVector<FlowFontRun> runs;
+  for (qsizetype i = start; i < start + length;) {
+    uint codepoint = text.at(i).unicode();
+    qsizetype width = 1;
+    if (QChar::isHighSurrogate(codepoint) && i + 1 < start + length &&
+        QChar::isLowSurrogate(text.at(i + 1).unicode())) {
+      codepoint = QChar::surrogateToUcs4(text.at(i), text.at(i + 1));
+      width = 2;
+    }
+    int font = -1;
+    for (int index = 0; index < fonts.size(); ++index) {
+      if (fonts.at(index).supportsCharacter(codepoint)) {
+        font = index;
+        break;
+      }
+    }
+    const QString family = font < 0 ? QString() : families.at(font);
+    if (!runs.isEmpty() && runs.last().family == family)
+      runs.last().length += width;
+    else
+      runs.append({i, width, family});
+    i += width;
+  }
+  return runs;
+}
+
+
+// The direction every character of a text runs in, as the Unicode bidi
+// algorithm resolves it where nothing embeds a direction: a strong character
+// has its own, a number that of the strong character before it, and a neutral
+// that of the strong characters around it, or the paragraph's where they
+// disagree. Blink shapes a line run by run of one direction: Arabic shaped as
+// left to right comes out in its isolated forms, much wider.
+QVector<bool> flowRightToLeft(const QString& text, qsizetype start, qsizetype length, bool paragraphRightToLeft) {
+  enum : char { Neutral, Left, Right, Number };
+  QByteArray types(length, Neutral);
+  for (qsizetype i = 0; i < length; ++i) {
+    uint codepoint = text.at(start + i).unicode();
+    if (QChar::isHighSurrogate(codepoint) && i + 1 < length &&
+        QChar::isLowSurrogate(text.at(start + i + 1).unicode()))
+      codepoint = QChar::surrogateToUcs4(text.at(start + i), text.at(start + i + 1));
+    switch (QChar::direction(codepoint)) {
+    case QChar::DirL:
+      types[i] = Left;
+      break;
+    case QChar::DirR:
+    case QChar::DirAL:
+      types[i] = Right;
+      break;
+    case QChar::DirEN:
+    case QChar::DirAN:
+      types[i] = Number;
+      break;
+    default:
+      break;
+    }
+  }
+  QVector<bool> rtl(length, paragraphRightToLeft);
+  const auto isStrong = [&](qsizetype i) { return types.at(i) == Left || types.at(i) == Right; };
+  // The strong character before `at`, or the paragraph's start.
+  const auto before = [&](qsizetype at) {
+    for (qsizetype i = at; i > 0; --i)
+      if (isStrong(i - 1))
+        return types.at(i - 1) == Right;
+    return paragraphRightToLeft;
+  };
+  const auto after = [&](qsizetype at) {
+    for (qsizetype i = at + 1; i < length; ++i)
+      if (isStrong(i))
+        return types.at(i) == Right;
+    return paragraphRightToLeft;
+  };
+  for (qsizetype i = 0; i < length; ++i) {
+    if (isStrong(i))
+      rtl[i] = types.at(i) == Right;
+    else if (types.at(i) == Number)
+      rtl[i] = before(i);
+    else {
+      const bool previous = before(i);
+      rtl[i] = previous == after(i) ? previous : paragraphRightToLeft;
+    }
+  }
+  // The second half of a pair takes the direction of the first.
+  for (qsizetype i = 0; i + 1 < length; ++i)
+    if (text.at(start + i).isHighSurrogate() && text.at(start + i + 1).isLowSurrogate())
+      rtl[i + 1] = rtl[i];
+  return rtl;
+}
+
+} // namespace
+
+// A run Blink shapes in one piece on a line: a formatted segment, split
+// where the text passes to another font or another direction.
+struct FlowLabelPiece {
+  qsizetype start;
+  qsizetype length;
+  QString family;
+};
+
+QVector<FlowLabelPiece> flowLabelLinePieces(const FlowLabelDocument& label, const FlowLabelLineRange& line,
+                                            const QString& fontFamily) {
+  const qsizetype lineEnd = line.start + line.length;
+  // Blink shapes a line one run after the other, and a run ends at a change
+  // of format or of font.
+  QVector<qsizetype> boundaries{line.start, lineEnd};
+  for (const TextLayout::FormatRange& range : label.formats) {
+    boundaries.append(std::clamp<qsizetype>(range.start, line.start, lineEnd));
+    boundaries.append(std::clamp<qsizetype>(range.start + range.length, line.start, lineEnd));
+  }
+  // A run ends where the direction changes too.
+  const QVector<bool> rtl = flowRightToLeft(label.text, line.start, line.length, label.direction == Qt::RightToLeft);
+  for (qsizetype i = 1; i < line.length; ++i)
+    if (rtl.at(i) != rtl.at(i - 1))
+      boundaries.append(line.start + i);
+  std::sort(boundaries.begin(), boundaries.end());
+  boundaries.erase(std::unique(boundaries.begin(), boundaries.end()), boundaries.end());
+
+  QVector<FlowLabelPiece> pieces;
+  for (qsizetype i = 1; i < boundaries.size(); ++i) {
+    const qsizetype start = boundaries.at(i - 1);
+    const qsizetype length = boundaries.at(i) - start;
+    if (length <= 0)
+      continue;
+    for (const FlowFontRun& run : flowFontRuns(label.text, start, length, fontFamily))
+      pieces.append({run.start, run.length, run.family});
+  }
+  return pieces;
+}
+
 qreal measureChromiumInlineLayoutWidth(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize) {
   if (label.text.isEmpty() || !(fontPixelSize > 0.0))
     return 0.0;
+
+  // A character that no font of the list covers takes a fallback font that
+  // only Qt's own layout knows. Such a label keeps the width that layout
+  // gives it, run by run and in context. A line break is covered by no font
+  // and needs none: it only ends a line.
+  for (const FlowFontRun& run : flowFontRuns(label.text, 0, label.text.size(), fontFamily)) {
+    const QChar first = label.text.at(run.start);
+    if (run.family.isEmpty() && first != QLatin1Char('\n') && first != QLatin1Char('\r'))
+      return measureFlowLabel(label, fontFamily, fontPixelSize, fontPixelSize * 1.5).width();
+  }
 
   QVector<FlowLabelLineRange> lines = label.visualLines;
   if (lines.isEmpty()) {
@@ -1848,35 +2101,32 @@ qreal measureChromiumInlineLayoutWidth(const FlowLabelDocument& label, const QSt
 
   qreal maximum = 0.0;
   for (const FlowLabelLineRange& line : lines) {
-    const qsizetype lineEnd = line.start + line.length;
-    QVector<qsizetype> boundaries{line.start, lineEnd};
-    for (const TextLayout::FormatRange& range : label.formats) {
-      boundaries.append(std::clamp<qsizetype>(range.start, line.start, lineEnd));
-      boundaries.append(std::clamp<qsizetype>(range.start + range.length, line.start, lineEnd));
-    }
-    std::sort(boundaries.begin(), boundaries.end());
-    boundaries.erase(std::unique(boundaries.begin(), boundaries.end()), boundaries.end());
-
     qreal width = 0.0;
-    for (qsizetype i = 1; i < boundaries.size(); ++i) {
-      const qsizetype start = boundaries.at(i - 1);
-      const qsizetype length = boundaries.at(i) - start;
-      if (length <= 0)
-        continue;
-
+    // A line's direction at each of its characters, for a run's own.
+    const QVector<bool> rtl = flowRightToLeft(label.text, line.start, line.length, label.direction == Qt::RightToLeft);
+    for (const FlowLabelPiece& piece : flowLabelLinePieces(label, line, fontFamily)) {
       FlowLabelDocument segment = label;
       for (const TextLayout::FormatRange& range : label.formats) {
-        if (range.start > start || range.start + range.length < start + length)
+        if (range.start > piece.start || range.start + range.length < piece.start + piece.length)
           continue;
         if (range.format.hasProperty(QTextFormat::FontWeight))
           segment.baseWeight = QFont::Weight(range.format.fontWeight());
         if (range.format.hasProperty(QTextFormat::FontItalic))
           segment.baseStyle = range.format.fontItalic() ? QFont::StyleItalic : QFont::StyleNormal;
       }
-      const qreal advance =
-          measureOpenTypeDesignAdvance(segment, start, length, fontFamily, fontPixelSize)
-              .value_or(measureFlowTextAdvanceWidth(segment, start, length, fontFamily, fontPixelSize));
-      width += std::ceil(advance * 64.0) / 64.0;
+      segment.direction = rtl.at(piece.start - line.start) ? Qt::RightToLeft : Qt::LeftToRight;
+      const QString family = piece.family.isEmpty() ? fontFamily : piece.family;
+      const QRawFont raw = flowDesignRawFont(segment, family);
+      // Blink lays an inline box out in units of 1/64 px, and rounds each
+      // run's advance up to one.
+      std::optional<qreal> advance =
+          raw.isValid() && flowRawFontSupportsRange(raw, label.text, piece.start, piece.length)
+              ? shapeFlowHarfBuzzAdvance(raw, label.text, piece.start, piece.length, fontPixelSize,
+                                         segment.direction == Qt::RightToLeft, false, nullptr, nullptr, 0.0)
+              : std::nullopt;
+      if (!advance)
+        advance = measureFlowTextAdvanceWidth(segment, piece.start, piece.length, fontFamily, fontPixelSize);
+      width += std::ceil(*advance * 64.0) / 64.0;
     }
     maximum = std::max(maximum, width);
   }
@@ -2085,6 +2335,289 @@ QVector<FlowLabelLineRange> flowLabelLineRanges(const FlowLabelDocument& label) 
 
 } // namespace
 
+namespace {
+
+// One run as an SVG text shapes it: its glyphs in drawn order, its design
+// advance, and the advance cell the layout gives it.
+struct FlowSvgTextRun {
+  QVector<SvgTextGlyph> glyphs;
+  qreal advance = 0.0;
+};
+
+// Shapes a range in one font, over the font's own tables. nullopt when the
+// font has no tables to shape with.
+std::optional<FlowSvgTextRun> shapeFlowSvgTextRun(const QRawFont& raw, const QString& text, qsizetype start,
+                                                  qsizetype length, qreal fontPixelSize, bool rightToLeft,
+                                                  bool disableKerning) {
+  FlowSvgTextRun run;
+  if (length <= 0)
+    return run;
+  auto* source = new FlowHarfBuzzRawFont{raw};
+  hb_face_t* face = hb_face_create_for_tables(referenceFlowHarfBuzzTable, source, destroyFlowHarfBuzzFont);
+  const unsigned upem = hb_face_get_upem(face);
+  if (upem == 0) {
+    hb_face_destroy(face);
+    return std::nullopt;
+  }
+  hb_font_t* font = hb_font_create(face);
+  hb_ot_font_set_funcs(font);
+  // Positions in font units.
+  hb_font_set_scale(font, int(upem), int(upem));
+  hb_buffer_t* buffer = hb_buffer_create();
+  const auto* utf16 = reinterpret_cast<const uint16_t*>(text.utf16());
+  hb_buffer_add_utf16(buffer, utf16, text.size(), unsigned(start), int(length));
+  hb_buffer_set_direction(buffer, rightToLeft ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
+  hb_buffer_guess_segment_properties(buffer);
+  hb_feature_t feature{};
+  const hb_feature_t* features = nullptr;
+  unsigned featureCount = 0;
+  if (disableKerning && hb_feature_from_string("kern=0", -1, &feature)) {
+    features = &feature;
+    featureCount = 1;
+  }
+  hb_shape(font, buffer, features, featureCount);
+
+  unsigned glyphCount = 0;
+  const hb_glyph_position_t* positions = hb_buffer_get_glyph_positions(buffer, &glyphCount);
+  const hb_glyph_info_t* infos = hb_buffer_get_glyph_infos(buffer, nullptr);
+  const qreal scale = fontPixelSize / qreal(upem);
+  qint64 pen = 0;
+  for (unsigned i = 0; i < glyphCount; ++i) {
+    SvgTextGlyph glyph;
+    glyph.pen = qreal(pen) * scale;
+    hb_glyph_extents_t extents{};
+    if (hb_font_get_glyph_extents(font, infos[i].codepoint, &extents) && extents.width != 0) {
+      // A mark's extents run backwards: their width is negative.
+      const qint64 origin = pen + positions[i].x_offset + extents.x_bearing;
+      const qint64 end = origin + extents.width;
+      glyph.inkLeft = qreal(std::min(origin, end)) * scale;
+      glyph.inkRight = qreal(std::max(origin, end)) * scale;
+      glyph.inked = true;
+    }
+    run.glyphs.append(glyph);
+    pen += positions[i].x_advance;
+  }
+  hb_buffer_destroy(buffer);
+  hb_font_destroy(font);
+  hb_face_destroy(face);
+  run.advance = qreal(pen) * scale;
+  return run;
+}
+
+// The style of a run: what the formats covering it declare, else the text's.
+FlowLabelDocument flowSvgTextSegment(const FlowLabelDocument& label, const FlowLabelPiece& piece) {
+  FlowLabelDocument segment = label;
+  for (const TextLayout::FormatRange& range : label.formats) {
+    if (range.start > piece.start || range.start + range.length < piece.start + piece.length)
+      continue;
+    if (range.format.hasProperty(QTextFormat::FontWeight))
+      segment.baseWeight = QFont::Weight(range.format.fontWeight());
+    if (range.format.hasProperty(QTextFormat::FontItalic))
+      segment.baseStyle = range.format.fontItalic() ? QFont::StyleItalic : QFont::StyleNormal;
+  }
+  return segment;
+}
+
+// createFormattedText gives every word of a line a tspan of its own, with the
+// space before it, and Blink rounds each one's advance up to a layout cell.
+QVector<FlowLabelPiece> svgTextWordPieces(const FlowLabelDocument& label, const QVector<FlowLabelPiece>& pieces) {
+  QVector<FlowLabelPiece> words;
+  for (const FlowLabelPiece& piece : pieces) {
+    qsizetype start = piece.start;
+    for (qsizetype at = piece.start + 1; at < piece.start + piece.length; ++at) {
+      if (label.text.at(at) == QLatin1Char(' ') && label.text.at(at - 1) != QLatin1Char(' ')) {
+        words.append({start, at - start, piece.family});
+        start = at;
+      }
+    }
+    words.append({start, piece.length - (start - piece.start), piece.family});
+  }
+  return words;
+}
+
+constexpr qreal kSvgCell = 1.0 / 64.0;
+
+} // namespace
+
+std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const QString& fontFamily,
+                                           qreal fontPixelSize) {
+  if (label.text.isEmpty() || !(fontPixelSize > 0.0))
+    return SvgTextLayout{QRectF(), {}, {}};
+  const QVector<FlowLabelLineRange> lines = flowLabelLineRanges(label);
+  // The layout cell outside a pen.
+  const auto cell = [](qreal value) { return std::ceil(value / kSvgCell - 1e-7) * kSvgCell; };
+  // An ink edge, as Skia bounds a glyph: taken to the layout cell, then to
+  // the whole pixel outside it, and one pixel further when it lies within a
+  // quarter of that edge.
+  const auto edgeUp = [](qreal value) {
+    const qreal edge = std::round(value / kSvgCell) * kSvgCell;
+    qreal whole = std::ceil(edge);
+    if (whole - edge <= 0.25)
+      whole += 1.0;
+    return whole;
+  };
+  const auto edgeDown = [](qreal value) {
+    const qreal edge = std::round(value / kSvgCell) * kSvgCell;
+    qreal whole = std::floor(edge);
+    if (edge - whole <= 0.25)
+      whole -= 1.0;
+    return whole;
+  };
+  const FlowLabelFontMetrics vertical =
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight, label.baseStyle);
+  // The font's box in whole pixels.
+  const qreal ascent = std::round(vertical.ascent);
+  const qreal descent = std::round(vertical.descent);
+  const qreal step = flowSvgFormattedTextLineStep(fontPixelSize);
+  SvgTextLayout layout;
+  for (qsizetype index = 0; index < lines.size(); ++index) {
+    const FlowLabelLineRange& line = lines.at(index);
+    qreal left = std::numeric_limits<qreal>::max();
+    qreal right = std::numeric_limits<qreal>::lowest();
+    qreal advanceCell = 0.0;
+    const QVector<bool> rtl =
+        flowRightToLeft(label.text, line.start, line.length, label.direction == Qt::RightToLeft);
+    qreal pen = 0.0;  // the unrounded one
+    qreal cellPen = 0.0;
+    for (const FlowLabelPiece& piece : svgTextWordPieces(label, flowLabelLinePieces(label, line, fontFamily))) {
+      const FlowLabelDocument segment = flowSvgTextSegment(label, piece);
+      const QString family = piece.family.isEmpty() ? fontFamily : piece.family;
+      const QRawFont raw = flowDesignRawFont(segment, family);
+      if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, piece.start, piece.length))
+        return std::nullopt;
+      const std::optional<FlowSvgTextRun> run =
+          shapeFlowSvgTextRun(raw, label.text, piece.start, piece.length, fontPixelSize,
+                              rtl.at(piece.start - line.start), false);
+      if (!run)
+        return std::nullopt;
+      // The bundled CJK font is CFF, and Skia bounds its glyphs wider than
+      // their ink: a pixel past the right edge, and half a pixel more freely
+      // on the left.
+      const bool cff = family.contains(QStringLiteral("CJK"), Qt::CaseInsensitive);
+      for (const SvgTextGlyph& glyph : run->glyphs) {
+        // A glyph stands at its pen.
+        const qreal at = pen + glyph.pen;
+        if (glyph.inked) {
+          const qreal inkLeft = glyph.inkLeft - glyph.pen;
+          const qreal inkRight = glyph.inkRight - glyph.pen;
+          left = std::min(left, at + (cff ? edgeDown(inkLeft - 0.5) : edgeDown(inkLeft)));
+          right = std::max(right, at + (cff ? std::ceil(cell(inkRight)) + 1.0 : edgeUp(inkRight)));
+        }
+      }
+      pen += run->advance;
+      advanceCell += cell(run->advance);
+    }
+    const qreal lineRight = std::max(right, advanceCell);
+    const qreal lineLeft = left == std::numeric_limits<qreal>::max() ? 0.0 : std::min<qreal>(0.0, left);
+    layout.lineCells.append(advanceCell);
+    // The first baseline is a font size below the top; each line 1.1em lower.
+    layout.lines.append(QRectF(lineLeft, index * step + fontPixelSize - ascent,
+                               std::max<qreal>(0.0, lineRight - lineLeft), ascent + descent));
+  }
+
+  SvgTextLayout result;
+  result.lineCells = std::move(layout.lineCells);
+  result.lines = std::move(layout.lines);
+  if (result.lines.isEmpty())
+    result.lines.append(QRectF(0.0, fontPixelSize - ascent, 0.0, ascent + descent));
+  result.box = result.lines.first();
+  for (const QRectF& line : result.lines)
+    result.box = result.box.united(line);
+  return result;
+}
+
+std::optional<QRectF> measureSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize) {
+  const std::optional<SvgTextLayout> layout = layoutSvgText(label, fontFamily, fontPixelSize);
+  if (!layout)
+    return std::nullopt;
+  return layout->box;
+}
+
+namespace {
+
+// The next grapheme of a text from `at`: a surrogate pair is one, and so is
+// a character with the marks that follow it.
+qsizetype svgGrapheme(const QString& text, qsizetype at) {
+  qsizetype end = at + (text.at(at).isHighSurrogate() && at + 1 < text.size() ? 2 : 1);
+  while (end < text.size() && text.at(end).isMark())
+    ++end;
+  return end - at;
+}
+
+} // namespace
+
+FlowLabelDocument wrapSvgText(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize,
+                              qreal width) {
+  FlowLabelDocument result = label;
+  if (label.text.isEmpty() || !(width > 0.0) || !(fontPixelSize > 0.0))
+    return result;
+  // What getComputedTextLength() reports for a range: its advances, summed.
+  const auto length = [&](qsizetype start, qsizetype count) {
+    return measureOpenTypeDesignAdvanceImpl(label, start, count, fontFamily, fontPixelSize, false, nullptr, nullptr, 0.0)
+               .value_or(measureFlowTextAdvanceWidth(label, start, count, fontFamily, fontPixelSize));
+  };
+  const auto fits = [&](qsizetype start, qsizetype count) { return length(start, count) <= width; };
+
+  QVector<FlowLabelLineRange> lines;
+  for (const FlowLabelLineRange& line : flowLabelLineRanges(label)) {
+    if (line.length <= 0 || fits(line.start, line.length)) {
+      lines.append(line);
+      continue;
+    }
+    // The line's words, each where it is written.
+    QVector<FlowLabelLineRange> words;
+    for (qsizetype at = line.start; at < line.start + line.length;) {
+      if (label.text.at(at) == QLatin1Char(' ')) {
+        ++at;
+        continue;
+      }
+      qsizetype end = at;
+      while (end < line.start + line.length && label.text.at(end) != QLatin1Char(' '))
+        ++end;
+      words.append({at, end - at});
+      at = end;
+    }
+    // Words join a line while the line still fits; a word that starts a line
+    // and does not fit is cut where it stops fitting.
+    qsizetype lineStart = -1, lineEnd = -1;
+    for (qsizetype index = 0; index < words.size(); ++index) {
+      FlowLabelLineRange word = words.at(index);
+      if (lineStart < 0) {
+        if (fits(word.start, word.length)) {
+          lineStart = word.start;
+          lineEnd = word.start + word.length;
+          continue;
+        }
+        qsizetype used = 0;
+        while (used < word.length) {
+          const qsizetype next = used + svgGrapheme(label.text, word.start + used);
+          if (used > 0 && !fits(word.start, next))
+            break;
+          used = next;
+        }
+        lines.append({word.start, used});
+        // What is left of the word is a word of its own.
+        words[index] = {word.start + used, word.length - used};
+        --index;
+        continue;
+      }
+      if (fits(lineStart, word.start + word.length - lineStart)) {
+        lineEnd = word.start + word.length;
+      } else {
+        lines.append({lineStart, lineEnd - lineStart});
+        lineStart = word.start;
+        lineEnd = word.start + word.length;
+        // The word may not fit on a line of its own either.
+        --index;
+      }
+    }
+    if (lineStart >= 0)
+      lines.append({lineStart, lineEnd - lineStart});
+  }
+  result.visualLines = std::move(lines);
+  return result;
+}
+
 QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize) {
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
 
@@ -2161,6 +2694,30 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label, const QString& f
   return {left, top, std::max<qreal>(0.0, right - left), height};
 }
 
+namespace {
+
+// A line may break before text.at(index): at a space, after a hyphen, or
+// between CJK characters. It never breaks inside a word written in letters.
+bool flowLineBreaksBefore(const QString& text, qsizetype index) {
+  const QChar next = text.at(index);
+  const QChar previous = text.at(index - 1);
+  const auto cjk = [](QChar character) {
+    switch (character.script()) {
+    case QChar::Script_Han:
+    case QChar::Script_Hiragana:
+    case QChar::Script_Katakana:
+    case QChar::Script_Hangul:
+    case QChar::Script_Bopomofo:
+      return true;
+    default:
+      return false;
+    }
+  };
+  return previous.isSpace() || next.isSpace() || previous == QLatin1Char('-') || cjk(previous) || cjk(next);
+}
+
+} // namespace
+
 FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize,
                                 qreal maximumLineWidth) {
   FlowLabelDocument wrapped = label;
@@ -2169,26 +2726,59 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label, const QString& f
   if (maximumLineWidth <= 0.0 || label.text.contains(QLatin1Char('\n')))
     return wrapped;
 
-  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
-  TextLayout layout(label.text, font);
+  const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   QTextOption option;
   option.setUseDesignMetrics(true);
   option.setTextDirection(label.direction);
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-  layout.setTextOption(option);
-  layout.setFormats(label.formats);
-  layout.beginLayout();
+  // Qt prefers a word boundary like CSS does, and, unlike CSS, also splits a
+  // word that is longer than the line. That split is undone below.
+  option.setWrapMode(QTextOption::WordWrap);
+  const auto wrap = [&](qreal lineWidth) {
+    TextLayout layout(label.text, font);
+    layout.setTextOption(option);
+    layout.setFormats(label.formats);
+    layout.beginLayout();
+    QVector<FlowLabelLineRange> lines;
+    while (true) {
+      TextLine line = layout.createLine();
+      if (!line.isValid())
+        break;
+      line.setLineWidth(lineWidth);
+      qsizetype length = line.textLength();
+      while (length > 0 && label.text.at(line.textStart() + length - 1).isSpace())
+        --length;
+      lines.push_back({line.textStart(), length});
+    }
+    layout.endLayout();
+    return lines;
+  };
+
+  // Mermaid lays a wrapped label out in a table as wide as the wrap width. A
+  // word wider than that widens the table to the word, and the other words
+  // wrap inside the wider table.
+  qreal lineWidth = maximumLineWidth;
+  QVector<FlowLabelLineRange> lines = wrap(lineWidth);
   while (true) {
-    TextLine line = layout.createLine();
-    if (!line.isValid())
+    qreal widestWord = 0.0;
+    for (qsizetype index = 1; index < lines.size(); ++index) {
+      const qsizetype split = lines.at(index).start;
+      if (flowLineBreaksBefore(label.text, split))
+        continue;
+      qsizetype start = split;
+      qsizetype end = split;
+      while (start > 0 && !flowLineBreaksBefore(label.text, start))
+        --start;
+      while (end < label.text.size() && !flowLineBreaksBefore(label.text, end))
+        ++end;
+      widestWord = std::max(widestWord,
+                            measureFlowTextAdvanceWidth(label, start, end - start, fontFamily, fontPixelSize));
+    }
+    if (widestWord <= lineWidth)
       break;
-    line.setLineWidth(maximumLineWidth);
-    qsizetype length = line.textLength();
-    while (length > 0 && label.text.at(line.textStart() + length - 1).isSpace())
-      --length;
-    wrapped.visualLines.push_back({line.textStart(), length});
+    lineWidth = std::nextafter(widestWord, std::numeric_limits<qreal>::infinity());
+    lines = wrap(lineWidth);
   }
-  layout.endLayout();
+  wrapped.visualLines = lines;
   if (wrapped.visualLines.size() <= 1)
     wrapped.visualLines.clear();
   return wrapped;

@@ -487,6 +487,8 @@ private:
       };
       const QString dummy1Id = start + QStringLiteral("---") + start + QStringLiteral("---1");
       const QString dummy2Id = start + QStringLiteral("---") + start + QStringLiteral("---2");
+      out.loopMarks = {QPointF(dummy1->x.value_or(0.0), dummy1->y.value_or(0.0)) - origin,
+                       QPointF(dummy2->x.value_or(0.0), dummy2->y.value_or(0.0)) - origin};
       out.segments = {
           segmentPoints(start, dummy1Id, start + QStringLiteral("-cyclic-special-0"), vertexType.value(start),
                         QStringLiteral("rect")),
@@ -589,10 +591,21 @@ private:
     for (const FlowVertex& v : data.vertices)
       vertexType.insert(v.id, v.type);
 
-    for (const FlowEdge& fe : data.edges) {
+    // Mermaid names a loop's three edges after its node alone, so each further
+    // edge from a node to itself replaces the previous one in its graph: of
+    // several, only the last is laid out and drawn.
+    QHash<QString, qsizetype> lastSelfEdge;
+    for (qsizetype index = 0; index < data.edges.size(); ++index)
+      if (data.edges.at(index).start == data.edges.at(index).end)
+        lastSelfEdge.insert(data.edges.at(index).start, index);
+
+    for (qsizetype index = 0; index < data.edges.size(); ++index) {
+      const FlowEdge& fe = data.edges.at(index);
       const QString start = layoutEndpoint(fe.start);
       const QString end = layoutEndpoint(fe.end);
       if (start == end && (start != fe.start || end != fe.end))
+        continue;
+      if (fe.start == fe.end && lastSelfEdge.value(fe.start) != index)
         continue;
       FlowLayoutEdge out;
       out.id = fe.id;
