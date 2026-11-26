@@ -1,6 +1,7 @@
 #include "mermaid/state/StateScenePainter.h"
 
 #include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/NeoShadow.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -99,177 +100,12 @@ QPen dashedPen(const QColor& strokeColor, qreal width, const QString& dasharray)
   return pen;
 }
 
-// ---- neo look drop-shadow ------------------------------------------------
-//
-// The common 11.16 sheet applies the theme's dropShadow variable as a
-// `filter:` on `[data-look="neo"].node rect` / `.node circle` /
-// `.node .outer-path` (state adds `.statediagram-cluster rect.outer`). CSS
-// blur radius maps to a Gaussian with sigma = radius / 2 (Blink converts
-// drop-shadow blur to feDropShadow stdDeviation the same way).
-struct NeoShadow {
-  bool valid = false;
-  qreal dx = 0.0, dy = 0.0, sigma = 0.0;
-  QColor tint;
-};
-NeoShadow parseNeoShadow(const QString& css) {
-  NeoShadow shadow;
-  const QString trimmed = css.trimmed();
-  if (!trimmed.startsWith(QLatin1String("drop-shadow")))
-    return shadow; // "url(#drop-shadow)"-style themes keep flat semantics
-  const int open = trimmed.indexOf(QLatin1Char('('));
-  const int close = trimmed.lastIndexOf(QLatin1Char(')'));
-  if (open < 0 || close <= open)
-    return shadow;
-  const QStringList parts = trimmed.mid(open + 1, close - open - 1).split(QLatin1Char(' '), Qt::SkipEmptyParts);
-  qreal lengths[3] = {0.0, 0.0, 0.0};
-  int lengthsSeen = 0;
-  QString colorText;
-  for (const QString& part : parts) {
-    QString token = part;
-    if (token.endsWith(QLatin1String("px"), Qt::CaseInsensitive))
-      token.chop(2);
-    bool ok = false;
-    const qreal value = token.toDouble(&ok);
-    if (ok && lengthsSeen < 3) {
-      lengths[lengthsSeen++] = value;
-    } else {
-      colorText += colorText.isEmpty() ? part : (QLatin1Char(' ') + part);
-    }
-  }
-  if (lengthsSeen < 2)
-    return shadow;
-  shadow.valid = true;
-  shadow.dx = lengths[0];
-  shadow.dy = lengths[1];
-  shadow.sigma = (lengthsSeen > 2 ? lengths[2] : 0.0) / 2.0;
-  shadow.tint = colorText.isEmpty() ? QColor(Qt::black) : color(colorText);
-  return shadow;
-}
-
-// Paints the element silhouette blurred by `shadow.sigma`, offset by
-// (dx, dy), in `shadow.tint` — the raster equivalent of filter:
-// drop-shadow(). The filter input is the element's ACTUAL rendering: each
-// paint channel contributes its region at its resolved alpha (color alpha ×
-// fill-/stroke-opacity × element opacity, source-over combined where the
-// regions overlap); a channel that paints nothing contributes nothing, and
-// when neither paints (fill:none;stroke:none, or the element is hidden)
-// the filter output is empty — exactly like the browser.
-struct ShadowChannels {
-  qreal fillAlpha = 0.0;
-  qreal strokeAlpha = 0.0;
-  bool paints() const { return fillAlpha > 0.0 || strokeAlpha > 0.0; }
-};
-// One region contribution to the filter input: a path, its stroke width, and
-// the per-channel alphas of ITS OWN rendering. A filtered GROUP (stateEnd's
-// g.outer-path) is several contributions source-over combined in ONE mask —
-// collapsing them into global scalars would let a visible inner dot cast a
-// full ring-shaped shadow when the ring itself paints nothing.
-struct ShadowPart {
-  QPainterPath path;
-  qreal strokeWidth = 0.0;
-  ShadowChannels channels;
-};
-void paintNeoShadow(QPainter& painter, const QVector<ShadowPart>& parts, const NeoShadow& shadow) {
-  if (!shadow.valid || parts.isEmpty())
-    return;
-  const qreal margin = 3.0 * shadow.sigma + std::abs(shadow.dx) + std::abs(shadow.dy) + 2.0;
-  QRectF silhouette;
-  bool any = false;
-  for (const ShadowPart& part : parts) {
-    if (part.path.isEmpty() || !part.channels.paints())
-      continue;
-    QRectF partBounds = part.path.boundingRect();
-    if (part.channels.strokeAlpha > 0.0 && part.strokeWidth > 0.0) {
-      QPainterPathStroker stroker;
-      stroker.setWidth(part.strokeWidth);
-      stroker.setCapStyle(Qt::FlatCap);
-      stroker.setJoinStyle(Qt::MiterJoin);
-      partBounds = partBounds.united(stroker.createStroke(part.path).boundingRect());
-    }
-    silhouette = any ? silhouette.united(partBounds) : partBounds;
-    any = true;
-  }
-  if (!any || !silhouette.isValid())
-    return;
-  const QRectF padded = silhouette.adjusted(-margin, -margin, margin, margin);
-  QImage mask(qMax(1, qCeil(padded.width())), qMax(1, qCeil(padded.height())), QImage::Format_Grayscale8);
-  mask.fill(0);
-  {
-    QPainter maskPainter(&mask);
-    maskPainter.translate(-padded.topLeft());
-    maskPainter.setPen(Qt::NoPen);
-    // The mask stores SOURCE-OVER COVERAGE in the grayscale value: each
-    // channel paints white at its own alpha (fill region, then stroke
-    // region), so overlaps accumulate like the element's real rendering.
-    for (const ShadowPart& part : parts) {
-      if (part.path.isEmpty())
-        continue;
-      if (part.channels.fillAlpha > 0.0) {
-        maskPainter.setOpacity(part.channels.fillAlpha);
-        maskPainter.setBrush(Qt::white);
-        maskPainter.drawPath(part.path);
-      }
-      if (part.channels.strokeAlpha > 0.0 && part.strokeWidth > 0.0) {
-        QPainterPathStroker stroker;
-        stroker.setWidth(part.strokeWidth);
-        stroker.setCapStyle(Qt::FlatCap);
-        stroker.setJoinStyle(Qt::MiterJoin);
-        const QPainterPath strokeRegion = stroker.createStroke(part.path);
-        if (!strokeRegion.isEmpty()) {
-          maskPainter.setOpacity(part.channels.strokeAlpha);
-          maskPainter.setBrush(Qt::white);
-          maskPainter.drawPath(strokeRegion);
-        }
-      }
-    }
-  }
-  if (shadow.sigma > 0.0) {
-    // Separable gaussian with standard deviation sigma (CSS drop-shadow
-    // blur radius maps to stdDeviation = radius / 2).
-    const int radius = qMax(1, qCeil(3.0 * shadow.sigma));
-    QVector<qreal> kernel(2 * radius + 1, 0.0);
-    for (int i = 0; i <= radius; ++i) {
-      const qreal gaussian = std::exp(-(i * i) / (2.0 * shadow.sigma * shadow.sigma + 1e-9));
-      kernel[radius - i] = kernel[radius + i] = gaussian;
-    }
-    const qreal sum = std::accumulate(kernel.cbegin(), kernel.cend(), 0.0);
-    for (qreal& tap : kernel)
-      tap /= sum;
-    const auto blurPass = [&](bool horizontal) {
-      QImage source = mask;
-      const int w = mask.width(), h = mask.height();
-      for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-          qreal accumulated = 0.0;
-          for (int tap = -radius; tap <= radius; ++tap) {
-            const int sx = horizontal ? qBound(0, x + tap, w - 1) : x;
-            const int sy = horizontal ? y : qBound(0, y + tap, h - 1);
-            accumulated += source.scanLine(sy)[sx] * kernel.at(tap + radius);
-          }
-          mask.scanLine(y)[x] = static_cast<unsigned char>(qBound(0, qRound(accumulated), 255));
-        }
-      }
-    };
-    blurPass(true);
-    blurPass(false);
-  }
-  QImage layer(mask.size(), QImage::Format_ARGB32_Premultiplied);
-  layer.fill(Qt::transparent);
-  const QColor tint = shadow.tint.isValid() ? shadow.tint : QColor(Qt::black);
-  for (int y = 0; y < mask.height(); ++y) {
-    const unsigned char* row = mask.scanLine(y);
-    QRgb* target = reinterpret_cast<QRgb*>(layer.scanLine(y));
-    for (int x = 0; x < mask.width(); ++x) {
-      // Coverage × the tint's own alpha (e.g. redux-dark's flat white
-      // feDropShadow carries flood-opacity 0.06). qPremultiply applies the
-      // final alpha to the channels — keep RGB at the full tint color so
-      // soft edge pixels stay the shadow color (not alpha-squared).
-      const int alpha = tint.alpha() * row[x] / 255;
-      target[x] = qPremultiply(qRgba(tint.red(), tint.green(), tint.blue(), alpha));
-    }
-  }
-  painter.drawImage(padded.translated(shadow.dx, shadow.dy).topLeft(), layer);
-}
+// The neo look's drop-shadow is shared with the other families.
+using scene::NeoShadow;
+using scene::ShadowChannels;
+using scene::ShadowPart;
+using scene::paintNeoShadow;
+using scene::parseNeoShadow;
 
 void paintLabel(QPainter& painter, const flowchart::FlowLabelDocument& document, const QRectF& bounds,
                 const QString& family, qreal size, qreal lineHeight, const QColor& textColor, bool clip = true) {

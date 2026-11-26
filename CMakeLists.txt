@@ -716,6 +716,8 @@ set(MUFFIN_CORE_SOURCES
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/html/HtmlSanitizer.h
   src/mermaid/scene/EdgeMarkerPaint.cpp
+  src/mermaid/scene/NeoShadow.cpp
+  src/mermaid/scene/NeoShadow.h
   src/mermaid/scene/EdgeMarkerPaint.h
   src/mermaid/scene/FlowMarkers.cpp
   src/mermaid/scene/FlowMarkers.h
