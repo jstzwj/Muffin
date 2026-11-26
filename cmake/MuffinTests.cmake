@@ -532,10 +532,17 @@ muffin_add_test(NAME MuffinMathBlockControllerTest SOURCE tests/blocks/MathBlock
 muffin_add_test(NAME MuffinHtmlBlockControllerTest SOURCE tests/blocks/HtmlBlockControllerTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinBlockStructureTest SOURCE tests/document/BlockStructureTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinBlockHandleTest SOURCE tests/editor/BlockHandleTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK SYNTHETIC_IME)
+# This test drags a block at a viewport edge and reads the clipboard back right
+# after a block copy. On a desktop platform both depend on session-wide state:
+# any other window taking the foreground delivers WindowDeactivate, which
+# cancels a drag by design, and any other process clearing the system clipboard
+# empties the read-back. Keep every variant on a hermetic platform, where
+# neither the window activation nor the clipboard can change from outside.
+set_property(TEST MuffinBlockHandleTest APPEND PROPERTY ENVIRONMENT_MODIFICATION "QT_QPA_PLATFORM=set:offscreen")
 foreach(_block_scale 1.25 1.5)
   add_test(NAME MuffinBlockHandleDpi${_block_scale} COMMAND $<TARGET_FILE:MuffinBlockHandleTest>)
   set_tests_properties(MuffinBlockHandleDpi${_block_scale} PROPERTIES
-    ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_SCALE_FACTOR=set:${_block_scale}"
+    ENVIRONMENT_MODIFICATION "${MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS};QT_QPA_PLATFORM=set:offscreen;QT_SCALE_FACTOR=set:${_block_scale}"
     RESOURCE_LOCK MuffinQtGui)
 endforeach()
 add_test(NAME MuffinLazyBlockHandleTest COMMAND $<TARGET_FILE:MuffinBlockHandleTest>)

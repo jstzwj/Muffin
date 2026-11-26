@@ -7,6 +7,20 @@
 #include <QJsonDocument>
 #include <QSet>
 
+#if !defined(Q_OS_WIN)
+#include <ctime>
+#else
+// Only the process timing calls come from windows.h: keep it lean, and keep
+// its min/max macros away from the standard headers included below.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 #include <cstdlib>
 #include <random>
 
@@ -26,6 +40,36 @@ constexpr bool addressSanitizerEnabled() {
 // runner. Keep the Release budget and allow 3x for instrumented builds; all
 // inputs, operation checks and sanitizer failures still run unchanged.
 constexpr qint64 kTimeBudgetMs = addressSanitizerEnabled() ? 6000 : 2000;
+
+// CPU time this process has consumed so far, in milliseconds, or -1 when the
+// system does not report it.
+qint64 processCpuTimeMs() {
+#if defined(Q_OS_WIN)
+  FILETIME creation{}, exited{}, kernel{}, user{};
+  if (!GetProcessTimes(GetCurrentProcess(), &creation, &exited, &kernel, &user))
+    return -1;
+  const auto ticks = [](const FILETIME& time) { return (quint64(time.dwHighDateTime) << 32) | time.dwLowDateTime; };
+  return qint64((ticks(kernel) + ticks(user)) / 10000); // FILETIME counts 100 ns
+#else
+  const std::clock_t ticks = std::clock();
+  return ticks == std::clock_t(-1) ? -1 : qint64(qint64(ticks) * 1000 / CLOCKS_PER_SEC);
+#endif
+}
+
+// Like QElapsedTimer, but for the CPU time of this process. The budget below
+// guards the amount of work the corpus makes the renderer do, and only CPU
+// time measures that: a wall clock also charges the time other processes own
+// the core for, which turned a load peak on a shared runner into a false
+// failure (the same corpus needs about one second of CPU time).
+struct CpuTimer {
+  qint64 elapsedMs() const {
+    const qint64 nowMs = processCpuTimeMs();
+    return startedMs < 0 || nowMs < 0 ? -1 : nowMs - startedMs;
+  }
+
+private:
+  qint64 startedMs = processCpuTimeMs();
+};
 
 [[noreturn]] void fail(const QString& message) {
   qCritical().noquote() << message;
@@ -99,6 +143,7 @@ int main(int argc, char** argv) {
   QSet<int> rootKinds;
   QElapsedTimer timer;
   timer.start();
+  const CpuTimer cpuTimer;
 
   for (int index = 0; index < kCaseCount; ++index) {
     const QString source = expression(random, 1 + index % 3);
@@ -118,12 +163,16 @@ int main(int argc, char** argv) {
 
   require(rootKinds.size() >= 7, QStringLiteral("Math operation fuzz root-kind coverage regressed"));
   const qint64 elapsedMs = timer.elapsed();
-  require(elapsedMs < kTimeBudgetMs,
-          QStringLiteral("Math operation fuzz exceeded %1 ms budget (%2): %3 ms")
+  const qint64 cpuMs = cpuTimer.elapsedMs();
+  const qint64 measuredMs = cpuMs >= 0 ? cpuMs : elapsedMs;
+  require(measuredMs < kTimeBudgetMs,
+          QStringLiteral("Math operation fuzz exceeded %1 ms CPU budget (%2): %3 ms CPU, %4 ms wall")
               .arg(kTimeBudgetMs)
               .arg(addressSanitizerEnabled() ? QStringLiteral("ASan") : QStringLiteral("Release"))
+              .arg(measuredMs)
               .arg(elapsedMs));
-  qInfo() << "MermaidMathMlOperationFuzzTest:" << kCaseCount << "operation trees passed in" << elapsedMs << "ms; budget"
-          << kTimeBudgetMs << "ms; ASan" << addressSanitizerEnabled();
+  qInfo() << "MermaidMathMlOperationFuzzTest:" << kCaseCount << "operation trees passed in" << measuredMs
+          << "ms of CPU time," << elapsedMs << "ms of wall time; budget" << kTimeBudgetMs << "ms; ASan"
+          << addressSanitizerEnabled();
   return 0;
 }
