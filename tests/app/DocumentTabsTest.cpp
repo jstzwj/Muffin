@@ -30,6 +30,7 @@
 
 #include "../TestUtils.h"
 #include "../AtomicFileWrite.h"
+#include "../UnansweredDialogGuard.h"
 #include "../../scripts/MemoryLifecycleAudit.h"
 #include "../../scripts/DocumentMemoryBenchmark.h"
 
@@ -39,6 +40,7 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QEventLoop>
 #include <QElapsedTimer>
 #include <QDir>
 #include <QDialog>
@@ -63,6 +65,7 @@
 #include <QKeySequenceEdit>
 #include <QListWidget>
 #include <QPushButton>
+#include <QProcess>
 #include <QProgressDialog>
 #include <QPlainTextEdit>
 #include <QProxyStyle>
@@ -5189,6 +5192,25 @@ int runWindowsUpdateHandoffTest();
 void runSplitViewTests();
 void runCommandTableTests();
 
+// Windows can refuse a file for a moment while another process looks at it,
+// and the app then says so in a message box instead of returning. A test step
+// that meets one has to fail with what it says, not hang the run: this runs
+// the binary again with a box that nothing answers (`--unanswered-dialog-probe`).
+void unansweredDialogFailsTheRunInsteadOfHanging() {
+  QProcess probe;
+  probe.start(QCoreApplication::applicationFilePath(), {QStringLiteral("--unanswered-dialog-probe")});
+  require(probe.waitForStarted(30000), "the probe process starts");
+  const bool ended = probe.waitForFinished(60000);
+  if (!ended)
+    probe.kill();
+  const auto output = QString::fromLocal8Bit(probe.readAllStandardError() + probe.readAllStandardOutput());
+  require(ended, QStringLiteral("an unanswered dialog fails the run instead of hanging: ") + output);
+  require(probe.exitStatus() == QProcess::NormalExit && probe.exitCode() == 1,
+          QStringLiteral("the guard fails the run: ") + output);
+  require(output.contains(QStringLiteral("A file was busy for a moment.")),
+          QStringLiteral("the failure quotes the dialog: ") + output);
+}
+
 int main(int argc, char** argv) {
   // A deterministic converter process for export plumbing tests. Actual
   // Pandoc need not be installed on CI, and can fail after partial output.
@@ -5243,6 +5265,19 @@ int main(int argc, char** argv) {
   QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
   QSettings().setValue(QStringLiteral("files/autoSave"), false);
   LanguageManager::instance().setLanguage(QStringLiteral("en"));
+  muffin::test::failOnUnansweredDialog();
+  if (QCoreApplication::arguments().contains(QStringLiteral("--unanswered-dialog-probe"))) {
+    // For unansweredDialogFailsTheRunInsteadOfHanging: a box that nothing
+    // answers. The guard fails the run from inside its event loop.
+    muffin::test::failOnUnansweredDialog(std::chrono::milliseconds(500));
+    QEventLoop loop;
+    QTimer::singleShot(0, &loop, [&loop] {
+      QMessageBox::warning(nullptr, QStringLiteral("Probe"), QStringLiteral("A file was busy for a moment."));
+      loop.quit();
+    });
+    loop.exec();
+    return 0; // Not reached: the guard fails the run inside the box's event loop.
+  }
   if (QCoreApplication::arguments().contains(QStringLiteral("--chrome-appearance"))) {
     runTest("chromeAppearanceUsesSharedMetrics", chromeAppearanceUsesSharedMetrics);
     runTest("tabBarOnlyForMultipleDocuments", tabBarOnlyForMultipleDocuments);
@@ -5336,6 +5371,7 @@ int main(int argc, char** argv) {
     runSessionViewTests();
     return 0;
   }
+  runTest("unansweredDialogFailsTheRunInsteadOfHanging", unansweredDialogFailsTheRunInsteadOfHanging);
   runTest("externalFilesOpenInTabsByPreference", externalFilesOpenInTabsByPreference);
   runTest("closedInitialWindowDoesNotCaptureFileOpens", closedInitialWindowDoesNotCaptureFileOpens);
   runTest("earlyNativeFileEventsAreRetained", earlyNativeFileEventsAreRetained);

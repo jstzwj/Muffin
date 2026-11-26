@@ -1,5 +1,6 @@
 #include "document/DocumentSession.h"
 #include "io/FileController.h"
+#include "../UnansweredDialogGuard.h"
 
 #include <QApplication>
 #include <QAbstractButton>
@@ -195,6 +196,8 @@ void testWindows1252UndefinedBytesRoundTrip(const QString& path) {
 
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
+  // A save the system refuses for a moment ends in a box from FileController.
+  muffin::test::failOnUnansweredDialog();
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTests"));
   QCoreApplication::setApplicationName(QStringLiteral("FileControllerFormatTest"));
   QSettings().clear();
