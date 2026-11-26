@@ -135,9 +135,10 @@ void paintNodeLabel(QPainter& painter, const StateSceneNode& node, const StateSc
     paintLabel(painter, node.labelDocument, node.bounds, family, size, lineHeight, textColor);
     return;
   }
-  const qreal top = node.bounds.top() + 3.0;
-  QRectF title(node.bounds.left(), top, node.bounds.width(), node.titleHeight > 0.0 ? node.titleHeight : lineHeight);
-  paintLabel(painter, node.labelDocument, title, family, size, lineHeight, textColor);
+  const QRectF title = stateNodeTitleRect(node, lineHeight);
+  // Painted across the box's width: the text is centred, as its own box is.
+  paintLabel(painter, node.labelDocument, QRectF(node.bounds.left(), title.top(), node.bounds.width(), title.height()),
+             family, size, lineHeight, textColor);
   if (!descriptionPaints)
     return;
   // The description rows are their OWN <p> (the second fo): their font/color
@@ -146,13 +147,10 @@ void paintNodeLabel(QPainter& painter, const StateSceneNode& node, const StateSc
   const QString rowsFamily = !descFamily.isEmpty() ? descFamily : family;
   const qreal rowsSize = descSize > 0.0 ? descSize : size;
   const qreal rowsLineHeight = rowsSize * 1.5;
-  qreal y = top + node.titleHeight + 9.0;
-  for (const auto& document : node.descriptionDocuments) {
-    QRectF line(node.bounds.left(), y, node.bounds.width(), rowsLineHeight);
-    paintLabel(painter, document, line, rowsFamily, rowsSize, rowsLineHeight,
+  const QVector<QRectF> rows = stateNodeDescriptionRects(node, rowsLineHeight);
+  for (qsizetype index = 0; index < node.descriptionDocuments.size() && index < rows.size(); ++index)
+    paintLabel(painter, node.descriptionDocuments.at(index), rows.at(index), rowsFamily, rowsSize, rowsLineHeight,
                descColor.isValid() ? descColor : textColor, false);
-    y += rowsLineHeight;
-  }
 }
 
 // The upstream marker is a concave barb, not a solid triangle:
@@ -373,8 +371,7 @@ void paintStateScene(const StateScene& scene, QPainter& painter, const MermaidPa
       const qreal size = cluster.labelTextCss.fontSize > 0.0
                              ? cluster.labelTextCss.fontSize
                              : (cluster.labelCss.fontSize > 0.0 ? cluster.labelCss.fontSize : scene.style.fontSize);
-      QRectF title = cluster.bounds.adjusted(8.0, 1.0, -8.0, 0.0);
-      title.setHeight(cluster.titleHeight > 0.0 ? cluster.titleHeight : scene.style.lineHeight);
+      const QRectF title = stateClusterTitleRect(cluster, scene.style.lineHeight);
       if (cluster.labelCss.displayed && cluster.labelCss.painted && cluster.labelTextCss.displayed &&
           cluster.labelTextCss.painted)
         paintLabel(painter, cluster.labelDocument, title, family, size, size * 1.5,
@@ -768,8 +765,7 @@ void paintStateScene(const StateScene& scene, QPainter& painter, const MermaidPa
       // line.divider at titleHeight + padding/2 below the rect top — its
       // OWN DOM element: `.statediagram-state .divider { stroke:
       // stateBorder }` plus whatever themeCSS resolves onto the line.
-      const qreal dividerY =
-          node.bounds.top() + (node.titleHeight > 0.0 ? node.titleHeight : scene.style.lineHeight) + 4.0;
+      const qreal dividerY = stateNodeDividerY(node, scene.style.lineHeight);
       const PaintSlot dividerStroke =
           paintSlot(node.dividerCss.stroke, node.stroke, mermaid::color::SvgPaintKind::Stroke, inherited);
       const qreal dividerWidth = node.dividerCss.strokeWidthSet ? node.dividerCss.strokeWidthPx : 1.0;

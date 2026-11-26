@@ -270,9 +270,9 @@ try {
     // ---- themeCSS differential: per-element computed styles against the
     // real state DOM (structural selectors must resolve like the browser).
     const themeCssCases = [
-      // note+composite and external-edge-into-cluster combinations avoided:
-      // both have open pre-existing layout divergences (tracked in
-      // docs/mermaid-architecture.md), not themeCSS channels.
+      // Each case pins its CSS channels on a plain diagram. The layouts
+      // that are harder to place (a note beside a composite, a relationship
+      // into or out of one) are asserted by the state geometry oracle.
       { id: "state-theme-structural",
         source: "stateDiagram-v2\nstate Running {\n  A --> B : label\n  B --> C\n}",
         themeCSS: ".node:nth-of-type(1) rect { fill: rgb(255,0,0) !important; } " +

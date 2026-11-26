@@ -2,53 +2,191 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State node sizes + transition topology. Transition from/to is getData().edges, the logical ends the renderer hands the layout, read by each rendered path's data-id. Node ids match Muffin directly (root_start/root_end/<name>). width/height are font-coupled; compare against state::StateScene::toJsonObject (nodes id/height/width, edges start/end/markerEnd)."
+    "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry captured via headless Chrome with the bundled Noto fonts. Every state, note and pseudo-state with its centre, its box (in its own coordinates), each text box the SVG gives its labels (a titled state's title, then the description rows, with the height the rows take) and its divider, every composite with each rectangle it draws and its title, every transition with the waypoints the layout gave it (which the path carries), the path's data, its marker and its label, and the canvas (the content's bounding box, as the SVG's getBBox() reports it), all but the node-local parts normalized to the centre of the first node the document shows. Compare, through the render cache, against state::StateScene."
   },
   "mermaidVersion": "11.16.0",
   "fontMode": "bundled-noto-2.13b171",
-  "oracle": "stateDiagram.render state nodes (size) + transition topology (logical from/to by path id)",
+  "oracle": "stateDiagram.render states, notes, transitions, composites and canvas (first-state normalized)",
   "cases": [
     {
       "id": "linear",
       "source": "stateDiagram-v2\n[*] --> Active\nActive --> Inactive\nInactive --> [*]",
       "expected": {
+        "origin": {
+          "x": 45.516,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            91.03125,
+            274
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "91.0312px",
+          "content": {
+            "x": -37.516,
+            "y": -7,
+            "width": 75.031,
+            "height": 258
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Active",
-            "width": 60.969,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Active",
+                "rect": {
+                  "x": -22.484,
+                  "y": 65,
+                  "width": 44.969,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Inactive",
-            "width": 75.031,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 167
+            },
+            "box": {
+              "x": -37.516,
+              "y": -20,
+              "width": 75.031,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Inactive",
+                "rect": {
+                  "x": -29.516,
+                  "y": 155,
+                  "width": 59.031,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 244
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Active",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Active",
             "to": "Inactive",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              }
+            ],
+            "path": "M0,97L0,101.167C0,105.333,0,113.667,0,122C0,130.333,0,138.667,0,142.833L0,147",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "Inactive",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 187
+              },
+              {
+                "x": 0,
+                "y": 212
+              },
+              {
+                "x": 0,
+                "y": 236.993
+              }
+            ],
+            "path": "M0,187L0,191.167C0,195.333,0,203.667,0,211.999C0,220.331,0,228.662,0,232.828L0,236.993",
+            "label": null
           }
         ]
       }
@@ -57,58 +195,269 @@
       "id": "branching",
       "source": "stateDiagram-v2\n[*] --> A\nA --> B : yes\nA --> C : no\nB --> [*]\nC --> [*]",
       "expected": {
+        "origin": {
+          "x": 59.336,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            118.53125,
+            298
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "118.531px",
+          "content": {
+            "x": -51.336,
+            "y": -7,
+            "width": 102.531,
+            "height": 282
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 26.234,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": 65,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "B",
-            "width": 26.406,
-            "height": 40
+            "centre": {
+              "x": -38.133,
+              "y": 191
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -43.336,
+                  "y": 179,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "C",
-            "width": 26.125,
-            "height": 40
+            "centre": {
+              "x": 38.133,
+              "y": 191
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": 33.07,
+                  "y": 179,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 268
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "A",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -13.117,
+                "y": 96.607
+              },
+              {
+                "x": -38.133,
+                "y": 134
+              },
+              {
+                "x": -38.133,
+                "y": 171
+              }
+            ],
+            "path": "M-13.117,96.607L-17.287,102.839C-21.456,109.072,-29.794,121.536,-33.964,133.935C-38.133,146.333,-38.133,158.667,-38.133,164.833L-38.133,171",
+            "label": {
+              "text": "yes",
+              "rect": {
+                "x": -50.562,
+                "y": 122,
+                "width": 24.859,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "A",
             "to": "C",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 13.117,
+                "y": 96.607
+              },
+              {
+                "x": 38.133,
+                "y": 134
+              },
+              {
+                "x": 38.133,
+                "y": 171
+              }
+            ],
+            "path": "M13.117,96.607L17.286,102.839C21.456,109.072,29.794,121.536,33.963,133.935C38.133,146.333,38.133,158.667,38.133,164.833L38.133,171",
+            "label": {
+              "text": "no",
+              "rect": {
+                "x": 28.344,
+                "y": 122,
+                "width": 19.578,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "B",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -38.133,
+                "y": 211
+              },
+              {
+                "x": -38.133,
+                "y": 236
+              },
+              {
+                "x": -5.367,
+                "y": 263.496
+              }
+            ],
+            "path": "M-38.133,211L-38.133,215.167C-38.133,219.333,-38.133,227.667,-32.672,236.416C-27.211,245.165,-16.289,254.331,-10.828,258.913L-5.367,263.496",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "C",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 38.133,
+                "y": 211
+              },
+              {
+                "x": 38.133,
+                "y": 236
+              },
+              {
+                "x": 5.367,
+                "y": 263.496
+              }
+            ],
+            "path": "M38.133,211L38.133,215.167C38.133,219.333,38.133,227.667,32.672,236.416C27.211,245.165,16.289,254.331,10.828,258.913L5.367,263.496",
+            "label": null
           }
         ]
       }
@@ -117,78 +466,329 @@
       "id": "fork-join",
       "source": "stateDiagram-v2\n[*] --> Active\nstate Fork <<fork>>\nActive --> Fork\nFork --> S1\nFork --> S2\nstate Join <<join>>\nS1 --> Join\nS2 --> Join\nJoin --> [*]",
       "expected": {
+        "origin": {
+          "x": 66.938,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            133.875,
+            402
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "133.875px",
+          "content": {
+            "x": -58.937,
+            "y": -7,
+            "width": 117.875,
+            "height": 386
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Active",
-            "width": 60.969,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Active",
+                "rect": {
+                  "x": -22.484,
+                  "y": 65,
+                  "width": 44.969,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Fork",
-            "width": 70,
-            "height": 10
+            "centre": {
+              "x": 0,
+              "y": 154
+            },
+            "box": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "S1",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": -41.969,
+              "y": 231
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S1",
+                "rect": {
+                  "x": -50.937,
+                  "y": 219,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S2",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 41.969,
+              "y": 231
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S2",
+                "rect": {
+                  "x": 33,
+                  "y": 219,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Join",
-            "width": 70,
-            "height": 10
+            "centre": {
+              "x": 0,
+              "y": 308
+            },
+            "box": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 372
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Active",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0.001,7L0.001,11.167C0.001,15.333,0.001,23.667,0.001,32C0.001,40.333,0.001,48.667,0.001,52.833L0.001,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Active",
             "to": "Fork",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              }
+            ],
+            "path": "M0.001,97L0.001,101.167C0.001,105.333,0.001,113.667,0.001,122C0.001,130.333,0.001,138.667,0.001,142.833L0.001,147",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "Fork",
             "to": "S1",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -9.181,
+                "y": 161
+              },
+              {
+                "x": -41.969,
+                "y": 186
+              },
+              {
+                "x": -41.969,
+                "y": 211
+              }
+            ],
+            "path": "M-9.181,161L-14.645,165.167C-20.11,169.333,-31.039,177.667,-36.504,186C-41.968,194.333,-41.968,202.667,-41.968,206.833L-41.968,211",
+            "label": null
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "Fork",
             "to": "S2",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 9.181,
+                "y": 161
+              },
+              {
+                "x": 41.969,
+                "y": 186
+              },
+              {
+                "x": 41.969,
+                "y": 211
+              }
+            ],
+            "path": "M9.18,161L14.645,165.167C20.111,169.333,31.04,177.667,36.504,186C41.969,194.333,41.969,202.667,41.969,206.833L41.969,211",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "S1",
             "to": "Join",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -41.969,
+                "y": 251
+              },
+              {
+                "x": -41.969,
+                "y": 276
+              },
+              {
+                "x": -9.181,
+                "y": 301
+              }
+            ],
+            "path": "M-41.968,251L-41.968,255.167C-41.968,259.333,-41.968,267.667,-36.504,276C-31.039,284.333,-20.11,292.667,-14.645,296.833L-9.181,301",
+            "label": null
           },
           {
+            "id": "edge5",
+            "cut": false,
             "from": "S2",
             "to": "Join",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 41.969,
+                "y": 251
+              },
+              {
+                "x": 41.969,
+                "y": 276
+              },
+              {
+                "x": 9.181,
+                "y": 301
+              }
+            ],
+            "path": "M41.969,251L41.969,255.167C41.969,259.333,41.969,267.667,36.504,276C31.04,284.333,20.111,292.667,14.645,296.833L9.18,301",
+            "label": null
           },
           {
+            "id": "edge6",
+            "cut": false,
             "from": "Join",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 315
+              },
+              {
+                "x": 0,
+                "y": 340
+              },
+              {
+                "x": 0,
+                "y": 364.993
+              }
+            ],
+            "path": "M0.001,315L0.001,319.167C0.001,323.333,0.001,331.667,0.001,339.999C0.001,348.331,0.001,356.662,0.001,360.828L0.001,364.993",
+            "label": null
           }
         ]
       }
@@ -197,38 +797,167 @@
       "id": "self-loop",
       "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Idle : retry\nIdle --> [*]",
       "expected": {
+        "origin": {
+          "x": 72.063,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0.006646156311035156,
+            0,
+            102.26758575439453,
+            258.15000915527344
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "102.268px",
+          "content": {
+            "x": -64.057,
+            "y": -7,
+            "width": 86.268,
+            "height": 242.15
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Idle",
-            "width": 44.422,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -22.211,
+              "y": -20,
+              "width": 44.422,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Idle",
+                "rect": {
+                  "x": -14.211,
+                  "y": 65,
+                  "width": 28.422,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": -57.057,
+              "y": 154
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Idle",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "Idle",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -22.211,
+                "y": 94.518
+              },
+              {
+                "x": -57.057,
+                "y": 122
+              },
+              {
+                "x": -57.057,
+                "y": 146.993
+              }
+            ],
+            "path": "M-22.211,94.518L-28.018,99.098C-33.826,103.678,-45.441,112.839,-51.249,121.585C-57.056,130.331,-57.056,138.662,-57.056,142.828L-57.056,146.993",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Idle",
             "to": "Idle",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -8.182,
+                "y": 97
+              },
+              {
+                "x": -18,
+                "y": 121
+              },
+              {
+                "x": 18,
+                "y": 121
+              },
+              {
+                "x": 8.182,
+                "y": 97
+              }
+            ],
+            "path": "M-8.182,97L-9.818,101C-11.454,105,-14.727,113,-10.363,117C-6,121,6,121,10.364,117C14.728,113,11.455,105,9.818,101L8.182,97",
+            "label": {
+              "text": "retry",
+              "rect": {
+                "x": -17.93,
+                "y": 125,
+                "width": 35.859,
+                "height": 24
+              }
+            }
           }
         ]
       }
@@ -237,113 +966,528 @@
       "id": "labeled",
       "source": "stateDiagram-v2\n[*] --> Off\nOff --> On : power\nOn --> Off : power\nOn --> [*] : timeout",
       "expected": {
+        "origin": {
+          "x": 65.422,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            130.84375,
+            322
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "130.844px",
+          "content": {
+            "x": -57.422,
+            "y": -7,
+            "width": 114.844,
+            "height": 306
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Off",
-            "width": 39.516,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -19.758,
+              "y": -20,
+              "width": 39.516,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Off",
+                "rect": {
+                  "x": -11.758,
+                  "y": 65,
+                  "width": 23.516,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "On",
-            "width": 38.391,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 191
+            },
+            "box": {
+              "x": -19.195,
+              "y": -20,
+              "width": 38.391,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "On",
+                "rect": {
+                  "x": -11.195,
+                  "y": 179,
+                  "width": 22.391,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 292
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Off",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Off",
             "to": "On",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -11.828,
+                "y": 97
+              },
+              {
+                "x": -33.711,
+                "y": 134
+              },
+              {
+                "x": -11.828,
+                "y": 171
+              }
+            ],
+            "path": "M-11.829,97L-15.476,103.167C-19.123,109.333,-26.417,121.667,-26.417,134C-26.417,146.333,-19.123,158.667,-15.476,164.833L-11.829,171",
+            "label": {
+              "text": "power",
+              "rect": {
+                "x": -57.422,
+                "y": 122,
+                "width": 47.422,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "On",
             "to": "Off",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 11.828,
+                "y": 171
+              },
+              {
+                "x": 33.711,
+                "y": 134
+              },
+              {
+                "x": 11.828,
+                "y": 97
+              }
+            ],
+            "path": "M11.828,171L15.475,164.833C19.122,158.667,26.417,146.333,26.417,134C26.417,121.667,19.122,109.333,15.475,103.167L11.828,97",
+            "label": {
+              "text": "power",
+              "rect": {
+                "x": 10,
+                "y": 122,
+                "width": 47.422,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "On",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 211
+              },
+              {
+                "x": 0,
+                "y": 248
+              },
+              {
+                "x": 0,
+                "y": 284.993
+              }
+            ],
+            "path": "M0,211L0,217.167C0,223.333,0,235.667,0,247.999C0,260.331,0,272.662,0,278.828L0,284.993",
+            "label": {
+              "text": "timeout",
+              "rect": {
+                "x": -29.617,
+                "y": 236,
+                "width": 59.234,
+                "height": 24
+              }
+            }
           }
         ]
       }
     },
     {
       "id": "composite",
-      "source": "stateDiagram-v2\n[*] --> Outer\nstate Outer {\n  [*] --> Inner1\n  Inner1 --> Inner2\n  Inner2 --> [*]\n}\nOuter --> [*]",
+      "source": "stateDiagram-v2\n[*] --> Outer\nstate Outer {\n  [*] --> Inner1\n  Inner1 --> Inner2 : go\n  Inner2 --> [*]\n}\nOuter --> [*]",
       "expected": {
+        "origin": {
+          "x": 75.992,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            151.984375,
+            576
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "151.984px",
+          "content": {
+            "x": -67.992,
+            "y": -7,
+            "width": 135.984,
+            "height": 560
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Outer_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 101.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Inner1",
-            "width": 65.984,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 203.5
+            },
+            "box": {
+              "x": -32.992,
+              "y": -20,
+              "width": 65.984,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Inner1",
+                "rect": {
+                  "x": -24.992,
+                  "y": 191.5,
+                  "width": 49.984,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Inner2",
-            "width": 65.984,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 342.5
+            },
+            "box": {
+              "x": -32.992,
+              "y": -20,
+              "width": 65.984,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Inner2",
+                "rect": {
+                  "x": -24.992,
+                  "y": 330.5,
+                  "width": 49.984,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Outer_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 444.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 546
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Outer",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -67.992,
+                  "y": 57,
+                  "width": 135.984,
+                  "height": 432
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -67.992,
+                  "y": 83,
+                  "width": 135.984,
+                  "height": 402
+                }
+              }
+            ],
+            "title": {
+              "text": "Outer",
+              "rect": {
+                "x": -21.898,
+                "y": 58,
+                "width": 43.797,
+                "height": 24
+              }
+            }
           }
         ],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Outer",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "Outer",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 489
+              },
+              {
+                "x": 0,
+                "y": 514
+              },
+              {
+                "x": 0,
+                "y": 539
+              }
+            ],
+            "path": "M0,489L0,493.167C0,497.333,0,505.667,0,514C0,522.333,0,530.667,0,534.833L0,539",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Outer_start",
             "to": "Inner1",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 108.5
+              },
+              {
+                "x": 0,
+                "y": 146
+              },
+              {
+                "x": 0,
+                "y": 183.5
+              }
+            ],
+            "path": "M0,108.5L0,114.75C0,121,0,133.5,0,146C0,158.5,0,171,0,177.25L0,183.5",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "Inner1",
             "to": "Inner2",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 223.5
+              },
+              {
+                "x": 0,
+                "y": 273
+              },
+              {
+                "x": 0,
+                "y": 322.5
+              }
+            ],
+            "path": "M0,223.5L0,231.75C0,240,0,256.5,0,273C0,289.5,0,306,0,314.25L0,322.5",
+            "label": {
+              "text": "go",
+              "rect": {
+                "x": -9.766,
+                "y": 261,
+                "width": 19.531,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "Inner2",
             "to": "Outer_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 362.5
+              },
+              {
+                "x": 0,
+                "y": 400
+              },
+              {
+                "x": 0,
+                "y": 437.493
+              }
+            ],
+            "path": "M0,362.5L0,368.75C0,375,0,387.5,0,399.999C0,412.498,0,424.996,0,431.244L0,437.493",
+            "label": null
           }
         ]
       }
@@ -352,68 +1496,307 @@
       "id": "choice",
       "source": "stateDiagram-v2\n[*] --> A\nstate c <<choice>>\nA --> c\nc --> B : yes\nc --> C : no\nB --> [*]\nC --> [*]",
       "expected": {
+        "origin": {
+          "x": 59.336,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            118.53125,
+            376
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "118.531px",
+          "content": {
+            "x": -51.336,
+            "y": -7,
+            "width": 102.531,
+            "height": 360
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 26.234,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": 65,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "c",
-            "width": 28,
-            "height": 28
+            "centre": {
+              "x": 0,
+              "y": 161
+            },
+            "box": {
+              "x": -14,
+              "y": -14,
+              "width": 28,
+              "height": 28
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "B",
-            "width": 26.406,
-            "height": 40
+            "centre": {
+              "x": -38.133,
+              "y": 269
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -43.336,
+                  "y": 257,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "C",
-            "width": 26.125,
-            "height": 40
+            "centre": {
+              "x": 38.133,
+              "y": 269
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": 33.07,
+                  "y": 257,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 346
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "A",
             "to": "c",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0.5,
+                "y": 147.5
+              }
+            ],
+            "path": "M0,97L0,101.167C0,105.333,0,113.667,0.083,122.083C0.167,130.5,0.333,139,0.417,143.25L0.5,147.5",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "c",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -5.489,
+                "y": 169.511
+              },
+              {
+                "x": -38.133,
+                "y": 212
+              },
+              {
+                "x": -38.133,
+                "y": 249
+              }
+            ],
+            "path": "M-5.49,169.511L-10.93,176.592C-16.371,183.674,-27.252,197.837,-32.692,211.085C-38.133,224.333,-38.133,236.667,-38.133,242.833L-38.133,249",
+            "label": {
+              "text": "yes",
+              "rect": {
+                "x": -50.562,
+                "y": 200,
+                "width": 24.859,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "c",
             "to": "C",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 6.489,
+                "y": 169.511
+              },
+              {
+                "x": 38.133,
+                "y": 212
+              },
+              {
+                "x": 38.133,
+                "y": 249
+              }
+            ],
+            "path": "M6.489,169.511L11.763,176.592C17.037,183.674,27.585,197.837,32.859,211.085C38.133,224.333,38.133,236.667,38.133,242.833L38.133,249",
+            "label": {
+              "text": "no",
+              "rect": {
+                "x": 28.344,
+                "y": 200,
+                "width": 19.578,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "B",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -38.133,
+                "y": 289
+              },
+              {
+                "x": -38.133,
+                "y": 314
+              },
+              {
+                "x": -5.367,
+                "y": 341.496
+              }
+            ],
+            "path": "M-38.133,289L-38.133,293.167C-38.133,297.333,-38.133,305.667,-32.672,314.416C-27.211,323.165,-16.289,332.331,-10.828,336.913L-5.367,341.496",
+            "label": null
           },
           {
+            "id": "edge5",
+            "cut": false,
             "from": "C",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 38.133,
+                "y": 289
+              },
+              {
+                "x": 38.133,
+                "y": 314
+              },
+              {
+                "x": 5.367,
+                "y": 341.496
+              }
+            ],
+            "path": "M38.133,289L38.133,293.167C38.133,297.333,38.133,305.667,32.672,314.416C27.211,323.165,16.289,332.331,10.828,336.913L5.367,341.496",
+            "label": null
           }
         ]
       }
@@ -422,63 +1805,560 @@
       "id": "note",
       "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Running : start\nnote right of Idle : waits for input\nnote right of Running : processing\nRunning --> [*]",
       "expected": {
+        "origin": {
+          "x": 241.003,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            412.00823974609375,
+            452
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "412.008px",
+          "content": {
+            "x": -233.003,
+            "y": -7,
+            "width": 396.008,
+            "height": 436
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "Idle",
-            "width": 44.422,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -22.211,
+              "y": -20,
+              "width": 44.422,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Idle",
+                "rect": {
+                  "x": -14.211,
+                  "y": 65,
+                  "width": 28.422,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Running",
-            "width": 79.484,
-            "height": 40
+            "centre": {
+              "x": 89.563,
+              "y": 223
+            },
+            "box": {
+              "x": -39.742,
+              "y": -20,
+              "width": 79.484,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Running",
+                "rect": {
+                  "x": 57.82,
+                  "y": 211,
+                  "width": 63.484,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Idle----note-2",
-            "width": 138.766,
-            "height": 54
+            "centre": {
+              "x": -128.621,
+              "y": 223
+            },
+            "box": {
+              "x": -69.383,
+              "y": -27,
+              "width": 138.766,
+              "height": 54
+            },
+            "labels": [
+              {
+                "text": "waits for input",
+                "rect": {
+                  "x": -183.003,
+                  "y": 211,
+                  "width": 108.766,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "Running----note-3",
-            "width": 111.703,
-            "height": 54
+            "centre": {
+              "x": 23.133,
+              "y": 377
+            },
+            "box": {
+              "x": -55.852,
+              "y": -27,
+              "width": 111.703,
+              "height": 54
+            },
+            "labels": [
+              {
+                "text": "processing",
+                "rect": {
+                  "x": -17.718,
+                  "y": 365,
+                  "width": 81.703,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 155.992,
+              "y": 377
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Idle----parent",
+            "rects": [
+              {
+                "kind": "",
+                "rect": {
+                  "x": -233.003,
+                  "y": 171,
+                  "width": 208.766,
+                  "height": 104
+                }
+              }
+            ],
+            "title": null
+          },
+          {
+            "id": "Running----parent",
+            "rects": [
+              {
+                "kind": "",
+                "rect": {
+                  "x": -67.718,
+                  "y": 325,
+                  "width": 181.703,
+                  "height": 104
+                }
+              }
+            ],
+            "title": null
           }
         ],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "Idle",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "Idle",
             "to": "Running",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 22.211,
+                "y": 91.136
+              },
+              {
+                "x": 89.562,
+                "y": 134
+              },
+              {
+                "x": 89.562,
+                "y": 171
+              },
+              {
+                "x": 89.562,
+                "y": 203
+              }
+            ],
+            "path": "M22.211,91.136L33.437,98.28C44.662,105.424,67.112,119.712,78.338,133.023C89.563,146.333,89.563,158.667,89.563,170.167C89.563,181.667,89.563,192.333,89.563,197.667L89.563,203",
+            "label": {
+              "text": "start",
+              "rect": {
+                "x": 72.156,
+                "y": 122,
+                "width": 34.813,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "Idle-Idle----note-2",
+            "cut": false,
             "from": "Idle",
             "to": "Idle----note-2",
-            "markerEnd": null
+            "markerEnd": null,
+            "points": [
+              {
+                "x": -22.211,
+                "y": 86.843
+              },
+              {
+                "x": -128.621,
+                "y": 134
+              },
+              {
+                "x": -128.621,
+                "y": 171
+              },
+              {
+                "x": -128.621,
+                "y": 196
+              }
+            ],
+            "path": "M-22.211,86.843L-39.946,94.703C-57.68,102.562,-93.15,118.281,-110.885,132.307C-128.62,146.333,-128.62,158.667,-128.62,169C-128.62,179.333,-128.62,187.667,-128.62,191.833L-128.62,196",
+            "label": null
           },
           {
+            "id": "Running-Running----note-3",
+            "cut": false,
             "from": "Running",
             "to": "Running----note-3",
-            "markerEnd": null
+            "markerEnd": null,
+            "points": [
+              {
+                "x": 64.013,
+                "y": 243
+              },
+              {
+                "x": 23.133,
+                "y": 275
+              },
+              {
+                "x": 23.133,
+                "y": 300
+              },
+              {
+                "x": 23.133,
+                "y": 325
+              },
+              {
+                "x": 23.133,
+                "y": 350
+              }
+            ],
+            "path": "M64.013,243L57.2,248.333C50.387,253.667,36.76,264.333,29.947,273.833C23.134,283.333,23.134,291.667,23.134,300C23.134,308.333,23.134,316.667,23.134,325C23.134,333.333,23.134,341.667,23.134,345.833L23.134,350",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "Running",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 115.112,
+                "y": 243
+              },
+              {
+                "x": 155.992,
+                "y": 275
+              },
+              {
+                "x": 155.992,
+                "y": 300
+              },
+              {
+                "x": 155.992,
+                "y": 325
+              },
+              {
+                "x": 155.992,
+                "y": 369.993
+              }
+            ],
+            "path": "M115.112,243L121.926,248.333C128.739,253.667,142.365,264.333,149.179,273.833C155.992,283.333,155.992,291.667,155.992,300C155.992,308.333,155.992,316.667,155.992,328.332C155.992,339.998,155.992,354.996,155.992,362.494L155.992,369.993",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "note-left",
+      "source": "stateDiagram-v2\n[*] --> Active\nActive --> Done\nnote left of Active : Left note",
+      "expected": {
+        "origin": {
+          "x": 15,
+          "y": 60
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            232.21875,
+            300
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "232.219px",
+          "content": {
+            "x": -7,
+            "y": -52,
+            "width": 216.219,
+            "height": 284
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Active",
+            "centre": {
+              "x": 62.805,
+              "y": 122
+            },
+            "box": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Active",
+                "rect": {
+                  "x": 40.32,
+                  "y": 110,
+                  "width": 44.969,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "Done",
+            "centre": {
+              "x": 62.805,
+              "y": 212
+            },
+            "box": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Done",
+                "rect": {
+                  "x": 42.664,
+                  "y": 200,
+                  "width": 40.281,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "Active----note-2",
+            "centre": {
+              "x": 125.609,
+              "y": 0
+            },
+            "box": {
+              "x": -48.609,
+              "y": -27,
+              "width": 97.219,
+              "height": 54
+            },
+            "labels": [
+              {
+                "text": "Left note",
+                "rect": {
+                  "x": 92,
+                  "y": -12,
+                  "width": 67.219,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Active----parent",
+            "rects": [
+              {
+                "kind": "",
+                "rect": {
+                  "x": 42,
+                  "y": -52,
+                  "width": 167.219,
+                  "height": 104
+                }
+              }
+            ],
+            "title": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "Active",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 52
+              },
+              {
+                "x": 0,
+                "y": 77
+              },
+              {
+                "x": 34.891,
+                "y": 102
+              }
+            ],
+            "path": "M0,7L0,14.5C0,22,0,37,0,48.667C0,60.333,0,68.667,5.815,77C11.63,85.333,23.261,93.667,29.076,97.833L34.891,102",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "Active",
+            "to": "Done",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 62.805,
+                "y": 142
+              },
+              {
+                "x": 62.805,
+                "y": 167
+              },
+              {
+                "x": 62.805,
+                "y": 192
+              }
+            ],
+            "path": "M62.805,142L62.805,146.167C62.805,150.333,62.805,158.667,62.805,167C62.805,175.333,62.805,183.667,62.805,187.833L62.805,192",
+            "label": null
+          },
+          {
+            "id": "Active----note-2-Active",
+            "cut": false,
+            "from": "Active----note-2",
+            "to": "Active",
+            "markerEnd": null,
+            "points": [
+              {
+                "x": 125.609,
+                "y": 27
+              },
+              {
+                "x": 125.609,
+                "y": 52
+              },
+              {
+                "x": 125.609,
+                "y": 77
+              },
+              {
+                "x": 90.718,
+                "y": 102
+              }
+            ],
+            "path": "M125.609,27L125.609,31.167C125.609,35.333,125.609,43.667,125.609,52C125.609,60.333,125.609,68.667,119.794,77C113.979,85.333,102.348,93.667,96.533,97.833L90.718,102",
+            "label": null
           }
         ]
       }
@@ -487,68 +2367,302 @@
       "id": "diamond",
       "source": "stateDiagram-v2\n[*] --> A\nA --> B\nA --> C\nB --> D\nC --> D\nD --> [*]",
       "expected": {
+        "origin": {
+          "x": 59.336,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            118.53125,
+            364
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "118.531px",
+          "content": {
+            "x": -51.336,
+            "y": -7,
+            "width": 102.531,
+            "height": 348
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 26.234,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": 65,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "B",
-            "width": 26.406,
-            "height": 40
+            "centre": {
+              "x": -38.133,
+              "y": 167
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -43.336,
+                  "y": 155,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "C",
-            "width": 26.125,
-            "height": 40
+            "centre": {
+              "x": 38.133,
+              "y": 167
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": 33.07,
+                  "y": 155,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "D",
-            "width": 27.688,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 257
+            },
+            "box": {
+              "x": -13.844,
+              "y": -20,
+              "width": 27.688,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "D",
+                "rect": {
+                  "x": -5.844,
+                  "y": 245,
+                  "width": 11.688,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 334
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "A",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -13.117,
+                "y": 92.479
+              },
+              {
+                "x": -38.133,
+                "y": 122
+              },
+              {
+                "x": -38.133,
+                "y": 147
+              }
+            ],
+            "path": "M-13.117,92.479L-17.287,97.4C-21.456,102.32,-29.794,112.16,-33.964,121.247C-38.133,130.333,-38.133,138.667,-38.133,142.833L-38.133,147",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "A",
             "to": "C",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 13.117,
+                "y": 92.479
+              },
+              {
+                "x": 38.133,
+                "y": 122
+              },
+              {
+                "x": 38.133,
+                "y": 147
+              }
+            ],
+            "path": "M13.117,92.479L17.286,97.4C21.456,102.32,29.794,112.16,33.963,121.247C38.133,130.333,38.133,138.667,38.133,142.833L38.133,147",
+            "label": null
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "B",
             "to": "D",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -38.133,
+                "y": 187
+              },
+              {
+                "x": -38.133,
+                "y": 212
+              },
+              {
+                "x": -13.844,
+                "y": 240.663
+              }
+            ],
+            "path": "M-38.133,187L-38.133,191.167C-38.133,195.333,-38.133,203.667,-34.085,212.611C-30.037,221.554,-21.94,231.109,-17.892,235.886L-13.844,240.663",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "C",
             "to": "D",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 38.133,
+                "y": 187
+              },
+              {
+                "x": 38.133,
+                "y": 212
+              },
+              {
+                "x": 13.844,
+                "y": 240.663
+              }
+            ],
+            "path": "M38.133,187L38.133,191.167C38.133,195.333,38.133,203.667,34.085,212.611C30.036,221.554,21.94,231.109,17.892,235.886L13.844,240.663",
+            "label": null
           },
           {
+            "id": "edge5",
+            "cut": false,
             "from": "D",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 277
+              },
+              {
+                "x": 0,
+                "y": 302
+              },
+              {
+                "x": 0,
+                "y": 326.993
+              }
+            ],
+            "path": "M0,277L0,281.167C0,285.333,0,293.667,0,301.999C0,310.331,0,318.662,0,322.828L0,326.993",
+            "label": null
           }
         ]
       }
@@ -557,83 +2671,377 @@
       "id": "chain",
       "source": "stateDiagram-v2\n[*] --> S1\nS1 --> S2\nS2 --> S3\nS3 --> S4\nS4 --> S5\nS5 --> S6\nS6 --> [*]",
       "expected": {
+        "origin": {
+          "x": 24.969,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            49.9375,
+            634
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "49.9375px",
+          "content": {
+            "x": -16.969,
+            "y": -7,
+            "width": 33.938,
+            "height": 618
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "S1",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S1",
+                "rect": {
+                  "x": -8.969,
+                  "y": 65,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S2",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 167
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S2",
+                "rect": {
+                  "x": -8.969,
+                  "y": 155,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S3",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 257
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S3",
+                "rect": {
+                  "x": -8.969,
+                  "y": 245,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S4",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 347
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S4",
+                "rect": {
+                  "x": -8.969,
+                  "y": 335,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S5",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 437
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S5",
+                "rect": {
+                  "x": -8.969,
+                  "y": 425,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "S6",
-            "width": 33.938,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 527
+            },
+            "box": {
+              "x": -16.969,
+              "y": -20,
+              "width": 33.938,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "S6",
+                "rect": {
+                  "x": -8.969,
+                  "y": 515,
+                  "width": 17.938,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 604
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "S1",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "S1",
             "to": "S2",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              }
+            ],
+            "path": "M0,97L0,101.167C0,105.333,0,113.667,0,122C0,130.333,0,138.667,0,142.833L0,147",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "S2",
             "to": "S3",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 187
+              },
+              {
+                "x": 0,
+                "y": 212
+              },
+              {
+                "x": 0,
+                "y": 237
+              }
+            ],
+            "path": "M0,187L0,191.167C0,195.333,0,203.667,0,212C0,220.333,0,228.667,0,232.833L0,237",
+            "label": null
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "S3",
             "to": "S4",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 277
+              },
+              {
+                "x": 0,
+                "y": 302
+              },
+              {
+                "x": 0,
+                "y": 327
+              }
+            ],
+            "path": "M0,277L0,281.167C0,285.333,0,293.667,0,302C0,310.333,0,318.667,0,322.833L0,327",
+            "label": null
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "S4",
             "to": "S5",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 367
+              },
+              {
+                "x": 0,
+                "y": 392
+              },
+              {
+                "x": 0,
+                "y": 417
+              }
+            ],
+            "path": "M0,367L0,371.167C0,375.333,0,383.667,0,392C0,400.333,0,408.667,0,412.833L0,417",
+            "label": null
           },
           {
+            "id": "edge5",
+            "cut": false,
             "from": "S5",
             "to": "S6",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 457
+              },
+              {
+                "x": 0,
+                "y": 482
+              },
+              {
+                "x": 0,
+                "y": 507
+              }
+            ],
+            "path": "M0,457L0,461.167C0,465.333,0,473.667,0,482C0,490.333,0,498.667,0,502.833L0,507",
+            "label": null
           },
           {
+            "id": "edge6",
+            "cut": false,
             "from": "S6",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 547
+              },
+              {
+                "x": 0,
+                "y": 572
+              },
+              {
+                "x": 0,
+                "y": 596.993
+              }
+            ],
+            "path": "M0,547L0,551.167C0,555.333,0,563.667,0,571.999C0,580.331,0,588.662,0,592.828L0,596.993",
+            "label": null
           }
         ]
       }
@@ -642,88 +3050,557 @@
       "id": "long-names",
       "source": "stateDiagram-v2\n[*] --> AwaitingUserConfirmation\nAwaitingUserConfirmation --> ProcessingPaymentAuthorization : submit\nProcessingPaymentAuthorization --> [*]",
       "expected": {
+        "origin": {
+          "x": 141.086,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            282.171875,
+            298
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "282.172px",
+          "content": {
+            "x": -133.086,
+            "y": -7,
+            "width": 266.172,
+            "height": 282
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "AwaitingUserConfirmation",
-            "width": 215.859,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -107.93,
+              "y": -20,
+              "width": 215.859,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "AwaitingUserConfirmation",
+                "rect": {
+                  "x": -99.93,
+                  "y": 65,
+                  "width": 199.859,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "ProcessingPaymentAuthorization",
-            "width": 266.172,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 191
+            },
+            "box": {
+              "x": -133.086,
+              "y": -20,
+              "width": 266.172,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "ProcessingPaymentAuthorization",
+                "rect": {
+                  "x": -125.086,
+                  "y": 179,
+                  "width": 250.172,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 268
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "AwaitingUserConfirmation",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "AwaitingUserConfirmation",
             "to": "ProcessingPaymentAuthorization",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 134
+              },
+              {
+                "x": 0,
+                "y": 171
+              }
+            ],
+            "path": "M0,97L0,103.167C0,109.333,0,121.667,0,134C0,146.333,0,158.667,0,164.833L0,171",
+            "label": {
+              "text": "submit",
+              "rect": {
+                "x": -26.133,
+                "y": 122,
+                "width": 52.266,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "ProcessingPaymentAuthorization",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 211
+              },
+              {
+                "x": 0,
+                "y": 236
+              },
+              {
+                "x": 0,
+                "y": 260.993
+              }
+            ],
+            "path": "M0,211L0,215.167C0,219.333,0,227.667,0,235.999C0,244.331,0,252.662,0,256.828L0,260.993",
+            "label": null
           }
         ]
       }
     },
     {
-      "id": "description",
-      "source": "stateDiagram-v2\n[*] --> Idle\nIdle : waiting for a signal from the host\nIdle --> Busy : a much longer transition label with several words\nBusy --> [*]",
+      "id": "titled-state",
+      "source": "stateDiagram-v2\n[*] --> Detailed\nDetailed : first row\nDetailed : second row here\nstate Running {\n  b2 : row one\n  b2 --> C : go\n}\nnote right of C : note text\nDetailed --> Running\nRunning --> [*]",
       "expected": {
+        "origin": {
+          "x": 106.508,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            237.0199432373047,
+            553
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "237.02px",
+          "content": {
+            "x": -98.508,
+            "y": -7,
+            "width": 221.02,
+            "height": 537
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
-            "id": "Idle",
-            "width": 216,
-            "height": 64
+            "id": "Detailed",
+            "centre": {
+              "x": 0,
+              "y": 89.5
+            },
+            "box": {
+              "x": -66.273,
+              "y": -32.5,
+              "width": 132.547,
+              "height": 65
+            },
+            "labels": [
+              {
+                "text": "first row",
+                "rect": {
+                  "x": -31.039,
+                  "y": 60,
+                  "width": 62.078,
+                  "height": 24
+                },
+                "contentHeight": 24
+              },
+              {
+                "text": "second row here",
+                "rect": {
+                  "x": -62.273,
+                  "y": 93,
+                  "width": 124.547,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": {
+              "from": {
+                "x": -66.273,
+                "y": 85
+              },
+              "to": {
+                "x": 66.273,
+                "y": 85
+              }
+            }
           },
           {
-            "id": "Busy",
-            "width": 52.125,
-            "height": 40
+            "id": "b2",
+            "centre": {
+              "x": 0,
+              "y": 217
+            },
+            "box": {
+              "x": -38.492,
+              "y": -20,
+              "width": 76.984,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "row one",
+                "rect": {
+                  "x": -30.492,
+                  "y": 205,
+                  "width": 60.984,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C",
+            "centre": {
+              "x": -14.883,
+              "y": 331
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": -19.945,
+                  "y": 319,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C----note-2",
+            "centre": {
+              "x": -14.883,
+              "y": 478
+            },
+            "box": {
+              "x": -48.625,
+              "y": -27,
+              "width": 97.25,
+              "height": 54
+            },
+            "labels": [
+              {
+                "text": "note text",
+                "rect": {
+                  "x": -48.508,
+                  "y": 466,
+                  "width": 67.25,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 115.499,
+              "y": 331
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Running",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -75.66,
+                  "y": 172,
+                  "width": 149.152,
+                  "height": 204
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -75.66,
+                  "y": 198,
+                  "width": 149.152,
+                  "height": 174
+                }
+              }
+            ],
+            "title": {
+              "text": "Running",
+              "rect": {
+                "x": -32.826,
+                "y": 173,
+                "width": 63.484,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "C----parent",
+            "rects": [
+              {
+                "kind": "",
+                "rect": {
+                  "x": -98.508,
+                  "y": 426,
+                  "width": 167.25,
+                  "height": 104
+                }
+              }
+            ],
+            "title": null
           }
         ],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
-            "to": "Idle",
-            "markerEnd": "barbEnd"
+            "to": "Detailed",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
-            "from": "Idle",
-            "to": "Busy",
-            "markerEnd": "barbEnd"
+            "id": "edge1",
+            "cut": false,
+            "from": "b2",
+            "to": "C",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -5.222,
+                "y": 237
+              },
+              {
+                "x": -14.883,
+                "y": 274
+              },
+              {
+                "x": -14.883,
+                "y": 311
+              }
+            ],
+            "path": "M-5.222,237L-6.832,243.167C-8.442,249.333,-11.663,261.667,-13.273,274C-14.883,286.333,-14.883,298.667,-14.883,304.833L-14.883,311",
+            "label": {
+              "text": "go",
+              "rect": {
+                "x": -24.648,
+                "y": 262,
+                "width": 19.531,
+                "height": 24
+              }
+            }
           },
           {
-            "from": "Busy",
+            "id": "C-C----note-2",
+            "cut": false,
+            "from": "C",
+            "to": "C----note-2",
+            "markerEnd": null,
+            "points": [
+              {
+                "x": -14.883,
+                "y": 351
+              },
+              {
+                "x": -14.883,
+                "y": 376
+              },
+              {
+                "x": -14.883,
+                "y": 401
+              },
+              {
+                "x": -14.883,
+                "y": 426
+              },
+              {
+                "x": -14.883,
+                "y": 451
+              }
+            ],
+            "path": "M-14.883,351L-14.883,355.167C-14.883,359.333,-14.883,367.667,-14.883,376C-14.883,384.333,-14.883,392.667,-14.883,401C-14.883,409.333,-14.883,417.667,-14.883,426C-14.883,434.333,-14.883,442.667,-14.883,446.833L-14.883,451",
+            "label": null
+          },
+          {
+            "id": "edge3",
+            "cut": true,
+            "from": "Detailed",
+            "to": "Running",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              },
+              {
+                "x": 0,
+                "y": 172
+              },
+              {
+                "x": 0,
+                "y": 197
+              }
+            ],
+            "path": "M0,122L0,126.167C0,130.333,0,138.667,0,147C0,155.333,0,163.667,0,167.833L0,172",
+            "label": null
+          },
+          {
+            "id": "edge4",
+            "cut": true,
+            "from": "Running",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 9.385,
+                "y": 237
+              },
+              {
+                "x": 26.746,
+                "y": 274
+              },
+              {
+                "x": 109.603,
+                "y": 327.214
+              }
+            ],
+            "path": "M73.492,297.192L109.603,327.214",
+            "label": null
           }
         ]
       }
@@ -732,53 +3609,230 @@
       "id": "direction-lr",
       "source": "stateDiagram-v2\ndirection LR\n[*] --> A\nA --> B\nB --> C\nC --> [*]",
       "expected": {
+        "origin": {
+          "x": 15,
+          "y": 28
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            322.78558349609375,
+            56
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "322.786px",
+          "content": {
+            "x": -7,
+            "y": -20,
+            "width": 306.786,
+            "height": 40
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 26.234,
-            "height": 40
+            "centre": {
+              "x": 70.117,
+              "y": 0
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": 65,
+                  "y": -12,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "B",
-            "width": 26.406,
-            "height": 40
+            "centre": {
+              "x": 146.438,
+              "y": 0
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": 141.234,
+                  "y": -12,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "C",
-            "width": 26.125,
-            "height": 40
+            "centre": {
+              "x": 222.703,
+              "y": 0
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": 217.641,
+                  "y": -12,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 292.772,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 7,
+                "y": 0
+              },
+              {
+                "x": 32,
+                "y": 0
+              },
+              {
+                "x": 57,
+                "y": 0
+              }
+            ],
+            "path": "M7,0L11.167,0C15.333,0,23.667,0,32,0C40.333,0,48.667,0,52.833,0L57,0",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "A",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 83.234,
+                "y": 0
+              },
+              {
+                "x": 108.234,
+                "y": 0
+              },
+              {
+                "x": 133.234,
+                "y": 0
+              }
+            ],
+            "path": "M83.234,0L87.401,0C91.568,0,99.901,0,108.234,0C116.568,0,124.901,0,129.068,0L133.234,0",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "B",
             "to": "C",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 159.641,
+                "y": 0
+              },
+              {
+                "x": 184.641,
+                "y": 0
+              },
+              {
+                "x": 209.641,
+                "y": 0
+              }
+            ],
+            "path": "M159.641,0L163.807,0C167.974,0,176.307,0,184.641,0C192.974,0,201.307,0,205.474,0L209.641,0",
+            "label": null
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "C",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 235.766,
+                "y": 0
+              },
+              {
+                "x": 260.766,
+                "y": 0
+              },
+              {
+                "x": 285.766,
+                "y": 0
+              }
+            ],
+            "path": "M235.766,0L239.932,0C244.099,0,252.432,0,260.766,0C269.099,0,277.432,0,281.599,0L285.766,0",
+            "label": null
           }
         ]
       }
@@ -787,53 +3841,259 @@
       "id": "two-loops",
       "source": "stateDiagram-v2\n[*] --> A\nA --> A : retry\nA --> B : go\nB --> B : wait\nB --> [*]",
       "expected": {
+        "origin": {
+          "x": 100.43,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0.006646156311035156,
+            0,
+            181.923828125,
+            396.1499938964844
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "181.924px",
+          "content": {
+            "x": -92.423,
+            "y": -7,
+            "width": 165.924,
+            "height": 380.15
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 26.234,
-            "height": 40
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": 65,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "B",
-            "width": 26.406,
-            "height": 40
+            "centre": {
+              "x": 57.767,
+              "y": 191
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": 52.563,
+                  "y": 179,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": -85.423,
+              "y": 292
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "edge0",
+            "cut": false,
             "from": "root_start",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
           },
           {
+            "id": "edge2",
+            "cut": false,
             "from": "A",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 13.117,
+                "y": 89.943
+              },
+              {
+                "x": 57.767,
+                "y": 134
+              },
+              {
+                "x": 57.767,
+                "y": 171
+              }
+            ],
+            "path": "M13.117,89.943L20.558,97.286C28,104.629,42.883,119.314,50.325,132.824C57.766,146.333,57.766,158.667,57.766,164.833L57.766,171",
+            "label": {
+              "text": "go",
+              "rect": {
+                "x": 48.001,
+                "y": 122,
+                "width": 19.531,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge4",
+            "cut": false,
             "from": "B",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 44.563,
+                "y": 196.256
+              },
+              {
+                "x": -85.423,
+                "y": 248
+              },
+              {
+                "x": -85.423,
+                "y": 284.993
+              }
+            ],
+            "path": "M44.563,196.256L22.899,204.88C1.234,213.504,-42.095,230.752,-63.759,245.542C-85.423,260.331,-85.423,272.662,-85.423,278.828L-85.423,284.993",
+            "label": null
           },
           {
+            "id": "edge1",
+            "cut": false,
             "from": "A",
             "to": "A",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -8.182,
+                "y": 97
+              },
+              {
+                "x": -18,
+                "y": 121
+              },
+              {
+                "x": 18,
+                "y": 121
+              },
+              {
+                "x": 8.182,
+                "y": 97
+              }
+            ],
+            "path": "M-8.182,97L-9.819,101C-11.455,105,-14.728,113,-10.364,117C-6,121,6,121,10.363,117C14.727,113,11.454,105,9.818,101L8.181,97",
+            "label": {
+              "text": "retry",
+              "rect": {
+                "x": -17.93,
+                "y": 125,
+                "width": 35.859,
+                "height": 24
+              }
+            }
           },
           {
+            "id": "edge3",
+            "cut": false,
             "from": "B",
             "to": "B",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 49.585,
+                "y": 211
+              },
+              {
+                "x": 39.767,
+                "y": 235
+              },
+              {
+                "x": 75.767,
+                "y": 235
+              },
+              {
+                "x": 65.948,
+                "y": 211
+              }
+            ],
+            "path": "M49.584,211L47.948,215C46.312,219,43.039,227,47.402,231C51.766,235,63.766,235,68.13,231C72.493,227,69.221,219,67.584,215L65.948,211",
+            "label": {
+              "text": "wait",
+              "rect": {
+                "x": 42.032,
+                "y": 239,
+                "width": 31.469,
+                "height": 24
+              }
+            }
           }
         ]
       }
@@ -842,36 +4102,2308 @@
       "id": "long-description",
       "source": "stateDiagram-v2\n[*] --> A\nA : Waiting for the user to confirm the payment authorization before anything else can proceed\nA --> [*]",
       "expected": {
+        "origin": {
+          "x": 116,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            232,
+            256
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "232px",
+          "content": {
+            "x": -108,
+            "y": -7,
+            "width": 216,
+            "height": 240
+          }
+        },
         "nodes": [
           {
             "id": "root_start",
-            "width": 14,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
           },
           {
             "id": "A",
-            "width": 216,
-            "height": 112
+            "centre": {
+              "x": 0,
+              "y": 113
+            },
+            "box": {
+              "x": -108,
+              "y": -56,
+              "width": 216,
+              "height": 112
+            },
+            "labels": [
+              {
+                "text": "Waiting for the user to confirm the payment authorization before anything else can proceed",
+                "rect": {
+                  "x": -100,
+                  "y": 65,
+                  "width": 200,
+                  "height": 96
+                },
+                "contentHeight": 96
+              }
+            ],
+            "divider": null
           },
           {
             "id": "root_end",
-            "width": 14.013,
-            "height": 14
+            "centre": {
+              "x": 0,
+              "y": 226
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "A",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 169
+              },
+              {
+                "x": 0,
+                "y": 194
+              },
+              {
+                "x": 0,
+                "y": 218.993
+              }
+            ],
+            "path": "M0,169L0,173.167C0,177.333,0,185.667,0,193.999C0,202.331,0,210.662,0,214.828L0,218.993",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "nested-composite",
+      "source": "stateDiagram-v2\n[*] --> Outer\nstate Outer {\n  [*] --> Middle\n  state Middle {\n    [*] --> Deep\n    Deep --> [*]\n  }\n  Middle --> [*]\n}\nOuter --> Done\nDone --> [*]",
+      "expected": {
+        "origin": {
+          "x": 105.789,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            211.578125,
+            855
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "211.578px",
+          "content": {
+            "x": -97.789,
+            "y": -7,
+            "width": 195.578,
+            "height": 839
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Outer_start",
+            "centre": {
+              "x": 0,
+              "y": 101.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Middle_start",
+            "centre": {
+              "x": 0,
+              "y": 240.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Deep",
+            "centre": {
+              "x": 0,
+              "y": 367.5
+            },
+            "box": {
+              "x": -27.789,
+              "y": -20,
+              "width": 55.578,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Deep",
+                "rect": {
+                  "x": -19.789,
+                  "y": 355.5,
+                  "width": 39.578,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "Middle_end",
+            "centre": {
+              "x": 0,
+              "y": 494.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Outer_end",
+            "centre": {
+              "x": 0,
+              "y": 633.5
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Done",
+            "centre": {
+              "x": 0,
+              "y": 748
+            },
+            "box": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Done",
+                "rect": {
+                  "x": -20.141,
+                  "y": 736,
+                  "width": 40.281,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 0,
+              "y": 825
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Outer",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -97.789,
+                  "y": 57,
+                  "width": 195.578,
+                  "height": 621
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -97.789,
+                  "y": 83,
+                  "width": 195.578,
+                  "height": 591
+                }
+              }
+            ],
+            "title": {
+              "text": "Outer",
+              "rect": {
+                "x": -21.898,
+                "y": 58,
+                "width": 43.797,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "Middle",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -62.789,
+                  "y": 183.5,
+                  "width": 125.578,
+                  "height": 368
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -62.789,
+                  "y": 209.5,
+                  "width": 125.578,
+                  "height": 338
+                }
+              }
+            ],
+            "title": {
+              "text": "Middle",
+              "rect": {
+                "x": -25.742,
+                "y": 184.5,
+                "width": 51.484,
+                "height": 24
+              }
+            }
           }
         ],
         "edges": [
           {
-            "from": "root_start",
-            "to": "A",
-            "markerEnd": "barbEnd"
+            "id": "edge6",
+            "cut": false,
+            "from": "Done",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 768
+              },
+              {
+                "x": 0,
+                "y": 793
+              },
+              {
+                "x": 0,
+                "y": 817.993
+              }
+            ],
+            "path": "M0,768L0,772.167C0,776.333,0,784.667,0,792.999C0,801.331,0,809.662,0,813.828L0,817.993",
+            "label": null
           },
           {
-            "from": "A",
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "Outer",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge5",
+            "cut": false,
+            "from": "Outer",
+            "to": "Done",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 678
+              },
+              {
+                "x": 0,
+                "y": 703
+              },
+              {
+                "x": 0,
+                "y": 728
+              }
+            ],
+            "path": "M0,678L0,682.167C0,686.333,0,694.667,0,703C0,711.333,0,719.667,0,723.833L0,728",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "Outer_start",
+            "to": "Middle",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 108.5
+              },
+              {
+                "x": 0,
+                "y": 146
+              },
+              {
+                "x": 0,
+                "y": 183.5
+              }
+            ],
+            "path": "M0,108.5L0,114.75C0,121,0,133.5,0,146C0,158.5,0,171,0,177.25L0,183.5",
+            "label": null
+          },
+          {
+            "id": "edge4",
+            "cut": false,
+            "from": "Middle",
+            "to": "Outer_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 551.5
+              },
+              {
+                "x": 0,
+                "y": 589
+              },
+              {
+                "x": 0,
+                "y": 626.5
+              }
+            ],
+            "path": "M0,551.5L0,557.75C0,564,0,576.5,0,589C0,601.5,0,614,0,620.25L0,626.5",
+            "label": null
+          },
+          {
+            "id": "edge2",
+            "cut": false,
+            "from": "Middle_start",
+            "to": "Deep",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 247.5
+              },
+              {
+                "x": 0,
+                "y": 297.5
+              },
+              {
+                "x": 0,
+                "y": 347.5
+              }
+            ],
+            "path": "M0,247.5L0,255.833C0,264.167,0,280.833,0,297.5C0,314.167,0,330.833,0,339.167L0,347.5",
+            "label": null
+          },
+          {
+            "id": "edge3",
+            "cut": false,
+            "from": "Deep",
+            "to": "Middle_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 387.5
+              },
+              {
+                "x": 0,
+                "y": 437.5
+              },
+              {
+                "x": 0,
+                "y": 487.493
+              }
+            ],
+            "path": "M0,387.5L0,395.833C0,404.167,0,420.833,0,437.499C0,454.164,0,470.829,0,479.161L0,487.493",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "external-into-composite",
+      "source": "stateDiagram-v2\nstate Target {\n  [*] --> Inner\n}\nOutside --> Inner : enter",
+      "expected": {
+        "origin": {
+          "x": 60.711,
+          "y": 53
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            270.49609375,
+            220
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "270.496px",
+          "content": {
+            "x": -52.711,
+            "y": -45,
+            "width": 254.496,
+            "height": 204
+          }
+        },
+        "nodes": [
+          {
+            "id": "Target_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Inner",
+            "centre": {
+              "x": 20.082,
+              "y": 114
+            },
+            "box": {
+              "x": -28.422,
+              "y": -20,
+              "width": 56.844,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Inner",
+                "rect": {
+                  "x": -0.34,
+                  "y": 102,
+                  "width": 40.844,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "Outside",
+            "centre": {
+              "x": 164.371,
+              "y": 0
+            },
+            "box": {
+              "x": -37.414,
+              "y": -20,
+              "width": 74.828,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Outside",
+                "rect": {
+                  "x": 134.957,
+                  "y": -12,
+                  "width": 58.828,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Target",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -52.711,
+                  "y": -45,
+                  "width": 144.668,
+                  "height": 204
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -52.711,
+                  "y": -19,
+                  "width": 144.668,
+                  "height": 174
+                }
+              }
+            ],
+            "title": {
+              "text": "Target",
+              "rect": {
+                "x": -4.221,
+                "y": -44,
+                "width": 47.688,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "Target_start",
+            "to": "Inner",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 57
+              },
+              {
+                "x": 13.036,
+                "y": 94
+              }
+            ],
+            "path": "M0,7L0,15.333C0,23.667,0,40.333,2.173,54.833C4.345,69.333,8.69,81.667,10.863,87.833L13.036,94",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "Outside",
+            "to": "Inner",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 126.957,
+                "y": 17.17
+              },
+              {
+                "x": 40.164,
+                "y": 57
+              },
+              {
+                "x": 27.128,
+                "y": 94
+              }
+            ],
+            "path": "M126.957,17.17L112.491,23.808C98.026,30.446,69.095,43.723,52.457,56.528C35.819,69.333,31.474,81.667,29.301,87.833L27.128,94",
+            "label": {
+              "text": "enter",
+              "rect": {
+                "x": 20,
+                "y": 45,
+                "width": 40.328,
+                "height": 24
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "titled-into-composite",
+      "source": "stateDiagram-v2\n[*] --> Detailed\nDetailed : first row\nDetailed : second row here\nstate Running {\n  b2 : row one\n  b2 --> C : go\n}\nDetailed --> Running\nRunning --> [*]",
+      "expected": {
+        "origin": {
+          "x": 81.492,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            162.984375,
+            513
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "162.984px",
+          "content": {
+            "x": -73.492,
+            "y": -7,
+            "width": 146.984,
+            "height": 497
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Detailed",
+            "centre": {
+              "x": 0,
+              "y": 89.5
+            },
+            "box": {
+              "x": -66.273,
+              "y": -32.5,
+              "width": 132.547,
+              "height": 65
+            },
+            "labels": [
+              {
+                "text": "first row",
+                "rect": {
+                  "x": -31.039,
+                  "y": 60,
+                  "width": 62.078,
+                  "height": 24
+                },
+                "contentHeight": 24
+              },
+              {
+                "text": "second row here",
+                "rect": {
+                  "x": -62.273,
+                  "y": 93,
+                  "width": 124.547,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": {
+              "from": {
+                "x": -66.273,
+                "y": 85
+              },
+              "to": {
+                "x": 66.273,
+                "y": 85
+              }
+            }
+          },
+          {
+            "id": "b2",
+            "centre": {
+              "x": 0,
+              "y": 229.5
+            },
+            "box": {
+              "x": -38.492,
+              "y": -20,
+              "width": 76.984,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "row one",
+                "rect": {
+                  "x": -30.492,
+                  "y": 217.5,
+                  "width": 60.984,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C",
+            "centre": {
+              "x": 0,
+              "y": 368.5
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": -5.062,
+                  "y": 356.5,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 0,
+              "y": 483
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Running",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -73.492,
+                  "y": 172,
+                  "width": 146.984,
+                  "height": 254
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -73.492,
+                  "y": 198,
+                  "width": 146.984,
+                  "height": 224
+                }
+              }
+            ],
+            "title": {
+              "text": "Running",
+              "rect": {
+                "x": -31.742,
+                "y": 173,
+                "width": 63.484,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "Detailed",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge2",
+            "cut": false,
+            "from": "Detailed",
+            "to": "Running",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              },
+              {
+                "x": 0,
+                "y": 172
+              }
+            ],
+            "path": "M0,122L0,126.167C0,130.333,0,138.667,0,147C0,155.333,0,163.667,0,167.833L0,172",
+            "label": null
+          },
+          {
+            "id": "edge3",
+            "cut": false,
+            "from": "Running",
             "to": "root_end",
-            "markerEnd": "barbEnd"
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 426
+              },
+              {
+                "x": 0,
+                "y": 451
+              },
+              {
+                "x": 0,
+                "y": 476
+              }
+            ],
+            "path": "M0,426L0,430.167C0,434.333,0,442.667,0,451C0,459.333,0,467.667,0,471.833L0,476",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "b2",
+            "to": "C",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 249.5
+              },
+              {
+                "x": 0,
+                "y": 299
+              },
+              {
+                "x": 0,
+                "y": 348.5
+              }
+            ],
+            "path": "M0,249.5L0,257.75C0,266,0,282.5,0,299C0,315.5,0,332,0,340.25L0,348.5",
+            "label": {
+              "text": "go",
+              "rect": {
+                "x": -9.766,
+                "y": 287,
+                "width": 19.531,
+                "height": 24
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "composite-with-note",
+      "source": "stateDiagram-v2\n[*] --> Start\nstate Running {\n  b2 --> C : go\n  note right of C : note text\n}\nStart --> Running\nRunning --> [*]",
+      "expected": {
+        "origin": {
+          "x": 106.508,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            216.0277557373047,
+            528
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "216.028px",
+          "content": {
+            "x": -98.508,
+            "y": -7,
+            "width": 200.028,
+            "height": 512
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "Start",
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -25.961,
+              "y": -20,
+              "width": 51.922,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "Start",
+                "rect": {
+                  "x": -17.961,
+                  "y": 65,
+                  "width": 35.922,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "b2",
+            "centre": {
+              "x": 0,
+              "y": 192
+            },
+            "box": {
+              "x": -17.5,
+              "y": -20,
+              "width": 35,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "b2",
+                "rect": {
+                  "x": -9.5,
+                  "y": 180,
+                  "width": 19,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C",
+            "centre": {
+              "x": -14.883,
+              "y": 306
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": -19.945,
+                  "y": 294,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C----note-2",
+            "centre": {
+              "x": -14.883,
+              "y": 453
+            },
+            "box": {
+              "x": -48.625,
+              "y": -27,
+              "width": 97.25,
+              "height": 54
+            },
+            "labels": [
+              {
+                "text": "note text",
+                "rect": {
+                  "x": -48.508,
+                  "y": 441,
+                  "width": 67.25,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 94.507,
+              "y": 306
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Running",
+            "rects": [
+              {
+                "kind": "outer",
+                "rect": {
+                  "x": -65.164,
+                  "y": 147,
+                  "width": 117.664,
+                  "height": 204
+                }
+              },
+              {
+                "kind": "inner",
+                "rect": {
+                  "x": -65.164,
+                  "y": 173,
+                  "width": 117.664,
+                  "height": 174
+                }
+              }
+            ],
+            "title": {
+              "text": "Running",
+              "rect": {
+                "x": -38.074,
+                "y": 148,
+                "width": 63.484,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "C----parent",
+            "rects": [
+              {
+                "kind": "",
+                "rect": {
+                  "x": -98.508,
+                  "y": 401,
+                  "width": 167.25,
+                  "height": 104
+                }
+              }
+            ],
+            "title": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "Start",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "b2",
+            "to": "C",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -5.222,
+                "y": 212
+              },
+              {
+                "x": -14.883,
+                "y": 249
+              },
+              {
+                "x": -14.883,
+                "y": 286
+              }
+            ],
+            "path": "M-5.222,212L-6.832,218.167C-8.442,224.333,-11.663,236.667,-13.273,249C-14.883,261.333,-14.883,273.667,-14.883,279.833L-14.883,286",
+            "label": {
+              "text": "go",
+              "rect": {
+                "x": -24.648,
+                "y": 237,
+                "width": 19.531,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "C-C----note-2",
+            "cut": false,
+            "from": "C",
+            "to": "C----note-2",
+            "markerEnd": null,
+            "points": [
+              {
+                "x": -14.883,
+                "y": 326
+              },
+              {
+                "x": -14.883,
+                "y": 351
+              },
+              {
+                "x": -14.883,
+                "y": 376
+              },
+              {
+                "x": -14.883,
+                "y": 401
+              },
+              {
+                "x": -14.883,
+                "y": 426
+              }
+            ],
+            "path": "M-14.883,326L-14.883,330.167C-14.883,334.333,-14.883,342.667,-14.883,351C-14.883,359.333,-14.883,367.667,-14.883,376C-14.883,384.333,-14.883,392.667,-14.883,401C-14.883,409.333,-14.883,417.667,-14.883,421.833L-14.883,426",
+            "label": null
+          },
+          {
+            "id": "edge3",
+            "cut": true,
+            "from": "Start",
+            "to": "Running",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0,
+                "y": 147
+              },
+              {
+                "x": 0,
+                "y": 172
+              }
+            ],
+            "path": "M0,97L0,101.167C0,105.333,0,113.667,0,122C0,130.333,0,138.667,0,142.833L0,147",
+            "label": null
+          },
+          {
+            "id": "edge4",
+            "cut": true,
+            "from": "Running",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 5.702,
+                "y": 212
+              },
+              {
+                "x": 16.25,
+                "y": 249
+              },
+              {
+                "x": 88.843,
+                "y": 301.875
+              }
+            ],
+            "path": "M52.5,275.471L88.843,301.875",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "choice-fork-join",
+      "source": "stateDiagram-v2\n[*] --> A\nstate c <<choice>>\nA --> c\nc --> B : yes\nc --> C : no\nstate f <<fork>>\nB --> f\nC --> f\nf --> D\nf --> E\nstate j <<join>>\nD --> j\nE --> j\nj --> [*]",
+      "expected": {
+        "origin": {
+          "x": 59.992,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            119.1875,
+            594
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "119.188px",
+          "content": {
+            "x": -51.992,
+            "y": -7,
+            "width": 103.188,
+            "height": 578
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "A",
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": 65,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "c",
+            "centre": {
+              "x": 0,
+              "y": 161
+            },
+            "box": {
+              "x": -14,
+              "y": -14,
+              "width": 28,
+              "height": 28
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "B",
+            "centre": {
+              "x": -38.133,
+              "y": 269
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -43.336,
+                  "y": 257,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C",
+            "centre": {
+              "x": 38.133,
+              "y": 269
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": 33.07,
+                  "y": 257,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "f",
+            "centre": {
+              "x": 0,
+              "y": 346
+            },
+            "box": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "D",
+            "centre": {
+              "x": -38.148,
+              "y": 423
+            },
+            "box": {
+              "x": -13.844,
+              "y": -20,
+              "width": 27.688,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "D",
+                "rect": {
+                  "x": -43.992,
+                  "y": 411,
+                  "width": 11.688,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "E",
+            "centre": {
+              "x": 38.148,
+              "y": 423
+            },
+            "box": {
+              "x": -12.453,
+              "y": -20,
+              "width": 24.906,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "E",
+                "rect": {
+                  "x": 33.695,
+                  "y": 411,
+                  "width": 8.906,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "j",
+            "centre": {
+              "x": 0,
+              "y": 500
+            },
+            "box": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 0,
+              "y": 564
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "A",
+            "to": "c",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 122
+              },
+              {
+                "x": 0.5,
+                "y": 147.5
+              }
+            ],
+            "path": "M0,97L0,101.167C0,105.333,0,113.667,0.084,122.083C0.167,130.5,0.334,139,0.417,143.25L0.5,147.5",
+            "label": null
+          },
+          {
+            "id": "edge2",
+            "cut": false,
+            "from": "c",
+            "to": "B",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -5.489,
+                "y": 169.511
+              },
+              {
+                "x": -38.133,
+                "y": 212
+              },
+              {
+                "x": -38.133,
+                "y": 249
+              }
+            ],
+            "path": "M-5.489,169.511L-10.93,176.592C-16.37,183.674,-27.252,197.837,-32.692,211.085C-38.133,224.333,-38.133,236.667,-38.133,242.833L-38.133,249",
+            "label": {
+              "text": "yes",
+              "rect": {
+                "x": -50.562,
+                "y": 200,
+                "width": 24.859,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "edge3",
+            "cut": false,
+            "from": "c",
+            "to": "C",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 6.489,
+                "y": 169.511
+              },
+              {
+                "x": 38.133,
+                "y": 212
+              },
+              {
+                "x": 38.133,
+                "y": 249
+              }
+            ],
+            "path": "M6.49,169.511L11.764,176.592C17.037,183.674,27.585,197.837,32.859,211.085C38.133,224.333,38.133,236.667,38.133,242.833L38.133,249",
+            "label": {
+              "text": "no",
+              "rect": {
+                "x": 28.344,
+                "y": 200,
+                "width": 19.578,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "edge4",
+            "cut": false,
+            "from": "B",
+            "to": "f",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -38.133,
+                "y": 289
+              },
+              {
+                "x": -38.133,
+                "y": 314
+              },
+              {
+                "x": -8.342,
+                "y": 339
+              }
+            ],
+            "path": "M-38.133,289L-38.133,293.167C-38.133,297.333,-38.133,305.667,-33.167,314C-28.202,322.333,-18.272,330.667,-13.307,334.833L-8.341,339",
+            "label": null
+          },
+          {
+            "id": "edge5",
+            "cut": false,
+            "from": "C",
+            "to": "f",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 38.133,
+                "y": 289
+              },
+              {
+                "x": 38.133,
+                "y": 314
+              },
+              {
+                "x": 8.342,
+                "y": 339
+              }
+            ],
+            "path": "M38.133,289L38.133,293.167C38.133,297.333,38.133,305.667,33.168,314C28.203,322.333,18.272,330.667,13.307,334.833L8.342,339",
+            "label": null
+          },
+          {
+            "id": "edge6",
+            "cut": false,
+            "from": "f",
+            "to": "D",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -8.345,
+                "y": 353
+              },
+              {
+                "x": -38.148,
+                "y": 378
+              },
+              {
+                "x": -38.148,
+                "y": 403
+              }
+            ],
+            "path": "M-8.345,353L-13.312,357.167C-18.279,361.333,-28.214,369.667,-33.181,378C-38.148,386.333,-38.148,394.667,-38.148,398.833L-38.148,403",
+            "label": null
+          },
+          {
+            "id": "edge7",
+            "cut": false,
+            "from": "f",
+            "to": "E",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 8.345,
+                "y": 353
+              },
+              {
+                "x": 38.148,
+                "y": 378
+              },
+              {
+                "x": 38.148,
+                "y": 403
+              }
+            ],
+            "path": "M8.345,353L13.312,357.167C18.28,361.333,28.214,369.667,33.181,378C38.149,386.333,38.149,394.667,38.149,398.833L38.149,403",
+            "label": null
+          },
+          {
+            "id": "edge8",
+            "cut": false,
+            "from": "D",
+            "to": "j",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": -38.148,
+                "y": 443
+              },
+              {
+                "x": -38.148,
+                "y": 468
+              },
+              {
+                "x": -8.345,
+                "y": 493
+              }
+            ],
+            "path": "M-38.148,443L-38.148,447.167C-38.148,451.333,-38.148,459.667,-33.181,468C-28.214,476.333,-18.279,484.667,-13.312,488.833L-8.345,493",
+            "label": null
+          },
+          {
+            "id": "edge9",
+            "cut": false,
+            "from": "E",
+            "to": "j",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 38.148,
+                "y": 443
+              },
+              {
+                "x": 38.148,
+                "y": 468
+              },
+              {
+                "x": 8.345,
+                "y": 493
+              }
+            ],
+            "path": "M38.149,443L38.149,447.167C38.149,451.333,38.149,459.667,33.181,468C28.214,476.333,18.28,484.667,13.312,488.833L8.345,493",
+            "label": null
+          },
+          {
+            "id": "edge10",
+            "cut": false,
+            "from": "j",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 507
+              },
+              {
+                "x": 0,
+                "y": 532
+              },
+              {
+                "x": 0,
+                "y": 556.993
+              }
+            ],
+            "path": "M0,507L0,511.167C0,515.333,0,523.667,0,531.999C0,540.331,0,548.662,0,552.828L0,556.993",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "long-word",
+      "source": "stateDiagram-v2\n[*] --> A\nA : SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious\nA --> B : AntidisestablishmentarianismAntidisestablishmentarianism\nB --> [*]",
+      "expected": {
+        "origin": {
+          "x": 259.906,
+          "y": 15
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            519.8125,
+            298
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "519.812px",
+          "content": {
+            "x": -251.906,
+            "y": -7,
+            "width": 503.813,
+            "height": 282
+          }
+        },
+        "nodes": [
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "A",
+            "centre": {
+              "x": 0,
+              "y": 77
+            },
+            "box": {
+              "x": -251.906,
+              "y": -20,
+              "width": 503.813,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "SupercalifragilisticexpialidociousSupercalifragilisticexpialidocious",
+                "rect": {
+                  "x": -243.906,
+                  "y": 65,
+                  "width": 487.813,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "B",
+            "centre": {
+              "x": 0,
+              "y": 191
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -5.203,
+                  "y": 179,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 0,
+              "y": 268
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 7
+              },
+              {
+                "x": 0,
+                "y": 32
+              },
+              {
+                "x": 0,
+                "y": 57
+              }
+            ],
+            "path": "M0,7L0,11.167C0,15.333,0,23.667,0,32C0,40.333,0,48.667,0,52.833L0,57",
+            "label": null
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 97
+              },
+              {
+                "x": 0,
+                "y": 134
+              },
+              {
+                "x": 0,
+                "y": 171
+              }
+            ],
+            "path": "M0,97L0,103.167C0,109.333,0,121.667,0,134C0,146.333,0,158.667,0,164.833L0,171",
+            "label": {
+              "text": "AntidisestablishmentarianismAntidisestablishmentarianism",
+              "rect": {
+                "x": -223.719,
+                "y": 122,
+                "width": 447.438,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "edge2",
+            "cut": false,
+            "from": "B",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 211
+              },
+              {
+                "x": 0,
+                "y": 236
+              },
+              {
+                "x": 0,
+                "y": 260.993
+              }
+            ],
+            "path": "M0,211L0,215.167C0,219.333,0,227.667,0,235.999C0,244.331,0,252.662,0,256.828L0,260.993",
+            "label": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "wide-labels",
+      "source": "stateDiagram-v2\nA --> B : a much longer transition label with several words\nB --> C : short\nC --> [*]\n[*] --> A",
+      "expected": {
+        "origin": {
+          "x": 108,
+          "y": 92
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            216,
+            436
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "216px",
+          "content": {
+            "x": -100,
+            "y": -84,
+            "width": 200,
+            "height": 420
+          }
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "box": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "A",
+                "rect": {
+                  "x": -5.117,
+                  "y": -12,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "B",
+            "centre": {
+              "x": 0,
+              "y": 138
+            },
+            "box": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "B",
+                "rect": {
+                  "x": -5.203,
+                  "y": 126,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "C",
+            "centre": {
+              "x": 0,
+              "y": 252
+            },
+            "box": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "labels": [
+              {
+                "text": "C",
+                "rect": {
+                  "x": -5.062,
+                  "y": 240,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "contentHeight": 24
+              }
+            ],
+            "divider": null
+          },
+          {
+            "id": "root_end",
+            "centre": {
+              "x": 0,
+              "y": 329
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          },
+          {
+            "id": "root_start",
+            "centre": {
+              "x": 0,
+              "y": -77
+            },
+            "box": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "labels": [],
+            "divider": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "cut": false,
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 20
+              },
+              {
+                "x": 0,
+                "y": 69
+              },
+              {
+                "x": 0,
+                "y": 118
+              }
+            ],
+            "path": "M0,20L0,28.167C0,36.333,0,52.667,0,69C0,85.333,0,101.667,0,109.833L0,118",
+            "label": {
+              "text": "a much longer transition label with several words",
+              "rect": {
+                "x": -100,
+                "y": 45,
+                "width": 200,
+                "height": 48
+              }
+            }
+          },
+          {
+            "id": "edge1",
+            "cut": false,
+            "from": "B",
+            "to": "C",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 158
+              },
+              {
+                "x": 0,
+                "y": 195
+              },
+              {
+                "x": 0,
+                "y": 232
+              }
+            ],
+            "path": "M0,158L0,164.167C0,170.333,0,182.667,0,195C0,207.333,0,219.667,0,225.833L0,232",
+            "label": {
+              "text": "short",
+              "rect": {
+                "x": -19.812,
+                "y": 183,
+                "width": 39.625,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "edge2",
+            "cut": false,
+            "from": "C",
+            "to": "root_end",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": 272
+              },
+              {
+                "x": 0,
+                "y": 297
+              },
+              {
+                "x": 0,
+                "y": 321.993
+              }
+            ],
+            "path": "M0,272L0,276.167C0,280.333,0,288.667,0,296.999C0,305.331,0,313.662,0,317.828L0,321.993",
+            "label": null
+          },
+          {
+            "id": "edge3",
+            "cut": false,
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd",
+            "points": [
+              {
+                "x": 0,
+                "y": -70
+              },
+              {
+                "x": 0,
+                "y": -45
+              },
+              {
+                "x": 0,
+                "y": -20
+              }
+            ],
+            "path": "M0,-70L0,-65.833C0,-61.667,0,-53.333,0,-45C0,-36.667,0,-28.333,0,-24.167L0,-20",
+            "label": null
           }
         ]
       }
     }
-  ]
+  ],
+  "fixtureSha256": "caf6e14b2499bac98a8dae8b8a7f8cd07a846af53190326459f2fed19f5aba91"
 }

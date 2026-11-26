@@ -13,6 +13,10 @@
 
 namespace muffin::mermaid::state {
 
+// createText() gives a label this width as its max-width (flowchart's
+// wrappingWidth): a text wider than it is wrapped, and its box keeps the width.
+inline constexpr qreal kStateLabelWidth = 200.0;
+
 struct StateLayoutNodeInput {
   QString id;
   QString shape;
@@ -92,6 +96,8 @@ struct StatePlacementEdge {
   QVector<QPointF> points;
   QVector<QVector<QPointF>> segments;
   std::optional<QPointF> labelPosition;
+  // The centres of the two 0.1 x 0.1 nodes a loop is laid out through.
+  QVector<QPointF> loopMarks;
 };
 struct StatePlacementCluster {
   QString id;

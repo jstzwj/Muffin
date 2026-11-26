@@ -6,7 +6,10 @@
 #include "mermaid/rough/RoughOps.h"
 #include "mermaid/theme/MermaidStyleResolve.h"
 
+#include <QLineF>
 #include <QRectF>
+
+#include <optional>
 
 namespace muffin::mermaid::state {
 
@@ -125,6 +128,17 @@ struct StateSceneNode {
   // upstream titleBox: divider at titleHeight + padding/2, description block
   // at titleHeight + padding/2 + 5, label group 3px below the rect top).
   qreal titleHeight = 0.0;
+  // The same measurement's width.
+  qreal labelWidth = 0.0;
+  // Where the text is painted, in scene coordinates and the scene's fonts: a
+  // plain state's label line box, a titled state's title and description
+  // boxes and its divider, a composite's title.
+  QRectF labelBounds;
+  QRectF titleBounds;
+  QRectF descriptionBounds;
+  // Each description row's own box, as wide as its text.
+  QVector<QRectF> descriptionRects;
+  std::optional<QLineF> divider;
   StateElementCss shapeCss;       // shape element (rect / circle / rough fill path)
   StateElementCss shapeStrokeCss; // rough stroke path (note/choice/fork/end)
   StateElementCss labelCss;       // span.nodeLabel
@@ -153,6 +167,22 @@ struct StateSceneNode {
   QVector<rough::Drawable> roughDrawables;
   QRectF paintedBounds;
 };
+
+// rectWithTitle's text stack, as upstream places it: the title's line box
+// (as wide as its text) 3px below the box's top, the divider a half padding
+// under the title, and the description rows' box, the padding narrower, 5px
+// under the divider.
+QRectF stateNodeTitleRect(const StateSceneNode& node, qreal lineHeight);
+qreal stateNodeDividerY(const StateSceneNode& node, qreal lineHeight);
+// Each description row's own box, in order: a row takes as many lines as
+// it was wrapped into.
+QVector<QRectF> stateNodeDescriptionRects(const StateSceneNode& node, qreal rowLineHeight);
+qsizetype stateLabelLines(const flowchart::FlowLabelDocument& document);
+QRectF stateNodeDescriptionRect(const StateSceneNode& node, qreal rowLineHeight);
+// A composite's title: its line box (as wide as its text) a pixel below the
+// top edge.
+QRectF stateClusterTitleRect(const StateSceneNode& cluster, qreal lineHeight);
+
 struct StateSceneEdge {
   QString id;
   QString start;
@@ -162,6 +192,9 @@ struct StateSceneEdge {
   QString classes;
   QVector<QPointF> points;
   QVector<QVector<QPointF>> segments;
+  // The centres of the two 0.1 x 0.1 nodes a loop is laid out through; they
+  // are not painted, but the SVG draws them and its bounding box covers them.
+  QVector<QPointF> loopMarks;
   std::optional<QPointF> labelPosition;
   QString path;
   flowchart::FlowLabelDocument labelDocument;

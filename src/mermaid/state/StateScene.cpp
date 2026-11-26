@@ -13,11 +13,19 @@
 
 namespace muffin::mermaid::state {
 namespace {
-flowchart::FlowLabelDocument prepareLabel(const QString& text, qreal fontSize) {
+// A label as createText() lays it out: when it has the wrapping width as its
+// max-width (`wrap`), a wider text is wrapped and the box keeps the width.
+flowchart::FlowLabelDocument prepareLabel(const QString& text, const QString& fontFamily, qreal fontSize, bool wrap) {
   auto document = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
   document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
   flowchart::prepareFlowLabelMath(document, fontSize);
-  return document;
+  return wrap ? flowchart::wrapFlowLabel(document, fontFamily, fontSize, kStateLabelWidth) : document;
+}
+QSizeF stateLabelSize(const flowchart::FlowLabelDocument& document, const QString& fontFamily, qreal fontSize) {
+  QSizeF size = flowchart::measureFlowLabel(document, fontFamily, fontSize, fontSize * 1.5);
+  if (!document.visualLines.isEmpty())
+    size.setWidth(std::max(size.width(), kStateLabelWidth));
+  return size;
 }
 QStringList descriptions(const QJsonValue& value) {
   QStringList result;
@@ -86,6 +94,55 @@ QRectF edgePaintBounds(const QVector<QPointF>& points, const QVector<QVector<QPo
       include(bounds, initialized, QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
   return initialized ? bounds.adjusted(-12.0, -12.0, 12.0, 12.0) : QRectF{};
 }
+}
+
+QRectF stateNodeTitleRect(const StateSceneNode& node, qreal lineHeight) {
+  const qreal height = node.titleHeight > 0.0 ? node.titleHeight : lineHeight;
+  return QRectF(node.bounds.center().x() - node.labelWidth / 2.0, node.bounds.top() + 3.0, node.labelWidth, height);
+}
+
+qreal stateNodeDividerY(const StateSceneNode& node, qreal lineHeight) {
+  return node.bounds.top() + (node.titleHeight > 0.0 ? node.titleHeight : lineHeight) + 4.0;
+}
+
+qsizetype stateLabelLines(const flowchart::FlowLabelDocument& document) {
+  if (!document.visualLines.isEmpty())
+    return document.visualLines.size();
+  return document.text.count(QLatin1Char('\n')) + 1;
+}
+
+// rectWithTitle.ts: the description's box starts 9px under the title's
+// bottom, and lies under the title's centre when it is the narrower one.
+QRectF stateNodeDescriptionBox(const StateSceneNode& node, qreal width, qreal top, qreal height) {
+  const qreal shift = std::max(0.0, (node.labelWidth - width) / 2.0);
+  return QRectF(node.bounds.left() + 4.0 + shift, top, width, height);
+}
+
+QVector<QRectF> stateNodeDescriptionRects(const StateSceneNode& node, qreal rowLineHeight) {
+  if (!node.descriptionRects.isEmpty())
+    return node.descriptionRects;
+  QVector<QRectF> rects;
+  qreal y = stateNodeDividerY(node, rowLineHeight) + 8.0;
+  for (const auto& document : node.descriptionDocuments) {
+    const qreal height = static_cast<qreal>(stateLabelLines(document)) * rowLineHeight;
+    rects.append(stateNodeDescriptionBox(node, node.bounds.width() - 8.0, y, height));
+    y += height;
+  }
+  return rects;
+}
+
+QRectF stateNodeDescriptionRect(const StateSceneNode& node, qreal rowLineHeight) {
+  const QVector<QRectF> rects = stateNodeDescriptionRects(node, rowLineHeight);
+  if (rects.isEmpty())
+    return QRectF(node.bounds.left() + 4.0, stateNodeDividerY(node, rowLineHeight) + 8.0, node.bounds.width() - 8.0,
+                  0.0);
+  return rects.first().united(rects.last());
+}
+
+QRectF stateClusterTitleRect(const StateSceneNode& cluster, qreal lineHeight) {
+  const qreal height = cluster.titleHeight > 0.0 ? cluster.titleHeight : lineHeight;
+  return QRectF(cluster.bounds.center().x() - cluster.labelWidth / 2.0, cluster.bounds.top() + 1.0, cluster.labelWidth,
+                height);
 }
 
 StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementResult& placement, StateSceneStyle style,
@@ -159,11 +216,12 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
                          scene.style.stateLabelColor.isEmpty() ? scene.style.textColor : scene.style.stateLabelColor,
                          scene.style.strokeWidth);
     const auto clusterFont = labelFont(node.id);
-    node.labelDocument = prepareLabel(node.label, clusterFont.second);
-    const qreal titleHeight =
-        flowchart::measureFlowLabel(node.labelDocument, clusterFont.first, clusterFont.second, clusterFont.second * 1.5)
-            .height();
+    node.labelDocument = prepareLabel(node.label, clusterFont.first, clusterFont.second, false);
+    const QSizeF titleSize = stateLabelSize(node.labelDocument, clusterFont.first, clusterFont.second);
+    const qreal titleHeight = titleSize.height();
     node.titleHeight = titleHeight;
+    node.labelWidth = titleSize.width();
+    node.titleBounds = stateClusterTitleRect(node, clusterFont.second * 1.5);
     if (!divider) {
       const qreal innerY = node.bounds.top() + titleHeight + 2.0;
       node.innerBounds = QRectF(node.bounds.left(), innerY, node.bounds.width(),
@@ -195,14 +253,35 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
     node.cssClasses = source->cssClasses;
     node.styles = source->styles;
     const auto nodeFont = labelFont(node.id);
-    node.labelDocument = prepareLabel(node.label, nodeFont.second);
-    node.titleHeight =
-        flowchart::measureFlowLabel(node.labelDocument, nodeFont.first, nodeFont.second, nodeFont.second * 1.5)
-            .height();
+    node.labelDocument = prepareLabel(node.label, nodeFont.first, nodeFont.second, node.descriptions.isEmpty());
+    const QSizeF labelSize = stateLabelSize(node.labelDocument, nodeFont.first, nodeFont.second);
+    node.titleHeight = labelSize.height();
+    node.labelWidth = labelSize.width();
     for (const QString& description : node.descriptions)
-      node.descriptionDocuments.append(prepareLabel(description, descFont(node.id).second));
+      node.descriptionDocuments.append(
+          prepareLabel(description, descFont(node.id).first, descFont(node.id).second, false));
     node.bounds = QRectF(placed.center - QPointF(placed.paintedSize.width() / 2.0, placed.paintedSize.height() / 2.0),
                          placed.paintedSize);
+    if (node.descriptions.isEmpty()) {
+      node.labelBounds =
+          QRectF(node.bounds.center() - QPointF(labelSize.width() / 2.0, labelSize.height() / 2.0), labelSize);
+    } else {
+      const qreal lineHeight = nodeFont.second * 1.5;
+      node.titleBounds = stateNodeTitleRect(node, lineHeight);
+      const qreal dividerY = stateNodeDividerY(node, lineHeight);
+      node.divider = QLineF(node.bounds.left(), dividerY, node.bounds.right(), dividerY);
+      const auto rowFont = descFont(node.id);
+      const qreal rowLineHeight = rowFont.second * 1.5;
+      qreal rowY = dividerY + 8.0;
+      for (const auto& document : node.descriptionDocuments) {
+        const qreal width = flowchart::measureFlowLabel(document, rowFont.first, rowFont.second, rowLineHeight).width();
+        const qreal height = static_cast<qreal>(stateLabelLines(document)) * rowLineHeight;
+        const QRectF row = stateNodeDescriptionBox(node, width, rowY, height);
+        node.descriptionRects.append(row);
+        rowY += height;
+      }
+      node.descriptionBounds = stateNodeDescriptionRect(node, rowLineHeight);
+    }
     const bool note = node.shape == QLatin1String("note");
     const bool roughShape = note || node.shape == QLatin1String("choice") || node.shape == QLatin1String("fork") ||
                             node.shape == QLatin1String("join");
@@ -247,6 +326,7 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
     edge.classes = it->classes;
     edge.points = placed.points;
     edge.segments = placed.segments;
+    edge.loopMarks = placed.loopMarks;
     edge.labelPosition = placed.labelPosition;
     edge.path = placed.path;
     // The rendered path (and every consumer of the endpoint: the raster
@@ -259,7 +339,6 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
     // theme slots (themeCSS may still restyle them per element).
     if (edge.classes.contains(QLatin1String("note-edge")))
       edge.strokeDasharray = QStringLiteral("5,5");
-    edge.labelDocument = prepareLabel(edge.label, scene.style.fontSize);
     edge.pathBounds = edgePaintBounds(edge.points, edge.segments);
     if (handDrawn) {
       edge.roughDrawable = rough::roughEdgeDrawable(scene::parseSvgPath(edge.path), handDrawnSeed);
@@ -282,9 +361,8 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
       // display:none on the label <p>: the label box never existed for
       // layout (0x0) — keep the scene bounds free of it too (the browser's
       // getBBox drops the collapsed fo content).
-      edge.labelSize = labelHidden
-                           ? QSizeF(0.0, 0.0)
-                           : flowchart::measureFlowLabel(edge.labelDocument, labelFamily, labelSize, labelSize * 1.5);
+      edge.labelDocument = prepareLabel(edge.label, labelFamily, labelSize, true);
+      edge.labelSize = labelHidden ? QSizeF(0.0, 0.0) : stateLabelSize(edge.labelDocument, labelFamily, labelSize);
       edge.labelBounds = QRectF(
           *edge.labelPosition - QPointF(edge.labelSize.width() / 2.0, edge.labelSize.height() / 2.0), edge.labelSize);
       // The upstream svg.getBBox() union includes the edge-label boxes —
@@ -295,8 +373,13 @@ StateScene buildStateScene(const StateLayoutInput& input, const StatePlacementRe
     if (handDrawn && edge.pathBounds.isValid())
       include(scene.bounds, initialized, edge.pathBounds);
     else
-      for (const QPointF& point : placed.points)
-        include(scene.bounds, initialized, QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
+      // What the SVG's getBBox() covers: the path's own extent, which a curve
+      // keeps short of its control points.
+      include(scene.bounds, initialized, scene::parseSvgPath(edge.path).boundingRect());
+    // The loop's two 0.1 x 0.1 nodes (labelRect) draw their rect from the
+    // node's origin, not about its centre.
+    for (const QPointF& mark : placed.loopMarks)
+      include(scene.bounds, initialized, QRectF(mark, QSizeF(0.1, 0.1)));
   }
   if (initialized)
     scene.bounds.adjust(-8.0, -8.0, 8.0, 8.0);

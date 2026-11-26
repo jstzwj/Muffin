@@ -260,16 +260,21 @@ StateLayoutMeasurements measureStateLayoutInput(const StateLayoutInput& input, Q
                                                 const QHash<QString, StateMeasureCss>* nodeCss,
                                                 const QHash<QString, StateMeasureCss>* edgeLabelCss) {
   StateLayoutMeasurements result;
-  auto optionsFor = [&](const QString& family, qreal size) {
+  // createText() gives a plain state's label and a transition's the wrapping
+  // width as their max-width; a titled state's and a composite's title are
+  // made without one (createLabel()), so they never wrap.
+  auto optionsFor = [&](const QString& family, qreal size, bool wrap = true) {
     flowchart::FlowTextOptions options;
     options.fontFamily = family.isEmpty() ? fontFamily : family;
     options.fontPixelSize = size > 0.0 ? size : fontSize;
     options.lineHeight = options.fontPixelSize * 1.5;
     options.horizontalPadding = 16.0;
     options.verticalPadding = 16.0;
+    options.maximumLineWidth = wrap ? kStateLabelWidth : 0.0;
     return options;
   };
   const flowchart::FlowTextOptions defaultOptions = optionsFor(QString(), 0.0);
+  const flowchart::FlowTextOptions unwrappedOptions = optionsFor(QString(), 0.0, false);
   for (const StateLayoutNodeInput& node : input.nodes) {
     if (node.isGroup) {
       if (node.shape != QLatin1String("noteGroup")) {
@@ -283,11 +288,12 @@ StateLayoutMeasurements measureStateLayoutInput(const StateLayoutInput& input, Q
             clusterCss = &it.value();
         }
         result.clusterLabels.insert(
-            node.id, clusterCss && clusterCss->labelHidden
-                         ? QSizeF(0.0, 0.0)
-                         : flowchart::measureLabel(node.label.toString(), QStringLiteral("markdown"),
-                                                   clusterCss ? optionsFor(clusterCss->fontFamily, clusterCss->fontSize)
-                                                              : defaultOptions));
+            node.id,
+            clusterCss && clusterCss->labelHidden
+                ? QSizeF(0.0, 0.0)
+                : flowchart::measureLabel(node.label.toString(), QStringLiteral("markdown"),
+                                          clusterCss ? optionsFor(clusterCss->fontFamily, clusterCss->fontSize, false)
+                                                     : unwrappedOptions));
       }
       continue;
     }
@@ -356,14 +362,21 @@ StateLayoutMeasurements measureStateLayoutInput(const StateLayoutInput& input, Q
         const bool descCollapsed = descLines.isEmpty() || (css && css->descHidden);
         const flowchart::FlowTextOptions descOptions =
             css && (css->descFontSize > 0.0 || !css->descFontFamily.isEmpty())
-                ? optionsFor(css->descFontFamily, css->descFontSize)
+                ? optionsFor(css->descFontFamily, css->descFontSize, false)
                 : options;
-        const QSizeF title = flowchart::measureLabel(node.label.toString(), QStringLiteral("markdown"), options);
+        flowchart::FlowTextOptions titleOptions = options;
+        titleOptions.maximumLineWidth = 0.0;
+        const QSizeF title = flowchart::measureLabel(node.label.toString(), QStringLiteral("markdown"), titleOptions);
         if (descCollapsed) {
           size = title;
         } else {
-          const QSizeF rows =
-              flowchart::measureLabel(descLines.join(QLatin1Char('\n')), QStringLiteral("markdown"), descOptions);
+          // Each row is a paragraph of its own: it wraps by itself.
+          QSizeF rows(0.0, 0.0);
+          for (const QString& row : descLines) {
+            const QSizeF measured = flowchart::measureLabel(row, QStringLiteral("markdown"), descOptions);
+            rows.setWidth(std::max(rows.width(), measured.width()));
+            rows.setHeight(rows.height() + measured.height());
+          }
           size = QSizeF(std::max(title.width(), rows.width()), title.height() + rows.height());
         }
       } else {
@@ -448,7 +461,10 @@ StatePlacementResult layoutStateDiagramDagre(const StateLayoutInput& input, cons
       flowchart::FlowVertex vertex;
       vertex.id = node.id;
       vertex.text = node.label.toString();
-      vertex.type = (node.shape == QLatin1String("stateStart") || node.shape == QLatin1String("stateEnd"))
+      // A transition ends where it meets the shape: the choice's sides are
+      // those of a diamond, the start's and the end's those of a circle.
+      vertex.type = node.shape == QLatin1String("choice") ? QStringLiteral("choice")
+                    : (node.shape == QLatin1String("stateStart") || node.shape == QLatin1String("stateEnd"))
                         ? node.shape
                         : QStringLiteral("rect");
       projected.vertices.append(std::move(vertex));
@@ -510,6 +526,7 @@ StatePlacementResult layoutStateDiagramDagre(const StateLayoutInput& input, cons
     converted.path = edge.path;
     converted.points = edge.points;
     converted.segments = edge.segments;
+    converted.loopMarks = edge.loopMarks;
     if (edge.hasLabelPosition)
       converted.labelPosition = QPointF(edge.labelX, edge.labelY);
     result.edges.append(std::move(converted));
