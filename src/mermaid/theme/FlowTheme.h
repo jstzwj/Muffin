@@ -39,6 +39,29 @@ enum class FlowThemeId {
   ReduxDarkColor
 };
 
+// The groups Mermaid's stylesheets branch on.
+constexpr bool isNeoTheme(FlowThemeId id) {
+  return id == FlowThemeId::Neo || id == FlowThemeId::NeoDark;
+}
+
+// The themes whose name contains "dark": the branch the renderer's drop-shadow
+// filter takes for its flood color.
+constexpr bool isDarkTheme(FlowThemeId id) {
+  return id == FlowThemeId::Dark || id == FlowThemeId::NeoDark || id == FlowThemeId::ReduxDark ||
+         id == FlowThemeId::ReduxDarkColor;
+}
+
+// redux, redux-dark, and the two color themes below.
+constexpr bool isReduxTheme(FlowThemeId id) {
+  return id == FlowThemeId::Redux || id == FlowThemeId::ReduxDark || id == FlowThemeId::ReduxColor ||
+         id == FlowThemeId::ReduxDarkColor;
+}
+
+// The redux themes that paint each node from a color of a palette.
+constexpr bool isColorTheme(FlowThemeId id) {
+  return id == FlowThemeId::ReduxColor || id == FlowThemeId::ReduxDarkColor;
+}
+
 // Mermaid stores XYChart colors in the nested themeVariables.xyChart object,
 // rather than as top-level theme-variable scalars. updateColors() fills missing
 // per-field values from the current theme; resolveFlowTheme's final override

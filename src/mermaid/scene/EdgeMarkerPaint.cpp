@@ -25,6 +25,25 @@ QVector<QPointF> stitchEdgePolyline(const QVector<QPointF>& points, const QVecto
   return flat;
 }
 
+QPointF pathStartTangent(const QPainterPath& path) {
+  // A cubic is stored as its end point, then the second and the first control
+  // point; the path leaves its start towards the first one.
+  const QPainterPath::Element start = path.elementAt(0);
+  const QPainterPath::Element next = path.elementAt(1);
+  const QPainterPath::Element towards =
+      next.type == QPainterPath::CurveToElement ? path.elementAt(3) : next;
+  return QPointF(towards.x, towards.y) - QPointF(start.x, start.y);
+}
+
+QPointF pathEndTangent(const QPainterPath& path) {
+  // A path enters its end from the second control point, or from the point
+  // before a line.
+  const qsizetype count = path.elementCount();
+  const QPainterPath::Element end = path.elementAt(count - 1);
+  const QPainterPath::Element from = path.elementAt(count - 2);
+  return QPointF(end.x, end.y) - QPointF(from.x, from.y);
+}
+
 QPainterPath edgePolylinePath(const QString& path, const QVector<QPointF>& points,
                               const QVector<QVector<QPointF>>& segments) {
   if (!path.isEmpty()) {

@@ -49,6 +49,23 @@ StyleMap compileClassMap(const QStringList& classNames, const QVector<ClassDef>&
   return map;
 }
 
+// An element's own `style` declarations come after its classes and win.
+void applyInlineStyles(StyleMap& map, const QStringList& inlineStyles) {
+  for (const QString& s : inlineStyles) {
+    const auto [k, v] = splitStyle(s);
+    if (!k.isEmpty())
+      map.insert(k, v);
+  }
+}
+
+QStringList styleList(const StyleMap& map) {
+  QStringList out;
+  out.reserve(map.entries.size());
+  for (const auto& [key, value] : map.entries)
+    out.append(key + QLatin1Char(':') + value);
+  return out;
+}
+
 // compileStyles: mermaid prepends the built-in "default" and "node" classes to
 // every node (getCompiledStyles(["default","node",...classes])), so
 // `classDef default`/`classDef node` apply to all nodes. Inline `style` is
@@ -61,23 +78,21 @@ StyleMap compileStyles(const QStringList& classes, const QStringList& inlineStyl
   names.append(QStringLiteral("node"));
   names.append(classes);
   StyleMap map = compileClassMap(names, classDefs);
-  for (const QString& s : inlineStyles) {
-    const auto [k, v] = splitStyle(s);
-    if (!k.isEmpty())
-      map.insert(k, v);
-  }
+  applyInlineStyles(map, inlineStyles);
   return map;
 }
 
 } // namespace
 
+QStringList compiledStyles(const QStringList& classNames, const QVector<ClassDef>& classDefs,
+                           const QStringList& inlineStyles) {
+  StyleMap map = compileClassMap(classNames, classDefs);
+  applyInlineStyles(map, inlineStyles);
+  return styleList(map);
+}
+
 QStringList compiledClassStyles(const QStringList& classNames, const QVector<ClassDef>& classDefs) {
-  const StyleMap map = compileClassMap(classNames, classDefs);
-  QStringList out;
-  out.reserve(map.entries.size());
-  for (const auto& [key, value] : map.entries)
-    out.append(key + QLatin1Char(':') + value);
-  return out;
+  return styleList(compileClassMap(classNames, classDefs));
 }
 
 bool isLabelStyle(const QString& key) {

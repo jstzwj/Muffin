@@ -38,6 +38,13 @@ inline void applyMarkerTransform(QPainter& painter, const QPointF& endpoint, qre
 // first()/last() still bound the full edge.
 QVector<QPointF> stitchEdgePolyline(const QVector<QPointF>& points, const QVector<QVector<QPointF>>& segments);
 
+// The direction a drawn path of at least two elements leaves its start and
+// enters its end: the tangent of its first and its last segment, forward
+// along the path. It is the direction an SVG `orient="auto"` marker is turned
+// to, read off the path as it was drawn rather than off the points behind it.
+QPointF pathStartTangent(const QPainterPath& path);
+QPointF pathEndTangent(const QPainterPath& path);
+
 // Edge stroke path: the authored SVG `path` when present, else the stitched polyline.
 QPainterPath edgePolylinePath(const QString& path, const QVector<QPointF>& points,
                               const QVector<QVector<QPointF>>& segments);

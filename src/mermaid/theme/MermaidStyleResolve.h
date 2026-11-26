@@ -85,6 +85,14 @@ ResolvedEdgeStyle resolveEdgeStyle(const QString& pattern, const QStringList& li
 // tail or the default/node prepend. Callers split by key.
 QStringList compiledClassStyles(const QStringList& classNames, const QVector<ClassDef>& classDefs);
 
+// compiledClassStyles followed by `inlineStyles`, the element's own `style`
+// declarations, applied afterwards and last-wins: the whole cascade of one
+// element as its class list names it. Nothing is filled in from the theme, so
+// an absent property is absent — for painters whose defaults are not the theme
+// defaults of ResolvedNodeStyle.
+QStringList compiledStyles(const QStringList& classNames, const QVector<ClassDef>& classDefs,
+                           const QStringList& inlineStyles);
+
 // Whether a CSS property key is a label (text) style vs a node (box) style.
 bool isLabelStyle(const QString& key);
 

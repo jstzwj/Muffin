@@ -207,7 +207,7 @@ bool svgInheritedProperty(const QString& property) {
       QStringLiteral("font-family"),  QStringLiteral("font-size"),    QStringLiteral("font-weight"),
       QStringLiteral("font-style"),   QStringLiteral("line-height"),  QStringLiteral("letter-spacing"),
       QStringLiteral("word-spacing"), QStringLiteral("text-anchor"),  QStringLiteral("dominant-baseline"),
-      QStringLiteral("visibility")};
+      QStringLiteral("visibility"), QStringLiteral("stroke-dasharray")};
   return inherited.contains(property);
 }
 
@@ -218,6 +218,10 @@ QString initialValue(const QString& property, const QString& fallback) {
     return QStringLiteral("none");
   if (property == QLatin1String("stroke-width"))
     return QStringLiteral("1px");
+  if (property == QLatin1String("stroke-dasharray"))
+    return QStringLiteral("none");
+  if (property == QLatin1String("filter"))
+    return QStringLiteral("none");
   if (property == QLatin1String("font-size"))
     return QStringLiteral("16px");
   if (property == QLatin1String("font-family"))
@@ -282,6 +286,8 @@ QString inheritedValue(const ElementStyle& parent, const QString& property, cons
     return parent.dominantBaseline;
   if (property == QLatin1String("visibility"))
     return parent.visibility;
+  if (property == QLatin1String("stroke-dasharray"))
+    return parent.strokeDasharray;
   if (property == QLatin1String("opacity"))
     return parent.opacity;
   if (property == QLatin1String("fill-opacity"))
@@ -357,6 +363,7 @@ ElementStyle project(const CssComputedStyle& style, const ElementStyle& fallback
   usedFallback.fill = validFallbackValue(QStringLiteral("fill"), fallback.fill, parent);
   usedFallback.stroke = validFallbackValue(QStringLiteral("stroke"), fallback.stroke, parent);
   usedFallback.strokeWidth = validFallbackValue(QStringLiteral("stroke-width"), fallback.strokeWidth, parent);
+  usedFallback.strokeDasharray = validFallbackValue(QStringLiteral("stroke-dasharray"), fallback.strokeDasharray, parent);
   usedFallback.color = validFallbackValue(QStringLiteral("color"), fallback.color, parent);
   usedFallback.fontSize = validFallbackValue(QStringLiteral("font-size"), fallback.fontSize, parent);
   usedFallback.fontWeight = validFallbackValue(QStringLiteral("font-weight"), fallback.fontWeight, parent);
@@ -376,6 +383,8 @@ ElementStyle project(const CssComputedStyle& style, const ElementStyle& fallback
   result.fill = value(style, QStringLiteral("fill"), usedFallback.fill, parent);
   result.stroke = value(style, QStringLiteral("stroke"), usedFallback.stroke, parent);
   result.strokeWidth = value(style, QStringLiteral("stroke-width"), usedFallback.strokeWidth, parent);
+  result.strokeDasharray = value(style, QStringLiteral("stroke-dasharray"), usedFallback.strokeDasharray, parent);
+  result.filter = value(style, QStringLiteral("filter"), fallback.filter, parent);
   result.color = value(style, QStringLiteral("color"), usedFallback.color, parent);
   result.fontFamily = value(style, QStringLiteral("font-family"), usedFallback.fontFamily, parent);
   result.fontSize = value(style, QStringLiteral("font-size"), usedFallback.fontSize, parent);

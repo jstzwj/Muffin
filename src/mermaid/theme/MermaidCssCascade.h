@@ -32,6 +32,11 @@ struct ElementStyle {
   QString opacity = QStringLiteral("1");
   QString fillOpacity = QStringLiteral("1");
   QString strokeOpacity = QStringLiteral("1");
+  // As declared or computed, "none" for a solid stroke.
+  QString strokeDasharray = QStringLiteral("none");
+  // The element's `filter`, as declared: "none", a `drop-shadow()`, or the
+  // `url(#…)` of a filter element. Not inherited.
+  QString filter = QStringLiteral("none");
   QString mixBlendMode = QStringLiteral("normal");
   bool ancestorRenderable = true;
   bool ancestorHasBox = true;
