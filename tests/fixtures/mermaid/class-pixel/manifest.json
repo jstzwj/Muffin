@@ -8,7 +8,7 @@
       "cropTarget": "node",
       "cropKind": "node-html-math",
       "cropSelector": "g.node .label",
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"<b>Service</b><br/>$$\\frac{x}{y}$$\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"<b>Service</b><br/>$$\\frac{x}{y}$$\"]",
       "cropFile": "label-node-html-math-label.png",
       "cropSha256": "b411f36f86e791e5850a9fcb204118833282eba7fd2a532d4beced65b5044abe",
       "labelBox": {
@@ -499,7 +499,7 @@
       "cropKind": "node-markdown",
       "cropSelector": "g.node .label",
       "dpr": 1.25,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"**Service** _value_\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"**Service** _value_\"]",
       "cropFile": "label-node-markdown-label.png",
       "cropSha256": "fe77032a0183f23f806deb79b747562d82f0f467d463b0c20ddba6495ca07a61",
       "labelBox": {
@@ -989,7 +989,7 @@
       "cropKind": "node-cjk",
       "cropSelector": "g.node .label",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"用户服务无空格换行\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"用户服务无空格换行\"]",
       "cropFile": "label-node-cjk-label.png",
       "cropSha256": "bb0bf3dc8786d2983cd5677869f1ca6f209508d8e8d3dc8dc147d61cb41a1304",
       "labelBox": {
@@ -1480,7 +1480,7 @@
       "cropSelector": "g.node .label",
       "dpr": 2,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
       "cropFile": "label-node-rtl-dark-label.png",
       "cropSha256": "209225401d3f162ab212d6b8f73964a724f40afb6dbc755fb467fc74b10fe8f0",
       "labelBox": {
@@ -1970,7 +1970,7 @@
       "cropKind": "edge-math-bidi",
       "cropSelector": "g.edgeLabel .label",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nA --> B : $$\\sqrt{x^2}$$ שלום 42",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nA --> B : $$\\sqrt{x^2}$$ שלום 42",
       "cropFile": "label-edge-math-bidi-label.png",
       "cropSha256": "2515833fb1811ccfdf378c3544a399f922ff54bccdfc7f4b183f975b043fde44",
       "labelBox": {
@@ -2560,7 +2560,7 @@
       "cropSelector": "g.cluster .cluster-label",
       "dpr": 1.25,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Core[\"核心 مرحبا\"] {\nclass A\n}",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Core[\"核心 مرحبا\"] {\nclass A\n}",
       "cropFile": "label-cluster-cjk-rtl-dark-label.png",
       "cropSha256": "113990e0f27475cd7103a44d72e2c9d66a9bb2eda08c7b5c4a88882d0a3d0696",
       "labelBox": {
@@ -3088,7 +3088,7 @@
       "cropSelector": "g.node .label-group .label",
       "dpr": 1.5,
       "htmlLabels": false,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"Service<br/>中文 مرحبا\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"Service<br/>中文 مرحبا\"]",
       "cropFile": "label-node-svg-multiline-cjk-label.png",
       "cropSha256": "211c628e7204c1dc85956489c3b3feb7e73d887ee10ea552359826a62bdf1822",
       "labelBox": {
@@ -3585,7 +3585,7 @@
       "dpr": 2,
       "theme": "dark",
       "htmlLabels": false,
-      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":false,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
       "cropFile": "label-node-svg-rtl-dark-label.png",
       "cropSha256": "f5057681960327d64421259203fc3ba553dc27cee41b811a2e2d130d563d16ac",
       "labelBox": {
@@ -4075,7 +4075,7 @@
     {
       "id": "compartments",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\naccTitle: Service classes\naccDescr: Service inheritance model\nclass Service {\n  <<interface>>\n  +String name\n  +run(input) Result*\n}\nclass Empty\nService <|-- Empty : extends",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\naccTitle: Service classes\naccDescr: Service inheritance model\nclass Service {\n  <<interface>>\n  +String name\n  +run(input) Result*\n}\nclass Empty\nService <|-- Empty : extends",
       "file": "compartments.png",
       "sha256": "1a562f63270026dfac6af88863293fc398c50e3613966211e13b24e16cfa3234",
       "cssWidth": 225.15625,
@@ -4684,7 +4684,7 @@
       "id": "marker-matrix",
       "dpr": 1,
       "handDrawnSeed": 42,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
       "file": "marker-matrix.png",
       "sha256": "2164bd7fb17127c117c520b571cf0000f1e8ed7fdaeb89fbb8a46c83a7ca4802",
       "maskFile": "marker-matrix-mask.png",
@@ -5828,7 +5828,7 @@
       "edgeMask": true,
       "strokeWidth": 1,
       "handDrawnSeed": 42,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":1}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":1}}}%%\nclassDiagram\ndirection LR\nA ..> B",
       "file": "dash-width-1.png",
       "sha256": "23a4a22b5d71177b8c9e3483092d7fddb914ecb6607d1b7056ebbab8780ab852",
       "edgeMaskFile": "dash-width-1-edge-mask.png",
@@ -6394,7 +6394,7 @@
       "edgeMask": true,
       "strokeWidth": 2,
       "handDrawnSeed": 42,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":2}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":2}}}%%\nclassDiagram\ndirection LR\nA ..> B",
       "file": "dash-width-2.png",
       "sha256": "731426a4dc46a48d401d71a8f50d2793108b58cf648d85652f23b6c18834ddf8",
       "edgeMaskFile": "dash-width-2-edge-mask.png",
@@ -6960,7 +6960,7 @@
       "edgeMask": true,
       "strokeWidth": 4,
       "handDrawnSeed": 42,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":4}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":4}}}%%\nclassDiagram\ndirection LR\nA ..> B",
       "file": "dash-width-4.png",
       "sha256": "f3464d651ebd0a7ec4a25f1e737fb23b9cdbfea982ff8439d9304c263519e07d",
       "edgeMaskFile": "dash-width-4-edge-mask.png",
@@ -7523,7 +7523,7 @@
     {
       "id": "note",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
       "file": "note.png",
       "sha256": "3dc4993c4fe55ee4de91263fa8cb200333001e49e15fffe35ae3950cf19cee80",
       "cssWidth": 258,
@@ -8180,7 +8180,7 @@
     {
       "id": "nested-namespaces",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Company {\n  namespace Core {\n    class Api\n    class Worker\n  }\n}\nApi --> Worker : delegates",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Company {\n  namespace Core {\n    class Api\n    class Worker\n  }\n}\nApi --> Worker : delegates",
       "file": "nested-namespaces.png",
       "sha256": "b531fa2f31d59d54b7ed48a9620610d93c29085dde9871815ea3d96e8d14d0b1",
       "cssWidth": 240.03125,
@@ -8814,7 +8814,7 @@
     {
       "id": "styled-members",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Generic~T~ {\n  +T value\n  +get() T$\n  +abstract() void*\n}\nstyle Generic fill:#e8f5e9,stroke:#2e7d32,color:#102810",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Generic~T~ {\n  +T value\n  +get() T$\n  +abstract() void*\n}\nstyle Generic fill:#e8f5e9,stroke:#2e7d32,color:#102810",
       "file": "styled-members.png",
       "sha256": "112f3003b7d70dfd1bf94ca5708055d6575cbd8bbff27c6f57fb3c3f651f0877",
       "cssWidth": 206.71875,
@@ -9322,7 +9322,7 @@
     {
       "id": "cjk-rtl",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass 用户服务 {\n  +字符串 名称\n  +执行() 结果\n}\nclass مرحبا\n用户服务 --> مرحبا : שלום 123",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass 用户服务 {\n  +字符串 名称\n  +执行() 结果\n}\nclass مرحبا\n用户服务 --> مرحبا : שלום 123",
       "file": "cjk-rtl.png",
       "sha256": "376c5650e6949c30ba3bcdc9cc8f2d6e16f4837b4878f0e6e00a981811090bb2",
       "cssWidth": 167.375,
@@ -9914,7 +9914,7 @@
       "id": "dark-compound",
       "dpr": 2,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Runtime {\n  class Store {\n    +save() void\n  }\n  class Cache\n}\nStore *-- Cache : owns",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Runtime {\n  class Store {\n    +save() void\n  }\n  class Cache\n}\nStore *-- Cache : owns",
       "file": "dark-compound.png",
       "sha256": "6dda6e62f4f87ac7cd68084ada82572709b01814c2b549528dea5155629c5633",
       "cssWidth": 415.90625,
@@ -10528,7 +10528,7 @@
       "id": "dark-note-markers",
       "dpr": 1.25,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nclass Client\nclass Service\nnote for Client \"客户端 مرحبا\"\nClient ..> Service : calls",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nclass Client\nclass Service\nnote for Client \"客户端 مرحبا\"\nClient ..> Service : calls",
       "file": "dark-note-markers.png",
       "sha256": "944d6b7ddd110be6f53981528ae76e031b08d9e7876eb8429affa9c4f3ef61ef",
       "cssWidth": 402.875,
@@ -11186,7 +11186,7 @@
       "id": "svg-compartments",
       "dpr": 1.25,
       "htmlLabels": false,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service {\n  <<interface>>\n  +名称\n  +run(value) Result*\n}",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"class\":{\"padding\":12},\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service {\n  <<interface>>\n  +名称\n  +run(value) Result*\n}",
       "file": "svg-compartments.png",
       "sha256": "c134f1d8c7aaa08ddf1c806a34f099beaa822de54b800e8c6b1d6c940e65ce47",
       "cssWidth": 226,
@@ -11702,5 +11702,5 @@
       }
     }
   ],
-  "fixtureSha256": "b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"
+  "fixtureSha256": "b88995145f50124ba10c02239b24f90a57e433c109fbc8a3985d1b391a9bddd4"
 }

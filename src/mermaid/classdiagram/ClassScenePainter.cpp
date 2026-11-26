@@ -192,17 +192,15 @@ void paintClassScene(const ClassScene& scene, QPainter& painter, ClassPaintMode 
     const auto terminal = [&](const std::optional<ClassSceneTerminalLabel>& label) {
       if (!label)
         return;
-      const QSizeF size = label->size.isValid()
-                              ? label->size
-                              : flowchart::measureFlowLabel(label->document, scene.style.fontFamily, 11.0, 12.0);
-      const QRectF rect(label->center.x() - size.width() / 2.0, label->center.y() - size.height() / 2.0, size.width(),
-                        size.height());
-      if (!mermaidPrimitiveIsVisible(rect, options))
+      const QRectF& rect = label->textBox;
+      if (!mermaidPrimitiveIsVisible(label->box.isValid() ? label->box : rect, options))
         return;
       painter.save();
-      painter.setClipRect(rect);
+      // The label's foreignObject clips the text to the box of its own.
+      painter.setClipRect(label->box);
+      constexpr qreal kTerminalFontPx = 11.0;
       flowchart::paintFlowLabel(
-          painter, label->document, rect, scene.style.fontFamily, 11.0, 12.0,
+          painter, label->document, rect, scene.style.fontFamily, kTerminalFontPx, kTerminalFontPx * 1.5,
           mode != ClassPaintMode::Color ? QColor::fromRgba(kClassMaskText) : color(scene.style.textColor), true);
       painter.restore();
     };

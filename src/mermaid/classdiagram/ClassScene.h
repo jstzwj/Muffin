@@ -65,8 +65,13 @@ struct ClassSceneNode {
 
 struct ClassSceneTerminalLabel {
   QString text;
+  // Where the SVG group sits: a start label is centred on it, an end one has
+  // its corner there.
   QPointF center;
-  QSizeF size;
+  // The text's own box, and the box setTerminalWidth() clips it to: 9px per
+  // character by 12px, from the text box's corner.
+  QRectF textBox;
+  QRectF box;
   flowchart::FlowLabelDocument document;
 };
 
@@ -80,6 +85,10 @@ struct ClassSceneEdge {
   QVector<QPointF> renderedPoints;
   QVector<QVector<QPointF>> segments;
   QVector<QVector<QPointF>> renderedSegments;
+  // The centres of the two 0.1 x 0.1 nodes a relationship from a class to
+  // itself is laid out through; they are not painted, but the canvas covers
+  // them as the SVG's does.
+  QVector<QPointF> loopMarks;
   QString path;
   QStringList paths;
   QString label;

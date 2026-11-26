@@ -1,6 +1,7 @@
 #include "mermaid/classdiagram/ClassScene.h"
 
 #include "mermaid/flowchart/D3Curves.h"
+#include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
 
@@ -143,11 +144,17 @@ QPointF terminalPosition(const QVector<QPointF>& source, bool start, bool right,
 }
 
 flowchart::FlowLabelDocument prepareLabel(const QString& text, qreal fontSize, bool bold = false,
-                                          const QString& cssStyle = {}, bool svgText = false) {
-  auto document = svgText ? flowchart::parseFlowSvgLabel(text, QStringLiteral("markdown"))
-                          : flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+                                          const QString& cssStyle = {}, bool svgText = false,
+                                          const QString& labelType = QStringLiteral("markdown"),
+                                          const QString& fontFamily = QStringLiteral("Noto Sans"), bool wrap = false) {
+  auto document =
+      svgText ? flowchart::parseFlowSvgLabel(text, labelType) : flowchart::parseFlowLabel(text, labelType, true);
   if (!svgText)
     document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+  // A relationship's label has kClassLabelWidth as its max-width: where its
+  // text is wider, it is wrapped, as the layout measured it.
+  if (!svgText && wrap)
+    document = flowchart::wrapFlowLabel(document, fontFamily, fontSize, kClassLabelWidth);
   if ((bold || !cssStyle.isEmpty()) && !document.text.isEmpty()) {
     QTextCharFormat format;
     if (bold)
@@ -179,7 +186,8 @@ QVector<ClassSceneLabel> compartmentLabels(const QVector<QString>& texts,
     label.svgText = measured.svgText;
     label.center =
         geometry.translation + QPointF(measured.bounds.center().x(), measured.bounds.center().y() + labelOffset);
-    label.document = prepareLabel(label.text, sceneStyle.fontSize, bold, label.cssStyle, label.svgText);
+    label.document = prepareLabel(label.text, sceneStyle.fontSize, bold, label.cssStyle, label.svgText,
+                                  QStringLiteral("markdown"), sceneStyle.fontFamily);
     labels.append(std::move(label));
     offset += measured.bounds.height() + textPadding;
   }
@@ -340,9 +348,13 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
                                logicalSize);
     if (!rendered.label.isEmpty()) {
       rendered.titleLabel.text = rendered.label;
-      rendered.titleLabel.document = prepareLabel(rendered.label, scene.style.fontSize);
-      rendered.titleLabel.size = flowchart::measureFlowLabel(rendered.titleLabel.document, scene.style.fontFamily,
-                                                             scene.style.fontSize, scene.style.lineHeight);
+      // A namespace's title goes through createLabel(), which is not markdown.
+      rendered.titleLabel.document = prepareLabel(rendered.label, scene.style.fontSize, false, {}, false, QString());
+      const QSizeF measured = placement.clusterLabels.value(cluster.id);
+      rendered.titleLabel.size = measured.isValid()
+                                     ? measured
+                                     : flowchart::measureFlowLabel(rendered.titleLabel.document, scene.style.fontFamily,
+                                                                   scene.style.fontSize, scene.style.lineHeight);
       rendered.titleLabel.center =
           QPointF(rendered.bounds.center().x(), logicalBounds.top() + rendered.titleLabel.size.height() / 2.0);
     }
@@ -402,8 +414,12 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
       label.text = node.label;
       label.center = {};
       const qreal padding = node.padding.value_or(0.0);
-      label.size = QSizeF(std::max(0.0, placed.width - padding * 2.0), std::max(0.0, placed.height - padding * 2.0));
-      label.document = prepareLabel(label.text, scene.style.fontSize);
+      // squareRect pads a label twice over sideways and once from top to
+      // bottom; a note pads the same on all sides.
+      const qreal paddingX = node.shape == QLatin1String("rect") ? padding * 4.0 : padding * 2.0;
+      label.size = QSizeF(std::max(0.0, placed.width - paddingX), std::max(0.0, placed.height - padding * 2.0));
+      label.document = prepareLabel(label.text, scene.style.fontSize, false, {}, false, QStringLiteral("markdown"),
+                                    scene.style.fontFamily);
       rendered.nameLabels.append(std::move(label));
     }
     if (handDrawn) {
@@ -427,6 +443,30 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
     scene.nodes.append(std::move(rendered));
   }
 
+  // .edgeTerminals is 11px and the label div's line-height is 1.5.
+  constexpr qreal kTerminalFontPx = 11.0;
+  constexpr qreal kTerminalLineHeight = kTerminalFontPx * 1.5;
+  const auto terminalLabel = [&](const QString& text, const QVector<QPointF>& points, bool start, bool right,
+                                 bool hasMarker) {
+    ClassSceneTerminalLabel terminal;
+    terminal.text = text;
+    terminal.center = terminalPosition(points, start, right, hasMarker);
+    // createLabel() is not markdown: a lone "*" is a character.
+    terminal.document = prepareLabel(text, scene.style.fontSize, false, {}, false, QString());
+    const qreal textWidth =
+        flowchart::measureFlowLabel(terminal.document, scene.style.fontFamily, kTerminalFontPx, kTerminalLineHeight)
+            .width();
+    // insertEdgeLabel() centres a start label with an inner group and lays an
+    // end one on the group itself: its corner is the group's origin.
+    const QPointF corner =
+        start ? terminal.center - QPointF(textWidth / 2.0, kTerminalLineHeight / 2.0) : terminal.center;
+    terminal.textBox = QRectF(corner, QSizeF(textWidth, kTerminalLineHeight));
+    // setTerminalWidth(): the foreignObject is 9px per character by 12px,
+    // from the text box's corner.
+    terminal.box = QRectF(corner, QSizeF(static_cast<qreal>(text.size()) * 9.0, 12.0));
+    return terminal;
+  };
+
   for (const ClassLayoutEdgeInput& edge : input.edges) {
     const auto found = std::find_if(placement.edges.cbegin(), placement.edges.cend(),
                                     [&](const auto& value) { return value.id == edge.id; });
@@ -440,6 +480,7 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
     rendered.markerEnd = edge.arrowTypeEnd;
     rendered.points = found->points;
     rendered.segments = found->segments;
+    rendered.loopMarks = found->loopMarks;
     if (rendered.segments.isEmpty()) {
       rendered.renderedPoints = applyMarkerOffsets(rendered.points, edge);
       rendered.path = flowchart::d3curve::pathForCurve(rendered.renderedPoints, QStringLiteral("basis"));
@@ -473,31 +514,33 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
     rendered.strokeDasharray = resolvedEdge.strokeDasharray;
     rendered.pathBounds = pointsBounds(rendered.renderedPoints, rendered.renderedSegments);
     if (!rendered.label.isEmpty() && rendered.labelPosition) {
-      rendered.labelDocument = prepareLabel(rendered.label, scene.style.fontSize);
+      // positionEdgeLabel() runs for each path; of a loop's three, only the
+      // middle one carries the label.
+      const bool loop = rendered.segments.size() == 3;
+      const QVector<QPointF>& labelPoints = loop ? rendered.segments.at(1) : rendered.points;
+      const QString& labelPath = loop ? rendered.paths.at(1) : rendered.paths.first();
+      rendered.labelPosition = flowchart::positionEdgeLabel(labelPoints, labelPath, *rendered.labelPosition);
+      rendered.labelDocument = prepareLabel(rendered.label, scene.style.fontSize, false, {}, false,
+                                            QStringLiteral("markdown"), scene.style.fontFamily, true);
       rendered.labelSize = flowchart::measureFlowLabel(rendered.labelDocument, scene.style.fontFamily,
                                                        scene.style.fontSize, scene.style.lineHeight);
+      // A wrapped label is laid out in a box as wide as the max-width.
+      if (!rendered.labelDocument.visualLines.isEmpty())
+        rendered.labelSize.setWidth(std::max(rendered.labelSize.width(), kClassLabelWidth));
       rendered.labelBounds =
           QRectF(*rendered.labelPosition - QPointF(rendered.labelSize.width() / 2.0, rendered.labelSize.height() / 2.0),
                  rendered.labelSize);
     }
     if (!edge.startLabelRight.isEmpty()) {
-      ClassSceneTerminalLabel terminal;
-      terminal.text = edge.startLabelRight;
       const QVector<QPointF>& terminalPoints =
           rendered.segments.isEmpty() ? rendered.points : rendered.segments.first();
-      terminal.center = terminalPosition(terminalPoints, true, true, !edge.arrowTypeStart.isEmpty());
-      terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
-      terminal.size = flowchart::measureFlowLabel(terminal.document, scene.style.fontFamily, 11.0, 12.0);
-      rendered.startLabelRight = std::move(terminal);
+      rendered.startLabelRight =
+          terminalLabel(edge.startLabelRight, terminalPoints, true, true, !edge.arrowTypeStart.isEmpty());
     }
     if (!edge.endLabelLeft.isEmpty()) {
-      ClassSceneTerminalLabel terminal;
-      terminal.text = edge.endLabelLeft;
       const QVector<QPointF>& terminalPoints = rendered.segments.isEmpty() ? rendered.points : rendered.segments.last();
-      terminal.center = terminalPosition(terminalPoints, false, false, !edge.arrowTypeEnd.isEmpty());
-      terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
-      terminal.size = flowchart::measureFlowLabel(terminal.document, scene.style.fontFamily, 11.0, 12.0);
-      rendered.endLabelLeft = std::move(terminal);
+      rendered.endLabelLeft =
+          terminalLabel(edge.endLabelLeft, terminalPoints, false, false, !edge.arrowTypeEnd.isEmpty());
     }
     if (handDrawn) {
       for (const QString& path : rendered.paths)
@@ -511,32 +554,67 @@ ClassScene buildClassScene(const ClassLayoutInput& input, const QVector<ClassBox
     scene.edges.append(std::move(rendered));
   }
 
+  // The canvas is what the SVG's getBBox() covers: every cluster, class, note,
+  // path, label and cardinality. QRectF::united() leaves an empty rectangle
+  // out, and a path that is a straight line is one, so the edges are kept by
+  // their own sides.
   bool first = true;
+  qreal left = 0.0, top = 0.0, right = 0.0, bottom = 0.0;
   auto unite = [&](const QRectF& bounds) {
+    if (!bounds.isValid())
+      return;
     if (first) {
-      scene.bounds = bounds;
+      left = bounds.left();
+      top = bounds.top();
+      right = bounds.right();
+      bottom = bounds.bottom();
       first = false;
-    } else
-      scene.bounds = scene.bounds.united(bounds);
+      return;
+    }
+    left = std::min(left, bounds.left());
+    top = std::min(top, bounds.top());
+    right = std::max(right, bounds.right());
+    bottom = std::max(bottom, bounds.bottom());
   };
   for (const auto& cluster : scene.clusters)
     unite(handDrawn && cluster.paintedBounds.isValid() ? cluster.paintedBounds : cluster.bounds);
-  for (const auto& node : scene.nodes)
+  const auto uniteLabels = [&](const QVector<ClassSceneLabel>& labels, const QPointF& centre) {
+    for (const ClassSceneLabel& label : labels)
+      unite(QRectF(centre + label.center - QPointF(label.size.width() / 2.0, label.size.height() / 2.0), label.size));
+  };
+  for (const auto& node : scene.nodes) {
     unite(handDrawn && node.paintedBounds.isValid()
               ? node.paintedBounds
               : QRectF(node.center.x() - node.size.width() / 2.0, node.center.y() - node.size.height() / 2.0,
                        node.size.width(), node.size.height()));
+    // The canvas is the bounding box of what is drawn, text groups included:
+    // a class box's first row reaches above its outline (classBox lifts every
+    // text group by 4px).
+    uniteLabels(node.annotationLabels, node.center);
+    uniteLabels(node.nameLabels, node.center);
+    uniteLabels(node.memberLabels, node.center);
+    uniteLabels(node.methodLabels, node.center);
+  }
   for (const auto& edge : scene.edges) {
     if (handDrawn && edge.pathBounds.isValid()) {
       unite(edge.pathBounds);
-      continue;
+    } else {
+      for (const QString& path : edge.paths)
+        unite(scene::parseSvgPath(path).boundingRect());
     }
-    for (const QPointF& point : edge.renderedPoints)
-      unite(QRectF(point, QSizeF(0, 0)));
-    for (const QVector<QPointF>& segment : edge.renderedSegments)
-      for (const QPointF& point : segment)
-        unite(QRectF(point, QSizeF(0, 0)));
+    if (edge.labelBounds.isValid())
+      unite(edge.labelBounds);
+    // A self loop's two 0.1 x 0.1 nodes (labelRect) draw their rect from the
+    // node's origin, not about its centre.
+    for (const QPointF& mark : edge.loopMarks)
+      unite(QRectF(mark, QSizeF(0.1, 0.1)));
+    if (edge.startLabelRight)
+      unite(edge.startLabelRight->box);
+    if (edge.endLabelLeft)
+      unite(edge.endLabelLeft->box);
   }
+  if (!first)
+    scene.bounds = QRectF(QPointF(left, top), QPointF(right, bottom));
 
   // Interaction regions for click/href directives (mirror FlowScene: the node box is the
   // link region; the tooltip doubles as the SVG <title>/aria-label).

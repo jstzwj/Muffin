@@ -175,6 +175,8 @@ private:
   struct Scope {
     ScopeKind kind;
     QString id;
+    // The classes a namespace block declares itself; a nested block keeps its own.
+    QStringList classes;
   };
 
   ClassNode& addClass(const QString& id, const QString& type, qsizetype offset) {
@@ -196,6 +198,15 @@ private:
     if (!namespaceStack_.isEmpty())
       namespaceById(namespaceStack_.back()).classKeys.append(id);
     return data_.classes.back();
+  }
+
+  void declareClassInNamespace(const QString& id) {
+    for (auto scope = scopes_.rbegin(); scope != scopes_.rend(); ++scope) {
+      if (scope->kind == ScopeKind::Namespace) {
+        scope->classes.append(id);
+        return;
+      }
+    }
   }
 
   ClassNode* findClass(const QString& id) {
@@ -319,8 +330,20 @@ private:
         raise(source_, offset, ClassErrorStage::Lexer, ClassErrorCode::UnexpectedToken, QStringLiteral("statement"),
               QStringLiteral("STRUCT_STOP"), {});
       const Scope scope = scopes_.takeLast();
-      if (scope.kind == ScopeKind::Namespace)
+      if (scope.kind == ScopeKind::Namespace) {
+        // addClassesToNamespace: a namespace takes the classes its own block
+        // declares when the block closes, so the last block to close is the
+        // parent, over an earlier declaration in a nested or enclosing block.
+        for (const QString& id : scope.classes) {
+          if (ClassNode* node = findClass(id)) {
+            node->parent = scope.id;
+            ClassNamespace& owner = namespaceById(scope.id);
+            if (!owner.classKeys.contains(id))
+              owner.classKeys.append(id);
+          }
+        }
         namespaceStack_.removeLast();
+      }
       if (!line.atEnd())
         parseStatement(line, line.peek().offset);
       return;
@@ -428,6 +451,7 @@ private:
       raise(source_, offset + 5, ClassErrorStage::Parser, ClassErrorCode::UnexpectedToken,
             QStringLiteral("classIdentifier"), QStringLiteral("NEWLINE"), {QStringLiteral("className")});
     ClassNode& node = addClass(name.id, name.type, name.offset);
+    declareClassInNamespace(name.id);
     if (!cursor.atEnd() && cursor.peek().kind == ClassTokenKind::LBracket) {
       const ClassToken openingBracket = cursor.consume();
       if (cursor.atEnd() ||
@@ -599,7 +623,9 @@ private:
       const ParsedName name = parseName(cursor);
       if (name.id.isEmpty())
         unexpected(cursor, offset, QStringLiteral("noteStatement"), {QStringLiteral("className")});
-      className = name.id;
+      // The grammar's className keeps the generic (`Name~T~`), which is not
+      // the id the class is stored under.
+      className = name.type.isEmpty() ? name.id : name.id + QLatin1Char('~') + name.type + QLatin1Char('~');
     }
     if (cursor.atEnd())
       unexpected(cursor, offset, QStringLiteral("noteStatement"), {QStringLiteral("noteText")});

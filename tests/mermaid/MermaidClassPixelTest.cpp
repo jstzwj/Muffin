@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto-2.13b171"),
           QStringLiteral("Class pixel font contract drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"),
+              QLatin1String("b88995145f50124ba10c02239b24f90a57e433c109fbc8a3985d1b391a9bddd4"),
           QStringLiteral("Class pixel fixture changed; audit the browser oracle and update its digest"));
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   require(cases.size() == 20, QStringLiteral("Class pixel matrix must retain 12 scene and 8 label cases"));

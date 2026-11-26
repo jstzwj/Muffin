@@ -35,7 +35,11 @@ struct ClassDiagramImpl : Diagram {
         themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme), themeOverrides(pre.config));
     const QJsonObject classConfig = pre.config.value(QStringLiteral("class")).toObject();
     classdiagram::ClassLayoutOptions options;
-    options.padding = configNumber(classConfig, QStringLiteral("padding"), 12.0);
+    // class.padding is one number for the three shapes that read it; unset,
+    // each falls back to its own.
+    const QJsonValue configuredPadding = classConfig.value(QStringLiteral("padding"));
+    if (configuredPadding.isDouble() && configuredPadding.toDouble() >= 0.0)
+      options.padding = configuredPadding.toDouble();
     options.hierarchicalNamespaces = classConfig.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
     options.hideEmptyMembersBox = classConfig.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
     options.htmlLabels = pre.config.value(QStringLiteral("htmlLabels")).toBool(true);

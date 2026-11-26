@@ -193,6 +193,8 @@ int main(int argc, char** argv) {
     ids.insert(id);
     const ClassDiagram diagram = ClassDiagram::parse(fixture.value(QStringLiteral("source")).toString());
     ClassLayoutOptions options;
+    // The generator configures class.padding to 12 for every case.
+    options.padding = 12.0;
     options.hierarchicalNamespaces = fixture.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
     options.hideEmptyMembersBox = fixture.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
     options.htmlLabels = fixture.value(QStringLiteral("htmlLabels")).toBool(true);

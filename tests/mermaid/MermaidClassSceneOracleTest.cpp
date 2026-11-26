@@ -234,6 +234,8 @@ int main(int argc, char** argv) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
     ClassLayoutOptions options;
+    // The generator configures class.padding to 12 for every case.
+    options.padding = 12.0;
     options.hierarchicalNamespaces = fixture.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
     options.hideEmptyMembersBox = fixture.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
     options.htmlLabels = fixture.value(QStringLiteral("htmlLabels")).toBool(true);

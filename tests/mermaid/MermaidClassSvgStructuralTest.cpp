@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("mermaidVersion")).toString() == QLatin1String("11.16.0") &&
               root.value(QStringLiteral("fixtureSha256")).toString() ==
-                  QLatin1String("b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"),
+                  QLatin1String("b88995145f50124ba10c02239b24f90a57e433c109fbc8a3985d1b391a9bddd4"),
           QStringLiteral("Class SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;

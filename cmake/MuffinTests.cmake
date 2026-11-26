@@ -109,6 +109,8 @@ muffin_add_test(NAME MuffinMermaidClassLayoutOracleTest SOURCE tests/mermaid/Mer
 muffin_add_test(NAME MuffinMermaidClassSceneOracleTest SOURCE tests/mermaid/MermaidClassSceneOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-layout.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidClassLinkStyleTest SOURCE tests/mermaid/MermaidClassLinkStyleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidClassGeometryOracleTest SOURCE tests/mermaid/MermaidClassGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-geometry.json RESOURCE_LOCK)
+# The same comparison over the seeded random corpus.
+muffin_add_test(NAME MuffinMermaidClassGeometryFuzzTest SOURCE tests/mermaid/MermaidClassGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-geometry-fuzz.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementGeometryOracleTest SOURCE tests/mermaid/MermaidRequirementGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/requirement-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementPixelTest SOURCE tests/mermaid/MermaidRequirementPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/requirement-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRequirementParserTest SOURCE tests/mermaid/MermaidRequirementParserTest.cpp LINK MuffinCore)
@@ -219,6 +221,7 @@ muffin_add_test(NAME MuffinMermaidSwimlaneGeometryOracleTest SOURCE tests/mermai
 muffin_add_test(NAME MuffinMermaidSwimlanePixelTest SOURCE tests/mermaid/MermaidSwimlanePixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/swimlane-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSwimlaneEdgeParityTest SOURCE tests/mermaid/MermaidSwimlaneEdgeParityTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/swimlane-config.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidStateGeometryOracleTest SOURCE tests/mermaid/MermaidStateGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-geometry.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidStateGeometryFuzzTest SOURCE tests/mermaid/MermaidStateGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-geometry-fuzz.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSequenceGeometryOracleTest SOURCE tests/mermaid/MermaidSequenceGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErGeometryOracleTest SOURCE tests/mermaid/MermaidErGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErTextOracleTest SOURCE tests/mermaid/MermaidErTextOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/er-text.json)

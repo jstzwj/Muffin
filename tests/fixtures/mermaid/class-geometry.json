@@ -2,35 +2,168 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "notes": "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome. Per class node: compartment divider count + width/height (origin-independent, font-coupled diagnostic). Per relationship edge: line pattern + start/end marker kinds. Marker kinds are bare types (Start/End suffix dropped; field position encodes the side) to line up with ClassScene's markerStart/markerEnd. Positions are not captured (doubly font-coupled via dagre). Compare against classdiagram::ClassScene::toJsonObject."
+    "notes": "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome with the bundled Noto fonts. Every class and note with its centre, its outline (in the node's own coordinates), its dividers (from the node's left edge to its right, as the first and last point of the divider path) and its text rows (annotation, name, members, methods; the note's text), every relationship with its paths (the waypoints the layout gave each, which the path carries, and the path's data), its pattern, markers, label and cardinalities (their text box and the box clipped to), every namespace with its box and title, and the canvas (the content's bounding box, as the SVG's getBBox() reports it), all but the node-local parts normalized to the centre of the first declared class. Compare, through the render cache, against classdiagram::ClassScene."
   },
   "mermaidVersion": "11.16.0",
   "fontMode": "bundled-noto-2.13b171",
-  "oracle": "classDiagram.render class nodes (bounds+dividers) + relationship edges (pattern+markers)",
+  "oracle": "classDiagram.render classes, notes, relationship paths, namespaces and canvas (first-class normalized)",
   "cases": [
     {
       "id": "inheritance",
       "source": "classDiagram\nAnimal <|-- Duck",
       "expected": {
+        "origin": {
+          "x": 46.156,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            92.3125,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "92.3125px",
+          "content": {
+            "x": -38.156,
+            "y": -42,
+            "width": 76.313,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "Animal",
-            "dividers": 2,
-            "width": 76.313,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -38.15625,
+              "y": -42,
+              "width": 76.3125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -38.15625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 38.15625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -38.15625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 38.15625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -26.156,
+                "y": -30,
+                "width": 52.313,
+                "height": 24,
+                "text": "Animal"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Duck",
-            "dividers": 2,
-            "width": 61.797,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -30.8984375,
+              "y": -42,
+              "width": 61.796875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.898,
+                "y": -30,
+                "width": 37.797,
+                "height": 24,
+                "text": "Duck"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_Animal_Duck_1",
+            "from": "Animal",
+            "to": "Duck",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": "extension",
-            "markerEnd": null
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,69.875C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -39,25 +172,158 @@
       "id": "realization",
       "source": "classDiagram\nShape <|.. Shape2",
       "expected": {
+        "origin": {
+          "x": 47.836,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            95.671875,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "95.6719px",
+          "content": {
+            "x": -39.836,
+            "y": -42,
+            "width": 79.672,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "Shape",
-            "dividers": 2,
-            "width": 70.516,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -35.2578125,
+              "y": -42,
+              "width": 70.515625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -35.2578125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 35.2578125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -35.2578125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 35.2578125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -23.258,
+                "y": -30,
+                "width": 46.516,
+                "height": 24,
+                "text": "Shape"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Shape2",
-            "dividers": 2,
-            "width": 79.672,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -39.8359375,
+              "y": -42,
+              "width": 79.671875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -39.8359375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 39.8359375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -39.8359375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 39.8359375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -27.836,
+                "y": -30,
+                "width": 55.672,
+                "height": 24,
+                "text": "Shape2"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_Shape_Shape2_1",
+            "from": "Shape",
+            "to": "Shape2",
+            "superseded": false,
             "pattern": "dashed",
             "markerStart": "extension",
-            "markerEnd": null
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,69.875C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -66,25 +332,158 @@
       "id": "composition",
       "source": "classDiagram\nCar *-- Wheel",
       "expected": {
+        "origin": {
+          "x": 43.477,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            86.953125,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "86.9531px",
+          "content": {
+            "x": -35.477,
+            "y": -42,
+            "width": 70.953,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "Car",
-            "dividers": 2,
-            "width": 49.703,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -24.8515625,
+              "y": -42,
+              "width": 49.703125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -24.8515625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 24.8515625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -24.8515625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 24.8515625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -12.852,
+                "y": -30,
+                "width": 25.703,
+                "height": 24,
+                "text": "Car"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Wheel",
-            "dividers": 2,
-            "width": 70.953,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -35.4765625,
+              "y": -42,
+              "width": 70.953125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -35.4765625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 35.4765625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -35.4765625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 35.4765625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -23.477,
+                "y": -30,
+                "width": 46.953,
+                "height": 24,
+                "text": "Wheel"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_Car_Wheel_1",
+            "from": "Car",
+            "to": "Wheel",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": "composition",
-            "markerEnd": null
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,69.875C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -93,25 +492,158 @@
       "id": "aggregation",
       "source": "classDiagram\nCompany o-- Employee",
       "expected": {
+        "origin": {
+          "x": 56.703,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            113.40625,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "113.406px",
+          "content": {
+            "x": -48.703,
+            "y": -42,
+            "width": 97.406,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "Company",
-            "dividers": 2,
-            "width": 95.625,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -47.8125,
+              "y": -42,
+              "width": 95.625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -47.8125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 47.8125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -47.8125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 47.8125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -35.812,
+                "y": -30,
+                "width": 71.625,
+                "height": 24,
+                "text": "Company"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Employee",
-            "dividers": 2,
-            "width": 97.406,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -48.703125,
+              "y": -42,
+              "width": 97.40625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -48.703125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 48.703125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -48.703125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 48.703125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -36.703,
+                "y": -30,
+                "width": 73.406,
+                "height": 24,
+                "text": "Employee"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_Company_Employee_1",
+            "from": "Company",
+            "to": "Employee",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": "aggregation",
-            "markerEnd": null
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,69.875C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -120,25 +652,158 @@
       "id": "association",
       "source": "classDiagram\nA --> B",
       "expected": {
+        "origin": {
+          "x": 25.203,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            50.40625,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "50.4062px",
+          "content": {
+            "x": -17.203,
+            "y": -42,
+            "width": 34.406,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "A",
-            "dividers": 2,
-            "width": 34.234,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -17.1171875,
+              "y": -42,
+              "width": 34.234375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.117,
+                "y": -30,
+                "width": 10.234,
+                "height": 24,
+                "text": "A"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "B",
-            "dividers": 2,
-            "width": 34.406,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -17.203125,
+              "y": -42,
+              "width": 34.40625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.203,
+                "y": -30,
+                "width": 10.406,
+                "height": 24,
+                "text": "B"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_A_B_1",
+            "from": "A",
+            "to": "B",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": null,
-            "markerEnd": "dependency"
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,42L0,46.167C0,50.333,0,58.667,0,66C0,73.333,0,79.667,0,82.833L0,86"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -147,25 +812,158 @@
       "id": "dependency-dashed",
       "source": "classDiagram\nC ..> D",
       "expected": {
+        "origin": {
+          "x": 25.844,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            51.6875,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "51.6875px",
+          "content": {
+            "x": -17.844,
+            "y": -42,
+            "width": 35.688,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "C",
-            "dividers": 2,
-            "width": 34.125,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -17.0625,
+              "y": -42,
+              "width": 34.125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.062,
+                "y": -30,
+                "width": 10.125,
+                "height": 24,
+                "text": "C"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "D",
-            "dividers": 2,
-            "width": 35.688,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -17.84375,
+              "y": -42,
+              "width": 35.6875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.84375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.84375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.84375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.84375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.844,
+                "y": -30,
+                "width": 11.688,
+                "height": 24,
+                "text": "D"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_C_D_1",
+            "from": "C",
+            "to": "D",
+            "superseded": false,
             "pattern": "dashed",
             "markerStart": null,
-            "markerEnd": "dependency"
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,42L0,46.167C0,50.333,0,58.667,0,66C0,73.333,0,79.667,0,82.833L0,86"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -174,25 +972,158 @@
       "id": "solid-link",
       "source": "classDiagram\nE -- F",
       "expected": {
+        "origin": {
+          "x": 24.453,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            48.90625,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "48.9062px",
+          "content": {
+            "x": -16.453,
+            "y": -42,
+            "width": 32.906,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "E",
-            "dividers": 2,
-            "width": 32.906,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -16.453125,
+              "y": -42,
+              "width": 32.90625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.453125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.453125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.453125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.453125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.453,
+                "y": -30,
+                "width": 8.906,
+                "height": 24,
+                "text": "E"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "F",
-            "dividers": 2,
-            "width": 32.313,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -16.15625,
+              "y": -42,
+              "width": 32.3125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.15625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.15625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.15625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.15625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.156,
+                "y": -30,
+                "width": 8.313,
+                "height": 24,
+                "text": "F"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_E_F_1",
+            "from": "E",
+            "to": "F",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": null,
-            "markerEnd": null
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,42L0,46.167C0,50.333,0,58.667,0,67C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -201,25 +1132,158 @@
       "id": "composition-both-ends",
       "source": "classDiagram\nP *--* Q",
       "expected": {
+        "origin": {
+          "x": 26.25,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            52.5,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "52.5px",
+          "content": {
+            "x": -18.25,
+            "y": -42,
+            "width": 36.5,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "P",
-            "dividers": 2,
-            "width": 33.688,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -16.84375,
+              "y": -42,
+              "width": 33.6875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.84375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.84375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.84375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.84375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.844,
+                "y": -30,
+                "width": 9.688,
+                "height": 24,
+                "text": "P"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Q",
-            "dividers": 2,
-            "width": 36.5,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -18.25,
+              "y": -42,
+              "width": 36.5,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -18.25,
+                  "y": 6
+                },
+                "to": {
+                  "x": 18.25,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -18.25,
+                  "y": 24
+                },
+                "to": {
+                  "x": 18.25,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -6.25,
+                "y": -30,
+                "width": 12.5,
+                "height": 24,
+                "text": "Q"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_P_Q_1",
+            "from": "P",
+            "to": "Q",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": "composition",
-            "markerEnd": "composition"
+            "markerEnd": "composition",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,67C0,69.583,0,72.167,0,73.458L0,74.75"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -228,25 +1292,158 @@
       "id": "aggregation-both-ends",
       "source": "classDiagram\nR o--o S",
       "expected": {
+        "origin": {
+          "x": 24.977,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            49.953125,
+            234
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "49.9531px",
+          "content": {
+            "x": -16.977,
+            "y": -42,
+            "width": 33.953,
+            "height": 218
+          }
+        },
         "nodes": [
           {
             "id": "R",
-            "dividers": 2,
-            "width": 33.953,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -16.9765625,
+              "y": -42,
+              "width": 33.953125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.9765625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.9765625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.9765625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.9765625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.977,
+                "y": -30,
+                "width": 9.953,
+                "height": 24,
+                "text": "R"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "S",
-            "dividers": 2,
-            "width": 32.797,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -16.3984375,
+              "y": -42,
+              "width": 32.796875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.3984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.3984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.3984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.3984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.398,
+                "y": -30,
+                "width": 8.797,
+                "height": 24,
+                "text": "S"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_R_S_1",
+            "from": "R",
+            "to": "S",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": "aggregation",
-            "markerEnd": "aggregation"
+            "markerEnd": "aggregation",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,67C0,69.583,0,72.167,0,73.458L0,74.75"
+              }
+            ],
+            "label": null,
+            "terminals": {}
           }
         ]
       }
@@ -255,25 +1452,166 @@
       "id": "labeled-edge",
       "source": "classDiagram\nOwner --> Pet : owns",
       "expected": {
+        "origin": {
+          "x": 45.297,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            90.59375,
+            258
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "90.5938px",
+          "content": {
+            "x": -37.297,
+            "y": -42,
+            "width": 74.594,
+            "height": 242
+          }
+        },
         "nodes": [
           {
             "id": "Owner",
-            "dividers": 2,
-            "width": 74.594,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -37.296875,
+              "y": -42,
+              "width": 74.59375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -37.296875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 37.296875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -37.296875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 37.296875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -25.297,
+                "y": -30,
+                "width": 50.594,
+                "height": 24,
+                "text": "Owner"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Pet",
-            "dividers": 2,
-            "width": 48.484,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 158
+            },
+            "local": {
+              "x": -24.2421875,
+              "y": -42,
+              "width": 48.484375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -24.2421875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 24.2421875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -24.2421875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 24.2421875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -12.242,
+                "y": -30,
+                "width": 24.484,
+                "height": 24,
+                "text": "Pet"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           }
         ],
+        "clusters": [],
         "edges": [
           {
+            "id": "id_Owner_Pet_1",
+            "from": "Owner",
+            "to": "Pet",
+            "superseded": false,
             "pattern": "solid",
             "markerStart": null,
-            "markerEnd": "dependency"
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 79
+                  },
+                  {
+                    "x": 0,
+                    "y": 116
+                  }
+                ],
+                "path": "M0,42L0,48.167C0,54.333,0,66.667,0,78C0,89.333,0,99.667,0,104.833L0,110"
+              }
+            ],
+            "label": {
+              "text": "owns",
+              "rect": {
+                "x": -19.75,
+                "y": 67,
+                "width": 39.5,
+                "height": 24
+              }
+            },
+            "terminals": {}
           }
         ]
       }
@@ -282,14 +1620,102 @@
       "id": "compartments",
       "source": "classDiagram\nclass Duck {\n  +String beakColor\n  +swim()\n  +quack()\n}",
       "expected": {
-        "nodes": [
-          {
-            "id": "Duck",
-            "dividers": 2,
+        "origin": {
+          "x": 96.918,
+          "y": 92
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            193.8359375,
+            184
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "193.836px",
+          "content": {
+            "x": -88.918,
+            "y": -84,
             "width": 177.836,
             "height": 168
           }
+        },
+        "nodes": [
+          {
+            "id": "Duck",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -88.91796875,
+              "y": -84,
+              "width": 177.8359375,
+              "height": 168
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -88.91796875,
+                  "y": -36
+                },
+                "to": {
+                  "x": 88.91796875,
+                  "y": -35.999
+                }
+              },
+              {
+                "from": {
+                  "x": -88.91796875,
+                  "y": 12
+                },
+                "to": {
+                  "x": 88.91796875,
+                  "y": 12.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.898,
+                "y": -72,
+                "width": 37.797,
+                "height": 24,
+                "text": "Duck"
+              }
+            ],
+            "members": [
+              {
+                "x": -76.918,
+                "y": -24,
+                "width": 134.938,
+                "height": 24,
+                "text": "+String beakColor"
+              }
+            ],
+            "methods": [
+              {
+                "x": -76.918,
+                "y": 24,
+                "width": 58.094,
+                "height": 24,
+                "text": "+swim()"
+              },
+              {
+                "x": -76.918,
+                "y": 48,
+                "width": 63.688,
+                "height": 24,
+                "text": "+quack()"
+              }
+            ],
+            "noteLabel": null
+          }
         ],
+        "clusters": [],
         "edges": []
       }
     },
@@ -297,22 +1723,4716 @@
       "id": "bare-classes",
       "source": "classDiagram\nclass X\nclass Y",
       "expected": {
+        "origin": {
+          "x": 24.695,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            132.453125,
+            100
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "132.453px",
+          "content": {
+            "x": -16.695,
+            "y": -42,
+            "width": 116.453,
+            "height": 84
+          }
+        },
         "nodes": [
           {
             "id": "X",
-            "dividers": 2,
-            "width": 33.391,
-            "height": 84
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -16.6953125,
+              "y": -42,
+              "width": 33.390625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.6953125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.6953125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.6953125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.6953125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.695,
+                "y": -30,
+                "width": 9.391,
+                "height": 24,
+                "text": "X"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
           },
           {
             "id": "Y",
-            "dividers": 2,
-            "width": 33.063,
+            "note": false,
+            "centre": {
+              "x": 83.227,
+              "y": 0
+            },
+            "local": {
+              "x": -16.53125,
+              "y": -42,
+              "width": 33.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.531,
+                "y": -30,
+                "width": 9.063,
+                "height": 24,
+                "text": "Y"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": []
+      }
+    },
+    {
+      "id": "compartments-full",
+      "source": "classDiagram\nclass Animal {\n  <<interface>>\n  +int age\n  +String gender\n  +isMammal() bool\n  +mate()\n}\nAnimal <|-- Duck",
+      "expected": {
+        "origin": {
+          "x": 112.227,
+          "y": 116
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            224.453125,
+            366
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "224.453px",
+          "content": {
+            "x": -104.227,
+            "y": -108,
+            "width": 208.453,
+            "height": 350
+          }
+        },
+        "nodes": [
+          {
+            "id": "Animal",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -104.2265625,
+              "y": -108,
+              "width": 208.453125,
+              "height": 216
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -104.2265625,
+                  "y": -36
+                },
+                "to": {
+                  "x": 104.2265625,
+                  "y": -35.999
+                }
+              },
+              {
+                "from": {
+                  "x": -104.2265625,
+                  "y": 36
+                },
+                "to": {
+                  "x": 104.2265625,
+                  "y": 36.001
+                }
+              }
+            ],
+            "annotation": [
+              {
+                "x": -41.453,
+                "y": -96,
+                "width": 82.906,
+                "height": 24,
+                "text": "«interface»"
+              }
+            ],
+            "name": [
+              {
+                "x": -26.156,
+                "y": -72,
+                "width": 52.313,
+                "height": 24,
+                "text": "Animal"
+              }
+            ],
+            "members": [
+              {
+                "x": -92.227,
+                "y": -24,
+                "width": 60.953,
+                "height": 24,
+                "text": "+int age"
+              },
+              {
+                "x": -92.227,
+                "y": 0,
+                "width": 112.563,
+                "height": 24,
+                "text": "+String gender"
+              }
+            ],
+            "methods": [
+              {
+                "x": -92.227,
+                "y": 48,
+                "width": 143,
+                "height": 24,
+                "text": "+isMammal() : bool"
+              },
+              {
+                "x": -92.227,
+                "y": 72,
+                "width": 57.5,
+                "height": 24,
+                "text": "+mate()"
+              }
+            ],
+            "noteLabel": null
+          },
+          {
+            "id": "Duck",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 200
+            },
+            "local": {
+              "x": -30.8984375,
+              "y": -42,
+              "width": 61.796875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.898,
+                "y": -30,
+                "width": 37.797,
+                "height": 24,
+                "text": "Duck"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Animal_Duck_1",
+            "from": "Animal",
+            "to": "Duck",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": "extension",
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 108
+                  },
+                  {
+                    "x": 0,
+                    "y": 133
+                  },
+                  {
+                    "x": 0,
+                    "y": 158
+                  }
+                ],
+                "path": "M0,125.25L0,126.542C0,127.833,0,130.417,0,135.875C0,141.333,0,149.667,0,153.833L0,158"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "note-for",
+      "source": "classDiagram\nclass Duck\nnote for Duck \"can fly\"",
+      "expected": {
+        "origin": {
+          "x": 38.898,
+          "y": 136
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            77.796875,
+            186
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "77.7969px",
+          "content": {
+            "x": -30.898,
+            "y": -128,
+            "width": 61.797,
+            "height": 170
+          }
+        },
+        "nodes": [
+          {
+            "id": "Duck",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -30.8984375,
+              "y": -42,
+              "width": 61.796875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -30.8984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 30.8984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.898,
+                "y": -30,
+                "width": 37.797,
+                "height": 24,
+                "text": "Duck"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "note0",
+            "note": true,
+            "centre": {
+              "x": 0,
+              "y": -110
+            },
+            "local": {
+              "x": -30.25,
+              "y": -18,
+              "width": 60.5,
+              "height": 36
+            },
+            "dividers": [],
+            "annotation": [],
+            "name": [],
+            "members": [],
+            "methods": [],
+            "noteLabel": {
+              "x": -24.25,
+              "y": -12,
+              "width": 48.5,
+              "height": 24,
+              "text": "can fly"
+            }
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edgeNote0",
+            "from": "note0",
+            "to": "Duck",
+            "superseded": false,
+            "pattern": "dotted",
+            "markerStart": null,
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -92
+                  },
+                  {
+                    "x": 0,
+                    "y": -67
+                  },
+                  {
+                    "x": 0,
+                    "y": -42
+                  }
+                ],
+                "path": "M0,-92L0,-87.833C0,-83.667,0,-75.333,0,-67C0,-58.667,0,-50.333,0,-46.167L0,-42"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "note-beside",
+      "source": "classDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
+      "expected": {
+        "origin": {
+          "x": 134.469,
+          "y": 208
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            246,
+            258
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "246px",
+          "content": {
+            "x": -126.469,
+            "y": -200,
+            "width": 230,
+            "height": 242
+          }
+        },
+        "nodes": [
+          {
+            "id": "Service",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -38.6953125,
+              "y": -42,
+              "width": 77.390625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -38.6953125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 38.6953125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -38.6953125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 38.6953125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -26.695,
+                "y": -30,
+                "width": 53.391,
+                "height": 24,
+                "text": "Service"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Client",
+            "note": false,
+            "centre": {
+              "x": 70,
+              "y": -158
+            },
+            "local": {
+              "x": -33.53125,
+              "y": -42,
+              "width": 67.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -21.531,
+                "y": -30,
+                "width": 43.063,
+                "height": 24,
+                "text": "Client"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "note0",
+            "note": true,
+            "centre": {
+              "x": -70,
+              "y": -158
+            },
+            "local": {
+              "x": -56.46875,
+              "y": -18,
+              "width": 112.9375,
+              "height": 36
+            },
+            "dividers": [],
+            "annotation": [],
+            "name": [],
+            "members": [],
+            "methods": [],
+            "noteLabel": {
+              "x": -50.469,
+              "y": -12,
+              "width": 100.938,
+              "height": 24,
+              "text": "A folded note"
+            }
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edgeNote0",
+            "from": "note0",
+            "to": "Service",
+            "superseded": false,
+            "pattern": "dotted",
+            "markerStart": null,
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -70,
+                    "y": -140
+                  },
+                  {
+                    "x": -70,
+                    "y": -79
+                  },
+                  {
+                    "x": -37.215,
+                    "y": -42
+                  }
+                ],
+                "path": "M-70,-140L-70,-129.833C-70,-119.667,-70,-99.333,-64.536,-83C-59.072,-66.667,-48.144,-54.333,-42.68,-48.167L-37.215,-42"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Client_Service_1",
+            "from": "Client",
+            "to": "Service",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 70,
+                    "y": -116
+                  },
+                  {
+                    "x": 70,
+                    "y": -79
+                  },
+                  {
+                    "x": 37.215,
+                    "y": -42
+                  }
+                ],
+                "path": "M70,-116L70,-109.833C70,-103.667,70,-91.333,65.199,-79.748C60.398,-68.164,50.796,-57.327,45.995,-51.909L41.194,-46.491"
+              }
+            ],
+            "label": {
+              "text": "uses",
+              "rect": {
+                "x": 52.875,
+                "y": -91,
+                "width": 34.25,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace",
+      "source": "classDiagram\nnamespace Base {\n  class Inside\n}\nclass Outside\nOutside ..> Inside",
+      "expected": {
+        "origin": {
+          "x": 77.984,
+          "y": 209
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            155.96875,
+            284
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "155.969px",
+          "content": {
+            "x": -69.984,
+            "y": -201,
+            "width": 139.969,
+            "height": 268
+          }
+        },
+        "nodes": [
+          {
+            "id": "Inside",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -34.984375,
+              "y": -42,
+              "width": 69.96875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -34.984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 34.984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -34.984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 34.984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -22.984,
+                "y": -30,
+                "width": 45.969,
+                "height": 24,
+                "text": "Inside"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Outside",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": -159
+            },
+            "local": {
+              "x": -41.4140625,
+              "y": -42,
+              "width": 82.828125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -41.4140625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 41.4140625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -41.4140625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 41.4140625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -29.414,
+                "y": -30,
+                "width": 58.828,
+                "height": 24,
+                "text": "Outside"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Base",
+            "bounds": {
+              "x": -69.984,
+              "y": -67,
+              "width": 139.969,
+              "height": 134
+            },
+            "title": {
+              "text": "Base",
+              "rect": {
+                "x": -18.039,
+                "y": -67,
+                "width": 36.078,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_Outside_Inside_1",
+            "from": "Outside",
+            "to": "Inside",
+            "superseded": false,
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -117
+                  },
+                  {
+                    "x": 0,
+                    "y": -92
+                  },
+                  {
+                    "x": 0,
+                    "y": -67
+                  },
+                  {
+                    "x": 0,
+                    "y": -42
+                  }
+                ],
+                "path": "M0,-117L0,-112.833C0,-108.667,0,-100.333,0,-92C0,-83.667,0,-75.333,0,-68C0,-60.667,0,-54.333,0,-51.167L0,-48"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace-nested",
+      "source": "classDiagram\nnamespace Outer {\n  namespace Inner {\n    class Deep\n  }\n  class Shallow\n}\nclass User\nUser --> Deep\nUser --> Shallow",
+      "expected": {
+        "origin": {
+          "x": 94.789,
+          "y": 234
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            321.421875,
+            334
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "321.422px",
+          "content": {
+            "x": -86.789,
+            "y": -226,
+            "width": 305.422,
+            "height": 318
+          }
+        },
+        "nodes": [
+          {
+            "id": "Deep",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -31.7890625,
+              "y": -42,
+              "width": 63.578125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -31.7890625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 31.7890625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -31.7890625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 31.7890625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -19.789,
+                "y": -30,
+                "width": 39.578,
+                "height": 24,
+                "text": "Deep"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Shallow",
+            "note": false,
+            "centre": {
+              "x": 142.711,
+              "y": 0
+            },
+            "local": {
+              "x": -40.921875,
+              "y": -42,
+              "width": 81.84375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -40.921875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 40.921875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -40.921875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 40.921875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -28.922,
+                "y": -30,
+                "width": 57.844,
+                "height": 24,
+                "text": "Shallow"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "User",
+            "note": false,
+            "centre": {
+              "x": 71.355,
+              "y": -184
+            },
+            "local": {
+              "x": -29.5,
+              "y": -42,
+              "width": 59,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -29.5,
+                  "y": 6
+                },
+                "to": {
+                  "x": 29.5,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -29.5,
+                  "y": 24
+                },
+                "to": {
+                  "x": 29.5,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -17.5,
+                "y": -30,
+                "width": 35,
+                "height": 24,
+                "text": "User"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Outer",
+            "bounds": {
+              "x": -86.789,
+              "y": -92,
+              "width": 305.422,
+              "height": 184
+            },
+            "title": {
+              "text": "Outer",
+              "rect": {
+                "x": 44.023,
+                "y": -92,
+                "width": 43.797,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "Outer.Inner",
+            "bounds": {
+              "x": -66.789,
+              "y": -67,
+              "width": 133.578,
+              "height": 134
+            },
+            "title": {
+              "text": "Inner",
+              "rect": {
+                "x": -20.422,
+                "y": -67,
+                "width": 40.844,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_User_Deep_1",
+            "from": "User",
+            "to": "Deep",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 41.855,
+                    "y": -156.301
+                  },
+                  {
+                    "x": 0,
+                    "y": -117
+                  },
+                  {
+                    "x": 0,
+                    "y": -92
+                  },
+                  {
+                    "x": 0,
+                    "y": -67
+                  },
+                  {
+                    "x": 0,
+                    "y": -42
+                  }
+                ],
+                "path": "M41.856,-156.301L34.88,-149.751C27.904,-143.2,13.952,-130.1,6.976,-119.383C0,-108.667,0,-100.333,0,-92C0,-83.667,0,-75.333,0,-68C0,-60.667,0,-54.333,0,-51.167L0,-48"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_User_Shallow_2",
+            "from": "User",
+            "to": "Shallow",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 100.855,
+                    "y": -156.301
+                  },
+                  {
+                    "x": 142.711,
+                    "y": -117
+                  },
+                  {
+                    "x": 142.711,
+                    "y": -92
+                  },
+                  {
+                    "x": 142.711,
+                    "y": -67
+                  },
+                  {
+                    "x": 142.711,
+                    "y": -42
+                  }
+                ],
+                "path": "M100.856,-156.301L107.831,-149.751C114.807,-143.2,128.759,-130.1,135.735,-119.383C142.711,-108.667,142.711,-100.333,142.711,-92C142.711,-83.667,142.711,-75.333,142.711,-68C142.711,-60.667,142.711,-54.333,142.711,-51.167L142.711,-48"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "direction-rl",
+      "source": "classDiagram\ndirection RL\nclass A\nclass B\nclass C\nA --> B\nB --> C",
+      "expected": {
+        "origin": {
+          "x": 193.648,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            218.765625,
+            100
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "218.766px",
+          "content": {
+            "x": -185.648,
+            "y": -42,
+            "width": 202.766,
             "height": 84
+          }
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -17.1171875,
+              "y": -42,
+              "width": 34.234375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.117,
+                "y": -30,
+                "width": 10.234,
+                "height": 24,
+                "text": "A"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "B",
+            "note": false,
+            "centre": {
+              "x": -84.32,
+              "y": 0
+            },
+            "local": {
+              "x": -17.203125,
+              "y": -42,
+              "width": 34.40625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.203,
+                "y": -30,
+                "width": 10.406,
+                "height": 24,
+                "text": "B"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "C",
+            "note": false,
+            "centre": {
+              "x": -168.586,
+              "y": 0
+            },
+            "local": {
+              "x": -17.0625,
+              "y": -42,
+              "width": 34.125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.062,
+                "y": -30,
+                "width": 10.125,
+                "height": 24,
+                "text": "C"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_A_B_1",
+            "from": "A",
+            "to": "B",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -17.117,
+                    "y": 0
+                  },
+                  {
+                    "x": -42.117,
+                    "y": 0
+                  },
+                  {
+                    "x": -67.117,
+                    "y": 0
+                  }
+                ],
+                "path": "M-17.117,0L-21.283,0C-25.45,0,-33.783,0,-41.117,0C-48.45,0,-54.783,0,-57.95,0L-61.117,0"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_B_C_2",
+            "from": "B",
+            "to": "C",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -101.523,
+                    "y": 0
+                  },
+                  {
+                    "x": -126.523,
+                    "y": 0
+                  },
+                  {
+                    "x": -151.523,
+                    "y": 0
+                  }
+                ],
+                "path": "M-101.523,0L-105.69,0C-109.856,0,-118.19,0,-125.523,0C-132.856,0,-139.19,0,-142.356,0L-145.523,0"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "direction-bt",
+      "source": "classDiagram\ndirection BT\nclass A\nclass B\nclass C\nA --> B\nB --> C",
+      "expected": {
+        "origin": {
+          "x": 25.203,
+          "y": 318
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            50.40625,
+            368
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "50.4062px",
+          "content": {
+            "x": -17.203,
+            "y": -310,
+            "width": 34.406,
+            "height": 352
+          }
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -17.1171875,
+              "y": -42,
+              "width": 34.234375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.117,
+                "y": -30,
+                "width": 10.234,
+                "height": 24,
+                "text": "A"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "B",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": -134
+            },
+            "local": {
+              "x": -17.203125,
+              "y": -42,
+              "width": 34.40625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.203,
+                "y": -30,
+                "width": 10.406,
+                "height": 24,
+                "text": "B"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "C",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": -268
+            },
+            "local": {
+              "x": -17.0625,
+              "y": -42,
+              "width": 34.125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.062,
+                "y": -30,
+                "width": 10.125,
+                "height": 24,
+                "text": "C"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_A_B_1",
+            "from": "A",
+            "to": "B",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -42
+                  },
+                  {
+                    "x": 0,
+                    "y": -67
+                  },
+                  {
+                    "x": 0,
+                    "y": -92
+                  }
+                ],
+                "path": "M0,-42L0,-46.167C0,-50.333,0,-58.667,0,-66C0,-73.333,0,-79.667,0,-82.833L0,-86"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_B_C_2",
+            "from": "B",
+            "to": "C",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -176
+                  },
+                  {
+                    "x": 0,
+                    "y": -201
+                  },
+                  {
+                    "x": 0,
+                    "y": -226
+                  }
+                ],
+                "path": "M0,-176L0,-180.167C0,-184.333,0,-192.667,0,-200C0,-207.333,0,-213.667,0,-216.833L0,-220"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cardinality",
+      "source": "classDiagram\nOrder \"1\" --> \"*\" LineItem : contains",
+      "expected": {
+        "origin": {
+          "x": 53.305,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            106.609375,
+            258
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "106.609px",
+          "content": {
+            "x": -45.305,
+            "y": -42,
+            "width": 90.609,
+            "height": 242
+          }
+        },
+        "nodes": [
+          {
+            "id": "Order",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -34.1328125,
+              "y": -42,
+              "width": 68.265625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -34.1328125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 34.1328125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -34.1328125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 34.1328125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -22.133,
+                "y": -30,
+                "width": 44.266,
+                "height": 24,
+                "text": "Order"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "LineItem",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 158
+            },
+            "local": {
+              "x": -45.3046875,
+              "y": -42,
+              "width": 90.609375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -45.3046875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 45.3046875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -45.3046875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 45.3046875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -33.305,
+                "y": -30,
+                "width": 66.609,
+                "height": 24,
+                "text": "LineItem"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Order_LineItem_1",
+            "from": "Order",
+            "to": "LineItem",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 79
+                  },
+                  {
+                    "x": 0,
+                    "y": 116
+                  }
+                ],
+                "path": "M0,42L0,48.167C0,54.333,0,66.667,0,78C0,89.333,0,99.667,0,104.833L0,110"
+              }
+            ],
+            "label": {
+              "text": "contains",
+              "rect": {
+                "x": -31.844,
+                "y": 67,
+                "width": 63.688,
+                "height": 24
+              }
+            },
+            "terminals": {
+              "startLabelRight": {
+                "text": "1",
+                "rect": {
+                  "x": -18.148,
+                  "y": 51.25,
+                  "width": 6.297,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": -18.148,
+                  "y": 51.25,
+                  "width": 9,
+                  "height": 12
+                }
+              },
+              "endLabelLeft": {
+                "text": "*",
+                "rect": {
+                  "x": 10,
+                  "y": 93.5,
+                  "width": 6.063,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": 10,
+                  "y": 93.5,
+                  "width": 9,
+                  "height": 12
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "generics",
+      "source": "classDiagram\nclass Container~T~ {\n  +T item\n  +get() T\n}",
+      "expected": {
+        "origin": {
+          "x": 77.773,
+          "y": 80
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            155.546875,
+            160
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "155.547px",
+          "content": {
+            "x": -69.773,
+            "y": -72,
+            "width": 139.547,
+            "height": 144
+          }
+        },
+        "nodes": [
+          {
+            "id": "Container",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -69.7734375,
+              "y": -72,
+              "width": 139.546875,
+              "height": 144
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -69.7734375,
+                  "y": -24
+                },
+                "to": {
+                  "x": 69.7734375,
+                  "y": -23.999
+                }
+              },
+              {
+                "from": {
+                  "x": -69.7734375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 69.7734375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -50.641,
+                "y": -60,
+                "width": 101.281,
+                "height": 24,
+                "text": "Container<T>"
+              }
+            ],
+            "members": [
+              {
+                "x": -57.773,
+                "y": -12,
+                "width": 56.109,
+                "height": 24,
+                "text": "+T item"
+              }
+            ],
+            "methods": [
+              {
+                "x": -57.773,
+                "y": 36,
+                "width": 64.906,
+                "height": 24,
+                "text": "+get() : T"
+              }
+            ],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": []
+      }
+    },
+    {
+      "id": "diamond",
+      "source": "classDiagram\nBase <|-- Left\nBase <|-- Right\nLeft ..> Right : uses\nRight ..> Base : calls",
+      "expected": {
+        "origin": {
+          "x": 39.797,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            -29.55500030517578,
+            0,
+            171.28155517578125,
+            392
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "171.282px",
+          "content": {
+            "x": -61.352,
+            "y": -42,
+            "width": 155.282,
+            "height": 376
+          }
+        },
+        "nodes": [
+          {
+            "id": "Base",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -30.0390625,
+              "y": -42,
+              "width": 60.078125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -30.0390625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 30.0390625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -30.0390625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 30.0390625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.039,
+                "y": -30,
+                "width": 36.078,
+                "height": 24,
+                "text": "Base"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Left",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 134
+            },
+            "local": {
+              "x": -26.3515625,
+              "y": -42,
+              "width": 52.703125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -26.3515625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 26.3515625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -26.3515625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 26.3515625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -14.352,
+                "y": -30,
+                "width": 28.703,
+                "height": 24,
+                "text": "Left"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Right",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 292
+            },
+            "local": {
+              "x": -31.796875,
+              "y": -42,
+              "width": 63.59375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -31.796875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 31.796875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -31.796875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 31.796875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -19.797,
+                "y": -30,
+                "width": 39.594,
+                "height": 24,
+                "text": "Right"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Base_Left_1",
+            "from": "Base",
+            "to": "Left",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": "extension",
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 67
+                  },
+                  {
+                    "x": 0,
+                    "y": 92
+                  }
+                ],
+                "path": "M0,59.25L0,60.542C0,61.833,0,64.417,0,69.875C0,75.333,0,83.667,0,87.833L0,92"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Base_Right_2",
+            "from": "Base",
+            "to": "Right",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": "extension",
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -30.039,
+                    "y": 32.805
+                  },
+                  {
+                    "x": -61.352,
+                    "y": 67
+                  },
+                  {
+                    "x": -61.352,
+                    "y": 134
+                  },
+                  {
+                    "x": -61.352,
+                    "y": 213
+                  },
+                  {
+                    "x": -31.797,
+                    "y": 251.056
+                  }
+                ],
+                "path": "M-41.689,45.527L-44.966,49.106C-48.243,52.684,-54.797,59.842,-58.075,74.588C-61.352,89.333,-61.352,111.667,-61.352,136C-61.352,160.333,-61.352,186.667,-56.426,206.176C-51.5,225.685,-41.649,238.371,-36.723,244.714L-31.797,251.056"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Left_Right_3",
+            "from": "Left",
+            "to": "Right",
+            "superseded": false,
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 176
+                  },
+                  {
+                    "x": 0,
+                    "y": 213
+                  },
+                  {
+                    "x": 0,
+                    "y": 250
+                  }
+                ],
+                "path": "M0,176L0,182.167C0,188.333,0,200.667,0,212C0,223.333,0,233.667,0,238.833L0,244"
+              }
+            ],
+            "label": {
+              "text": "uses",
+              "rect": {
+                "x": -17.125,
+                "y": 201,
+                "width": 34.25,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          },
+          {
+            "id": "id_Right_Base_4",
+            "from": "Right",
+            "to": "Base",
+            "superseded": false,
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 31.797,
+                    "y": 259.646
+                  },
+                  {
+                    "x": 77.641,
+                    "y": 213
+                  },
+                  {
+                    "x": 77.641,
+                    "y": 134
+                  },
+                  {
+                    "x": 77.641,
+                    "y": 67
+                  },
+                  {
+                    "x": 30.039,
+                    "y": 25.922
+                  }
+                ],
+                "path": "M31.797,259.646L39.437,251.872C47.078,244.098,62.359,228.549,70,207.608C77.641,186.667,77.641,160.333,77.641,136C77.641,111.667,77.641,89.333,70.464,71.974C63.287,54.614,48.934,42.228,41.758,36.035L34.581,29.842"
+              }
+            ],
+            "label": {
+              "text": "calls",
+              "rect": {
+                "x": 61.352,
+                "y": 122,
+                "width": 32.578,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cjk-labels",
+      "source": "classDiagram\nclass 用户 {\n  +姓名\n  +登录()\n}\n用户 --> 订单 : 下单",
+      "expected": {
+        "origin": {
+          "x": 53.383,
+          "y": 80
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            106.765625,
+            318
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "106.766px",
+          "content": {
+            "x": -45.383,
+            "y": -72,
+            "width": 90.766,
+            "height": 302
+          }
+        },
+        "nodes": [
+          {
+            "id": "用户",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -45.3828125,
+              "y": -72,
+              "width": 90.765625,
+              "height": 144
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -45.3828125,
+                  "y": -24
+                },
+                "to": {
+                  "x": 45.3828125,
+                  "y": -23.999
+                }
+              },
+              {
+                "from": {
+                  "x": -45.3828125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 45.3828125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -16,
+                "y": -60,
+                "width": 32,
+                "height": 24,
+                "text": "用户"
+              }
+            ],
+            "members": [
+              {
+                "x": -33.383,
+                "y": -12,
+                "width": 41.156,
+                "height": 24,
+                "text": "+姓名"
+              }
+            ],
+            "methods": [
+              {
+                "x": -33.383,
+                "y": 36,
+                "width": 50.766,
+                "height": 24,
+                "text": "+登录()"
+              }
+            ],
+            "noteLabel": null
+          },
+          {
+            "id": "订单",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 188
+            },
+            "local": {
+              "x": -28,
+              "y": -42,
+              "width": 56,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -28,
+                  "y": 6
+                },
+                "to": {
+                  "x": 28,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -28,
+                  "y": 24
+                },
+                "to": {
+                  "x": 28,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -16,
+                "y": -30,
+                "width": 32,
+                "height": 24,
+                "text": "订单"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_用户_订单_1",
+            "from": "用户",
+            "to": "订单",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 72
+                  },
+                  {
+                    "x": 0,
+                    "y": 109
+                  },
+                  {
+                    "x": 0,
+                    "y": 146
+                  }
+                ],
+                "path": "M0,72L0,78.167C0,84.333,0,96.667,0,108C0,119.333,0,129.667,0,134.833L0,140"
+              }
+            ],
+            "label": {
+              "text": "下单",
+              "rect": {
+                "x": -16,
+                "y": 97,
+                "width": 32,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-relationship",
+      "source": "classDiagram\nNode \"0..1\" -- \"0..*\" Node : links",
+      "expected": {
+        "origin": {
+          "x": 43.77,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            -3.292454719543457,
+            0,
+            87.4213638305664,
+            224.25
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "87.4214px",
+          "content": {
+            "x": -39.062,
+            "y": -42,
+            "width": 71.421,
+            "height": 208.25
+          }
+        },
+        "nodes": [
+          {
+            "id": "Node",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -32.359375,
+              "y": -42,
+              "width": 64.71875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -32.359375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 32.359375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -32.359375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 32.359375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -20.359,
+                "y": -30,
+                "width": 40.719,
+                "height": 24,
+                "text": "Node"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Node_Node_1",
+            "from": "Node",
+            "to": "Node",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -11.653,
+                    "y": 42
+                  },
+                  {
+                    "x": -18.59,
+                    "y": 67
+                  },
+                  {
+                    "x": -18.59,
+                    "y": 92
+                  }
+                ],
+                "path": "M-11.654,42L-12.81,46.167C-13.966,50.333,-16.278,58.667,-17.434,67C-18.59,75.333,-18.59,83.667,-18.59,87.833L-18.59,92"
+              },
+              {
+                "points": [
+                  {
+                    "x": -18.59,
+                    "y": 92.1
+                  },
+                  {
+                    "x": -18.59,
+                    "y": 129.1
+                  },
+                  {
+                    "x": -0.025,
+                    "y": 166.1
+                  }
+                ],
+                "path": "M-18.59,92.1L-18.59,98.267C-18.59,104.433,-18.59,116.767,-15.496,129.1C-12.402,141.433,-6.214,153.767,-3.12,159.933L-0.026,166.1"
+              },
+              {
+                "points": [
+                  {
+                    "x": 0.025,
+                    "y": 166.1
+                  },
+                  {
+                    "x": 18.59,
+                    "y": 129.1
+                  },
+                  {
+                    "x": 18.59,
+                    "y": 92.05
+                  },
+                  {
+                    "x": 18.59,
+                    "y": 67
+                  },
+                  {
+                    "x": 11.653,
+                    "y": 42
+                  }
+                ],
+                "path": "M0.025,166.1L3.119,159.933C6.213,153.767,12.401,141.433,15.495,129.092C18.589,116.75,18.589,104.4,18.589,94.05C18.589,83.7,18.589,75.35,17.433,67.008C16.277,58.667,13.965,50.333,12.809,46.167L11.653,42"
+              }
+            ],
+            "label": {
+              "text": "links",
+              "rect": {
+                "x": -35.77,
+                "y": 117.1,
+                "width": 34.359,
+                "height": 24
+              }
+            },
+            "terminals": {
+              "startLabelRight": {
+                "text": "0..1",
+                "rect": {
+                  "x": -39.062,
+                  "y": 47.784,
+                  "width": 18.484,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": -39.062,
+                  "y": 47.784,
+                  "width": 36,
+                  "height": 12
+                }
+              },
+              "endLabelLeft": {
+                "text": "0..*",
+                "rect": {
+                  "x": -4.577,
+                  "y": 57.022,
+                  "width": 18.25,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": -4.577,
+                  "y": 57.022,
+                  "width": 36,
+                  "height": 12
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "many-classes",
+      "source": "classDiagram\nclass Alpha\nclass Beta\nclass Gamma\nclass Delta\nclass Epsilon\nAlpha --> Beta\nAlpha --> Gamma\nBeta --> Delta\nGamma --> Delta\nDelta --> Epsilon : finally",
+      "expected": {
+        "origin": {
+          "x": 97.523,
+          "y": 50
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            207.71875,
+            526
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "207.719px",
+          "content": {
+            "x": -89.523,
+            "y": -42,
+            "width": 191.719,
+            "height": 510
+          }
+        },
+        "nodes": [
+          {
+            "id": "Alpha",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -33.53125,
+              "y": -42,
+              "width": 67.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -21.531,
+                "y": -30,
+                "width": 43.063,
+                "height": 24,
+                "text": "Alpha"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Beta",
+            "note": false,
+            "centre": {
+              "x": -60.43,
+              "y": 134
+            },
+            "local": {
+              "x": -29.09375,
+              "y": -42,
+              "width": 58.1875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -29.09375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 29.09375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -29.09375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 29.09375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -17.094,
+                "y": -30,
+                "width": 34.188,
+                "height": 24,
+                "text": "Beta"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Gamma",
+            "note": false,
+            "centre": {
+              "x": 60.43,
+              "y": 134
+            },
+            "local": {
+              "x": -41.765625,
+              "y": -42,
+              "width": 83.53125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -41.765625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 41.765625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -41.765625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 41.765625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -29.766,
+                "y": -30,
+                "width": 59.531,
+                "height": 24,
+                "text": "Gamma"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Delta",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 268
+            },
+            "local": {
+              "x": -31.796875,
+              "y": -42,
+              "width": 63.59375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -31.796875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 31.796875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -31.796875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 31.796875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -19.797,
+                "y": -30,
+                "width": 39.594,
+                "height": 24,
+                "text": "Delta"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Epsilon",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 426
+            },
+            "local": {
+              "x": -39.1171875,
+              "y": -42,
+              "width": 78.234375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -39.1171875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 39.1171875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -39.1171875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 39.1171875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -27.117,
+                "y": -30,
+                "width": 54.234,
+                "height": 24,
+                "text": "Epsilon"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Alpha_Beta_1",
+            "from": "Alpha",
+            "to": "Beta",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -33.531,
+                    "y": 37.177
+                  },
+                  {
+                    "x": -60.43,
+                    "y": 67
+                  },
+                  {
+                    "x": -60.43,
+                    "y": 92
+                  }
+                ],
+                "path": "M-33.531,37.177L-38.014,42.147C-42.497,47.118,-51.463,57.059,-55.946,65.196C-60.429,73.333,-60.429,79.667,-60.429,82.833L-60.429,86"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Alpha_Gamma_2",
+            "from": "Alpha",
+            "to": "Gamma",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 33.531,
+                    "y": 37.177
+                  },
+                  {
+                    "x": 60.43,
+                    "y": 67
+                  },
+                  {
+                    "x": 60.43,
+                    "y": 92
+                  }
+                ],
+                "path": "M33.532,37.177L38.015,42.147C42.498,47.118,51.464,57.059,55.947,65.196C60.43,73.333,60.43,79.667,60.43,82.833L60.43,86"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Beta_Delta_3",
+            "from": "Beta",
+            "to": "Delta",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -60.43,
+                    "y": 176
+                  },
+                  {
+                    "x": -60.43,
+                    "y": 201
+                  },
+                  {
+                    "x": -31.797,
+                    "y": 232.746
+                  }
+                ],
+                "path": "M-60.429,176L-60.429,180.167C-60.429,184.333,-60.429,192.667,-56.327,201.382C-52.224,210.097,-44.02,219.194,-39.917,223.742L-35.815,228.29"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Gamma_Delta_4",
+            "from": "Gamma",
+            "to": "Delta",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 60.43,
+                    "y": 176
+                  },
+                  {
+                    "x": 60.43,
+                    "y": 201
+                  },
+                  {
+                    "x": 31.797,
+                    "y": 232.746
+                  }
+                ],
+                "path": "M60.43,176L60.43,180.167C60.43,184.333,60.43,192.667,56.328,201.382C52.225,210.097,44.021,219.194,39.918,223.742L35.816,228.29"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Delta_Epsilon_5",
+            "from": "Delta",
+            "to": "Epsilon",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 310
+                  },
+                  {
+                    "x": 0,
+                    "y": 347
+                  },
+                  {
+                    "x": 0,
+                    "y": 384
+                  }
+                ],
+                "path": "M0,310L0,316.167C0,322.333,0,334.667,0,346C0,357.333,0,367.667,0,372.833L0,378"
+              }
+            ],
+            "label": {
+              "text": "finally",
+              "rect": {
+                "x": -22.461,
+                "y": 335,
+                "width": 44.922,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace-closed",
+      "source": "classDiagram\nnamespace Region {\n  class Alpha\n  class Beta\n}\nclass Gamma\nAlpha --> Beta : inside",
+      "expected": {
+        "origin": {
+          "x": 71.031,
+          "y": 85
+        },
+        "canvas": {
+          "viewBox": [
+            -8,
+            0,
+            477.46875,
+            170
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "477.469px",
+          "content": {
+            "x": -71.031,
+            "y": -77,
+            "width": 461.469,
+            "height": 154
+          }
+        },
+        "nodes": [
+          {
+            "id": "Alpha",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -33.53125,
+              "y": -42,
+              "width": 67.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -21.531,
+                "y": -30,
+                "width": 43.063,
+                "height": 24,
+                "text": "Alpha"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Beta",
+            "note": false,
+            "centre": {
+              "x": 182.313,
+              "y": 0
+            },
+            "local": {
+              "x": -29.09375,
+              "y": -42,
+              "width": 58.1875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -29.09375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 29.09375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -29.09375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 29.09375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -17.094,
+                "y": -30,
+                "width": 34.188,
+                "height": 24,
+                "text": "Beta"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Gamma",
+            "note": false,
+            "centre": {
+              "x": 348.672,
+              "y": 0
+            },
+            "local": {
+              "x": -41.765625,
+              "y": -42,
+              "width": 83.53125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -41.765625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 41.765625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -41.765625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 41.765625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -29.766,
+                "y": -30,
+                "width": 59.531,
+                "height": 24,
+                "text": "Gamma"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Region",
+            "bounds": {
+              "x": -71.031,
+              "y": -77,
+              "width": 319.938,
+              "height": 154
+            },
+            "title": {
+              "text": "Region",
+              "rect": {
+                "x": 62.68,
+                "y": -77,
+                "width": 52.516,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_Alpha_Beta_1",
+            "from": "Alpha",
+            "to": "Beta",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 33.531,
+                    "y": 0
+                  },
+                  {
+                    "x": 93.375,
+                    "y": 0
+                  },
+                  {
+                    "x": 153.219,
+                    "y": 0
+                  }
+                ],
+                "path": "M33.532,0L43.505,0C53.479,0,73.427,0,92.375,0C111.323,0,129.271,0,138.245,0L147.219,0"
+              }
+            ],
+            "label": {
+              "text": "inside",
+              "rect": {
+                "x": 71.031,
+                "y": -12,
+                "width": 44.688,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace-chain",
+      "source": "classDiagram\nnamespace Outer {\n  class A\n  namespace Inner {\n    class B\n    class C\n  }\n}\nB --> C : inner",
+      "expected": {
+        "origin": {
+          "x": 89.703,
+          "y": 527
+        },
+        "canvas": {
+          "viewBox": [
+            -8,
+            0,
+            195.40625,
+            612
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "195.406px",
+          "content": {
+            "x": -89.703,
+            "y": -519,
+            "width": 179.406,
+            "height": 596
+          }
+        },
+        "nodes": [
+          {
+            "id": "B",
+            "note": false,
+            "centre": {
+              "x": -8,
+              "y": -392
+            },
+            "local": {
+              "x": -17.203125,
+              "y": -42,
+              "width": 34.40625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.203125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.203125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.203,
+                "y": -30,
+                "width": 10.406,
+                "height": 24,
+                "text": "B"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "C",
+            "note": false,
+            "centre": {
+              "x": -8,
+              "y": -184
+            },
+            "local": {
+              "x": -17.0625,
+              "y": -42,
+              "width": 34.125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.0625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.0625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.062,
+                "y": -30,
+                "width": 10.125,
+                "height": 24,
+                "text": "C"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "A",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -17.1171875,
+              "y": -42,
+              "width": 34.234375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -17.1171875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 17.1171875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -5.117,
+                "y": -30,
+                "width": 10.234,
+                "height": 24,
+                "text": "A"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Outer",
+            "bounds": {
+              "x": -89.703,
+              "y": -519,
+              "width": 179.406,
+              "height": 596
+            },
+            "title": {
+              "text": "Outer",
+              "rect": {
+                "x": -21.898,
+                "y": -519,
+                "width": 43.797,
+                "height": 24
+              }
+            }
+          },
+          {
+            "id": "Outer.Inner",
+            "bounds": {
+              "x": -60.203,
+              "y": -484,
+              "width": 104.406,
+              "height": 392
+            },
+            "title": {
+              "text": "Inner",
+              "rect": {
+                "x": -28.422,
+                "y": -484,
+                "width": 40.844,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_B_C_1",
+            "from": "B",
+            "to": "C",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -8,
+                    "y": -350
+                  },
+                  {
+                    "x": -8,
+                    "y": -288
+                  },
+                  {
+                    "x": -8,
+                    "y": -226
+                  }
+                ],
+                "path": "M-8,-350L-8,-339.667C-8,-329.333,-8,-308.667,-8,-289C-8,-269.333,-8,-250.667,-8,-241.333L-8,-232"
+              }
+            ],
+            "label": {
+              "text": "inner",
+              "rect": {
+                "x": -27.773,
+                "y": -300,
+                "width": 39.547,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace-wide-title",
+      "source": "classDiagram\nnamespace Domain[\"A namespace label far wider than its only class\"] {\n  class X\n}\nclass Y",
+      "expected": {
+        "origin": {
+          "x": 182.484,
+          "y": 85
+        },
+        "canvas": {
+          "viewBox": [
+            -8,
+            0,
+            472.03125,
+            170
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "472.031px",
+          "content": {
+            "x": -182.484,
+            "y": -77,
+            "width": 456.031,
+            "height": 154
+          }
+        },
+        "nodes": [
+          {
+            "id": "X",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -16.6953125,
+              "y": -42,
+              "width": 33.390625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.6953125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.6953125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.6953125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.6953125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.695,
+                "y": -30,
+                "width": 9.391,
+                "height": 24,
+                "text": "X"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Y",
+            "note": false,
+            "centre": {
+              "x": 257.016,
+              "y": 0
+            },
+            "local": {
+              "x": -16.53125,
+              "y": -42,
+              "width": 33.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -16.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 16.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -16.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 16.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -4.531,
+                "y": -30,
+                "width": 9.063,
+                "height": 24,
+                "text": "Y"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Domain",
+            "bounds": {
+              "x": -182.484,
+              "y": -77,
+              "width": 364.969,
+              "height": 154
+            },
+            "title": {
+              "text": "A namespace label far wider than its only class",
+              "rect": {
+                "x": -174.484,
+                "y": -77,
+                "width": 348.969,
+                "height": 24
+              }
+            }
           }
         ],
         "edges": []
       }
+    },
+    {
+      "id": "namespace-direction-lr",
+      "source": "classDiagram\ndirection LR\nnamespace Base {\n  class Inside\n}\nclass Outside\nOutside ..> Inside",
+      "expected": {
+        "origin": {
+          "x": 200.813,
+          "y": 85
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            268.796875,
+            170
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "268.797px",
+          "content": {
+            "x": -192.812,
+            "y": -77,
+            "width": 252.797,
+            "height": 154
+          }
+        },
+        "nodes": [
+          {
+            "id": "Inside",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -34.984375,
+              "y": -42,
+              "width": 69.96875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -34.984375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 34.984375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -34.984375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 34.984375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -22.984,
+                "y": -30,
+                "width": 45.969,
+                "height": 24,
+                "text": "Inside"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Outside",
+            "note": false,
+            "centre": {
+              "x": -151.398,
+              "y": 0
+            },
+            "local": {
+              "x": -41.4140625,
+              "y": -42,
+              "width": 82.828125,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -41.4140625,
+                  "y": 6
+                },
+                "to": {
+                  "x": 41.4140625,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -41.4140625,
+                  "y": 24
+                },
+                "to": {
+                  "x": 41.4140625,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -29.414,
+                "y": -30,
+                "width": 58.828,
+                "height": 24,
+                "text": "Outside"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Base",
+            "bounds": {
+              "x": -59.984,
+              "y": -77,
+              "width": 119.969,
+              "height": 154
+            },
+            "title": {
+              "text": "Base",
+              "rect": {
+                "x": -18.039,
+                "y": -77,
+                "width": 36.078,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_Outside_Inside_1",
+            "from": "Outside",
+            "to": "Inside",
+            "superseded": false,
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -109.984,
+                    "y": 0
+                  },
+                  {
+                    "x": -84.984,
+                    "y": 0
+                  },
+                  {
+                    "x": -59.984,
+                    "y": 0
+                  },
+                  {
+                    "x": -34.984,
+                    "y": 0
+                  }
+                ],
+                "path": "M-109.984,0L-105.817,0C-101.651,0,-93.317,0,-84.984,0C-76.651,0,-68.317,0,-60.984,0C-53.651,0,-47.317,0,-44.151,0L-40.984,0"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "note-in-namespace",
+      "source": "classDiagram\nnamespace Host {\n  class Service\n  note for Service \"listens on 8080\"\n}\nclass Client\nClient --> Service : call",
+      "expected": {
+        "origin": {
+          "x": 121.621,
+          "y": 233
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            317.2265625,
+            308
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "317.227px",
+          "content": {
+            "x": -113.621,
+            "y": -225,
+            "width": 301.227,
+            "height": 292
+          }
+        },
+        "nodes": [
+          {
+            "id": "Service",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -38.6953125,
+              "y": -42,
+              "width": 77.390625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -38.6953125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 38.6953125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -38.6953125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 38.6953125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -26.695,
+                "y": -30,
+                "width": 53.391,
+                "height": 24,
+                "text": "Service"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Client",
+            "note": false,
+            "centre": {
+              "x": 154.074,
+              "y": -158
+            },
+            "local": {
+              "x": -33.53125,
+              "y": -42,
+              "width": 67.0625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -33.53125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 33.53125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -21.531,
+                "y": -30,
+                "width": 43.063,
+                "height": 24,
+                "text": "Client"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "note0",
+            "note": true,
+            "centre": {
+              "x": -16.23,
+              "y": -158
+            },
+            "local": {
+              "x": -62.390625,
+              "y": -18,
+              "width": 124.78125,
+              "height": 36
+            },
+            "dividers": [],
+            "annotation": [],
+            "name": [],
+            "members": [],
+            "methods": [],
+            "noteLabel": {
+              "x": -56.391,
+              "y": -12,
+              "width": 112.781,
+              "height": 24,
+              "text": "listens on 8080"
+            }
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Host",
+            "bounds": {
+              "x": -113.621,
+              "y": -225,
+              "width": 199.164,
+              "height": 292
+            },
+            "title": {
+              "text": "Host",
+              "rect": {
+                "x": -31.531,
+                "y": -225,
+                "width": 34.984,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edgeNote0",
+            "from": "note0",
+            "to": "Service",
+            "superseded": false,
+            "pattern": "dotted",
+            "markerStart": null,
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": -16.23,
+                    "y": -140
+                  },
+                  {
+                    "x": -16.23,
+                    "y": -79
+                  },
+                  {
+                    "x": -8.629,
+                    "y": -42
+                  }
+                ],
+                "path": "M-16.23,-140L-16.23,-129.833C-16.23,-119.667,-16.23,-99.333,-14.963,-83C-13.697,-66.667,-11.163,-54.333,-9.896,-48.167L-8.629,-42"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Client_Service_1",
+            "from": "Client",
+            "to": "Service",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 120.543,
+                    "y": -136.217
+                  },
+                  {
+                    "x": 32.465,
+                    "y": -79
+                  },
+                  {
+                    "x": 17.26,
+                    "y": -42
+                  }
+                ],
+                "path": "M120.543,-136.217L105.863,-126.681C91.184,-117.145,61.824,-98.072,44.991,-83.295C28.157,-68.517,23.849,-58.033,21.695,-52.791L19.541,-47.55"
+              }
+            ],
+            "label": {
+              "text": "call",
+              "rect": {
+                "x": 47.27,
+                "y": -108.713,
+                "width": 24.922,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "cardinality-markers",
+      "source": "classDiagram\nOrder \"1\" *-- \"0..*\" LineItem : contains\nCustomer \"1\" o-- \"1..*\" Order : places",
+      "expected": {
+        "origin": {
+          "x": 56.859,
+          "y": 208
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            113.71875,
+            416
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "113.719px",
+          "content": {
+            "x": -48.859,
+            "y": -200,
+            "width": 97.719,
+            "height": 400
+          }
+        },
+        "nodes": [
+          {
+            "id": "Order",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -34.1328125,
+              "y": -42,
+              "width": 68.265625,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -34.1328125,
+                  "y": 6
+                },
+                "to": {
+                  "x": 34.1328125,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -34.1328125,
+                  "y": 24
+                },
+                "to": {
+                  "x": 34.1328125,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -22.133,
+                "y": -30,
+                "width": 44.266,
+                "height": 24,
+                "text": "Order"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "LineItem",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 158
+            },
+            "local": {
+              "x": -45.3046875,
+              "y": -42,
+              "width": 90.609375,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -45.3046875,
+                  "y": 6
+                },
+                "to": {
+                  "x": 45.3046875,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -45.3046875,
+                  "y": 24
+                },
+                "to": {
+                  "x": 45.3046875,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -33.305,
+                "y": -30,
+                "width": 66.609,
+                "height": 24,
+                "text": "LineItem"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Customer",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": -158
+            },
+            "local": {
+              "x": -48.859375,
+              "y": -42,
+              "width": 97.71875,
+              "height": 84
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -48.859375,
+                  "y": 6
+                },
+                "to": {
+                  "x": 48.859375,
+                  "y": 6.001
+                }
+              },
+              {
+                "from": {
+                  "x": -48.859375,
+                  "y": 24
+                },
+                "to": {
+                  "x": 48.859375,
+                  "y": 24.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -36.859,
+                "y": -30,
+                "width": 73.719,
+                "height": 24,
+                "text": "Customer"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "id_Order_LineItem_1",
+            "from": "Order",
+            "to": "LineItem",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": "composition",
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 42
+                  },
+                  {
+                    "x": 0,
+                    "y": 79
+                  },
+                  {
+                    "x": 0,
+                    "y": 116
+                  }
+                ],
+                "path": "M0,59.25L0,62.542C0,65.833,0,72.417,0,81.875C0,91.333,0,103.667,0,109.833L0,116"
+              }
+            ],
+            "label": {
+              "text": "contains",
+              "rect": {
+                "x": -31.844,
+                "y": 67,
+                "width": 63.688,
+                "height": 24
+              }
+            },
+            "terminals": {
+              "startLabelRight": {
+                "text": "1",
+                "rect": {
+                  "x": -18.148,
+                  "y": 51.25,
+                  "width": 6.297,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": -18.148,
+                  "y": 51.25,
+                  "width": 9,
+                  "height": 12
+                }
+              },
+              "endLabelLeft": {
+                "text": "0..*",
+                "rect": {
+                  "x": 10,
+                  "y": 93.5,
+                  "width": 18.25,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": 10,
+                  "y": 93.5,
+                  "width": 36,
+                  "height": 12
+                }
+              }
+            }
+          },
+          {
+            "id": "id_Customer_Order_2",
+            "from": "Customer",
+            "to": "Order",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": "aggregation",
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -116
+                  },
+                  {
+                    "x": 0,
+                    "y": -79
+                  },
+                  {
+                    "x": 0,
+                    "y": -42
+                  }
+                ],
+                "path": "M0,-98.75L0,-95.458C0,-92.167,0,-85.583,0,-76.125C0,-66.667,0,-54.333,0,-48.167L0,-42"
+              }
+            ],
+            "label": {
+              "text": "places",
+              "rect": {
+                "x": -23.656,
+                "y": -91,
+                "width": 47.313,
+                "height": 24
+              }
+            },
+            "terminals": {
+              "startLabelRight": {
+                "text": "1",
+                "rect": {
+                  "x": -18.148,
+                  "y": -106.75,
+                  "width": 6.297,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": -18.148,
+                  "y": -106.75,
+                  "width": 9,
+                  "height": 12
+                }
+              },
+              "endLabelLeft": {
+                "text": "1..*",
+                "rect": {
+                  "x": 10,
+                  "y": -64.5,
+                  "width": 18.25,
+                  "height": 16.5
+                },
+                "box": {
+                  "x": 10,
+                  "y": -64.5,
+                  "width": 36,
+                  "height": 12
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "padding-config",
+      "source": "%%{init: {\"class\": {\"padding\": 20}}}%%\nclassDiagram\nclass Wide {\n  +int value\n}\nnote for Wide \"padded\"\nnamespace Box {\n  class Inner\n}\nWide --> Inner : holds",
+      "expected": {
+        "origin": {
+          "x": 83.422,
+          "y": 206
+        },
+        "canvas": {
+          "viewBox": [
+            0,
+            0,
+            166.84375,
+            546
+          ],
+          "width": "100%",
+          "height": null,
+          "maxWidth": "166.844px",
+          "content": {
+            "x": -75.422,
+            "y": -198,
+            "width": 150.844,
+            "height": 530
+          }
+        },
+        "nodes": [
+          {
+            "id": "Wide",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 0
+            },
+            "local": {
+              "x": -66.09375,
+              "y": -84,
+              "width": 132.1875,
+              "height": 168
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -66.09375,
+                  "y": -20
+                },
+                "to": {
+                  "x": 66.09375,
+                  "y": -19.999
+                }
+              },
+              {
+                "from": {
+                  "x": -66.09375,
+                  "y": 44
+                },
+                "to": {
+                  "x": 66.09375,
+                  "y": 44.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -18.937,
+                "y": -56,
+                "width": 37.875,
+                "height": 24,
+                "text": "Wide"
+              }
+            ],
+            "members": [
+              {
+                "x": -46.094,
+                "y": 8,
+                "width": 73.25,
+                "height": 24,
+                "text": "+int value"
+              }
+            ],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "Inner",
+            "note": false,
+            "centre": {
+              "x": 0,
+              "y": 245
+            },
+            "local": {
+              "x": -40.421875,
+              "y": -62,
+              "width": 80.84375,
+              "height": 124
+            },
+            "dividers": [
+              {
+                "from": {
+                  "x": -40.421875,
+                  "y": 2
+                },
+                "to": {
+                  "x": 40.421875,
+                  "y": 2.001
+                }
+              },
+              {
+                "from": {
+                  "x": -40.421875,
+                  "y": 32
+                },
+                "to": {
+                  "x": 40.421875,
+                  "y": 32.001
+                }
+              }
+            ],
+            "annotation": [],
+            "name": [
+              {
+                "x": -20.422,
+                "y": -34,
+                "width": 40.844,
+                "height": 24,
+                "text": "Inner"
+              }
+            ],
+            "members": [],
+            "methods": [],
+            "noteLabel": null
+          },
+          {
+            "id": "note0",
+            "note": true,
+            "centre": {
+              "x": 0,
+              "y": -166
+            },
+            "local": {
+              "x": -48.6875,
+              "y": -32,
+              "width": 97.375,
+              "height": 64
+            },
+            "dividers": [],
+            "annotation": [],
+            "name": [],
+            "members": [],
+            "methods": [],
+            "noteLabel": {
+              "x": -28.687,
+              "y": -12,
+              "width": 57.375,
+              "height": 24,
+              "text": "padded"
+            }
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Box",
+            "bounds": {
+              "x": -75.422,
+              "y": 158,
+              "width": 150.844,
+              "height": 174
+            },
+            "title": {
+              "text": "Box",
+              "rect": {
+                "x": -14.117,
+                "y": 158,
+                "width": 28.234,
+                "height": 24
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edgeNote0",
+            "from": "note0",
+            "to": "Wide",
+            "superseded": false,
+            "pattern": "dotted",
+            "markerStart": null,
+            "markerEnd": null,
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": -134
+                  },
+                  {
+                    "x": 0,
+                    "y": -109
+                  },
+                  {
+                    "x": 0,
+                    "y": -84
+                  }
+                ],
+                "path": "M0,-134L0,-129.833C0,-125.667,0,-117.333,0,-109C0,-100.667,0,-92.333,0,-88.167L0,-84"
+              }
+            ],
+            "label": null,
+            "terminals": {}
+          },
+          {
+            "id": "id_Wide_Inner_1",
+            "from": "Wide",
+            "to": "Inner",
+            "superseded": false,
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency",
+            "paths": [
+              {
+                "points": [
+                  {
+                    "x": 0,
+                    "y": 84
+                  },
+                  {
+                    "x": 0,
+                    "y": 121
+                  },
+                  {
+                    "x": 0,
+                    "y": 158
+                  },
+                  {
+                    "x": 0,
+                    "y": 183
+                  }
+                ],
+                "path": "M0,84L0,90.167C0,96.333,0,108.667,0,121C0,133.333,0,145.667,0,155C0,164.333,0,170.667,0,173.833L0,177"
+              }
+            ],
+            "label": {
+              "text": "holds",
+              "rect": {
+                "x": -20.602,
+                "y": 109,
+                "width": 41.203,
+                "height": 24
+              }
+            },
+            "terminals": {}
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "fixtureSha256": "61ac7cb6dcd47689aec89fe3c2cfb179dc7985a6e3bec0dd60323ae2f7457ad3"
 }

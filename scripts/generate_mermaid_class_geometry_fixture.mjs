@@ -1,18 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { bundledFontArguments } from "./mermaid_bundled_fonts.mjs";
-
-// Captures real mermaid 11.16.0 classDiagram geometry (class node bounds +
-// compartment divider count + relationship edge markers) via headless Chrome,
-// normalized to the first source-order class's centre (mirroring Muffin's
-// origin subtraction). Output schema matches the fields of
-// classdiagram::ClassScene::toJsonObject that are comparable against mermaid.
-//
-// Edge marker kinds are extracted from the marker-start/marker-end url and the
-// Start/End suffix is DROPPED (the field position encodes the side), so the
-// fixture's markerStart/markerEnd read as bare types ("extension", "composition",
-// ...) exactly like Muffin's ClassScene JSON (arrowTypeStart/End via markerName).
+// Captures real mermaid 11.16.0 classDiagram geometry: every class and note
+// with its box, compartment dividers and text rows, every relationship path
+// with its label and cardinalities, every namespace and the canvas, normalized
+// to the first declared class's centre (the origin Muffin's layout subtracts
+// too).
 //
 //   node scripts/generate_mermaid_class_geometry_fixture.mjs \
 //     [mermaid-root] [output-json] [chrome-exe]
@@ -21,26 +11,15 @@ import { bundledFontArguments } from "./mermaid_bundled_fonts.mjs";
 //           tests/fixtures/mermaid/class-geometry.json,
 //           C:/Program Files/Google/Chrome/Application/chrome.exe
 
-const mermaidRoot = path.resolve(
-  process.env.MERMAID_REFERENCE_ROOT ??
-    process.argv[2] ??
-    path.join("..", "mermaid-cli", "node_modules", "mermaid"),
-);
-const output = path.resolve(
-  process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "class-geometry.json"),
-);
-const chrome =
-  process.argv[4] ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
+import fs from "node:fs";
+import path from "node:path";
+import { createHash } from "node:crypto";
+import { captureGeometry, generatorArguments, geometryFixture } from "./mermaid_geometry_capture.mjs";
+import { describeClassGeometry } from "./mermaid_class_geometry_capture.mjs";
 
-const packageJson = JSON.parse(fs.readFileSync(path.join(mermaidRoot, "package.json"), "utf8"));
-if (packageJson.version !== "11.16.0")
-  throw new Error(`Expected mermaid 11.16.0, found ${packageJson.version}`);
-const { default: puppeteer } = await import(
-  pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js"))
-);
-
-// Corpus exercising each relationship marker + line pattern + compartments.
-// mermaid class relation syntax: left-marker? + line(--|..) + right-marker?.
+// Corpus: each relationship marker and line pattern, both ends, labels,
+// compartments in full, notes, namespaces (nested ones too), the directions,
+// cardinalities, generics, self relationships and scripts beyond Latin.
 const cases = [
   { id: "inheritance", source: "classDiagram\nAnimal <|-- Duck" },
   { id: "realization", source: "classDiagram\nShape <|.. Shape2" },
@@ -54,137 +33,106 @@ const cases = [
   { id: "labeled-edge", source: "classDiagram\nOwner --> Pet : owns" },
   {
     id: "compartments",
-    source:
-      "classDiagram\nclass Duck {\n  +String beakColor\n  +swim()\n  +quack()\n}",
+    source: "classDiagram\nclass Duck {\n  +String beakColor\n  +swim()\n  +quack()\n}",
   },
   { id: "bare-classes", source: "classDiagram\nclass X\nclass Y" },
+  {
+    id: "compartments-full",
+    source:
+      "classDiagram\nclass Animal {\n  <<interface>>\n  +int age\n  +String gender\n  +isMammal() bool\n  +mate()\n}\nAnimal <|-- Duck",
+  },
+  { id: "note-for", source: 'classDiagram\nclass Duck\nnote for Duck "can fly"' },
+  {
+    id: "note-beside",
+    source: 'classDiagram\nclass Service\nnote for Service "A folded note"\nclass Client\nClient --> Service : uses',
+  },
+  {
+    id: "namespace",
+    source: "classDiagram\nnamespace Base {\n  class Inside\n}\nclass Outside\nOutside ..> Inside",
+  },
+  {
+    id: "namespace-nested",
+    source:
+      "classDiagram\nnamespace Outer {\n  namespace Inner {\n    class Deep\n  }\n  class Shallow\n}\nclass User\nUser --> Deep\nUser --> Shallow",
+  },
+  { id: "direction-rl", source: "classDiagram\ndirection RL\nclass A\nclass B\nclass C\nA --> B\nB --> C" },
+  { id: "direction-bt", source: "classDiagram\ndirection BT\nclass A\nclass B\nclass C\nA --> B\nB --> C" },
+  { id: "cardinality", source: 'classDiagram\nOrder "1" --> "*" LineItem : contains' },
+  { id: "generics", source: "classDiagram\nclass Container~T~ {\n  +T item\n  +get() T\n}" },
+  {
+    id: "diamond",
+    source: "classDiagram\nBase <|-- Left\nBase <|-- Right\nLeft ..> Right : uses\nRight ..> Base : calls",
+  },
+  { id: "cjk-labels", source: "classDiagram\nclass 用户 {\n  +姓名\n  +登录()\n}\n用户 --> 订单 : 下单" },
+  { id: "self-relationship", source: 'classDiagram\nNode "0..1" -- "0..*" Node : links' },
+  {
+    id: "many-classes",
+    source:
+      "classDiagram\nclass Alpha\nclass Beta\nclass Gamma\nclass Delta\nclass Epsilon\nAlpha --> Beta\nAlpha --> Gamma\nBeta --> Delta\nGamma --> Delta\nDelta --> Epsilon : finally",
+  },
+  // A namespace no relationship leaves is laid out as a unit of its own,
+  // which is where its padding shows: with a sibling, nested, with a title
+  // wider than its content and across directions.
+  {
+    id: "namespace-closed",
+    source: "classDiagram\nnamespace Region {\n  class Alpha\n  class Beta\n}\nclass Gamma\nAlpha --> Beta : inside",
+  },
+  {
+    id: "namespace-chain",
+    source:
+      "classDiagram\nnamespace Outer {\n  class A\n  namespace Inner {\n    class B\n    class C\n  }\n}\nB --> C : inner",
+  },
+  {
+    id: "namespace-wide-title",
+    source:
+      'classDiagram\nnamespace Domain["A namespace label far wider than its only class"] {\n  class X\n}\nclass Y',
+  },
+  {
+    id: "namespace-direction-lr",
+    source: "classDiagram\ndirection LR\nnamespace Base {\n  class Inside\n}\nclass Outside\nOutside ..> Inside",
+  },
+  {
+    id: "note-in-namespace",
+    source:
+      'classDiagram\nnamespace Host {\n  class Service\n  note for Service "listens on 8080"\n}\nclass Client\nClient --> Service : call',
+  },
+  { id: "cardinality-markers", source: 'classDiagram\nOrder "1" *-- "0..*" LineItem : contains\nCustomer "1" o-- "1..*" Order : places' },
+  {
+    id: "padding-config",
+    source:
+      '%%{init: {"class": {"padding": 20}}}%%\nclassDiagram\nclass Wide {\n  +int value\n}\nnote for Wide "padded"\nnamespace Box {\n  class Inner\n}\nWide --> Inner : holds',
+  },
 ];
 
-const browser = await puppeteer.launch({
-  headless: true,
-  executablePath: chrome,
-  args: ["--allow-file-access-from-files"],
+const { mermaidRootArgument, output, chromeArgument } = generatorArguments(
+  path.join("tests", "fixtures", "mermaid", "class-geometry.json"),
+);
+const { results } = await captureGeometry({
+  family: "class",
+  cases,
+  describe: describeClassGeometry,
+  mermaidRootArgument,
+  chromeArgument,
+  // The renderer's own tables of label and cardinality groups, by path id.
+  auxiliaryExport: "terminalLabels",
 });
-try {
-  const page = await browser.newPage();
-  await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
-  const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
-  const results = await page.evaluate(
-    async ({ cases, mermaidModule, fontFaces, fontFamily }) => {
-      const number = (v) => Math.round(v * 1000) / 1000;
-      const { default: mermaid } = await import(mermaidModule);
-      // Extract bare marker type from url(#.._class-extensionStart); drop the
-      // Start/End suffix (field position encodes the side).
-      const markerType = (value) => {
-        if (!value) return null;
-        const m = value.match(/(aggregation|composition|extension|dependency|lollipop)(Start|End)/);
-        return m ? m[1] : null;
-      };
-      const elementMatrix = (element, rootInverse) =>
-        rootInverse.multiply(element.getScreenCTM());
-      const absoluteBox = (element, rootInverse) => {
-        if (!element || !rootInverse) return null;
-        const box = element.getBBox();
-        const matrix = elementMatrix(element, rootInverse);
-        const corners = [
-          new DOMPoint(box.x, box.y),
-          new DOMPoint(box.x + box.width, box.y),
-          new DOMPoint(box.x, box.y + box.height),
-          new DOMPoint(box.x + box.width, box.y + box.height),
-        ].map((p) => p.matrixTransform(matrix));
-        const left = Math.min(...corners.map((p) => p.x));
-        const right = Math.max(...corners.map((p) => p.x));
-        const top = Math.min(...corners.map((p) => p.y));
-        const bottom = Math.max(...corners.map((p) => p.y));
-        return { x: left, y: top, width: right - left, height: bottom - top };
-      };
-      // class node domId is `<svgId>-classId-<name>-<index>`.
-      const parseClassId = (domId) => {
-        const tail = domId.includes("-classId-") ? domId.split("-classId-")[1] : domId;
-        const m = tail.match(/^(.*)-\d+$/);
-        return m ? m[1] : tail;
-      };
 
-      // The bundled Noto faces: what the port measures text in.
-      const fontStyle = document.createElement("style");
-      fontStyle.textContent = fontFaces;
-      document.head.appendChild(fontStyle);
-      await document.fonts.load('16px "Noto Sans"');
-      await document.fonts.ready;
-      const out = [];
-      for (let index = 0; index < cases.length; ++index) {
-        const fixture = cases[index];
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          theme: "default",
-          fontFamily,
-          themeVariables: { fontFamily },
-        });
-        const svgId = `class-geometry-${index}`;
-        const { svg } = await mermaid.render(svgId, fixture.source);
-        document.getElementById("container").innerHTML = svg;
-        const root = document.querySelector("svg");
-        const rootInverse = root.getScreenCTM()?.inverse();
-
-        const nodeElements = [...root.querySelectorAll("g.node")];
-        const nodes = nodeElements
-          .map((node) => {
-            const id = parseClassId(node.id);
-            // Class box outline = the outer-path group (same selector as ER).
-            const outline = node.querySelector(".outer-path") ?? node.querySelector(".label-container");
-            const box = absoluteBox(outline, rootInverse);
-            // Compartment dividers = g.divider children (header|members|methods).
-            const dividers = node.querySelectorAll("g.divider").length;
-            // width/height are origin-independent (font-coupled diagnostic);
-            // positions (cx/cy) are dropped — doubly font-coupled via dagre.
-            return {
-              id,
-              dividers,
-              width: box ? number(box.width) : null,
-              height: box ? number(box.height) : null,
-            };
-          });
-
-        const edges = [...root.querySelectorAll(".edgePaths path")].map((edge) => {
-          const klass = edge.getAttribute("class") ?? "";
-          const pattern = klass.includes("edge-pattern-dashed") ? "dashed" : "solid";
-          return {
-            pattern,
-            // markerStart/markerEnd are bare types (null when absent) so they
-            // line up with Muffin's ClassScene markerStart/markerEnd fields.
-            markerStart: markerType(edge.getAttribute("marker-start")),
-            markerEnd: markerType(edge.getAttribute("marker-end")),
-          };
-        });
-
-        out.push({ id: fixture.id, source: fixture.source, expected: { nodes, edges } });
-      }
-      return out;
-    },
-    { cases, mermaidModule, ...bundledFontArguments },
-  );
-
-  const root = {
-    upstream: {
-      package: "mermaid",
-      version: "11.16.0",
-      notes:
-        "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome. " +
-        "Per class node: compartment divider count + width/height (origin-independent, " +
-        "font-coupled diagnostic). Per relationship edge: line pattern + start/end " +
-        "marker kinds. Marker kinds are bare types (Start/End suffix dropped; field " +
-        "position encodes the side) to line up with ClassScene's markerStart/markerEnd. " +
-        "Positions are not captured (doubly font-coupled via dagre). Compare against " +
-        "classdiagram::ClassScene::toJsonObject.",
-    },
-    mermaidVersion: "11.16.0",
-    fontMode: "bundled-noto-2.13b171",
-    oracle: "classDiagram.render class nodes (bounds+dividers) + relationship edges (pattern+markers)",
-    cases: results,
-  };
-  fs.writeFileSync(output, JSON.stringify(root, null, 2) + "\n");
-  console.log(`Wrote ${output} (${results.length} cases)`);
-} finally {
-  await browser.close();
-}
+const root = geometryFixture(
+  "classDiagram.render classes, notes, relationship paths, namespaces and canvas (first-class normalized)",
+  "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome with " +
+    "the bundled Noto fonts. Every class and note with its centre, its outline " +
+    "(in the node's own coordinates), its dividers (from the node's left edge to " +
+    "its right, as the first and last point of the divider path) and its text rows " +
+    "(annotation, name, members, methods; the note's text), every relationship " +
+    "with its paths (the waypoints the layout gave each, which the path carries, " +
+    "and the path's data), its pattern, markers, label and cardinalities (their " +
+    "text box and the box clipped to), every " +
+    "namespace with its box and title, and the canvas (the content's bounding " +
+    "box, as the SVG's getBBox() reports it), all but the node-local " +
+    "parts normalized to the centre of the first declared class. Compare, " +
+    "through the render cache, against classdiagram::ClassScene.",
+  results,
+);
+root.fixtureSha256 = createHash("sha256").update(JSON.stringify(root)).digest("hex");
+fs.writeFileSync(output, JSON.stringify(root, null, 2) + "\n");
+console.log(`Wrote ${output} (${results.length} cases)`);

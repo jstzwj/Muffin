@@ -7,7 +7,6 @@
 #include "mermaid/dagre/DagreLabels.h"
 #include "mermaid/dagre/Layout.h"
 
-#include <QSet>
 #include <QTextCharFormat>
 
 #include <algorithm>
@@ -86,10 +85,11 @@ void uniteTranslated(QRectF& bounds, bool& initialized, const QRectF& local, con
 }
 
 ClassTextMeasurement measureClassText(const QString& source, const QString& cssStyle,
-                                      const ClassLabelMeasureOptions& options, bool bold = false) {
+                                      const ClassLabelMeasureOptions& options, bool bold = false,
+                                      const QString& labelType = QStringLiteral("markdown"), bool wrap = false) {
   const bool svgText = !options.htmlLabels && !source.contains(QStringLiteral("$$"));
-  flowchart::FlowLabelDocument document = svgText ? flowchart::parseFlowSvgLabel(source, QStringLiteral("markdown"))
-                                                  : flowchart::parseFlowLabel(source, QStringLiteral("markdown"), true);
+  flowchart::FlowLabelDocument document =
+      svgText ? flowchart::parseFlowSvgLabel(source, labelType) : flowchart::parseFlowLabel(source, labelType, true);
   if (!svgText)
     document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
   if (bold || !cssStyle.isEmpty()) {
@@ -102,6 +102,10 @@ ClassTextMeasurement measureClassText(const QString& source, const QString& cssS
       format.setFontUnderline(true);
     document.formats.append({0, static_cast<int>(document.text.size()), format});
   }
+  // A relationship's label is wrapped where its text is wider than the
+  // max-width createText() gives it.
+  if (!svgText && wrap)
+    document = flowchart::wrapFlowLabel(document, options.fontFamily, options.fontPixelSize, kClassLabelWidth);
   const flowchart::FlowLabelLayoutMetrics layout =
       flowchart::layoutFlowLabel(document, options.fontFamily, options.fontPixelSize, options.lineHeight);
   ClassTextMeasurement measured;
@@ -116,6 +120,9 @@ ClassTextMeasurement measureClassText(const QString& source, const QString& cssS
     // DirectWrite advance can differ by one fractional cell.
     measured.bounds.setWidth(
         flowchart::measureChromiumInlineLayoutWidth(document, options.fontFamily, options.fontPixelSize));
+    // addHtmlSpan lays a wrapped label out in a table as wide as the max-width.
+    if (!document.visualLines.isEmpty())
+      measured.bounds.setWidth(std::max(measured.bounds.width(), kClassLabelWidth));
   }
   return measured;
 }
@@ -146,7 +153,16 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data, ClassLayout
   result.direction = data.direction;
   result.nodeSpacing = options.nodeSpacing;
   result.rankSpacing = options.rankSpacing;
+  result.namespacePadding = options.namespacePadding();
 
+  const auto parentOf = [&](const QString& parent) {
+    if (parent.isEmpty())
+      return parent;
+    // Outside hierarchical mode a class or note sits in the nearest namespace
+    // the document declared; an ancestor created for a dotted name does not
+    // hold it.
+    return options.hierarchicalNamespaces ? parent : explicitAncestor(parent, data.namespaces);
+  };
   for (const ClassNamespace& value : data.namespaces) {
     if (!options.hierarchicalNamespaces && !value.explicitDeclaration)
       continue;
@@ -154,10 +170,18 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data, ClassLayout
     node.id = value.id;
     node.label = options.hierarchicalNamespaces ? value.label : value.id;
     node.shape = QStringLiteral("rect");
-    node.parentId = options.hierarchicalNamespaces ? value.parent : QString{};
-    node.padding = options.padding;
-    node.isGroup = true;
+    node.parentId = parentOf(value.parent);
+    node.padding = options.namespacePadding();
     node.look = options.look;
+    // The renderer's graph knows a namespace only by what names it as parent.
+    // One that nothing sits in is not a cluster: it is laid out and drawn as
+    // a box with its label, like any other node.
+    node.isGroup = std::any_of(data.classes.cbegin(), data.classes.cend(),
+                               [&](const ClassNode& entry) { return parentOf(entry.parent) == value.id; }) ||
+                   std::any_of(data.notes.cbegin(), data.notes.cend(),
+                               [&](const ClassNote& entry) { return parentOf(entry.parent) == value.id; }) ||
+                   std::any_of(data.namespaces.cbegin(), data.namespaces.cend(),
+                               [&](const ClassNamespace& entry) { return entry.parent == value.id; });
     result.nodes.append(std::move(node));
   }
 
@@ -189,10 +213,15 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data, ClassLayout
     node.parentId = options.hierarchicalNamespaces ? value.parent : explicitAncestor(value.parent, data.namespaces);
     node.cssStyles = {QStringLiteral("text-align: left"), QStringLiteral("white-space: nowrap"),
                       QStringLiteral("fill: #fff5ad"), QStringLiteral("stroke: #aaaa33")};
-    node.padding = options.padding;
+    node.padding = options.notePadding();
     node.look = options.look;
     result.nodes.append(std::move(node));
-    if (!value.className.isEmpty()) {
+    // classDb.getData(): a note is tied to its class only when a class of
+    // that exact id exists (a note on `Name~T~` names a class stored as
+    // `Name`, and stays untied).
+    const bool hasClass = std::any_of(data.classes.cbegin(), data.classes.cend(),
+                                      [&](const ClassNode& entry) { return entry.id == value.className; });
+    if (!value.className.isEmpty() && hasClass) {
       ClassLayoutEdgeInput edge;
       edge.id = QStringLiteral("edgeNote%1").arg(value.index);
       edge.start = value.id;
@@ -239,7 +268,7 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data, ClassLayout
 QVector<ClassBoxGeometry> layoutClassBoxes(const ClassLayoutInput& input, const ClassLayoutMeasurements& measurements,
                                            ClassLayoutOptions options) {
   QVector<ClassBoxGeometry> result;
-  const qreal padding = options.padding;
+  const qreal padding = options.classBoxPadding();
   const qreal gap = options.htmlLabels ? 0.0 : 3.0;
   // classBox.ts applies this explicit correction after positioning every text
   // group. It is part of Mermaid's SVG-label contract, not a font heuristic.
@@ -377,15 +406,22 @@ ClassDagreMeasurements measureClassDagreInput(const ClassLayoutInput& input, con
     classBoxes.insert(box.id, painted.size());
   }
   for (const ClassLayoutNodeInput& node : input.nodes) {
-    if (node.isGroup)
+    if (node.isGroup) {
+      // A namespace's title goes through createLabel(), which is not markdown.
+      result.clusterLabels.insert(node.id, measureClassText(node.label, {}, options, false, QString()).bounds.size());
       continue;
+    }
     if (node.shape == QLatin1String("classBox")) {
       result.nodes.insert(node.id, classBoxes.value(node.id));
       continue;
     }
     const QSizeF label = measureClassText(node.label, {}, options).bounds.size();
     const qreal padding = node.padding.value_or(0.0);
-    const QSizeF natural(label.width() + padding * 2.0, label.height() + padding * 2.0);
+    // A `rect` node is drawn by squareRect, which pads its label twice over
+    // sideways and once from top to bottom; a note pads the same on all sides.
+    const QSizeF natural = node.shape == QLatin1String("rect")
+                               ? QSizeF(label.width() + padding * 4.0, label.height() + padding * 2.0)
+                               : QSizeF(label.width() + padding * 2.0, label.height() + padding * 2.0);
     if (handDrawn) {
       const QRectF local(-natural.width() / 2.0, -natural.height() / 2.0, natural.width(), natural.height());
       result.nodes.insert(node.id, rough::tightBounds(rough::roughRectDrawable(local, handDrawnSeed)).size());
@@ -398,14 +434,14 @@ ClassDagreMeasurements measureClassDagreInput(const ClassLayoutInput& input, con
       result.edgeLabels.insert(edge.id, QSizeF(0.0, 0.0));
       continue;
     }
-    result.edgeLabels.insert(edge.id, measureClassText(edge.label, {}, options).bounds.size());
+    result.edgeLabels.insert(
+        edge.id, measureClassText(edge.label, {}, options, false, QStringLiteral("markdown"), true).bounds.size());
   }
   return result;
 }
 
 ClassPlacementResult layoutClassDiagramDagre(const ClassLayoutInput& input, const ClassDagreMeasurements& measurements,
                                              bool handDrawn, quint32 handDrawnSeed) {
-  constexpr qreal kDagreMarginX = 8.0;
   // All class layouts (flat + compound + self-edge) route through the shared
   // flowchart dagre pipeline. The former direct-dagre flat branch produced
   // identical geometry (class layout/scene/pixel oracles verify), so it was
@@ -445,7 +481,13 @@ ClassPlacementResult layoutClassDiagramDagre(const ClassLayoutInput& input, cons
     flowchart::FlowLayoutOptions options;
     options.nodeSpacing = input.nodeSpacing;
     options.rankSpacing = input.rankSpacing;
+    options.clusterPadding = input.namespacePadding;
     options.measuredEdgeLabels = measurements.edgeLabels;
+    options.measuredClusterLabels = measurements.clusterLabels;
+    // A loop's label is placed on the middle of the three paths the scene
+    // draws for it.
+    options.repositionEdgeLabels = true;
+    options.selfLoopLabelOnMiddlePath = true;
     if (handDrawn) {
       options.preserveRecursiveSvgFrame = true;
       options.clusterSizeTransform = [handDrawnSeed](const QString&, const QRectF& bounds) {
@@ -469,6 +511,7 @@ ClassPlacementResult layoutClassDiagramDagre(const ClassLayoutInput& input, cons
       projectedEdge.id = edge.id;
       projectedEdge.points = edge.points;
       projectedEdge.segments = edge.segments;
+      projectedEdge.loopMarks = edge.loopMarks;
       if (edge.hasLabelPosition)
         projectedEdge.labelPosition = QPointF(edge.labelX, edge.labelY);
       result.edges.append(std::move(projectedEdge));
@@ -487,6 +530,7 @@ ClassPlacementResult layoutClassDiagramDagre(const ClassLayoutInput& input, cons
         origin = QPointF(firstPlaced->x, firstPlaced->y);
     }
     result.sourceOrigin = origin;
+    result.clusterLabels = measurements.clusterLabels;
     for (ClassPlacementNode& node : result.nodes) {
       node.x -= origin.x();
       node.y -= origin.y();
@@ -501,83 +545,10 @@ ClassPlacementResult layoutClassDiagramDagre(const ClassLayoutInput& input, cons
       for (QVector<QPointF>& segment : edge.segments)
         for (QPointF& point : segment)
           point -= origin;
+      for (QPointF& point : edge.loopMarks)
+        point -= origin;
       if (edge.labelPosition)
         *edge.labelPosition -= origin;
-    }
-
-    // recursiveRender() stores only getBBox().width on an extracted cluster,
-    // while its child root starts at Dagre's marginx. positionNode() centers
-    // that width, leaving half the horizontal margin outside the logical atom
-    // on vertical layouts. A single-child namespace wrapper is collapsed by
-    // clusterDb; only nested clusters with a sibling get this CTM shift.
-    QSet<QString> shiftedClusters;
-    const QString direction = input.direction.toUpper();
-    if (direction == QLatin1String("TB") || direction == QLatin1String("BT")) {
-      for (const ClassLayoutNodeInput& group : input.nodes) {
-        if (!group.isGroup || group.parentId.isEmpty())
-          continue;
-        const bool hasSibling =
-            std::any_of(input.nodes.cbegin(), input.nodes.cend(), [&](const ClassLayoutNodeInput& candidate) {
-              return candidate.id != group.id && candidate.parentId == group.parentId;
-            });
-        if (hasSibling)
-          shiftedClusters.insert(group.id);
-      }
-    }
-    const auto horizontalShift = [&](QString id) {
-      qreal shift = 0.0;
-      QSet<QString> seen;
-      while (!id.isEmpty() && !seen.contains(id)) {
-        seen.insert(id);
-        const auto node = std::find_if(input.nodes.cbegin(), input.nodes.cend(),
-                                       [&](const ClassLayoutNodeInput& candidate) { return candidate.id == id; });
-        if (node == input.nodes.cend())
-          break;
-        if (shiftedClusters.contains(node->parentId))
-          shift -= kDagreMarginX / 2.0;
-        id = node->parentId;
-      }
-      return shift;
-    };
-    for (ClassPlacementNode& node : result.nodes)
-      node.x += horizontalShift(node.id);
-    for (ClassPlacementCluster& cluster : result.clusters) {
-      if (shiftedClusters.contains(cluster.id))
-        cluster.x -= kDagreMarginX / 2.0;
-      const auto semantic = std::find_if(input.nodes.cbegin(), input.nodes.cend(),
-                                         [&](const ClassLayoutNodeInput& node) { return node.id == cluster.id; });
-      if (semantic == input.nodes.cend())
-        continue;
-      QString nestedId = cluster.id;
-      while (!nestedId.isEmpty()) {
-        QVector<const ClassLayoutNodeInput*> children;
-        for (const ClassLayoutNodeInput& child : input.nodes)
-          if (child.parentId == nestedId)
-            children.append(&child);
-        if (children.size() != 1 || !children.first()->isGroup)
-          break;
-        cluster.x += kDagreMarginX / 2.0;
-        nestedId = children.first()->id;
-      }
-    }
-    for (ClassPlacementEdge& edge : result.edges) {
-      const auto semantic =
-          std::find_if(input.edges.cbegin(), input.edges.cend(),
-                       [&](const ClassLayoutEdgeInput& candidate) { return candidate.id == edge.id; });
-      if (semantic == input.edges.cend())
-        continue;
-      const qreal startShift = horizontalShift(semantic->start);
-      const qreal endShift = horizontalShift(semantic->end);
-      if (!qFuzzyCompare(startShift + 1.0, endShift + 1.0))
-        continue;
-      const QPointF correction(startShift, 0.0);
-      for (QPointF& point : edge.points)
-        point += correction;
-      for (QVector<QPointF>& segment : edge.segments)
-        for (QPointF& point : segment)
-          point += correction;
-      if (edge.labelPosition)
-        *edge.labelPosition += correction;
     }
     return result;
   }

@@ -25,11 +25,15 @@ const faces = fonts.map(([family, file]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}")}`
 ).join("\n");
 const stack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
+// The directive carries everything the native side must see of the browser's
+// configuration: the theme, the label mode and the class padding.
 const init = (theme = "default", htmlLabels = true, strokeWidth, handDrawnSeed) =>
   `%%{init: {"theme":"${theme}","htmlLabels":${htmlLabels}` +
   `${handDrawnSeed === undefined ? "" : `,"handDrawnSeed":${handDrawnSeed}`},` +
+  `"class":{"padding":${classPadding}},` +
   `"themeVariables":{"fontFamily":${JSON.stringify(stack)}` +
   `${strokeWidth === undefined ? "" : `,"strokeWidth":${strokeWidth}`}}}}%%\n`;
+const classPadding = 12;
 const cases = [
   { id: "label-node-html-math", cropOnly: true, cropTarget: "node",
     cropKind: "node-html-math", cropSelector: "g.node .label", source: init() + [
@@ -159,7 +163,7 @@ try {
     await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
     const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
     await page.evaluate(async ({ mermaidModule, faces, stack, source, id, theme,
-                                 htmlLabels, strokeWidth, handDrawnSeed }) => {
+                                 htmlLabels, strokeWidth, handDrawnSeed, classPadding }) => {
       const { default: mermaid } = await import(mermaidModule);
       const style = document.createElement("style");
       style.textContent = faces;
@@ -175,11 +179,12 @@ try {
         fontFamily: stack, themeVariables: { fontFamily: stack,
           ...(strokeWidth === undefined ? {} : { strokeWidth }) },
         ...(handDrawnSeed === undefined ? {} : { handDrawnSeed }),
-        htmlLabels, class: { padding: 12, hierarchicalNamespaces: true } });
+        htmlLabels, class: { padding: classPadding, hierarchicalNamespaces: true } });
       // The directive remains in the fixture source so the native cache sees the
-      // same theme. Mermaid generates browser theme CSS during initialize(), so
-      // applying it again during parsing would reset the fixed font to the
-      // theme default after that CSS has already been emitted.
+      // same configuration. Mermaid generates browser theme CSS during
+      // initialize(), so applying the directive again during parsing would reset
+      // the fixed font to the theme default after that CSS has already been
+      // emitted; the browser is configured above instead.
       const browserSource = source.split("\n").slice(1).join("\n");
       const { svg } = await mermaid.render(`class-pixel-${id}`, browserSource);
       document.body.style.margin = "0";
@@ -188,7 +193,7 @@ try {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }, { mermaidModule, faces, stack, source: fixture.source, id: fixture.id,
          theme: fixture.theme ?? "default", htmlLabels: fixture.htmlLabels ?? true,
-         strokeWidth: fixture.strokeWidth, handDrawnSeed: fixture.handDrawnSeed });
+         strokeWidth: fixture.strokeWidth, handDrawnSeed: fixture.handDrawnSeed, classPadding });
     const dimensions = await page.$eval("svg", (svg) => {
       const rect = svg.getBoundingClientRect();
       const viewBox = svg.viewBox.baseVal;
