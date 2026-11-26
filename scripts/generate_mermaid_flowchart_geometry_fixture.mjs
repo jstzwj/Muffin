@@ -397,6 +397,31 @@ const cases = [
       "roundedEdge@{ curve: rounded }",
     ].join("\n"),
   },
+  // Relationships to and from a cluster itself: one to a cluster a
+  // relationship leaves is met at the cluster's first node, and both are cut
+  // at the cluster's box.
+  {
+    id: "edge-into-open-cluster",
+    source: ["flowchart TB", "subgraph S[Group]", "A[Inside]", "end", "X[Outside] --> S", "A --> Y[After]"].join("\n"),
+  },
+  {
+    id: "edge-from-cluster",
+    source: ["flowchart TB", "subgraph S[Group]", "A[Inside]", "end", "S --> Y[After]", "X[Before] --> A"].join("\n"),
+  },
+  {
+    id: "edge-to-nested-cluster",
+    source: [
+      "flowchart TB",
+      "subgraph Outer[Outer]",
+      "subgraph Inner[Inner]",
+      "A[Alpha]",
+      "end",
+      "A --> B[Beta]",
+      "end",
+      "C[Gamma]",
+      "C --> Inner",
+    ].join("\n"),
+  },
 ];
 const duplicateCaseIds = cases
   .map((fixture) => fixture.id)

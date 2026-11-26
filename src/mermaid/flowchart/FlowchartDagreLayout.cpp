@@ -5,6 +5,8 @@
 #include "mermaid/dagre/DagreLabels.h"
 #include "mermaid/dagre/Layout.h"
 
+#include <QRectF>
+#include <QRegularExpression>
 #include <QSet>
 #include <algorithm>
 #include <cmath>
@@ -30,6 +32,63 @@ FlowLayoutResult layoutFlowchartNodesDagreScope(const FlowchartData& data, const
                                                 std::vector<dagre::DagreSnapshot>* dagreSnapshots,
                                                 const QString& retainedRoot);
 
+// cutPathAtIntersect(): a path's points up to the one where it enters the
+// box, the point where it crosses in its place.
+QVector<QPointF> cutPathAtIntersect(const QVector<QPointF>& points, const QRectF& box) {
+  const qreal halfWidth = box.width() / 2.0;
+  const qreal halfHeight = box.height() / 2.0;
+  // intersection(): where the line from the point outside crosses into the box.
+  const auto entry = [&](const QPointF& outside, const QPointF& inside) {
+    const qreal x = box.center().x();
+    const qreal y = box.center().y();
+    const qreal dx = std::abs(x - inside.x());
+    const qreal range = std::abs(outside.y() - inside.y());
+    const qreal run = std::abs(outside.x() - inside.x());
+    QPointF result;
+    if (std::abs(y - outside.y()) * halfWidth > std::abs(x - outside.x()) * halfHeight) {
+      // The top or the bottom of the box.
+      const qreal q = inside.y() < outside.y() ? outside.y() - halfHeight - y : y - halfHeight - outside.y();
+      const qreal r = (run * q) / range;
+      result = QPointF(inside.x() < outside.x() ? inside.x() + r : inside.x() - run + r,
+                       inside.y() < outside.y() ? inside.y() + range - q : inside.y() - range + q);
+      if (r == 0.0)
+        result = outside;
+    } else {
+      // A side of the box.
+      const qreal r = inside.x() < outside.x() ? outside.x() - halfWidth - x : x - halfWidth - outside.x();
+      const qreal q = (range * r) / run;
+      result = QPointF(inside.x() < outside.x() ? inside.x() + run - r : inside.x() - run + r,
+                       inside.y() < outside.y() ? inside.y() + q : inside.y() - q);
+      if (r == 0.0)
+        result = outside;
+    }
+    if (run == 0.0)
+      result.setX(outside.x());
+    if (range == 0.0)
+      result.setY(outside.y());
+    return result;
+  };
+  QVector<QPointF> cut;
+  QPointF lastOutside = points.value(0);
+  bool inside = false;
+  for (const QPointF& point : points) {
+    // outsideNode(): on the box's edge is outside.
+    const bool outside =
+        std::abs(point.x() - box.center().x()) >= halfWidth || std::abs(point.y() - box.center().y()) >= halfHeight;
+    if (!outside && !inside) {
+      const QPointF crossed = entry(lastOutside, point);
+      if (!cut.contains(crossed))
+        cut.append(crossed);
+      inside = true;
+    } else {
+      lastOutside = point;
+      if (!inside)
+        cut.append(point);
+    }
+  }
+  return cut;
+}
+
 // One recursive scope owns one Dagre graph. Each phase has a single purpose;
 // only final geometry leaves the scope, so extraction cannot leak parent state.
 class DagreScopeLayout {
@@ -41,6 +100,7 @@ public:
 
   FlowLayoutResult run(std::vector<dagre::DagreSnapshot>* snapshots) {
     indexSubgraphs();
+    resolveClusterEdges();
     extractClusters();
     configureGraph();
     insertNodes();
@@ -67,9 +127,13 @@ private:
     FlowLayoutResult layout;
     QPointF center;
     QSizeF size;
+    // Dagre's width of the root cluster's box and the width it is drawn at.
+    qreal dagreWidth = 0.0;
+    qreal boxWidth = 0.0;
   };
 
-  const FlowchartData& data;
+  // A copy: the relationships to clusters are moved to their anchors.
+  FlowchartData data;
   const QMap<QString, QSizeF>& measuredNodes;
   const FlowLayoutOptions options;
   const QString retainedRoot;
@@ -79,6 +143,16 @@ private:
   QSet<QString> claimedVertices;
   QSet<QString> claimedSubgraphs;
   QHash<QString, QString> extractedEndpoint;
+  // A cluster with members: the node a relationship to it is anchored on, and
+  // whether a relationship leaves it.
+  struct Cluster {
+    QString anchor;
+    bool external = false;
+  };
+  QHash<QString, Cluster> clusters;
+  // Per relationship, the cluster it leaves or enters (empty for none).
+  QVector<QString> fromCluster;
+  QVector<QString> toCluster;
   d::DagreGraph g;
   QString dir;
   QPointF origin;
@@ -130,6 +204,249 @@ private:
       for (const QString& child : sg.nodes)
         if (subgraphIds.contains(child))
           subgraphParent.insert(child, sg.id);
+    // A vertex named like a subgraph (a relationship written to the subgraph
+    // names it as a node too) is that subgraph: mermaid's getData merges the
+    // two into the cluster's node.
+    data.vertices.erase(std::remove_if(data.vertices.begin(), data.vertices.end(),
+                                       [&](const FlowVertex& vertex) { return subgraphIds.contains(vertex.id); }),
+                        data.vertices.end());
+  }
+
+  // The nodes the layout lists for this scope, in its order: the clusters,
+  // then the vertices (a family may prescribe the order itself).
+  QStringList upstreamOrder() const {
+    if (!options.nodeInsertionOrder.isEmpty())
+      return options.nodeInsertionOrder;
+    QStringList order;
+    for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it)
+      order.append(it->id);
+    for (const FlowVertex& vertex : data.vertices)
+      order.append(vertex.id);
+    return order;
+  }
+
+  int subgraphDepth(const QString& id) const {
+    int depth = 1;
+    QString current = id;
+    QSet<QString> guard;
+    while (subgraphParent.contains(current) && !guard.contains(current)) {
+      guard.insert(current);
+      current = subgraphParent.value(current);
+      ++depth;
+    }
+    return depth;
+  }
+
+  // The cluster a node belongs to: the deepest one that lists a vertex, the
+  // listing cluster of a nested one.
+  QString parentOf(const QString& id) const {
+    if (subgraphIds.contains(id))
+      return subgraphParent.value(id);
+    QString best;
+    int bestDepth = 0;
+    for (const FlowSubgraph& sg : data.subgraphs)
+      if (sg.nodes.contains(id)) {
+        const int depth = subgraphDepth(sg.id);
+        if (depth > bestDepth) {
+          best = sg.id;
+          bestDepth = depth;
+        }
+      }
+    return best;
+  }
+
+  QStringList childrenOf(const QString& id) const {
+    QStringList children;
+    for (const QString& candidate : upstreamOrder())
+      if (parentOf(candidate) == id)
+        children.append(candidate);
+    return children;
+  }
+
+  // What lies below a cluster, a nested cluster's contents before the
+  // cluster itself.
+  void collectClusterOrder(const QString& id, QStringList& order) const {
+    for (const QString& child : childrenOf(id)) {
+      if (subgraphIds.contains(child))
+        collectClusterOrder(child, order);
+      order.append(child);
+    }
+  }
+
+  QSet<QString> descendantsOf(const QString& id) const {
+    QSet<QString> result;
+    QStringList pending = childrenOf(id);
+    while (!pending.isEmpty()) {
+      const QString child = pending.takeLast();
+      if (result.contains(child))
+        continue;
+      result.insert(child);
+      pending += childrenOf(child);
+    }
+    return result;
+  }
+
+  // Whether the leaf has a relationship the cluster has too, with the same
+  // third node.
+  bool mirrorsEdge(const QString& clusterId, const QString& leafId) const {
+    const auto touches = [](const FlowEdge& edge, const QString& id) { return edge.start == id || edge.end == id; };
+    for (const FlowEdge& a : data.edges) {
+      if (!touches(a, clusterId))
+        continue;
+      const QString from = a.start == clusterId ? leafId : a.start;
+      const QString to = a.end == clusterId ? leafId : a.end;
+      for (const FlowEdge& b : data.edges)
+        if (touches(b, leafId) && b.start == from && b.end == to)
+          return true;
+    }
+    return false;
+  }
+
+  // findNonClusterChild(): the first thing below a cluster that is not a
+  // cluster, passed over when it mirrors a relationship of the cluster's own.
+  QString firstLeaf(const QString& id) const {
+    const QStringList children = childrenOf(id);
+    if (children.isEmpty())
+      return id;
+    QString reserve;
+    for (const QString& child : children) {
+      const QString leaf = subgraphIds.contains(child) ? firstLeaf(child) : child;
+      if (leaf.isEmpty())
+        continue;
+      if (mirrorsEdge(id, leaf))
+        reserve = leaf;
+      else
+        return leaf;
+    }
+    return reserve;
+  }
+
+  // A node is in a cluster a relationship does not leave: one that would be
+  // laid out on its own, taking the node out of this graph.
+  bool inExtractableCluster(const QString& node, const QString& rootId) const {
+    QString parent = parentOf(node);
+    while (!parent.isEmpty() && parent != rootId) {
+      const auto it = clusters.constFind(parent);
+      if (it != clusters.constEnd() && !it->external)
+        return true;
+      parent = parentOf(parent);
+    }
+    return false;
+  }
+
+  // A node of the cluster that stays in this graph: one outside the clusters
+  // a relationship does not leave.
+  QString safeAnchor(const QString& clusterId, const QString& excluded) const {
+    const QSet<QString> belowExcluded = descendantsOf(excluded);
+    for (const QString& child : childrenOf(clusterId)) {
+      if (child == excluded || belowExcluded.contains(child))
+        continue;
+      const QString candidate = firstLeaf(child);
+      if (candidate.isEmpty() || inExtractableCluster(candidate, clusterId))
+        continue;
+      return candidate;
+    }
+    return {};
+  }
+
+  // getAnchorId(): a cluster a relationship leaves is met at its anchor; a
+  // closed one keeps its own id, which becomes the node it is laid out as.
+  QString anchorId(const QString& id) const {
+    const auto it = clusters.constFind(id);
+    return it != clusters.constEnd() && it->external ? it->anchor : id;
+  }
+
+  // The box a path is cut at: Dagre's box of the cluster, widened for a title
+  // wider than it (a cluster laid out on its own keeps its own size).
+  QRectF clusterBox(const QString& id) const {
+    const d::DagreNodeLabel* node = g.node(id);
+    if (!node)
+      return {};
+    qreal width = node->width;
+    if (std::none_of(extracted.cbegin(), extracted.cend(),
+                     [&](const ExtractedCluster& item) { return item.id == id; })) {
+      const QSizeF titleSize = options.measuredClusterLabels.value(id);
+      if (titleSize.isValid() && !titleSize.isEmpty())
+        width = std::max(width, titleSize.width() + options.clusterPadding);
+    }
+    return QRectF(node->x.value_or(0.0) - width / 2.0, node->y.value_or(0.0) - node->height / 2.0, width, node->height);
+  }
+
+  // adjustClustersAndEdges(): a cluster is noted with the node a relationship
+  // to it is anchored on and with whether a relationship leaves it. Then each
+  // relationship to a cluster a relationship leaves is moved to that node,
+  // and remembers the cluster so that its path is cut at the cluster's box.
+  void resolveClusterEdges() {
+    for (const FlowSubgraph& sg : data.subgraphs)
+      if (!childrenOf(sg.id).isEmpty())
+        clusters.insert(sg.id, {firstLeaf(sg.id), false});
+    for (const FlowSubgraph& sg : data.subgraphs) {
+      const auto it = clusters.find(sg.id);
+      if (it == clusters.end())
+        continue;
+      const QSet<QString> below = descendantsOf(sg.id);
+      for (const FlowEdge& edge : data.edges)
+        if (below.contains(edge.start) != below.contains(edge.end)) {
+          it->external = true;
+          break;
+        }
+    }
+    for (const FlowSubgraph& sg : data.subgraphs) {
+      const auto it = clusters.find(sg.id);
+      if (it == clusters.end())
+        continue;
+      const QString leaf = it->anchor;
+      const QString parent = parentOf(leaf);
+      if (parent != sg.id && clusters.contains(parent) && !clusters.value(parent).external)
+        it->anchor = parent;
+      const bool leavesDirectly = std::any_of(data.edges.cbegin(), data.edges.cend(),
+                                              [&](const FlowEdge& edge) { return edge.start == sg.id; });
+      if (!leaf.isEmpty() && it->external && leavesDirectly && inExtractableCluster(leaf, sg.id)) {
+        const QString safe = safeAnchor(sg.id, parent);
+        if (!safe.isEmpty())
+          it->anchor = safe;
+      }
+    }
+    fromCluster.resize(data.edges.size());
+    toCluster.resize(data.edges.size());
+    QVector<bool> namesCluster(data.edges.size(), false);
+    for (qsizetype index = 0; index < data.edges.size(); ++index) {
+      FlowEdge& edge = data.edges[index];
+      const QString v = edge.start;
+      const QString w = edge.end;
+      if (!clusters.contains(v) && !clusters.contains(w))
+        continue;
+      namesCluster[index] = true;
+      edge.start = anchorId(v);
+      edge.end = anchorId(w);
+      if (edge.start != v) {
+        const QString parent = parentOf(edge.start);
+        if (clusters.contains(parent))
+          clusters[parent].external = true;
+        fromCluster[index] = v;
+      }
+      if (edge.end != w) {
+        const QString parent = parentOf(edge.end);
+        if (clusters.contains(parent))
+          clusters[parent].external = true;
+        toCluster[index] = w;
+      }
+    }
+    // A relationship that names a cluster is taken out of the graph and set
+    // again, so the graph lists it after the others.
+    QVector<FlowEdge> ordered;
+    QVector<QString> from, to;
+    ordered.reserve(data.edges.size());
+    for (const bool named : {false, true})
+      for (qsizetype index = 0; index < data.edges.size(); ++index)
+        if (namesCluster.at(index) == named) {
+          ordered.append(data.edges.at(index));
+          from.append(fromCluster.at(index));
+          to.append(toCluster.at(index));
+        }
+    data.edges = std::move(ordered);
+    fromCluster = std::move(from);
+    toCluster = std::move(to);
   }
 
   void extractClusters() {
@@ -137,19 +454,27 @@ private:
       if (it->id == retainedRoot || claimedSubgraphs.contains(it->id) || it->nodes.isEmpty())
         continue;
       QSet<QString> members;
+      // Everything below the cluster: the vertices of its own and of its
+      // nested subgraphs, and those subgraphs. A relationship leaves the
+      // cluster only when exactly one of its ends is down there, so one to
+      // a subgraph of the cluster enters it.
+      QSet<QString> descendants;
       for (const QString& id : it->nodes)
         if (!subgraphIds.contains(id))
           members.insert(id);
       for (const FlowSubgraph& nested : data.subgraphs)
-        if (nested.id != it->id && isSubgraphDescendant(nested.id, it->id))
+        if (nested.id != it->id && isSubgraphDescendant(nested.id, it->id)) {
+          descendants.insert(nested.id);
           for (const QString& id : nested.nodes)
             if (!subgraphIds.contains(id))
               members.insert(id);
+        }
       if (members.isEmpty())
         continue;
+      descendants.unite(members);
       bool externalConnection = false;
       for (const FlowEdge& edge : data.edges) {
-        if (members.contains(edge.start) != members.contains(edge.end)) {
+        if (descendants.contains(edge.start) != descendants.contains(edge.end)) {
           externalConnection = true;
           break;
         }
@@ -188,9 +513,25 @@ private:
       for (const FlowVertex& vertex : data.vertices)
         if (item.vertices.contains(vertex.id))
           inner.vertices.push_back(vertex);
-      for (const FlowEdge& edge : data.edges)
-        if (item.vertices.contains(edge.start) && item.vertices.contains(edge.end))
-          inner.edges.push_back(edge);
+      // copy(): a relationship goes with the first of its ends that is
+      // taken, the ends in order below the cluster.
+      QStringList order;
+      collectClusterOrder(it->id, order);
+      const auto inside = [&](const FlowEdge& edge) {
+        return descendants.contains(edge.start) && descendants.contains(edge.end);
+      };
+      QVector<bool> taken(data.edges.size(), false);
+      for (const QString& node : order)
+        for (qsizetype index = 0; index < data.edges.size(); ++index) {
+          const FlowEdge& edge = data.edges.at(index);
+          if (!taken.at(index) && inside(edge) && (edge.start == node || edge.end == node)) {
+            taken[index] = true;
+            inner.edges.push_back(edge);
+          }
+        }
+      for (qsizetype index = 0; index < data.edges.size(); ++index)
+        if (!taken.at(index) && inside(data.edges.at(index)))
+          inner.edges.push_back(data.edges.at(index));
       for (const FlowSubgraph& subgraph : data.subgraphs)
         if (item.subgraphs.contains(subgraph.id))
           inner.subgraphs.push_back(subgraph);
@@ -208,6 +549,8 @@ private:
         continue;
       item.center = QPointF(root->x, root->y);
       item.size = QSizeF(root->width, root->height);
+      item.dagreWidth = root->dagreWidth;
+      item.boxWidth = root->logicalWidth > 0.0 ? root->logicalWidth : root->width;
       claimedVertices.unite(item.vertices);
       claimedSubgraphs.unite(item.subgraphs);
       extracted.push_back(std::move(item));
@@ -242,9 +585,15 @@ private:
     QHash<QString, QSizeF> extractedSizes;
     for (const ExtractedCluster& item : extracted)
       extractedSizes.insert(item.id, item.size);
-    for (const ExtractedCluster& item : extracted)
+    for (const ExtractedCluster& item : extracted) {
       for (const QString& vertex : item.vertices)
         extractedEndpoint.insert(vertex, item.id);
+      // The subgraphs nested in it left the graph with it: a relationship to
+      // one of them is a relationship inside the cluster.
+      for (const QString& subgraph : item.subgraphs)
+        if (subgraph != item.id)
+          extractedEndpoint.insert(subgraph, item.id);
+    }
     auto addSubgraphNode = [&](const FlowSubgraph& subgraph) {
       if (claimedSubgraphs.contains(subgraph.id) && !extractedSizes.contains(subgraph.id))
         return;
@@ -560,8 +909,10 @@ private:
       out.points.last() =
           intersectNodeForShape(*node, vertexType.value(start), out.points.at(out.points.size() - 2), options.look);
       out.hasLabelPosition = !fe.text.isEmpty();
+      // A family that draws a loop as three paths of its own (class) gives its
+      // label the place of the middle one, as Dagre laid it out.
       const d::DagreEdgeLabel* middle = g.edge(dummy1Id, dummy2Id, start + QStringLiteral("-cyclic-special-1"));
-      if (out.hasLabelPosition && middle && middle->x && middle->y) {
+      if (out.hasLabelPosition && options.selfLoopLabelOnMiddlePath && middle && middle->x && middle->y) {
         out.labelX = *middle->x;
         out.labelY = *middle->y;
       }
@@ -657,7 +1008,21 @@ private:
                        : absPts.at(1),
           };
         }
-        for (const QPointF& p : absPts)
+        // insertEdge(): a relationship that enters or leaves a cluster ends
+        // where it crosses the cluster's box. One that enters is cut in
+        // Dagre's own points, one that leaves in the points so far.
+        QVector<QPointF> drawn = absPts;
+        if (index < toCluster.size() && !toCluster.at(index).isEmpty()) {
+          drawn = cutPathAtIntersect(el->points, clusterBox(toCluster.at(index)));
+          out.cutAtCluster = true;
+        }
+        if (index < fromCluster.size() && !fromCluster.at(index).isEmpty()) {
+          std::reverse(drawn.begin(), drawn.end());
+          drawn = cutPathAtIntersect(drawn, clusterBox(fromCluster.at(index)));
+          std::reverse(drawn.begin(), drawn.end());
+          out.cutAtCluster = true;
+        }
+        for (const QPointF& p : drawn)
           out.points.push_back(p - origin);
         out.reversedForLayout = el->reversed;
         if (el->x.has_value()) {
@@ -698,9 +1063,10 @@ private:
       c.y = n->y.value_or(0.0) - origin.y();
       c.width = n->width;
       c.height = n->height;
+      c.dagreWidth = c.width;
       const QSizeF titleSize = options.measuredClusterLabels.value(it->id);
       if (titleSize.isValid() && !titleSize.isEmpty())
-        c.width = std::max(c.width, titleSize.width() + 8.0);
+        c.width = std::max(c.width, titleSize.width() + options.clusterPadding);
       if (options.clusterSizeTransform) {
         const QSizeF logicalSize(c.width, c.height);
         const QRectF logicalBounds(QPointF(c.x - c.width / 2.0, c.y - c.height / 2.0), logicalSize);
@@ -720,9 +1086,22 @@ private:
       if (!atom)
         continue;
       const QPointF atomCenter(atom->x.value_or(0.0) - origin.x(), atom->y.value_or(0.0) - origin.y());
-      const QPointF delta = options.preserveRecursiveSvgFrame ? QPointF(atomCenter.x() - item.size.width() / 2.0 - 8.0,
-                                                                        atomCenter.y() - item.size.height() / 2.0 - 8.0)
-                                                              : atomCenter - item.center;
+      // insertCluster() leaves node.diff for positionNode(): a cluster whose
+      // Dagre box holds its title keeps that box and gets -padding; a narrower
+      // one is widened to title + padding, centred where Dagre put its box,
+      // and gets half the widening less the padding.
+      const qreal padding = options.clusterPadding;
+      const qreal widening = item.boxWidth - item.dagreWidth;
+      const qreal diff = widening > 0.0 ? widening / 2.0 - padding : -padding;
+      // positionNode() centres a rendered cluster's child <g> on the atom,
+      // shifted by that diff. The child's box starts at Dagre's 8px margin,
+      // which is what remains of the shift once the box is centred. A scope
+      // that keeps Dagre's frame holds the box at that margin itself.
+      const QPointF delta =
+          options.preserveRecursiveSvgFrame
+              ? QPointF(atomCenter.x() + diff - item.size.width() / 2.0,
+                        atomCenter.y() - 8.0 - item.size.height() / 2.0)
+              : QPointF(atomCenter.x() - item.center.x() + 8.0 - padding, atomCenter.y() - item.center.y());
       for (FlowLayoutNode node : item.layout.nodes) {
         node.x += delta.x();
         node.y += delta.y();
@@ -856,6 +1235,12 @@ private:
               ? semantic->interpolate
               : (!data.defaultEdgeInterpolate.isEmpty() ? data.defaultEdgeInterpolate : options.curve);
       edge.path = d3curve::pathForCurve(rendered, curve);
+      if (edge.hasLabelPosition && options.repositionEdgeLabels) {
+        const QPointF label =
+            positionEdgeLabel(edge.points, edge.path, QPointF(edge.labelX, edge.labelY), edge.cutAtCluster);
+        edge.labelX = label.x();
+        edge.labelY = label.y();
+      }
     }
   }
 };
@@ -872,6 +1257,42 @@ FlowLayoutResult layoutFlowchartNodesDagre(const FlowchartData& data, const QMap
                                            FlowLayoutOptions options,
                                            std::vector<dagre::DagreSnapshot>* dagreSnapshots) {
   return layoutFlowchartNodesDagreScope(data, measuredNodes, std::move(options), dagreSnapshots, {});
+}
+
+QPointF positionEdgeLabel(const QVector<QPointF>& points, const QString& path, const QPointF& placed, bool updated) {
+  if (points.isEmpty())
+    return placed;
+  // ECMAScript's Math.round(): half a unit rounds up, whichever the sign.
+  const auto rounded = [](qreal value) { return QString::number(static_cast<qlonglong>(std::floor(value + 0.5))); };
+  static const QRegularExpression decimal(QStringLiteral(R"((\d+\.\d+))"));
+  QString data;
+  qsizetype consumed = 0;
+  auto matches = decimal.globalMatch(path);
+  while (matches.hasNext()) {
+    const auto match = matches.next();
+    data += path.mid(consumed, match.capturedStart() - consumed);
+    data += rounded(match.captured().toDouble());
+    consumed = match.capturedEnd();
+  }
+  data += path.mid(consumed);
+  const QPointF middle = points.at(points.size() / 2);
+  if (!updated && (data.contains(rounded(middle.x())) || data.contains(rounded(middle.y()))))
+    return placed;
+  qreal remaining = 0.0;
+  for (qsizetype index = 1; index < points.size(); ++index)
+    remaining +=
+        std::hypot(points.at(index).x() - points.at(index - 1).x(), points.at(index).y() - points.at(index - 1).y());
+  remaining /= 2.0;
+  for (qsizetype index = 1; index < points.size(); ++index) {
+    const QPointF delta = points.at(index) - points.at(index - 1);
+    const qreal length = std::hypot(delta.x(), delta.y());
+    if (length == 0.0)
+      return points.at(index - 1);
+    if (length >= remaining)
+      return points.at(index - 1) + delta * (remaining / length);
+    remaining -= length;
+  }
+  return points.last();
 }
 
 } // namespace muffin::mermaid::flowchart

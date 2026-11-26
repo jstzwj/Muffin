@@ -50691,6 +50691,2301 @@
         ],
         "clusters": []
       }
+    },
+    {
+      "id": "edge-into-open-cluster",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Inside]\nend\nX[Outside] --> S\nA --> Y[After]",
+      "expected": {
+        "svg": {
+          "id": "flow-geometry-70",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "flowchart",
+          "style": "max-width: 188.703125px;",
+          "viewBox": "0 0 188.703125 328",
+          "role": "graphics-document document",
+          "aria-roledescription": "flowchart-v2"
+        },
+        "defs": {
+          "markers": [
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "11",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refY": "5",
+                "refX": "12.25",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-1",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-2",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "12",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "17.7",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "-1",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "-3.5",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 10 5 L 0 10 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "11.5",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "10.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 11.5 7 L 0 14 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "4.5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 5 L 10 10 L 10 0 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "1",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "points": "0,7 11.5,14 11.5,0",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "width": 102.703,
+            "height": 54,
+            "labelWidth": 42.703,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-21.3515625, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Inside",
+                  "width": 42.703,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 6,
+                      "x": 0,
+                      "width": 42.703,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-51.3515625",
+                "y": "-27",
+                "width": "102.703125",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "X",
+            "width": 115.141,
+            "height": 54,
+            "labelWidth": 55.141,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-27.5703125, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Outside",
+                  "width": 55.141,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 7,
+                      "x": 0,
+                      "width": 55.141,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-57.5703125",
+                "y": "-27",
+                "width": "115.140625",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": -129
+          },
+          {
+            "id": "Y",
+            "width": 93.797,
+            "height": 54,
+            "labelWidth": 33.797,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-16.8984375, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "After",
+                  "width": 33.797,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 33.797,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-46.8984375",
+                "y": "-27",
+                "width": "93.796875",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 129
+          }
+        ],
+        "edges": [
+          {
+            "id": "L_A_Y_0",
+            "d": "M0,27L0,31.167C0,35.333,0,43.667,0,52C0,60.333,0,68.667,0,76.333C0,84,0,91,0,94.5L0,98",
+            "attributes": {
+              "d": "M94.352,191L94.352,195.167C94.352,199.333,94.352,207.667,94.352,216C94.352,224.333,94.352,232.667,94.352,240.333C94.352,248,94.352,255,94.352,258.5L94.352,262",
+              "id": "flow-geometry-70-L_A_Y_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_A_Y_0",
+              "data-points": "W3sieCI6OTQuMzUxNTYyNSwieSI6MTkxfSx7IngiOjk0LjM1MTU2MjUsInkiOjIxNn0seyJ4Ijo5NC4zNTE1NjI1LCJ5IjoyNDF9LHsieCI6OTQuMzUxNTYyNSwieSI6MjY2fV0=",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -94.352,
+              "dy": -164
+            }
+          },
+          {
+            "id": "L_X_S_0",
+            "d": "M0,-102L0,-97.833C0,-93.667,0,-85.333,0,-77.667C0,-70,0,-63,0,-59.5L0,-56",
+            "attributes": {
+              "d": "M94.352,62L94.352,66.167C94.352,70.333,94.352,78.667,94.352,86.333C94.352,94,94.352,101,94.352,104.5L94.352,108",
+              "id": "flow-geometry-70-L_X_S_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_X_S_0",
+              "data-points": "W3sieCI6OTQuMzUxNTYyNSwieSI6NjJ9LHsieCI6OTQuMzUxNTYyNSwieSI6ODd9LHsieCI6OTQuMzUxNTYyNSwieSI6MTEyfSx7IngiOjk0LjM1MTU2MjUsInkiOjEzN31d",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -94.352,
+              "dy": -164
+            }
+          }
+        ],
+        "clusters": [
+          {
+            "id": "S",
+            "dx": -0.001,
+            "dy": 0,
+            "width": 172.703,
+            "height": 104,
+            "group": {
+              "class": "cluster",
+              "data-look": "classic"
+            },
+            "rect": {
+              "x": -86.352,
+              "y": -52,
+              "width": 172.703,
+              "height": 104
+            },
+            "rectAttributes": {
+              "style": "",
+              "x": "8",
+              "y": "112",
+              "width": "172.703125",
+              "height": "104"
+            },
+            "rectComputed": {
+              "fill": "rgb(255, 255, 222)",
+              "stroke": "rgb(170, 170, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "none"
+            },
+            "label": {
+              "x": -22.286,
+              "y": -50,
+              "width": 44.57,
+              "height": 17,
+              "attributes": {
+                "class": "cluster-label",
+                "transform": "translate(72.06640625, 112)"
+              },
+              "computed": {
+                "color": "rgb(0, 0, 0)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Group",
+                  "width": 44.469,
+                  "height": 17,
+                  "baseline": 14,
+                  "ascent": 14,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 44.469,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ],
+              "structure": {
+                "tag": "g",
+                "class": "cluster-label",
+                "children": [
+                  {
+                    "tag": "g",
+                    "class": ""
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-from-cluster",
+      "source": "flowchart TB\nsubgraph S[Group]\nA[Inside]\nend\nS --> Y[After]\nX[Before] --> A",
+      "expected": {
+        "svg": {
+          "id": "flow-geometry-71",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "flowchart",
+          "style": "max-width: 188.703125px;",
+          "viewBox": "0 0 188.703125 328",
+          "role": "graphics-document document",
+          "aria-roledescription": "flowchart-v2"
+        },
+        "defs": {
+          "markers": [
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "11",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refY": "5",
+                "refX": "12.25",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-1",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-2",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "12",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "17.7",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "-1",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "-3.5",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 10 5 L 0 10 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "11.5",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "10.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 11.5 7 L 0 14 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "4.5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 5 L 10 10 L 10 0 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "1",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "points": "0,7 11.5,14 11.5,0",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "width": 102.703,
+            "height": 54,
+            "labelWidth": 42.703,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-21.3515625, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Inside",
+                  "width": 42.703,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 6,
+                      "x": 0,
+                      "width": 42.703,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-51.3515625",
+                "y": "-27",
+                "width": "102.703125",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "Y",
+            "width": 93.797,
+            "height": 54,
+            "labelWidth": 33.797,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-16.8984375, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "After",
+                  "width": 33.797,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 33.797,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-46.8984375",
+                "y": "-27",
+                "width": "93.796875",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 129
+          },
+          {
+            "id": "X",
+            "width": 107.141,
+            "height": 54,
+            "labelWidth": 47.141,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-23.5703125, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Before",
+                  "width": 47.141,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 6,
+                      "x": 0,
+                      "width": 47.141,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-53.5703125",
+                "y": "-27",
+                "width": "107.140625",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": -129
+          }
+        ],
+        "edges": [
+          {
+            "id": "L_X_A_0",
+            "d": "M0,-102L0,-97.833C0,-93.667,0,-85.333,0,-77C0,-68.667,0,-60.333,0,-52.667C0,-45,0,-38,0,-34.5L0,-31",
+            "attributes": {
+              "d": "M94.352,62L94.352,66.167C94.352,70.333,94.352,78.667,94.352,87C94.352,95.333,94.352,103.667,94.352,111.333C94.352,119,94.352,126,94.352,129.5L94.352,133",
+              "id": "flow-geometry-71-L_X_A_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_X_A_0",
+              "data-points": "W3sieCI6OTQuMzUxNTYyNSwieSI6NjJ9LHsieCI6OTQuMzUxNTYyNSwieSI6ODd9LHsieCI6OTQuMzUxNTYyNSwieSI6MTEyfSx7IngiOjk0LjM1MTU2MjUsInkiOjEzN31d",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -94.352,
+              "dy": -164
+            }
+          },
+          {
+            "id": "L_S_Y_0",
+            "d": "M0,52L0,56.167C0,60.333,0,68.667,0,76.333C0,84,0,91,0,94.5L0,98",
+            "attributes": {
+              "d": "M94.352,216L94.352,220.167C94.352,224.333,94.352,232.667,94.352,240.333C94.352,248,94.352,255,94.352,258.5L94.352,262",
+              "id": "flow-geometry-71-L_S_Y_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_S_Y_0",
+              "data-points": "W3sieCI6OTQuMzUxNTYyNSwieSI6MTkxfSx7IngiOjk0LjM1MTU2MjUsInkiOjIxNn0seyJ4Ijo5NC4zNTE1NjI1LCJ5IjoyNDF9LHsieCI6OTQuMzUxNTYyNSwieSI6MjY2fV0=",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -94.352,
+              "dy": -164
+            }
+          }
+        ],
+        "clusters": [
+          {
+            "id": "S",
+            "dx": -0.001,
+            "dy": 0,
+            "width": 172.703,
+            "height": 104,
+            "group": {
+              "class": "cluster",
+              "data-look": "classic"
+            },
+            "rect": {
+              "x": -86.352,
+              "y": -52,
+              "width": 172.703,
+              "height": 104
+            },
+            "rectAttributes": {
+              "style": "",
+              "x": "8",
+              "y": "112",
+              "width": "172.703125",
+              "height": "104"
+            },
+            "rectComputed": {
+              "fill": "rgb(255, 255, 222)",
+              "stroke": "rgb(170, 170, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "none"
+            },
+            "label": {
+              "x": -22.286,
+              "y": -50,
+              "width": 44.57,
+              "height": 17,
+              "attributes": {
+                "class": "cluster-label",
+                "transform": "translate(72.06640625, 112)"
+              },
+              "computed": {
+                "color": "rgb(0, 0, 0)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Group",
+                  "width": 44.469,
+                  "height": 17,
+                  "baseline": 14,
+                  "ascent": 14,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 44.469,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ],
+              "structure": {
+                "tag": "g",
+                "class": "cluster-label",
+                "children": [
+                  {
+                    "tag": "g",
+                    "class": ""
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "edge-to-nested-cluster",
+      "source": "flowchart TB\nsubgraph Outer[Outer]\nsubgraph Inner[Inner]\nA[Alpha]\nend\nA --> B[Beta]\nend\nC[Gamma]\nC --> Inner",
+      "expected": {
+        "svg": {
+          "id": "flow-geometry-72",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "flowchart",
+          "style": "max-width: 226.921875px;",
+          "viewBox": "0 0 226.921875 378",
+          "role": "graphics-document document",
+          "aria-roledescription": "flowchart-v2"
+        },
+        "defs": {
+          "markers": [
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "11",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refY": "5",
+                "refX": "12.25",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-1",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "circleStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "-2",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "14",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "cx": "5",
+                    "cy": "5",
+                    "r": "5",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "12",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossEnd",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "17.7",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 11 11",
+                "refX": "-1",
+                "refY": "5.2",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11",
+                "markerHeight": "11",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 l 9,9 M 10,1 l -9,9",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "crossStart",
+                "class": "marker cross flowchart-v2",
+                "viewBox": "0 0 15 15",
+                "refX": "-3.5",
+                "refY": "7.5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "12",
+                "markerHeight": "12",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 L 14,14 M 1,14 L 14,1",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 2.5; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "2.5px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 10 5 L 0 10 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointEnd",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "11.5",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "10.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 0 L 11.5 7 L 0 14 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 10 10",
+                "refX": "4.5",
+                "refY": "5",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "8",
+                "markerHeight": "8",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 0 5 L 10 10 L 10 0 z",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 1; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "1px"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "pointStart",
+                "class": "marker flowchart-v2",
+                "viewBox": "0 0 11.5 14",
+                "refX": "1",
+                "refY": "7",
+                "markerUnits": "userSpaceOnUse",
+                "markerWidth": "11.5",
+                "markerHeight": "14",
+                "orient": "auto"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "points": "0,7 11.5,14 11.5,0",
+                    "class": "arrowMarkerPath",
+                    "style": "stroke-width: 0; stroke-dasharray: 1, 0;"
+                  },
+                  "computed": {
+                    "fill": "rgb(51, 51, 51)",
+                    "stroke": "rgb(51, 51, 51)",
+                    "stroke-width": "0px"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "A",
+            "width": 100.922,
+            "height": 54,
+            "labelWidth": 40.922,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-20.4609375, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Alpha",
+                  "width": 40.922,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 40.922,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-50.4609375",
+                "y": "-27",
+                "width": "100.921875",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 0
+          },
+          {
+            "id": "B",
+            "width": 92.922,
+            "height": 54,
+            "labelWidth": 32.922,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-16.4609375, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Beta",
+                  "width": 32.922,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 4,
+                      "x": 0,
+                      "width": 32.922,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-46.4609375",
+                "y": "-27",
+                "width": "92.921875",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": 129
+          },
+          {
+            "id": "C",
+            "width": 116.906,
+            "height": 54,
+            "labelWidth": 56.906,
+            "labelHeight": 24,
+            "group": {
+              "class": "node default"
+            },
+            "label": {
+              "tag": "g",
+              "attributes": {
+                "class": "label",
+                "transform": "translate(-28.453125, -12)",
+                "style": ""
+              },
+              "computed": {
+                "color": "rgb(51, 51, 51)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Gamma",
+                  "width": 56.906,
+                  "height": 24,
+                  "baseline": 16.5,
+                  "ascent": 12,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 56.906,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ]
+            },
+            "shape": {
+              "tag": "rect",
+              "attributes": {
+                "x": "-58.453125",
+                "y": "-27",
+                "width": "116.90625",
+                "height": "54",
+                "class": "basic label-container",
+                "style": ""
+              },
+              "computed": {
+                "fill": "rgb(236, 236, 255)",
+                "stroke": "rgb(147, 112, 219)",
+                "stroke-width": "1px",
+                "stroke-dasharray": "none"
+              }
+            },
+            "dx": 0,
+            "dy": -154
+          }
+        ],
+        "edges": [
+          {
+            "id": "L_A_B_0",
+            "d": "M0,27L0,31.167C0,35.333,0,43.667,0,52C0,60.333,0,68.667,0,76.333C0,84,0,91,0,94.5L0,98",
+            "attributes": {
+              "d": "M113.461,216L113.461,220.167C113.461,224.333,113.461,232.667,113.461,241C113.461,249.333,113.461,257.667,113.461,265.333C113.461,273,113.461,280,113.461,283.5L113.461,287",
+              "id": "flow-geometry-72-L_A_B_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_A_B_0",
+              "data-points": "W3sieCI6MTEzLjQ2MDkzNzUsInkiOjIxNn0seyJ4IjoxMTMuNDYwOTM3NSwieSI6MjQxfSx7IngiOjExMy40NjA5Mzc1LCJ5IjoyNjZ9LHsieCI6MTEzLjQ2MDkzNzUsInkiOjI5MX1d",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -113.461,
+              "dy": -189
+            }
+          },
+          {
+            "id": "L_C_Inner_0",
+            "d": "M0,-127L0,-122.833C0,-118.667,0,-110.333,0,-102C0,-93.667,0,-85.333,0,-77.667C0,-70,0,-63,0,-59.5L0,-56",
+            "attributes": {
+              "d": "M113.461,62L113.461,66.167C113.461,70.333,113.461,78.667,113.461,87C113.461,95.333,113.461,103.667,113.461,111.333C113.461,119,113.461,126,113.461,129.5L113.461,133",
+              "id": "flow-geometry-72-L_C_Inner_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "style": ";",
+              "data-edge": "true",
+              "data-et": "edge",
+              "data-id": "L_C_Inner_0",
+              "data-points": "W3sieCI6MTEzLjQ2MDkzNzUsInkiOjYyfSx7IngiOjExMy40NjA5Mzc1LCJ5Ijo4N30seyJ4IjoxMTMuNDYwOTM3NSwieSI6MTEyfSx7IngiOjExMy40NjA5Mzc1LCJ5IjoxMzd9LHsieCI6MTEzLjQ2MDkzNzUsInkiOjE2Mn1d",
+              "data-look": "classic",
+              "marker-end": "pointEnd"
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "0px",
+              "animation-name": "none",
+              "animation-duration": "0s",
+              "animation-timing-function": "ease"
+            },
+            "label": {
+              "width": 0,
+              "height": 0,
+              "contentWidth": 0,
+              "contentHeight": 0,
+              "textWidth": 0,
+              "textHeight": 0,
+              "fontFamily": "Arial",
+              "fontSize": "16px",
+              "lines": [
+                {
+                  "text": "",
+                  "width": 0,
+                  "height": 0,
+                  "baseline": 0,
+                  "ascent": 0,
+                  "descent": 0,
+                  "runs": []
+                }
+              ],
+              "dx": -113.461,
+              "dy": -189
+            }
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Outer",
+            "dx": 0,
+            "dy": 52,
+            "width": 210.922,
+            "height": 258,
+            "group": {
+              "class": "cluster",
+              "data-look": "classic"
+            },
+            "rect": {
+              "x": -105.461,
+              "y": -77,
+              "width": 210.922,
+              "height": 258
+            },
+            "rectAttributes": {
+              "style": "",
+              "x": "8",
+              "y": "112",
+              "width": "210.921875",
+              "height": "258"
+            },
+            "rectComputed": {
+              "fill": "rgb(255, 255, 222)",
+              "stroke": "rgb(170, 170, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "none"
+            },
+            "label": {
+              "x": -20.344,
+              "y": -75,
+              "width": 40.688,
+              "height": 17,
+              "attributes": {
+                "class": "cluster-label",
+                "transform": "translate(93.1171875, 112)"
+              },
+              "computed": {
+                "color": "rgb(0, 0, 0)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Outer",
+                  "width": 40.016,
+                  "height": 17,
+                  "baseline": 14,
+                  "ascent": 14,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 40.016,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ],
+              "structure": {
+                "tag": "g",
+                "class": "cluster-label",
+                "children": [
+                  {
+                    "tag": "g",
+                    "class": ""
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "id": "Inner",
+            "dx": 0,
+            "dy": 0,
+            "width": 170.922,
+            "height": 104,
+            "group": {
+              "class": "cluster",
+              "data-look": "classic"
+            },
+            "rect": {
+              "x": -85.461,
+              "y": -52,
+              "width": 170.922,
+              "height": 104
+            },
+            "rectAttributes": {
+              "style": "",
+              "x": "28",
+              "y": "137",
+              "width": "170.921875",
+              "height": "104"
+            },
+            "rectComputed": {
+              "fill": "rgb(255, 255, 222)",
+              "stroke": "rgb(170, 170, 51)",
+              "stroke-width": "1px",
+              "stroke-dasharray": "none"
+            },
+            "label": {
+              "x": -18.57,
+              "y": -50,
+              "width": 37.141,
+              "height": 17,
+              "attributes": {
+                "class": "cluster-label",
+                "transform": "translate(94.890625, 137)"
+              },
+              "computed": {
+                "color": "rgb(0, 0, 0)",
+                "fill": "rgb(51, 51, 51)",
+                "font-family": "Arial",
+                "font-size": "16px",
+                "font-weight": "400"
+              },
+              "lines": [
+                {
+                  "text": "Inner",
+                  "width": 36.469,
+                  "height": 17,
+                  "baseline": 14,
+                  "ascent": 14,
+                  "descent": 3,
+                  "runs": [
+                    {
+                      "start": 0,
+                      "length": 5,
+                      "x": 0,
+                      "width": 36.469,
+                      "rtl": false,
+                      "math": false,
+                      "fontFamily": "Arial"
+                    }
+                  ]
+                }
+              ],
+              "structure": {
+                "tag": "g",
+                "class": "cluster-label",
+                "children": [
+                  {
+                    "tag": "g",
+                    "class": ""
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
     }
   ]
 }

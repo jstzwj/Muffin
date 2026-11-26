@@ -142,6 +142,12 @@ QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type
   if (type == QLatin1String("stateStart") || type == QLatin1String("stateEnd")) {
     return intersectEllipse(node, node.width / 2.0, node.width / 2.0, point);
   }
+  // A state's choice meets a transition on its diamond through
+  // intersect.polygon(), which keeps intersectLine's half-pixel bias (the
+  // flowchart diamond is the one handler that takes it back out below).
+  if (type == QLatin1String("choice"))
+    return intersectPolygon(node, flowShapePolygonPoints(QStringLiteral("diamond"), node.width, node.height, look),
+                            point);
   const QString ctype = canonicalShape(type);
   if (ctype == QLatin1String("circle") || ctype == QLatin1String("double_circle") ||
       ctype == QLatin1String("filled_circle") || ctype == QLatin1String("crossed_circle") ||

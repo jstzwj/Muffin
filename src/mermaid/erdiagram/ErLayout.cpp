@@ -325,6 +325,10 @@ muffin::mermaid::er::layoutErDiagramDagre(const ErLayoutInput& input, const ErLa
   options.rankSpacing = rankSpacing;
   options.nodePadding = 8.0;
   options.measuredEdgeLabels = measurements.relationships;
+  // A relationship from an entity to itself is drawn as three paths, and its
+  // label sits where Dagre put the middle one's.
+  options.repositionEdgeLabels = false;
+  options.selfLoopLabelOnMiddlePath = true;
   const flowchart::FlowLayoutResult placed =
       flowchart::layoutFlowchartNodesDagre(projected, measurements.entities, options);
   // FlowLayoutNode.x/y are the node CENTER (per FlowchartLayout.h, and as

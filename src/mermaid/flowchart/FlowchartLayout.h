@@ -65,6 +65,9 @@ struct FlowLayoutEdge {
   // nodes; these are their centres, in output coordinates. Mermaid leaves the
   // marks in the canvas, so a consumer that bounds the canvas includes them.
   QVector<QPointF> loopMarks;
+  // The path was cut where it enters or leaves a cluster's box: its label
+  // follows the cut path, wherever Dagre put it.
+  bool cutAtCluster = false;
 };
 
 struct FlowEdgeLabelLayout {
@@ -84,6 +87,8 @@ struct FlowLayoutCluster {
   qreal titleTopMargin = 0.0;
   qreal logicalWidth = 0.0;
   qreal logicalHeight = 0.0;
+  // Dagre's width of the cluster's box, before its title widened it.
+  qreal dagreWidth = 0.0;
 };
 
 struct FlowLayoutResult {
@@ -91,6 +96,14 @@ struct FlowLayoutResult {
   QVector<FlowLayoutEdge> edges;
   QVector<FlowLayoutCluster> clusters;
 };
+
+// positionEdgeLabel(): a label stays where Dagre put it while the rounded x or
+// y of the middle of the edge's points reads off the path's data, every number
+// rounded likewise; otherwise, and always for a path that was cut at a
+// cluster (`updated`), it goes to the point half way along the points. `path`
+// is the path drawn from the points.
+QPointF positionEdgeLabel(const QVector<QPointF>& points, const QString& path, const QPointF& placed,
+                          bool updated = false);
 
 struct FlowLayoutOptions {
   qreal nodeSpacing = 50.0;
@@ -102,6 +115,15 @@ struct FlowLayoutOptions {
   qreal subGraphTitleTopMargin = 0.0;
   qreal subGraphTitleBottomMargin = 0.0;
   qreal diagramPadding = 0.0;
+  // The padding a cluster node carries into insertCluster(): a title wider
+  // than Dagre's box minus it widens the box to title + padding, and it is
+  // what positionNode() shifts a rendered cluster's child group by.
+  qreal clusterPadding = 8.0;
+  // positionEdgeLabel() runs over every path a family draws; a family that
+  // splits a loop into paths of its own (class) runs it itself, and keeps a
+  // loop's label where Dagre put the middle path's.
+  bool repositionEdgeLabels = true;
+  bool selfLoopLabelOnMiddlePath = false;
   FlowLook look = FlowLook::Classic;
   QMap<QString, QSizeF> measuredEdgeLabels;
   QMap<QString, FlowEdgeLabelLayout> preparedEdgeLabels;
