@@ -109,7 +109,8 @@ void testRealThemeBrowserGeometry() {
     };
     compare();
     const auto id = nodes[0]->id();
-    require(session.applyTextEdit(2, 0, "Edited ", {{id, 2, BlockType::Heading}}) != muffin::TextEditResult::Rejected, context + " edit");
+    require(session.applyTextEdit(2, 0, "Edited ", {{id, 2, BlockType::Heading}}) != muffin::TextEditResult::Rejected,
+            context + " edit");
     const auto range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
       layout.rebuildTopLevelRange(range, session.document(), theme, {});

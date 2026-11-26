@@ -79,10 +79,10 @@ inline qreal worstPixelDifference(const QImage& a, const QImage& b) {
       const QColor x1 = a.pixelColor(x, y), x2 = b.pixelColor(x, y);
       if (x1.alpha() < kInkAlpha && x2.alpha() < kInkAlpha)
         continue;
-      for (const int distance : {std::abs(premul(x1.red(), x1.alpha()) - premul(x2.red(), x2.alpha())),
-                                 std::abs(premul(x1.green(), x1.alpha()) - premul(x2.green(), x2.alpha())),
-                                 std::abs(premul(x1.blue(), x1.alpha()) - premul(x2.blue(), x2.alpha())),
-                                 std::abs(x1.alpha() - x2.alpha())})
+      for (const int distance :
+           {std::abs(premul(x1.red(), x1.alpha()) - premul(x2.red(), x2.alpha())),
+            std::abs(premul(x1.green(), x1.alpha()) - premul(x2.green(), x2.alpha())),
+            std::abs(premul(x1.blue(), x1.alpha()) - premul(x2.blue(), x2.alpha())), std::abs(x1.alpha() - x2.alpha())})
         worst = qMax(worst, distance);
     }
   }
@@ -128,11 +128,11 @@ inline QImage decodeDataUrl(const QString& url) {
 }
 
 struct Measures {
-  qreal iou = 0.0;    // the overlap of the ink of both images
-  qreal rgba = 0.0;   // the mean color similarity over the ink
-  qreal worst = 0.0;  // the largest per-pixel channel distance over the ink
-  qreal tile = 1.0;   // the mean color similarity of the worst 32 px tile
-  qreal area = 0.0;   // the largest area difference of a dominant color
+  qreal iou = 0.0;   // the overlap of the ink of both images
+  qreal rgba = 0.0;  // the mean color similarity over the ink
+  qreal worst = 0.0; // the largest per-pixel channel distance over the ink
+  qreal tile = 1.0;  // the mean color similarity of the worst 32 px tile
+  qreal area = 0.0;  // the largest area difference of a dominant color
 };
 
 QHash<QRgb, long long> colorCounts(const QImage& image) {

@@ -15,9 +15,12 @@ enum class RailroadErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(RailroadErrorKind kind) {
   switch (kind) {
-  case RailroadErrorKind::Lexer: return u"lexer";
-  case RailroadErrorKind::Parser: return u"parse";
-  case RailroadErrorKind::Runtime: return u"runtime";
+  case RailroadErrorKind::Lexer:
+    return u"lexer";
+  case RailroadErrorKind::Parser:
+    return u"parse";
+  case RailroadErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

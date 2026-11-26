@@ -13,9 +13,12 @@ enum class CynefinErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(CynefinErrorKind kind) {
   switch (kind) {
-  case CynefinErrorKind::Lexer: return u"lexer";
-  case CynefinErrorKind::Parser: return u"parse";
-  case CynefinErrorKind::Runtime: return u"runtime";
+  case CynefinErrorKind::Lexer:
+    return u"lexer";
+  case CynefinErrorKind::Parser:
+    return u"parse";
+  case CynefinErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

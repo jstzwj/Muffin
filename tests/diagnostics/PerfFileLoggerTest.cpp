@@ -71,8 +71,8 @@ inline int duplicate(int descriptor) {
 inline int openForWriting(const QString& path) {
 #if defined(Q_OS_WIN)
   int descriptor = -1;
-  if (_wsopen_s(&descriptor, reinterpret_cast<const wchar_t*>(path.utf16()),
-                _O_WRONLY | _O_CREAT | _O_TRUNC | _O_TEXT, _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0)
+  if (_wsopen_s(&descriptor, reinterpret_cast<const wchar_t*>(path.utf16()), _O_WRONLY | _O_CREAT | _O_TRUNC | _O_TEXT,
+                _SH_DENYNO, _S_IREAD | _S_IWRITE) != 0)
     return -1;
   return descriptor;
 #else

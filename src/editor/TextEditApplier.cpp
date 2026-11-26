@@ -121,11 +121,10 @@ EditOutcome applyEdit(EditorContext& ctx, TextEdit edit, const EditOptions& opti
       transaction = options.undoRecord(outcome);
     } else if (result == TextEditResult::AppliedLocally && !options.snapshotUndo && beforeCursor.isValid() &&
                outcome.cursor.isValid()) {
-      transaction = EditTransaction(options.kind, options.label,
-                                    TextDeltaCommand{TextDelta{edit.sourceStart, outcome.removedText, insertedText},
-                                                     beforeCursor, outcome.cursor,
-                                                     QVector<NodeId>{layoutBlockOf(session->document(),
-                                                                                  outcome.cursor.blockId)}});
+      transaction = EditTransaction(
+          options.kind, options.label,
+          TextDeltaCommand{TextDelta{edit.sourceStart, outcome.removedText, insertedText}, beforeCursor, outcome.cursor,
+                           QVector<NodeId>{layoutBlockOf(session->document(), outcome.cursor.blockId)}});
     } else {
       // The text before the edit is the text after it with the replacement undone: only the edit
       // itself changes the text, whichever way the session applied it.
@@ -134,10 +133,9 @@ EditOutcome applyEdit(EditorContext& ctx, TextEdit edit, const EditOptions& opti
         beforeText = session->markdownText().toString();
         beforeText.replace(edit.sourceStart, insertedText.size(), outcome.removedText);
       }
-      transaction = EditTransaction(options.kind, options.label,
-                                    DocumentSnapshot{beforeText, beforeCursor, markersBefore},
-                                    DocumentSnapshot{session->markdownText().toString(), outcome.cursor,
-                                                     session->pendingMarkerOffsets()});
+      transaction = EditTransaction(
+          options.kind, options.label, DocumentSnapshot{beforeText, beforeCursor, markersBefore},
+          DocumentSnapshot{session->markdownText().toString(), outcome.cursor, session->pendingMarkerOffsets()});
     }
     transaction.setBeforeSelection(beforeSelection);
     ctx.undoStack->push(std::move(transaction));

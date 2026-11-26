@@ -259,9 +259,9 @@ FlowLabelDocument wrapSvgText(const FlowLabelDocument& label, const QString& fon
 // again, by Skia's own fixed-point scale. nullopt where a run cannot be
 // shaped over its font's tables.
 struct SvgTextLayout {
-  QRectF box;                // the whole text, from the start of its first line
-  QVector<QRectF> lines;     // each line's own box, at its place among the lines
-  QVector<qreal> lineCells;  // each line's advance cell
+  QRectF box;               // the whole text, from the start of its first line
+  QVector<QRectF> lines;    // each line's own box, at its place among the lines
+  QVector<qreal> lineCells; // each line's advance cell
 };
 std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const QString& fontFamily,
                                            qreal fontPixelSize);

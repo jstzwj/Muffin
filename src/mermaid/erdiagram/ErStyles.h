@@ -13,7 +13,7 @@ namespace muffin::mermaid::er {
 // What styles an erDiagram's document besides the diagram itself.
 struct ErStyleInput {
   flowtheme::FlowThemeVariables theme;
-  QString fontFamily; // the theme's, as its stylesheet names it
+  QString fontFamily;                       // the theme's, as its stylesheet names it
   QString look = QStringLiteral("classic"); // classic, neo or handDrawn
   QString themeCss;
   QVector<style::ClassDef> classDefs;
@@ -66,7 +66,7 @@ ErDocumentStyle resolveErDocumentStyle(const ErLayoutInput& layout, const ErStyl
 // themeCSS with `!important` still overrides it, which is why the lines are
 // resolved again with it rather than written over their paint. Under any
 // other look there is nothing to do.
-void resolveErLineDashes(ErDocumentStyle& document, const ErLayoutInput& layout,
-                         const ErPlacementResult& placement, const ErStyleInput& input);
+void resolveErLineDashes(ErDocumentStyle& document, const ErLayoutInput& layout, const ErPlacementResult& placement,
+                         const ErStyleInput& input);
 
 } // namespace muffin::mermaid::er

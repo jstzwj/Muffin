@@ -25,7 +25,9 @@ namespace {
 
 // Whether a configuration value is there: absent and null both leave a key
 // unset to Mermaid.
-bool isSet(const QJsonValue& value) { return !value.isUndefined() && !value.isNull(); }
+bool isSet(const QJsonValue& value) {
+  return !value.isUndefined() && !value.isNull();
+}
 
 // erDiagram behind the Diagram contract.
 struct ErDiagramImpl : Diagram {
@@ -72,8 +74,9 @@ struct ErDiagramImpl : Diagram {
     // the flowchart one Mermaid once shared with every diagram.
     const QJsonValue rootHtmlLabels = pre.config.value(QStringLiteral("htmlLabels"));
     const QJsonValue relationshipHtmlLabels =
-        isSet(rootHtmlLabels) ? rootHtmlLabels
-                              : pre.config.value(QStringLiteral("flowchart")).toObject().value(QStringLiteral("htmlLabels"));
+        isSet(rootHtmlLabels)
+            ? rootHtmlLabels
+            : pre.config.value(QStringLiteral("flowchart")).toObject().value(QStringLiteral("htmlLabels"));
     styleInput.htmlLabels = !isSet(rootHtmlLabels) || truthyConfigValue(rootHtmlLabels);
     styleInput.relationshipHtmlLabels = !isSet(relationshipHtmlLabels) || truthyConfigValue(relationshipHtmlLabels);
 

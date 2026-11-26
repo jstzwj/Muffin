@@ -59,8 +59,9 @@ void require(bool condition, const QString& message) {
 
 QRectF toRect(const QJsonValue& value) {
   const QJsonObject object = value.toObject();
-  return QRectF(QPointF(object.value(QStringLiteral("x")).toDouble(), object.value(QStringLiteral("y")).toDouble()),
-               QSizeF(object.value(QStringLiteral("width")).toDouble(), object.value(QStringLiteral("height")).toDouble()));
+  return QRectF(
+      QPointF(object.value(QStringLiteral("x")).toDouble(), object.value(QStringLiteral("y")).toDouble()),
+      QSizeF(object.value(QStringLiteral("width")).toDouble(), object.value(QStringLiteral("height")).toDouble()));
 }
 
 bool near(const qreal* actual, const QJsonObject& reference, const char* const* keys) {
@@ -77,7 +78,7 @@ void compareRect(QStringList& out, const QRectF& actual, const QJsonValue& expec
   if (expected.isNull()) {
     if (!actual.isNull())
       out << QStringLiteral("%1: native %2x%3, expected none")
-             .arg(path, QString::number(actual.width()), QString::number(actual.height()));
+                 .arg(path, QString::number(actual.width()), QString::number(actual.height()));
     return;
   }
   const QRectF native = actual.translated(-origin);
@@ -105,12 +106,13 @@ void compareText(QStringList& out, const QJsonValue& actual, const QJsonValue& e
 // A color as Chrome computes it, rgb(r, g, b) or rgba(r, g, b, a); invalid
 // where there is none.
 QColor computedColor(const QString& value) {
-  static const QRegularExpression rgba(QStringLiteral("rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)(?:\\s*,\\s*([\\d.]+))?"));
+  static const QRegularExpression rgba(
+      QStringLiteral("rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)(?:\\s*,\\s*([\\d.]+))?"));
   const auto match = rgba.match(value);
   if (!match.hasMatch())
     return {};
-  QColor color = QColor::fromRgb(match.capturedView(1).toInt(), match.capturedView(2).toInt(),
-                                 match.capturedView(3).toInt());
+  QColor color =
+      QColor::fromRgb(match.capturedView(1).toInt(), match.capturedView(2).toInt(), match.capturedView(3).toInt());
   if (match.lastCapturedIndex() >= 4 && !match.capturedView(4).isEmpty())
     color.setAlphaF(match.capturedView(4).toDouble());
   return color;
@@ -131,7 +133,8 @@ void compareRgba(QStringList& out, const QColor& native, const QJsonValue& expec
 
 // A paint the native scene resolved: none where it is empty or `none`.
 QColor nativeColor(const QString& value) {
-  if (value.isEmpty() || value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0 || !color::isParsableColor(value))
+  if (value.isEmpty() || value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0 ||
+      !color::isParsableColor(value))
     return {};
   return color::toQColor(value);
 }
@@ -154,8 +157,8 @@ void compareColor(QStringList& out, const QString& native, const QJsonValue& exp
   }
   if (reference.isValid() != actual.isValid() || (reference.isValid() && reference.rgb() != actual.rgb()))
     out << QStringLiteral("%1: native %2, expected %3")
-             .arg(path, actual.isValid() ? actual.name(QColor::HexRgb) : QStringLiteral("none"),
-                  reference.isValid() ? reference.name(QColor::HexRgb) : QStringLiteral("none"));
+               .arg(path, actual.isValid() ? actual.name(QColor::HexRgb) : QStringLiteral("none"),
+                    reference.isValid() ? reference.name(QColor::HexRgb) : QStringLiteral("none"));
 }
 
 // The lengths of a stroke-dasharray, as Chrome computes them or as the scene
@@ -259,8 +262,8 @@ void compareEntity(QStringList& out, const QJsonObject& native, const QJsonObjec
     const QJsonObject nativeRow = nativeRows.at(row).toObject();
     const QJsonObject referenceRow = referenceRows.at(row).toObject();
     const QString rowPrefix = prefix + QStringLiteral("/row/%1").arg(row);
-    compareRect(out, toRect(nativeRow.value(QStringLiteral("rect"))), referenceRow.value(QStringLiteral("rect")), centre,
-                rowPrefix);
+    compareRect(out, toRect(nativeRow.value(QStringLiteral("rect"))), referenceRow.value(QStringLiteral("rect")),
+                centre, rowPrefix);
     for (const char* cell : {"type", "name", "keys", "comment"})
       compareText(out, nativeRow.value(QLatin1String(cell)), referenceRow.value(QLatin1String(cell)), centre,
                   rowPrefix + QLatin1Char('/') + QLatin1String(cell));
@@ -288,9 +291,8 @@ void compareEntity(QStringList& out, const QJsonObject& native, const QJsonObjec
                                   referenceDividers.at(i).toObject().value(QStringLiteral("x2")).toDouble(),
                                   referenceDividers.at(i).toObject().value(QStringLiteral("y2")).toDouble()};
     const bool again =
-        std::any_of(referenceDividers.cbegin(), referenceDividers.cbegin() + i, [&](const QJsonValue& earlier) {
-          return near(coordinates, earlier.toObject(), keys);
-        });
+        std::any_of(referenceDividers.cbegin(), referenceDividers.cbegin() + i,
+                    [&](const QJsonValue& earlier) { return near(coordinates, earlier.toObject(), keys); });
     if (!again)
       ++distinct;
   }
@@ -304,12 +306,13 @@ void compareEntity(QStringList& out, const QJsonObject& native, const QJsonObjec
                                   line.value(QStringLiteral("x2")).toDouble() - centre.x(),
                                   line.value(QStringLiteral("y2")).toDouble() - centre.y()};
     qsizetype match = 0;
-    while (match < referenceDividers.size() && (drawn.at(match) || !near(coordinates, referenceDividers.at(match).toObject(), keys)))
+    while (match < referenceDividers.size() &&
+           (drawn.at(match) || !near(coordinates, referenceDividers.at(match).toObject(), keys)))
       ++match;
     if (match == referenceDividers.size())
       out << prefix + QStringLiteral("/divider: native (%1,%2)-(%3,%4) is not drawn upstream")
-                 .arg(QString::number(coordinates[0]), QString::number(coordinates[1]), QString::number(coordinates[2]),
-                      QString::number(coordinates[3]));
+                          .arg(QString::number(coordinates[0]), QString::number(coordinates[1]),
+                               QString::number(coordinates[2]), QString::number(coordinates[3]));
     else
       drawn[match] = true;
   }
@@ -325,7 +328,6 @@ void compareEntity(QStringList& out, const QJsonObject& native, const QJsonObjec
               reference.value(QStringLiteral("strokeDasharray")), prefix + QStringLiteral("/strokeDasharray"));
   compareColor(out, native.value(QStringLiteral("textColor")).toString(), reference.value(QStringLiteral("textColor")),
                prefix + QStringLiteral("/textColor"));
-
 }
 
 // The entities, each by its place in the diagram.
@@ -417,13 +419,16 @@ void compareRelationships(QStringList& out, const QJsonObject& actual, const QJs
     nativeIds.removeAll(key);
     const QJsonObject mine = nativeById.value(key);
     if (cardinality(mine, QStringLiteral("cardA")) != cardinality(upstream, QStringLiteral("cardA")))
-      out << prefix + QStringLiteral("/cardA: native '%1', expected '%2'")
-                 .arg(cardinality(mine, QStringLiteral("cardA")), cardinality(upstream, QStringLiteral("cardA")));
+      out << prefix +
+                 QStringLiteral("/cardA: native '%1', expected '%2'")
+                     .arg(cardinality(mine, QStringLiteral("cardA")), cardinality(upstream, QStringLiteral("cardA")));
     if (cardinality(mine, QStringLiteral("cardB")) != cardinality(upstream, QStringLiteral("cardB")))
-      out << prefix + QStringLiteral("/cardB: native '%1', expected '%2'")
-                 .arg(cardinality(mine, QStringLiteral("cardB")), cardinality(upstream, QStringLiteral("cardB")));
-    out += parity::comparePath(mine.value(QStringLiteral("path")).toString(), upstream.value(QStringLiteral("path")).toString(),
-                               kTier, prefix + QStringLiteral("/path"));
+      out << prefix +
+                 QStringLiteral("/cardB: native '%1', expected '%2'")
+                     .arg(cardinality(mine, QStringLiteral("cardB")), cardinality(upstream, QStringLiteral("cardB")));
+    out +=
+        parity::comparePath(mine.value(QStringLiteral("path")).toString(),
+                            upstream.value(QStringLiteral("path")).toString(), kTier, prefix + QStringLiteral("/path"));
     // The line's paint is its own; the fixture records what Chrome computed.
     compareDash(out, mine.value(QStringLiteral("strokeDasharray")).toString(),
                 upstream.value(QStringLiteral("strokeDasharray")), prefix + QStringLiteral("/strokeDasharray"));
@@ -437,9 +442,10 @@ void compareRelationships(QStringList& out, const QJsonObject& actual, const QJs
     const QJsonValue label = upstream.value(QStringLiteral("label"));
     const bool nativeHasLabel = mine.contains(QStringLiteral("label"));
     if (label.isNull() == nativeHasLabel) {
-      out << prefix + (label.isNull() ? QStringLiteral(": native label '%1', expected none").arg(mine.value(QStringLiteral("label")).toString())
-                                       : QStringLiteral(": label '%1' is missing natively")
-                                             .arg(label.toObject().value(QStringLiteral("text")).toString()));
+      out << prefix + (label.isNull() ? QStringLiteral(": native label '%1', expected none")
+                                            .arg(mine.value(QStringLiteral("label")).toString())
+                                      : QStringLiteral(": label '%1' is missing natively")
+                                            .arg(label.toObject().value(QStringLiteral("text")).toString()));
     } else if (!label.isNull()) {
       // An SVG label's lines are elements of their own: the text has no
       // space where one ends.
@@ -447,14 +453,14 @@ void compareRelationships(QStringList& out, const QJsonObject& actual, const QJs
       if (mine.value(QStringLiteral("label")).toString().remove(QRegularExpression(spaces)) !=
           label.toObject().value(QStringLiteral("text")).toString().remove(QRegularExpression(spaces)))
         out << prefix + QStringLiteral("/label: native '%1', expected '%2'")
-                   .arg(mine.value(QStringLiteral("label")).toString(),
-                        label.toObject().value(QStringLiteral("text")).toString());
-      compareRect(out, toRect(mine.value(QStringLiteral("labelRect"))), label.toObject().value(QStringLiteral("rect")), QPointF(),
-                  prefix + QStringLiteral("/label"));
+                            .arg(mine.value(QStringLiteral("label")).toString(),
+                                 label.toObject().value(QStringLiteral("text")).toString());
+      compareRect(out, toRect(mine.value(QStringLiteral("labelRect"))), label.toObject().value(QStringLiteral("rect")),
+                  QPointF(), prefix + QStringLiteral("/label"));
       compareColor(out, mine.value(QStringLiteral("labelTextColor")).toString(),
                    label.toObject().value(QStringLiteral("textColor")), prefix + QStringLiteral("/label/textColor"));
       compareRgba(out, QColor(mine.value(QStringLiteral("labelBackground")).toString()),
-                 label.toObject().value(QStringLiteral("background")), prefix + QStringLiteral("/label/background"));
+                  label.toObject().value(QStringLiteral("background")), prefix + QStringLiteral("/label/background"));
     }
   }
   for (const QString& extra : nativeIds)
@@ -526,8 +532,8 @@ int main(int argc, char** argv) {
     const qreal padding = entry.metadata.diagramPadding;
     divergences += parity::compareNumber(bounds.width(), canvas.value(QStringLiteral("diagramWidth")).toDouble(), kTier,
                                          id + QStringLiteral("/canvas/width"));
-    divergences += parity::compareNumber(bounds.height(), canvas.value(QStringLiteral("diagramHeight")).toDouble(), kTier,
-                                         id + QStringLiteral("/canvas/height"));
+    divergences += parity::compareNumber(bounds.height(), canvas.value(QStringLiteral("diagramHeight")).toDouble(),
+                                         kTier, id + QStringLiteral("/canvas/height"));
     // The image is naturalSize, which the generic canvas has already padded.
     const QSize raster = entry.naturalSize;
     const QSize rule = er::erRasterExtent(bounds, padding);
@@ -540,7 +546,8 @@ int main(int argc, char** argv) {
                          .arg(rule.height());
     if (viewBox.size() == 4) {
       // The browser's image, from the viewBox it recorded.
-      const QRectF drawing(QPointF(), QSizeF(viewBox.at(2).toDouble() - 2 * padding, viewBox.at(3).toDouble() - 2 * padding));
+      const QRectF drawing(QPointF(),
+                           QSizeF(viewBox.at(2).toDouble() - 2 * padding, viewBox.at(3).toDouble() - 2 * padding));
       const QSize browser = er::erRasterExtent(drawing, padding);
       if (raster != browser)
         divergences << QStringLiteral("%1/canvas/viewBox: native %2x%3, browser %4x%5")
@@ -569,7 +576,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   if (openCases > 0)
-    std::printf("MermaidErGeometryOracleTest: %lld case(s) listed as open divergences\n", static_cast<long long>(openCases));
+    std::printf("MermaidErGeometryOracleTest: %lld case(s) listed as open divergences\n",
+                static_cast<long long>(openCases));
   std::printf("MermaidErGeometryOracleTest passed: %lld cases, every table, path, label and canvas within %0.2f px\n",
               static_cast<long long>(cases.size()), kGeometry);
   return 0;

@@ -249,7 +249,8 @@ void testFrontMatterRootRangeAfterLocalEdit() {
   session.setMarkdownText(QStringLiteral("---\ntitle: Example\n---\n\nbody paragraph\n\nlast line\n"), false);
   const qsizetype body = session.markdownText().indexOf(QStringView(u"body"));
   require(body >= 0, "front-matter sample should contain body text");
-  require(session.applyTextEdit(body + 4, 0, QStringLiteral(" edited")) != muffin::TextEditResult::Rejected, "front-matter body edit should apply");
+  require(session.applyTextEdit(body + 4, 0, QStringLiteral(" edited")) != muffin::TextEditResult::Rejected,
+          "front-matter body edit should apply");
   require(session.lastParseWasLocalEdit(), "front-matter body edit should remain local");
   QString err;
   const bool matches = documentMatchesFreshParse(session, err);
@@ -304,13 +305,13 @@ void testSeparatorEditsMatchFullParse() {
               ++failures;
             } else {
               const QString inverse = original.mid(start, removed);
-              const bool restored = session.applyTextEdit(start, replacement.size(), inverse) != muffin::TextEditResult::Rejected &&
-                                    session.markdownText().toString() == original &&
-                                    documentMatchesFreshParse(session, error);
+              const bool restored =
+                  session.applyTextEdit(start, replacement.size(), inverse) != muffin::TextEditResult::Rejected &&
+                  session.markdownText().toString() == original && documentMatchesFreshParse(session, error);
               require(restored, QStringLiteral("separator inverse edit: %1").arg(error));
-              const bool replayed = session.applyTextEdit(start, removed, replacement) != muffin::TextEditResult::Rejected &&
-                                    session.markdownText().toString() == expected &&
-                                    documentMatchesFreshParse(session, error);
+              const bool replayed =
+                  session.applyTextEdit(start, removed, replacement) != muffin::TextEditResult::Rejected &&
+                  session.markdownText().toString() == expected && documentMatchesFreshParse(session, error);
               require(replayed, QStringLiteral("separator replayed edit: %1").arg(error));
             }
           }

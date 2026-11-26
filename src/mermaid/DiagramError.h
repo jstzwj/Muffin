@@ -49,8 +49,7 @@ public:
 
 // The name of a failure kind inside a diagnostic code: "<diagram>-<name>-error", such as
 // "gantt-lexer-error". Each family names its own kinds with an overload of kindName.
-template <typename Kind>
-QString kindErrorCode(QStringView diagram, Kind kind) {
+template <typename Kind> QString kindErrorCode(QStringView diagram, Kind kind) {
   return QString(diagram) + QLatin1Char('-') + QString(kindName(kind)) + QStringLiteral("-error");
 }
 

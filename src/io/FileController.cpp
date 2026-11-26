@@ -574,43 +574,46 @@ bool muffin::FileController::writeTextFile(const QString& path, const QString& t
   bool encodable = true;
   // AtomicWrite opens the file before `writer` runs and renames it over `path`
   // after, waiting out the system's refusal of either.
-  const auto result = AtomicWrite::write(path, [&](QSaveFile& file) {
-    QString content = text;
+  const auto result = AtomicWrite::write(
+      path,
+      [&](QSaveFile& file) {
+        QString content = text;
 
-    if (format.ensureTrailingNewline) {
-      if (!content.isEmpty() && !content.endsWith(QLatin1Char('\n'))) {
-        content += QLatin1Char('\n');
-      }
-    }
+        if (format.ensureTrailingNewline) {
+          if (!content.isEmpty() && !content.endsWith(QLatin1Char('\n'))) {
+            content += QLatin1Char('\n');
+          }
+        }
 
-    // Apply line endings (internal text is always LF)
-    if (normalizedText) {
-      *normalizedText = content;
-    }
+        // Apply line endings (internal text is always LF)
+        if (normalizedText) {
+          *normalizedText = content;
+        }
 
-    QString diskText = content;
-    if (format.lineEnding == TextLineEnding::Crlf) {
-      diskText.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));
-    } else if (format.lineEnding == TextLineEnding::Cr) {
-      diskText.replace(QLatin1Char('\n'), QLatin1Char('\r'));
-    }
+        QString diskText = content;
+        if (format.lineEnding == TextLineEnding::Crlf) {
+          diskText.replace(QLatin1Char('\n'), QStringLiteral("\r\n"));
+        } else if (format.lineEnding == TextLineEnding::Cr) {
+          diskText.replace(QLatin1Char('\n'), QLatin1Char('\r'));
+        }
 
-    QByteArray encoded;
-    if (format.encodingName.compare(QStringLiteral("UTF-8"), Qt::CaseInsensitive) == 0) {
-      encoded = diskText.toUtf8();
-    } else if (!encodeLegacyText(diskText, format.encodingName, &encoded)) {
-      encodable = false;
-      return false;
-    }
-    if (format.writeBom) {
-      encoded.prepend(bomForEncoding(format.encodingName));
-    }
-    if (file.write(encoded) != encoded.size()) {
-      error = file.errorString();
-      return false;
-    }
-    return true;
-  }, &error);
+        QByteArray encoded;
+        if (format.encodingName.compare(QStringLiteral("UTF-8"), Qt::CaseInsensitive) == 0) {
+          encoded = diskText.toUtf8();
+        } else if (!encodeLegacyText(diskText, format.encodingName, &encoded)) {
+          encodable = false;
+          return false;
+        }
+        if (format.writeBom) {
+          encoded.prepend(bomForEncoding(format.encodingName));
+        }
+        if (file.write(encoded) != encoded.size()) {
+          error = file.errorString();
+          return false;
+        }
+        return true;
+      },
+      &error);
   if (!encodable) {
     QMessageBox::critical(parent, tr("Encoding Error"),
                           tr("The document cannot be encoded as %1.").arg(format.encodingName));

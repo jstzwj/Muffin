@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
       const auto start = node->sourceRange().byteStart;
       for (bool insert : {true, false}) {
         check(document.applyTextEdit(start, insert ? 0 : 14, insert ? QString("Inserted text ") : QString(),
-                                      {{nodeId, start, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
+                                     {{nodeId, start, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
               id + " typing/deletion");
         const auto range = document.lastLocalTopLevelRangeChange();
         if (range.isValid())

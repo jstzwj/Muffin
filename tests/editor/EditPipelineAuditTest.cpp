@@ -84,10 +84,7 @@ void testOnlyTheEditorChangesTheText() {
         if (permitted == QStringLiteral("*") || permitted.split(QLatin1Char('|')).contains(function)) {
           continue;
         }
-        offenders << QStringLiteral("%1:%2 calls %3")
-                         .arg(relative)
-                         .arg(index + 1)
-                         .arg(function);
+        offenders << QStringLiteral("%1:%2 calls %3").arg(relative).arg(index + 1).arg(function);
       }
     }
   }
@@ -96,10 +93,9 @@ void testOnlyTheEditorChangesTheText() {
   for (const QString& offender : offenders) {
     qCritical().noquote() << offender;
   }
-  require(offenders.isEmpty(),
-          QStringLiteral("%1 caller(s) change the text outside the editor; route them through "
-                         "applyEdit or RenderCommandFacade::replaceSourceRange")
-              .arg(offenders.size()));
+  require(offenders.isEmpty(), QStringLiteral("%1 caller(s) change the text outside the editor; route them through "
+                                              "applyEdit or RenderCommandFacade::replaceSourceRange")
+                                   .arg(offenders.size()));
 }
 
 int main(int argc, char** argv) {

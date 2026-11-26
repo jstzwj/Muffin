@@ -37,8 +37,10 @@ QJsonObject rectJson(const QRectF& rect) {
 }
 
 QJsonObject lineJson(const QLineF& line) {
-  return {{QStringLiteral("x1"), r3(line.x1())}, {QStringLiteral("y1"), r3(line.y1())},
-          {QStringLiteral("x2"), r3(line.x2())}, {QStringLiteral("y2"), r3(line.y2())}};
+  return {{QStringLiteral("x1"), r3(line.x1())},
+          {QStringLiteral("y1"), r3(line.y1())},
+          {QStringLiteral("x2"), r3(line.x2())},
+          {QStringLiteral("y2"), r3(line.y2())}};
 }
 
 QJsonValue textJson(const er::ErSceneText& text) {
@@ -229,8 +231,7 @@ er::ErSceneEntity buildEntity(const er::ErPlacementEntity& placed, const er::ErL
   }
   const qreal x0 = centre.x() - width / 2.0;
   const qreal y0 = centre.y() - height / 2.0;
-  const auto drawText = [&](const er::ErTextMetrics& metrics, const QPointF& origin,
-                            const er::ErTextStyle& style) {
+  const auto drawText = [&](const er::ErTextMetrics& metrics, const QPointF& origin, const er::ErTextStyle& style) {
     er::ErSceneText result = text(metrics, origin, sceneStyle.htmlLabels);
     result.style = style;
     return result;
@@ -260,8 +261,8 @@ er::ErSceneEntity buildEntity(const er::ErPlacementEntity& placed, const er::ErL
     if (entity.rough) {
       // rough.js draws the row about the rectangle's own centre.
       const QRectF local(localX, table.nameHeight + localY + metrics.top, width, metrics.height);
-      entity.rough->rows.append(er::roughTranslated(
-          er::roughRectangle(local, odd ? rough->oddRows : rough->evenRows), centre));
+      entity.rough->rows.append(
+          er::roughTranslated(er::roughRectangle(local, odd ? rough->oddRows : rough->evenRows), centre));
       row.rect = entity.rough->rows.last().bounds;
     } else {
       row.rect = QRectF(x0, top, width, metrics.height);
@@ -276,8 +277,8 @@ er::ErSceneEntity buildEntity(const er::ErPlacementEntity& placed, const er::ErL
     row.name = drawText(metrics.name, QPointF(textLeft[1], textTop),
                         styleOf(er::ErTextKind::AttributeName, metrics.name.style));
     row.keys = drawText(metrics.keys, QPointF(textLeft[2], textTop), styleOf(er::ErTextKind::Keys, metrics.keys.style));
-    row.comment =
-        drawText(metrics.comment, QPointF(textLeft[3], textTop), styleOf(er::ErTextKind::Comment, metrics.comment.style));
+    row.comment = drawText(metrics.comment, QPointF(textLeft[3], textTop),
+                           styleOf(er::ErTextKind::Comment, metrics.comment.style));
     entity.rows.append(std::move(row));
   }
 
@@ -288,9 +289,8 @@ er::ErSceneEntity buildEntity(const er::ErPlacementEntity& placed, const er::ErL
   const qreal dividerTop = table.nameHeight + localY;
   const qreal columns[3] = {table.typeWidth, table.typeWidth + table.nameWidth,
                             table.typeWidth + table.nameWidth + table.keysWidth};
-  QVector<QLineF> lines{
-      QLineF(localX, dividerTop, localX + width, dividerTop),
-      QLineF(localX + columns[0], dividerTop, localX + columns[0], localBottom)};
+  QVector<QLineF> lines{QLineF(localX, dividerTop, localX + width, dividerTop),
+                        QLineF(localX + columns[0], dividerTop, localX + columns[0], localBottom)};
   if (table.keysWidth > 0.0)
     lines.append(QLineF(localX + columns[1], dividerTop, localX + columns[1], localBottom));
   if (table.commentWidth > 0.0)
@@ -300,8 +300,7 @@ er::ErSceneEntity buildEntity(const er::ErPlacementEntity& placed, const er::ErL
       entity.dividers.append(line.translated(centre));
       continue;
     }
-    entity.rough->dividers.append(
-        er::roughTranslated(er::roughPolygon(dividerPolygon(line), rough->table), centre));
+    entity.rough->dividers.append(er::roughTranslated(er::roughPolygon(dividerPolygon(line), rough->table), centre));
     entity.dividers.append(dividerLine(entity.rough->dividers.last().bounds));
   }
   return entity;
@@ -365,8 +364,7 @@ QSize er::erRasterExtent(const QRectF& bounds, qreal padding) {
 
 QString er::erRelationshipKey(const QString& id, int loopIndex) {
   static const char* const parts[3] = {"1", "mid", "2"};
-  return loopIndex < 0 ? id
-                       : id + QStringLiteral("-loop-") + QLatin1String(parts[std::clamp(loopIndex, 0, 2)]);
+  return loopIndex < 0 ? id : id + QStringLiteral("-loop-") + QLatin1String(parts[std::clamp(loopIndex, 0, 2)]);
 }
 
 std::optional<er::ErMarker> er::erMarker(ErCardinality card, bool start, bool neo) {
@@ -418,14 +416,15 @@ er::ErScene er::buildErScene(const ErLayoutInput& input, const ErPlacementResult
     const auto measured = measurements.tables.constFind(placed.id);
     const er::ErTableMetrics table =
         measured == measurements.tables.cend()
-            ? er::measureErTable(*source, er::ErEntityTextStyle{style.text, style.text, style.text, style.text, style.text},
+            ? er::measureErTable(*source,
+                                 er::ErEntityTextStyle{style.text, style.text, style.text, style.text, style.text},
                                  style.htmlLabels, style.scalePaddings, er::ErMeasureOptions{style.text})
             : measured.value();
     const auto texts = documentPaint.backgroundTexts.constFind(placed.id);
     const er::ErEntityTextStyle* const textStyle =
         texts == documentPaint.backgroundTexts.cend() ? nullptr : &texts.value();
-    er::ErSceneEntity background = buildEntity(
-        placed, *source, table, style, documentPaint.backgrounds.value(placed.id), textStyle, nullptr, nullptr);
+    er::ErSceneEntity background = buildEntity(placed, *source, table, style,
+                                               documentPaint.backgrounds.value(placed.id), textStyle, nullptr, nullptr);
     background.id = placed.id + QStringLiteral("-background");
     background.nameDividerPasses = 1;
     canvas.add(background.bounds);
@@ -441,20 +440,20 @@ er::ErScene er::buildErScene(const ErLayoutInput& input, const ErPlacementResult
     // input gets erBox's default paddings.
     const er::ErTableMetrics table =
         measured == measurements.tables.cend()
-            ? er::measureErTable(*source, er::ErEntityTextStyle{style.text, style.text, style.text, style.text, style.text},
+            ? er::measureErTable(*source,
+                                 er::ErEntityTextStyle{style.text, style.text, style.text, style.text, style.text},
                                  style.htmlLabels, style.scalePaddings, er::ErMeasureOptions{style.text})
             : measured.value();
     const bool attributeless = source->attributes.isEmpty();
-    const er::ErEntityPaint paint =
-        documentPaint.entities.contains(placed.id) ? documentPaint.entities.value(placed.id)
-                                                   : themeEntityPaint(style, attributeless);
+    const er::ErEntityPaint paint = documentPaint.entities.contains(placed.id) ? documentPaint.entities.value(placed.id)
+                                                                               : themeEntityPaint(style, attributeless);
     // Under the handDrawn look the entity was laid out by the box of its
     // drawn rectangle, which the measurement keeps.
     const auto drawn = measurements.rough.constFind(placed.id);
     const auto options = style.rough.constFind(placed.id);
-    er::ErSceneEntity entity = buildEntity(
-        placed, *source, table, style, paint, nullptr, drawn == measurements.rough.cend() ? nullptr : &drawn.value(),
-        options == style.rough.cend() ? nullptr : &options.value());
+    er::ErSceneEntity entity = buildEntity(placed, *source, table, style, paint, nullptr,
+                                           drawn == measurements.rough.cend() ? nullptr : &drawn.value(),
+                                           options == style.rough.cend() ? nullptr : &options.value());
     canvas.add(entity.bounds);
     if (entity.rough)
       addRough(*entity.rough);
@@ -488,10 +487,9 @@ er::ErScene er::buildErScene(const ErLayoutInput& input, const ErPlacementResult
     const QString pathKey = er::erRelationshipKey(placed.id, placed.loopIndex);
     const bool ownPaint = documentPaint.relationships.contains(pathKey);
     const bool relationshipPaint = documentPaint.relationships.contains(placed.id);
-    er::ErRelationshipPaint paint =
-        ownPaint ? documentPaint.relationships.value(pathKey)
-                 : relationshipPaint ? documentPaint.relationships.value(placed.id)
-                                     : themeRelationshipPaint(style);
+    er::ErRelationshipPaint paint = ownPaint            ? documentPaint.relationships.value(pathKey)
+                                    : relationshipPaint ? documentPaint.relationships.value(placed.id)
+                                                        : themeRelationshipPaint(style);
     relationship.line = paint.line;
     relationship.labelBackground = paint.labelBackground;
     if (const er::ErLayoutRelationshipInput* source = relationshipsById.value(placed.id)) {

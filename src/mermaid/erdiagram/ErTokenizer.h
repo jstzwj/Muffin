@@ -29,41 +29,41 @@ enum class ErTokenKind {
   // backtick word or accDescr block; no production takes it.
   Eof,
   InputEnd,
-  Header,            // ER_DIAGRAM
-  Newline,           // NEWLINE
-  EntityName,        // ENTITY_NAME: a quoted name; text is without the quotes
-  Word,              // WORD: a quoted string that is not a valid ENTITY_NAME
-  Text,              // UNICODE_TEXT
-  Number,            // NUM
-  Decimal,           // DECIMAL_NUM
-  EntityOne,         // ENTITY_ONE: a "1" that can name an entity
-  BlockStart,        // BLOCK_START
-  BlockStop,         // BLOCK_STOP
-  BracketOpen,       // SQS
-  BracketClose,      // SQE
-  StyleSeparator,    // STYLE_SEPARATOR
-  Colon,             // COLON
-  Comma,             // COMMA
-  Semi,              // SEMI
-  Hash,              // BRKT
-  ClassDef,          // CLASSDEF
-  Class,             // CLASS
-  Style,             // STYLE
-  StyleText,         // STYLE_TEXT: a word of a classDef or style statement
-  AccTitle,          // acc_title
-  AccDescr,          // acc_descr
-  AccTitleValue,     // acc_title_value
-  AccDescrValue,     // acc_descr_value
-  AccDescrBlock,     // acc_descr_multiline_value
-  Direction,         // direction_tb and alike; text is TB, BT, RL or LR
-  Cardinality,       // text is Mermaid's name: ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE or MD_PARENT
-  Identifying,       // IDENTIFYING
-  NonIdentifying,    // NON_IDENTIFYING
-  AttributeWord,     // ATTRIBUTE_WORD
-  AttributeKey,      // ATTRIBUTE_KEY
-  AttributeComment,  // COMMENT: quoted; text is without the quotes
-  Question,          // "?"
-  Character,         // any other character: the grammar has no use for it
+  Header,           // ER_DIAGRAM
+  Newline,          // NEWLINE
+  EntityName,       // ENTITY_NAME: a quoted name; text is without the quotes
+  Word,             // WORD: a quoted string that is not a valid ENTITY_NAME
+  Text,             // UNICODE_TEXT
+  Number,           // NUM
+  Decimal,          // DECIMAL_NUM
+  EntityOne,        // ENTITY_ONE: a "1" that can name an entity
+  BlockStart,       // BLOCK_START
+  BlockStop,        // BLOCK_STOP
+  BracketOpen,      // SQS
+  BracketClose,     // SQE
+  StyleSeparator,   // STYLE_SEPARATOR
+  Colon,            // COLON
+  Comma,            // COMMA
+  Semi,             // SEMI
+  Hash,             // BRKT
+  ClassDef,         // CLASSDEF
+  Class,            // CLASS
+  Style,            // STYLE
+  StyleText,        // STYLE_TEXT: a word of a classDef or style statement
+  AccTitle,         // acc_title
+  AccDescr,         // acc_descr
+  AccTitleValue,    // acc_title_value
+  AccDescrValue,    // acc_descr_value
+  AccDescrBlock,    // acc_descr_multiline_value
+  Direction,        // direction_tb and alike; text is TB, BT, RL or LR
+  Cardinality,      // text is Mermaid's name: ONLY_ONE, ZERO_OR_ONE, ONE_OR_MORE, ZERO_OR_MORE or MD_PARENT
+  Identifying,      // IDENTIFYING
+  NonIdentifying,   // NON_IDENTIFYING
+  AttributeWord,    // ATTRIBUTE_WORD
+  AttributeKey,     // ATTRIBUTE_KEY
+  AttributeComment, // COMMENT: quoted; text is without the quotes
+  Question,         // "?"
+  Character,        // any other character: the grammar has no use for it
 };
 
 struct ErToken {

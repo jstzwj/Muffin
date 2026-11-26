@@ -1758,9 +1758,10 @@ QRawFont flowDesignRawFont(const FlowLabelDocument& label, const QString& fontFa
 // Shapes a range of text in one font, over the font's own tables, and returns
 // its design advance in px: every glyph's advance in font units, summed and
 // scaled, not quantized. nullopt when the font has no tables to shape with.
-std::optional<qreal> shapeFlowHarfBuzzAdvance(const QRawFont& raw, const QString& text, qsizetype start, qsizetype length,
-                                              qreal fontPixelSize, bool rightToLeft, bool disableKerning,
-                                              quint32* terminalGlyph, qreal* terminalOrigin, qreal deviceScale) {
+std::optional<qreal> shapeFlowHarfBuzzAdvance(const QRawFont& raw, const QString& text, qsizetype start,
+                                              qsizetype length, qreal fontPixelSize, bool rightToLeft,
+                                              bool disableKerning, quint32* terminalGlyph, qreal* terminalOrigin,
+                                              qreal deviceScale) {
   if (length <= 0)
     return 0.0;
   auto* source = new FlowHarfBuzzRawFont{raw};
@@ -1825,10 +1826,9 @@ std::optional<qreal> measureOpenTypeDesignAdvanceImpl(const FlowLabelDocument& l
   if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, start, length)) {
     return std::nullopt;
   }
-  std::optional<qreal> result = shapeFlowHarfBuzzAdvance(
-      raw, label.text, start, length, fontPixelSize,
-      rightToLeft.value_or(label.direction == Qt::RightToLeft), disableKerning, terminalGlyph, terminalOrigin,
-      deviceScale);
+  std::optional<qreal> result = shapeFlowHarfBuzzAdvance(raw, label.text, start, length, fontPixelSize,
+                                                         rightToLeft.value_or(label.direction == Qt::RightToLeft),
+                                                         disableKerning, terminalGlyph, terminalOrigin, deviceScale);
   if (!result)
     return std::nullopt;
   if (label.letterSpacingPx != 0.0)
@@ -1969,7 +1969,6 @@ QVector<FlowFontRun> flowFontRuns(const QString& text, qsizetype start, qsizetyp
   return runs;
 }
 
-
 // The direction every character of a text runs in, as the Unicode bidi
 // algorithm resolves it where nothing embeds a direction: a strong character
 // has its own, a number that of the strong character before it, and a neutral
@@ -1981,8 +1980,7 @@ QVector<bool> flowRightToLeft(const QString& text, qsizetype start, qsizetype le
   QByteArray types(length, Neutral);
   for (qsizetype i = 0; i < length; ++i) {
     uint codepoint = text.at(start + i).unicode();
-    if (QChar::isHighSurrogate(codepoint) && i + 1 < length &&
-        QChar::isLowSurrogate(text.at(start + i + 1).unicode()))
+    if (QChar::isHighSurrogate(codepoint) && i + 1 < length && QChar::isLowSurrogate(text.at(start + i + 1).unicode()))
       codepoint = QChar::surrogateToUcs4(text.at(start + i), text.at(start + i + 1));
     switch (QChar::direction(codepoint)) {
     case QChar::DirL:
@@ -2475,9 +2473,8 @@ std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const
     qreal left = std::numeric_limits<qreal>::max();
     qreal right = std::numeric_limits<qreal>::lowest();
     qreal advanceCell = 0.0;
-    const QVector<bool> rtl =
-        flowRightToLeft(label.text, line.start, line.length, label.direction == Qt::RightToLeft);
-    qreal pen = 0.0;  // the unrounded one
+    const QVector<bool> rtl = flowRightToLeft(label.text, line.start, line.length, label.direction == Qt::RightToLeft);
+    qreal pen = 0.0; // the unrounded one
     qreal cellPen = 0.0;
     for (const FlowLabelPiece& piece : svgTextWordPieces(label, flowLabelLinePieces(label, line, fontFamily))) {
       const FlowLabelDocument segment = flowSvgTextSegment(label, piece);
@@ -2485,9 +2482,8 @@ std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const
       const QRawFont raw = flowDesignRawFont(segment, family);
       if (!raw.isValid() || !flowRawFontSupportsRange(raw, label.text, piece.start, piece.length))
         return std::nullopt;
-      const std::optional<FlowSvgTextRun> run =
-          shapeFlowSvgTextRun(raw, label.text, piece.start, piece.length, fontPixelSize,
-                              rtl.at(piece.start - line.start), false);
+      const std::optional<FlowSvgTextRun> run = shapeFlowSvgTextRun(
+          raw, label.text, piece.start, piece.length, fontPixelSize, rtl.at(piece.start - line.start), false);
       if (!run)
         return std::nullopt;
       // The bundled CJK font is CFF, and Skia bounds its glyphs wider than
@@ -2526,7 +2522,8 @@ std::optional<SvgTextLayout> layoutSvgText(const FlowLabelDocument& label, const
   return result;
 }
 
-std::optional<QRectF> measureSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily, qreal fontPixelSize) {
+std::optional<QRectF> measureSvgTextBox(const FlowLabelDocument& label, const QString& fontFamily,
+                                        qreal fontPixelSize) {
   const std::optional<SvgTextLayout> layout = layoutSvgText(label, fontFamily, fontPixelSize);
   if (!layout)
     return std::nullopt;
@@ -2553,8 +2550,9 @@ FlowLabelDocument wrapSvgText(const FlowLabelDocument& label, const QString& fon
     return result;
   // What getComputedTextLength() reports for a range: its advances, summed.
   const auto length = [&](qsizetype start, qsizetype count) {
-    return measureOpenTypeDesignAdvanceImpl(label, start, count, fontFamily, fontPixelSize, false, nullptr, nullptr, 0.0)
-               .value_or(measureFlowTextAdvanceWidth(label, start, count, fontFamily, fontPixelSize));
+    return measureOpenTypeDesignAdvanceImpl(label, start, count, fontFamily, fontPixelSize, false, nullptr, nullptr,
+                                            0.0)
+        .value_or(measureFlowTextAdvanceWidth(label, start, count, fontFamily, fontPixelSize));
   };
   const auto fits = [&](qsizetype start, qsizetype count) { return length(start, count) <= width; };
 
@@ -2770,8 +2768,8 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label, const QString& f
         --start;
       while (end < label.text.size() && !flowLineBreaksBefore(label.text, end))
         ++end;
-      widestWord = std::max(widestWord,
-                            measureFlowTextAdvanceWidth(label, start, end - start, fontFamily, fontPixelSize));
+      widestWord =
+          std::max(widestWord, measureFlowTextAdvanceWidth(label, start, end - start, fontFamily, fontPixelSize));
     }
     if (widestWord <= lineWidth)
       break;

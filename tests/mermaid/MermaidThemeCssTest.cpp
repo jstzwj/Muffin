@@ -379,7 +379,8 @@ void comparePie(const QJsonObject& fixture) {
   // naturalSize is the rounded native width: a browser screenshot rounds
   // upstream's.
   const QJsonObject client = fixture.value(QStringLiteral("client")).toObject();
-  near(scene->bounds.width(), client.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/bounds/width"), 0.5);
+  near(scene->bounds.width(), client.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/bounds/width"),
+       0.5);
   near(entry.naturalSize.width(), std::round(scene->bounds.width()), id + QStringLiteral("/client/width"), 0.001);
   near(entry.naturalSize.height(), std::round(client.value(QStringLiteral("height")).toDouble()),
        id + QStringLiteral("/client/height"), 0.51);
@@ -422,7 +423,8 @@ void compareEr(const QJsonObject& fixture) {
   // Each entity's box and the name in it, in the order of the document.
   const QJsonArray boxes = matches.value(QStringLiteral(".node .label-container")).toArray();
   const QJsonArray names = matches.value(QStringLiteral(".nodeLabel")).toArray();
-  require(!scene->entities.isEmpty() && scene->entities.size() == boxes.size() && scene->entities.size() == names.size(),
+  require(!scene->entities.isEmpty() && scene->entities.size() == boxes.size() &&
+              scene->entities.size() == names.size(),
           id + QStringLiteral(": the entities do not line up with the document's"));
   for (qsizetype index = 0; index < scene->entities.size(); ++index) {
     const er::ErSceneEntity& entity = scene->entities.at(index);
@@ -958,7 +960,8 @@ void compareGitGraph(const QJsonObject& fixture) {
   // side of a half pixel and the browser's image differ by a pixel; the
   // extents themselves must agree to within half a pixel.
   const QJsonObject client = fixture.value(QStringLiteral("client")).toObject();
-  near(scene->bounds.width(), client.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/extent/width"), 0.5);
+  near(scene->bounds.width(), client.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/extent/width"),
+       0.5);
   near(entry.naturalSize.width(), std::round(scene->bounds.width()), id + QStringLiteral("/client/width"), 0.001);
   near(entry.naturalSize.height(), std::round(client.value(QStringLiteral("height")).toDouble()),
        id + QStringLiteral("/client/height"));
@@ -2341,8 +2344,8 @@ void compareKanban(const QJsonObject& fixture) {
 
   // The image is the rounded native extent; upstream's fractional extent must
   // agree with it to within half a pixel (see compareGitGraph).
-  near(scene->bounds.width(), kanbanClient.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/extent/width"),
-       0.5);
+  near(scene->bounds.width(), kanbanClient.value(QStringLiteral("width")).toDouble(),
+       id + QStringLiteral("/extent/width"), 0.5);
   near(entry.naturalSize.width(), std::round(scene->bounds.width()), id + QStringLiteral("/client/width"), 0.001);
   near(entry.naturalSize.height(), std::round(kanbanClient.value(QStringLiteral("height")).toDouble()),
        id + QStringLiteral("/client/height"));
@@ -2476,8 +2479,8 @@ void compareTimeline(const QJsonObject& fixture) {
 
   // The image is the rounded native extent; upstream's fractional extent must
   // agree with it to within half a pixel (see compareGitGraph).
-  near(scene->bounds.width(), clientSize.value(QStringLiteral("width")).toDouble(), id + QStringLiteral("/extent/width"),
-       0.5);
+  near(scene->bounds.width(), clientSize.value(QStringLiteral("width")).toDouble(),
+       id + QStringLiteral("/extent/width"), 0.5);
   near(entry.naturalSize.width(), std::round(scene->bounds.width()), id + QStringLiteral("/client/width"), 0.001);
   near(entry.naturalSize.height(), std::round(clientSize.value(QStringLiteral("height")).toDouble()),
        id + QStringLiteral("/client/height"));

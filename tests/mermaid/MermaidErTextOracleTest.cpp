@@ -86,8 +86,8 @@ int main(int argc, char** argv) {
                                       text + QStringLiteral("/html/width"));
     const er::ErTextMetrics svg = er::measureErText(text, style, false, 0.0);
     compareBox(failures, svg.box, fixture.value(QStringLiteral("insert")).toObject(), text + QStringLiteral("/insert"));
-    compareBox(failures, er::measureErSvgTextDrawnBox(svg.document, style), fixture.value(QStringLiteral("drawn")).toObject(),
-               text + QStringLiteral("/drawn"));
+    compareBox(failures, er::measureErSvgTextDrawnBox(svg.document, style),
+               fixture.value(QStringLiteral("drawn")).toObject(), text + QStringLiteral("/drawn"));
   }
 
   for (const QString& failure : failures)

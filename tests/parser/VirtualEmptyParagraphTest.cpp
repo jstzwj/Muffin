@@ -50,7 +50,8 @@ Parsed parse(const QString& markdown) {
 }
 
 const MarkdownNode& onlyChild(const MarkdownNode& node, const QString& label) {
-  require(node.children().size() == 1, QStringLiteral("%1: expected one child, got %2").arg(label).arg(node.children().size()));
+  require(node.children().size() == 1,
+          QStringLiteral("%1: expected one child, got %2").arg(label).arg(node.children().size()));
   return *node.children().front();
 }
 
@@ -77,7 +78,9 @@ void testTopLevelCountsRealBlankLines() {
     require(parsed.root != nullptr, QStringLiteral("%1: the document should parse").arg(item.label));
     require(countVirtualEmptyParagraphs(*parsed.root) == item.expected,
             QStringLiteral("top level, %1: expected %2 empty paragraphs, got %3")
-                .arg(item.label).arg(item.expected).arg(countVirtualEmptyParagraphs(*parsed.root)));
+                .arg(item.label)
+                .arg(item.expected)
+                .arg(countVirtualEmptyParagraphs(*parsed.root)));
   }
 }
 
@@ -102,10 +105,13 @@ void testBlockQuoteFollowsTheTopLevelRule() {
     const Parsed parsed = parse(item.markdown);
     require(parsed.root != nullptr, QStringLiteral("%1: the document should parse").arg(item.label));
     const MarkdownNode& quote = onlyChild(*parsed.root, QStringLiteral("block quote, %1").arg(item.label));
-    require(quote.type() == BlockType::BlockQuote, QStringLiteral("block quote, %1: expected one block quote").arg(item.label));
+    require(quote.type() == BlockType::BlockQuote,
+            QStringLiteral("block quote, %1: expected one block quote").arg(item.label));
     const qsizetype count = countVirtualEmptyParagraphs(quote);
     require(count == item.expected, QStringLiteral("block quote, %1: expected %2 empty paragraphs, got %3")
-                                        .arg(item.label).arg(item.expected).arg(count));
+                                        .arg(item.label)
+                                        .arg(item.expected)
+                                        .arg(count));
   }
 }
 

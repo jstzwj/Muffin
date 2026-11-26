@@ -597,8 +597,8 @@ bool TableController::insertTable(int rows, int columns) {
   };
   countTables(countTables, ctx_.session->document().root());
   auto commandNode = table->clone(CloneMode::PreserveIds);
-  const TextEditResult applied = ctx_.session->applyInsertedNode(
-      insertedTableId, BlockType::Table, replaceStart, tableSourceStart, removedText.size(), insertedText);
+  const TextEditResult applied = ctx_.session->applyInsertedNode(insertedTableId, BlockType::Table, replaceStart,
+                                                                 tableSourceStart, removedText.size(), insertedText);
   if (applied == TextEditResult::Rejected) {
     return false;
   }

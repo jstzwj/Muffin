@@ -24,7 +24,7 @@ CursorPosition cursorForBlock(NodeId blockId, qsizetype offset, const DocumentSe
 }
 
 CursorPosition cursorForSourceOffset(const BlockEditContextResolver& resolver, qsizetype sourceOffset,
-                                    bool preferLaterEmptyAtOffset) {
+                                     bool preferLaterEmptyAtOffset) {
   CursorPosition cursor;
   if (!resolver.session()) {
     return cursor;
@@ -100,7 +100,7 @@ CursorPosition cursorForSourceOffset(const BlockEditContextResolver& resolver, q
 }
 
 CursorPosition cursorForSourceInNode(const BlockEditContextResolver& resolver, MarkdownNode& node,
-                                    qsizetype sourceOffset) {
+                                     qsizetype sourceOffset) {
   BlockEditContext context;
   if (!resolver.fill(node, context)) {
     return {};
@@ -109,7 +109,7 @@ CursorPosition cursorForSourceInNode(const BlockEditContextResolver& resolver, M
 }
 
 CursorPosition cursorForSourceInContext(const BlockEditContextResolver& resolver, const BlockEditContext& context,
-                                       qsizetype sourceOffset) {
+                                        qsizetype sourceOffset) {
   const qsizetype localSourceOffset =
       qBound<qsizetype>(0, sourceOffset - context.contentRange.byteStart, context.contentText.size());
   qsizetype visibleOffset = -1;
@@ -134,7 +134,7 @@ CursorPosition blockAfterCursor(const MarkdownNode& host, qsizetype sourceOffset
 }
 
 CursorPosition cursorAfterEdit(const BlockEditContextResolver& resolver, CursorPosition preferredCursor,
-                              qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) {
+                               qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset) {
   const DocumentSession* session = resolver.session();
   if (session && preferredCursor.isValid()) {
     if (preferredCursor.text.sourceOffset >= 0) {

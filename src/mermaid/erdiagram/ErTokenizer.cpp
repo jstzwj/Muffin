@@ -18,9 +18,11 @@
 // out: `\s` (PCRE's stops at ASCII) and `.` (PCRE's also matches \r).
 
 // JavaScript's \s.
-#define ER_WS "[\\t\\n\\v\\f\\r \\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]"
+#define ER_WS                                                                                                          \
+  "[\\t\\n\\v\\f\\r \\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]"
 // The negation of JavaScript's \s.
-#define ER_NOT_WS "[^\\t\\n\\v\\f\\r \\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]"
+#define ER_NOT_WS                                                                                                      \
+  "[^\\t\\n\\v\\f\\r \\x{A0}\\x{1680}\\x{2000}-\\x{200A}\\x{2028}\\x{2029}\\x{202F}\\x{205F}\\x{3000}\\x{FEFF}]"
 // JavaScript's `.`: anything but a line terminator.
 #define ER_DOT "[^\\n\\r\\x{2028}\\x{2029}]"
 // The non-ASCII end of Mermaid's letter class, \u00C0-\uFFFF.
@@ -45,7 +47,7 @@ struct Rule {
   bool unquote = false;            // Mermaid's action drops every `"` from the text
   bool enters = false;             // begin(entered)
   ErLexerCondition entered = ErLexerCondition::Initial;
-  bool leaves = false;             // popState()
+  bool leaves = false; // popState()
   QRegularExpression expression;
 };
 
@@ -67,7 +69,8 @@ QVector<Rule> buildRules() {
                        ErLexerCondition entered = ErLexerCondition::Initial, bool leaves = false) {
     QRegularExpression expression(QString::fromUtf8(pattern), options);
     Q_ASSERT(expression.isValid());
-    rules.append(Rule{condition, pattern, std::move(kind), text, unquote, enters, entered, leaves, std::move(expression)});
+    rules.append(
+        Rule{condition, pattern, std::move(kind), text, unquote, enters, entered, leaves, std::move(expression)});
   };
   using C = ErLexerCondition;
   using K = ErTokenKind;
@@ -303,7 +306,7 @@ ErToken ErTokenizer::next() {
     if (rule.condition != condition)
       continue;
     const QRegularExpressionMatch match = rule.expression.match(source_, offset_, QRegularExpression::NormalMatch,
-                                      QRegularExpression::AnchorAtOffsetMatchOption);
+                                                                QRegularExpression::AnchorAtOffsetMatchOption);
     if (!match.hasMatch())
       continue;
     const QString matched = match.captured(0);
@@ -329,16 +332,19 @@ ErToken ErTokenizer::next() {
     token.kind = *rule.kind == ErTokenKind::Character ? characterToken(matched) : *rule.kind;
     token.length = matched.size();
     token.endLine = line_;
-    token.text = rule.text != nullptr      ? QString::fromUtf8(rule.text)
-                 : rule.unquote            ? stripQuotes(matched)
-                                           : matched;
+    token.text = rule.text != nullptr ? QString::fromUtf8(rule.text) : rule.unquote ? stripQuotes(matched) : matched;
     return token;
   }
 
   // No rule of this condition matches: a lexical error. It names the
   // character Mermaid's own message points at.
-  throw ErParseError({ErErrorStage::Lexer, ErErrorCode::UnexpectedToken, {offset_, 1, line_, column_},
-                      QStringLiteral("token"), source_.mid(offset_, 1), QStringLiteral("Unrecognized text"), {}});
+  throw ErParseError({ErErrorStage::Lexer,
+                      ErErrorCode::UnexpectedToken,
+                      {offset_, 1, line_, column_},
+                      QStringLiteral("token"),
+                      source_.mid(offset_, 1),
+                      QStringLiteral("Unrecognized text"),
+                      {}});
 }
 
 QVector<ErToken> ErTokenizer::tokenize() {

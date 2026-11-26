@@ -13,8 +13,10 @@ enum class IshikawaErrorKind { Lexer, Parser };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(IshikawaErrorKind kind) {
   switch (kind) {
-  case IshikawaErrorKind::Lexer: return u"lexer";
-  case IshikawaErrorKind::Parser: return u"parse";
+  case IshikawaErrorKind::Lexer:
+    return u"lexer";
+  case IshikawaErrorKind::Parser:
+    return u"parse";
   }
   return u"parse";
 }

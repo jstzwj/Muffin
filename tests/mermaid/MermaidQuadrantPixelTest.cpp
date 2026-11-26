@@ -110,9 +110,11 @@ int main(int argc, char** argv) {
     std::fflush(stderr);
     // Upstream's viewBox is fractional and the browser screenshots it to the
     // nearest pixel; the port rounds its extent the same way.
-    require(native.size() == browser.size(),
-            id + QStringLiteral(": canvas %1x%2, browser %3x%4")
-                    .arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
+    require(native.size() == browser.size(), id + QStringLiteral(": canvas %1x%2, browser %3x%4")
+                                                      .arg(native.width())
+                                                      .arg(native.height())
+                                                      .arg(browser.width())
+                                                      .arg(browser.height()));
     require(iou >= 0.97, id + QStringLiteral(": alpha IoU regressed"));
     require(rgba >= 0.96, id + QStringLiteral(": foreground RGBA regressed"));
     minIou = std::min(minIou, iou);

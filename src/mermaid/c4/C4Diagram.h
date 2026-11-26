@@ -14,9 +14,12 @@ enum class C4ErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(C4ErrorKind kind) {
   switch (kind) {
-  case C4ErrorKind::Lexer: return u"lexer";
-  case C4ErrorKind::Parser: return u"parse";
-  case C4ErrorKind::Runtime: return u"runtime";
+  case C4ErrorKind::Lexer:
+    return u"lexer";
+  case C4ErrorKind::Parser:
+    return u"parse";
+  case C4ErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

@@ -136,9 +136,12 @@ int main(int argc, char** argv) {
     std::fflush(stderr);
     // Upstream's viewBox is fractional and the browser screenshots it to the
     // nearest pixel; the port rounds its extent the same way.
-    require(widthDiff == 0 && heightDiff == 0,
-            QStringLiteral("%1: canvas %2x%3, browser %4x%5")
-                .arg(id).arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
+    require(widthDiff == 0 && heightDiff == 0, QStringLiteral("%1: canvas %2x%3, browser %4x%5")
+                                                   .arg(id)
+                                                   .arg(native.width())
+                                                   .arg(native.height())
+                                                   .arg(browser.width())
+                                                   .arg(browser.height()));
     require(iou >= 0.97, id + QStringLiteral(": native/browser alpha IoU regressed"));
     require(rgbaSimilarity >= 0.95, id + QStringLiteral(": native/browser foreground RGBA regressed"));
     if (id == QLatin1String("dash-width-4")) {

@@ -740,7 +740,7 @@ public:
     if (inBody)
       throw RequirementParseError(QStringLiteral("Unclosed requirement/element body"),
                                   lines_.isEmpty() || lines_.last().isEmpty() ? static_cast<int>(lines_.size())
-                                                                             : static_cast<int>(lines_.size()) + 1);
+                                                                              : static_cast<int>(lines_.size()) + 1);
     return std::move(data_);
   }
 

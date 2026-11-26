@@ -31,7 +31,7 @@ void testToggleCodeBlockUndo() {
 
   const EditTransaction undo = requireTextDeltaCommand(undoStack, "toggle code block undo should be TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == original, "undo should restore original text");
 }
 
@@ -51,7 +51,7 @@ void testToggleCodeBlockUndoConvertBack() {
 
   const EditTransaction undo = requireTextDeltaCommand(undoStack, "convert back undo should be TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == original, "convert back undo should restore original");
 }
 

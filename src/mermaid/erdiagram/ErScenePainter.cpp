@@ -96,7 +96,8 @@ QVector<qreal> dashPattern(const QString& dasharray, qreal strokeWidth) {
   if (lengths.size() >= 5 && lengths.size() % 2 == 1 && lengths.first() == 0.0 && lengths.at(1) == 0.0 &&
       lengths.last() == 0.0) {
     const int pairs = (lengths.size() - 3) / 2;
-    const bool generated = std::all_of(lengths.cbegin() + 2, lengths.cend() - 1, [](qreal length) { return length == 2.0; });
+    const bool generated =
+        std::all_of(lengths.cbegin() + 2, lengths.cend() - 1, [](qreal length) { return length == 2.0; });
     if (generated) {
       QVector<qreal> pattern;
       for (int dash = 0; dash < pairs - 1; ++dash)
@@ -342,8 +343,7 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter, 
     // The handDrawn look draws the path by rough.js, and its markers sit on
     // the drawn path's own ends.
     const QPainterPath path = scene::parseSvgPath(relationship.path);
-    const QRectF drawn =
-        relationship.rough ? QRectF(relationship.rough->bounds) : QRectF(path.boundingRect());
+    const QRectF drawn = relationship.rough ? QRectF(relationship.rough->bounds) : QRectF(path.boundingRect());
     if ((!relationship.rough && path.elementCount() < 2) || drawn.isNull() ||
         !mermaidPrimitiveIsVisible(drawn, options))
       continue;
@@ -365,10 +365,9 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter, 
     const ErPathAnchor start =
         relationship.rough ? er::roughPathStart(*relationship.rough)
                            : ErPathAnchor{path.elementAt(0), scene::tangentAngleDeg(scene::pathStartTangent(path))};
-    const ErPathAnchor end =
-        relationship.rough ? er::roughPathEnd(*relationship.rough)
-                           : ErPathAnchor{path.elementAt(path.elementCount() - 1),
-                                          scene::tangentAngleDeg(scene::pathEndTangent(path))};
+    const ErPathAnchor end = relationship.rough ? er::roughPathEnd(*relationship.rough)
+                                                : ErPathAnchor{path.elementAt(path.elementCount() - 1),
+                                                               scene::tangentAngleDeg(scene::pathEndTangent(path))};
     // A marker's viewport is scaled by the line's stroke width, as a marker's
     // is, unless the neo look sizes it in user units.
     const std::optional<qreal> lineWidth =

@@ -16,9 +16,12 @@ enum class WardleyErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(WardleyErrorKind kind) {
   switch (kind) {
-  case WardleyErrorKind::Lexer: return u"lexer";
-  case WardleyErrorKind::Parser: return u"parse";
-  case WardleyErrorKind::Runtime: return u"runtime";
+  case WardleyErrorKind::Lexer:
+    return u"lexer";
+  case WardleyErrorKind::Parser:
+    return u"parse";
+  case WardleyErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

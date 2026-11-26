@@ -334,7 +334,8 @@ static void overrideCacheLifetime() {
   layout.buildAll(theme);
   auto* paragraph = session.document().root().children().front().get();
   const auto identity = theme.cssElementForNode(*paragraph)->cacheId;
-  require(session.applyTextEdit(paragraph->sourceRange().byteStart + 2, 0, "x") != muffin::TextEditResult::Rejected, "edit overridden document");
+  require(session.applyTextEdit(paragraph->sourceRange().byteStart + 2, 0, "x") != muffin::TextEditResult::Rejected,
+          "edit overridden document");
   layout.rebuildTopLevelRange(session.lastLocalTopLevelRangeChange(), session.document(), theme, {});
   paragraph = session.document().root().children().front().get();
   require(theme.hasLocalStyleChange() && theme.cssElementForNode(*paragraph)->cacheId == identity,

@@ -50,13 +50,12 @@ QStringList names(std::initializer_list<ErTokenKind> kinds) {
 }
 
 constexpr std::initializer_list<ErTokenKind> kStatementStart = {
-    ErTokenKind::Newline,    ErTokenKind::AccTitle, ErTokenKind::AccDescr,   ErTokenKind::AccDescrBlock,
-    ErTokenKind::Direction,  ErTokenKind::ClassDef, ErTokenKind::Text,       ErTokenKind::Class,
-    ErTokenKind::Style,      ErTokenKind::Number,   ErTokenKind::EntityName, ErTokenKind::Decimal,
+    ErTokenKind::Newline,   ErTokenKind::AccTitle, ErTokenKind::AccDescr,   ErTokenKind::AccDescrBlock,
+    ErTokenKind::Direction, ErTokenKind::ClassDef, ErTokenKind::Text,       ErTokenKind::Class,
+    ErTokenKind::Style,     ErTokenKind::Number,   ErTokenKind::EntityName, ErTokenKind::Decimal,
     ErTokenKind::EntityOne};
-constexpr std::initializer_list<ErTokenKind> kEntityName = {ErTokenKind::Text, ErTokenKind::Number,
-                                                            ErTokenKind::EntityName, ErTokenKind::Decimal,
-                                                            ErTokenKind::EntityOne};
+constexpr std::initializer_list<ErTokenKind> kEntityName = {
+    ErTokenKind::Text, ErTokenKind::Number, ErTokenKind::EntityName, ErTokenKind::Decimal, ErTokenKind::EntityOne};
 constexpr std::initializer_list<ErTokenKind> kRole = {ErTokenKind::Text, ErTokenKind::EntityName, ErTokenKind::Word};
 constexpr std::initializer_list<ErTokenKind> kId = {ErTokenKind::Text, ErTokenKind::StyleText};
 constexpr std::initializer_list<ErTokenKind> kStyleComponent = {ErTokenKind::StyleText, ErTokenKind::Number,
@@ -84,7 +83,8 @@ public:
       fail(ErErrorStage::Resource, ErErrorCode::LimitExceeded, QStringLiteral("start"), {},
            QStringLiteral("Maximum er diagram text size exceeded"));
     if (!at(ErTokenKind::Header))
-      fail(ErErrorStage::Detector, ErErrorCode::MissingHeader, QStringLiteral("erDiagram"), {QStringLiteral("ER_DIAGRAM")});
+      fail(ErErrorStage::Detector, ErErrorCode::MissingHeader, QStringLiteral("erDiagram"),
+           {QStringLiteral("ER_DIAGRAM")});
     shift();
     while (!at(ErTokenKind::Eof)) {
       if (at(ErTokenKind::Newline)) {
@@ -158,8 +158,8 @@ private:
     ErSourceSpan span{0, 0, 1, 0}; // nothing taken yet: the start of the text
     if (lastShifted_)
       span = toSource({lastShifted_->offset, lastShifted_->length, lastShifted_->endLine, lastShifted_->column});
-    throw ErParseError({stage, code, span, std::move(production), nameOf(lookahead_), std::move(detail),
-                        std::move(expected)});
+    throw ErParseError(
+        {stage, code, span, std::move(production), nameOf(lookahead_), std::move(detail), std::move(expected)});
   }
 
   // ---- the database: Mermaid's ErDB
@@ -249,8 +249,8 @@ private:
     switch (lookahead_.kind) {
     case ErTokenKind::AccTitle:
       shift();
-      data_.accTitle = expect(ErTokenKind::AccTitleValue, QStringLiteral("acc_title"), {ErTokenKind::AccTitleValue})
-                           .text.trimmed();
+      data_.accTitle =
+          expect(ErTokenKind::AccTitleValue, QStringLiteral("acc_title"), {ErTokenKind::AccTitleValue}).text.trimmed();
       return;
     case ErTokenKind::AccDescr:
       shift();
@@ -305,7 +305,8 @@ private:
       QVector<ErAttribute> attributes;
       if (!at(ErTokenKind::BlockStop))
         attributes = parseAttributes();
-      expect(ErTokenKind::BlockStop, QStringLiteral("attributes"), {ErTokenKind::BlockStop, ErTokenKind::AttributeWord});
+      expect(ErTokenKind::BlockStop, QStringLiteral("attributes"),
+             {ErTokenKind::BlockStop, ErTokenKind::AttributeWord});
       addEntity(name, alias);
       addAttributes(name, attributes);
       setClass({name}, classes);
@@ -463,19 +464,22 @@ private:
   ErAttribute parseAttribute() {
     ErAttribute attribute;
     attribute.attributeType = expect(ErTokenKind::AttributeWord, QStringLiteral("attributeType"),
-                                     {ErTokenKind::BlockStop, ErTokenKind::AttributeWord}).text;
+                                     {ErTokenKind::BlockStop, ErTokenKind::AttributeWord})
+                                  .text;
     if (at(ErTokenKind::Question)) {
       shift();
       attribute.attributeType += QLatin1Char('?');
     }
     attribute.attributeName = expect(ErTokenKind::AttributeWord, QStringLiteral("attributeName"),
-                                     {ErTokenKind::AttributeWord, ErTokenKind::Question}).text;
+                                     {ErTokenKind::AttributeWord, ErTokenKind::Question})
+                                  .text;
     if (at(ErTokenKind::AttributeKey)) {
       attribute.keys.append(shift().text);
       while (at(ErTokenKind::Comma)) {
         shift();
-        attribute.keys.append(expect(ErTokenKind::AttributeKey, QStringLiteral("attributeKeyTypeList"),
-                                     {ErTokenKind::AttributeKey}).text);
+        attribute.keys.append(
+            expect(ErTokenKind::AttributeKey, QStringLiteral("attributeKeyTypeList"), {ErTokenKind::AttributeKey})
+                .text);
       }
     }
     if (at(ErTokenKind::AttributeComment))
@@ -489,7 +493,8 @@ private:
 namespace muffin::mermaid::er {
 
 ErParseError::ErParseError(ErDiagnostic diagnostic)
-    : DiagramError(formatErDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {}
+    : DiagramError(formatErDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
+}
 
 DiagramErrorInfo ErParseError::info() const {
   const ErDiagnostic& value = diagnostic();
@@ -508,7 +513,9 @@ DiagramErrorInfo ErParseError::info() const {
   return info;
 }
 
-const ErDiagnostic& ErParseError::diagnostic() const noexcept { return diagnostic_; }
+const ErDiagnostic& ErParseError::diagnostic() const noexcept {
+  return diagnostic_;
+}
 
 ErDiagram ErDiagram::parse(const QString& source, ErLimits limits) {
   // Mermaid hands a diagram's parser the preprocessed text with

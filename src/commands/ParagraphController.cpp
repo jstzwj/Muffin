@@ -294,18 +294,17 @@ bool ParagraphController::applyBlockDelta(EditTransaction::Kind kind, const QStr
   if (!ctx_.hasSession()) {
     return false;
   }
-  const EditOutcome outcome =
-      applyEdit(ctx_,
-                {.sourceStart = sourceStart,
-                 .removedLength = removedLength,
-                 .insertedText = std::move(insertedText),
-                 .nodeHints = std::move(nodeHints)},
-                {.kind = kind,
-                 .label = label,
-                 .fallbackSourceOffset = nextCursorSourceOffset,
-                 // A paragraph a command just inserted starts where the block before it ends.
-                 .preferLaterEmptyAtOffset = true,
-                 .structureEdit = structureEdit});
+  const EditOutcome outcome = applyEdit(ctx_,
+                                        {.sourceStart = sourceStart,
+                                         .removedLength = removedLength,
+                                         .insertedText = std::move(insertedText),
+                                         .nodeHints = std::move(nodeHints)},
+                                        {.kind = kind,
+                                         .label = label,
+                                         .fallbackSourceOffset = nextCursorSourceOffset,
+                                         // A paragraph a command just inserted starts where the block before it ends.
+                                         .preferLaterEmptyAtOffset = true,
+                                         .structureEdit = structureEdit});
   return outcome.applied;
 }
 

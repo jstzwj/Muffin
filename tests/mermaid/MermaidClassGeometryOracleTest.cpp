@@ -108,7 +108,6 @@ int main(int argc, char** argv) {
 
     QStringList assertErrors;
 
-
     const QJsonArray expectedNodes = expected.value(QStringLiteral("nodes")).toArray();
     const QJsonArray actualNodes = actual.value(QStringLiteral("nodes")).toArray();
     const QJsonArray expectedEdges = expected.value(QStringLiteral("edges")).toArray();

@@ -120,13 +120,16 @@ muffin::AtomicWrite::Result muffin::AtomicWrite::write(const QString& path,
 muffin::AtomicWrite::Result muffin::AtomicWrite::write(const QString& path, const QByteArray& bytes, QString* error,
                                                        Budget* budget, const std::function<bool()>& stillCurrent) {
   bool unwritten = false;
-  const Result result = write(path, [&bytes, error, &unwritten](QSaveFile& file) {
-    if (file.write(bytes) == bytes.size())
-      return true;
-    unwritten = true;
-    if (error)
-      *error = file.errorString();
-    return false;
-  }, error, budget, stillCurrent);
+  const Result result = write(
+      path,
+      [&bytes, error, &unwritten](QSaveFile& file) {
+        if (file.write(bytes) == bytes.size())
+          return true;
+        unwritten = true;
+        if (error)
+          *error = file.errorString();
+        return false;
+      },
+      error, budget, stillCurrent);
   return unwritten ? Result::Failed : result;
 }

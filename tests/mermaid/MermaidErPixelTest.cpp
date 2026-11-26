@@ -87,7 +87,8 @@ int main(int argc, char** argv) {
   const QJsonObject root = QJsonDocument::fromJson(bytes).object();
   if (root.value(QStringLiteral("fixtureSha256")).toString() !=
           QLatin1String("7d0c206812c7696c198cd79f99aa14e8471946a221ffd5496efaf2ca571e0e2d") ||
-      root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() != QLatin1String("11.16.0")) {
+      root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() !=
+          QLatin1String("11.16.0")) {
     std::fprintf(stderr, "ER pixel manifest provenance changed\n");
     return 1;
   }
@@ -104,8 +105,10 @@ int main(int argc, char** argv) {
     require(fileDigest(path) == fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
             id + QStringLiteral(": browser PNG drifted"));
     const QImage referenceImage = QImage(path);
-    const QImage nativeImage = mermaid_pixel::decodeDataUrl(editor::MermaidRenderCache::renderMermaidSourceToPng(
-        fixture.value(QStringLiteral("source")).toString(), fixture.value(QStringLiteral("dpr")).toDouble()).dataUrl);
+    const QImage nativeImage = mermaid_pixel::decodeDataUrl(
+        editor::MermaidRenderCache::renderMermaidSourceToPng(fixture.value(QStringLiteral("source")).toString(),
+                                                             fixture.value(QStringLiteral("dpr")).toDouble())
+            .dataUrl);
     require(!nativeImage.isNull() && !referenceImage.isNull(), id + QStringLiteral(": PNG decode"));
     // MUFFIN_SAVE_NATIVE=<dir> also writes every native image, to look at a
     // difference by eye.
@@ -122,13 +125,19 @@ int main(int argc, char** argv) {
     if (delta.width() != 0 || delta.height() != 0) {
       if (declared.isEmpty()) {
         failures << QStringLiteral("%1: native %2x%3, browser %4x%5")
-                        .arg(id).arg(nativeImage.width()).arg(nativeImage.height()).arg(referenceImage.width()).arg(referenceImage.height());
+                        .arg(id)
+                        .arg(nativeImage.width())
+                        .arg(nativeImage.height())
+                        .arg(referenceImage.width())
+                        .arg(referenceImage.height());
         continue;
       }
       if (declared.value(QStringLiteral("width")).toInt() != delta.width() ||
           declared.value(QStringLiteral("height")).toInt() != delta.height()) {
         failures << QStringLiteral("%1: canvas differs by %2x%3, the manifest declares %4x%5")
-                        .arg(id).arg(delta.width()).arg(delta.height())
+                        .arg(id)
+                        .arg(delta.width())
+                        .arg(delta.height())
                         .arg(declared.value(QStringLiteral("width")).toInt())
                         .arg(declared.value(QStringLiteral("height")).toInt());
         continue;
@@ -137,7 +146,8 @@ int main(int argc, char** argv) {
       native = native.copy(common);
       reference = reference.copy(common);
     } else if (!declared.isEmpty()) {
-      failures << QStringLiteral("%1: canvas now matches the browser; remove its canvasDelta from the manifest").arg(id);
+      failures
+          << QStringLiteral("%1: canvas now matches the browser; remove its canvasDelta from the manifest").arg(id);
     }
 
     const mermaid_pixel::Measures measures = mermaid_pixel::measure(native, reference);
@@ -154,20 +164,22 @@ int main(int argc, char** argv) {
       failures << QStringLiteral("%1: RGBA similarity %2 below %3").arg(id).arg(measures.rgba, 0, 'f', 4).arg(kMinRgba);
     if (measures.tile < kMinTile)
       failures << QStringLiteral("%1: worst tile similarity %2 below %3")
-                     .arg(id)
-                     .arg(measures.tile, 0, 'f', 4)
-                     .arg(kMinTile);
-    const qreal maxArea = fixture.value(QStringLiteral("look")).toString() == QLatin1String("handDrawn") ? kMaxHachureArea
-                                                                                                        : kMaxArea;
+                      .arg(id)
+                      .arg(measures.tile, 0, 'f', 4)
+                      .arg(kMinTile);
+    const qreal maxArea =
+        fixture.value(QStringLiteral("look")).toString() == QLatin1String("handDrawn") ? kMaxHachureArea : kMaxArea;
     if (measures.area > maxArea)
-      failures << QStringLiteral("%1: a dominant color covers %2 of the image more or less than in the browser, above %3")
-                     .arg(id)
-                     .arg(measures.area, 0, 'f', 4)
-                     .arg(maxArea);
+      failures << QStringLiteral(
+                      "%1: a dominant color covers %2 of the image more or less than in the browser, above %3")
+                      .arg(id)
+                      .arg(measures.area, 0, 'f', 4)
+                      .arg(maxArea);
   }
 
-  std::fprintf(stderr, "ER pixel: worst alpha IoU %.4f, worst RGBA similarity %.4f, worst tile similarity %.4f, "
-                       "worst dominant color area difference %.4f\n",
+  std::fprintf(stderr,
+               "ER pixel: worst alpha IoU %.4f, worst RGBA similarity %.4f, worst tile similarity %.4f, "
+               "worst dominant color area difference %.4f\n",
                worstIoU, worstRgba, worstTile, worstArea);
   for (const QString& failure : failures)
     std::fprintf(stderr, "FAIL: %s\n", qPrintable(failure));

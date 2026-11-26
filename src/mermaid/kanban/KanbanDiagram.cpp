@@ -22,8 +22,7 @@
 namespace muffin::mermaid::kanban {
 
 KanbanParseError::KanbanParseError(const QString& message, int line, int column, KanbanErrorKind kind, QString token)
-    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind),
-      token(std::move(token)) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind), token(std::move(token)) {
 }
 
 muffin::mermaid::DiagramErrorInfo KanbanParseError::info() const {

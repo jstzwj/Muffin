@@ -170,9 +170,10 @@ muffin::mermaid::er::measureErRelationshipLabel(const ErLayoutRelationshipInput&
   return result;
 }
 
-muffin::mermaid::er::ErTableMetrics
-muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity, const ErEntityTextStyle& styles,
-                                    bool htmlLabels, bool scalePaddings, const ErMeasureOptions& options) {
+muffin::mermaid::er::ErTableMetrics muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity,
+                                                                        const ErEntityTextStyle& styles,
+                                                                        bool htmlLabels, bool scalePaddings,
+                                                                        const ErMeasureOptions& options) {
   ErTableMetrics table;
   if (entity.attributes.isEmpty()) {
     // erBox's drawRect branch. Its label is never wider than the minimum
@@ -180,7 +181,7 @@ muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity, const ErE
     // name wraps at the wrapping width.
     const qreal unwrapped = measureErText(entity.name, options.siteStyle, htmlLabels, 0.0).size().width();
     const qreal limit = unwrapped + 2.0 * options.diagramPadding < options.minEntityWidth ? options.minEntityWidth
-                                                                                           : options.wrappingWidth;
+                                                                                          : options.wrappingWidth;
     table.name = measureErText(entity.name, styles.name, htmlLabels, limit);
     // The name centered, a padding on each side and a padding and a half
     // above and below, and never narrower than the minimum.
@@ -188,7 +189,8 @@ muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity, const ErE
     table.padding = options.diagramPadding;
     table.nameTop = (height - table.name.size().height()) / 2.0;
     table.nameHeight = height;
-    table.size = QSizeF(std::max(table.name.size().width() + 2.0 * options.diagramPadding, options.minEntityWidth), height);
+    table.size =
+        QSizeF(std::max(table.name.size().width() + 2.0 * options.diagramPadding, options.minEntityWidth), height);
     return table;
   }
 
@@ -206,7 +208,8 @@ muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity, const ErE
     row.keysText = attribute.keys.join(QLatin1Char(','));
     row.keys = measureErText(row.keysText, styles.of(ErTextKind::Keys), htmlLabels, 0.0);
     row.comment = measureErText(attribute.comment, styles.of(ErTextKind::Comment), htmlLabels, 0.0);
-    row.height = std::max({row.type.size().height(), row.name.size().height(), row.keys.size().height(), row.comment.size().height()}) +
+    row.height = std::max({row.type.size().height(), row.name.size().height(), row.keys.size().height(),
+                           row.comment.size().height()}) +
                  table.textPadding;
     row.top = rowsHeight;
     rowsHeight += row.height;
@@ -239,19 +242,18 @@ muffin::mermaid::er::measureErTable(const ErLayoutEntityInput& entity, const ErE
   }
   table.nameTop = table.textPadding / 2.0;
   table.nameHeight = table.name.size().height() + table.textPadding;
-  table.size = QSizeF(table.typeWidth + table.nameWidth + table.keysWidth + table.commentWidth,
-                      table.nameHeight + rowsHeight);
+  table.size =
+      QSizeF(table.typeWidth + table.nameWidth + table.keysWidth + table.commentWidth, table.nameHeight + rowsHeight);
   return table;
 }
 
-muffin::mermaid::er::ErLayoutMeasurements
-muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input, const ErTextOptions& text,
-                                          ErMeasureOptions options) {
+muffin::mermaid::er::ErLayoutMeasurements muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
+                                                                                    const ErTextOptions& text,
+                                                                                    ErMeasureOptions options) {
   ErLayoutMeasurements result;
   for (const ErLayoutEntityInput& entity : input.entities) {
-    const ErTableMetrics table =
-        measureErTable(entity, text.entities.value(entity.id, uniformStyles(text.table)), text.htmlLabels,
-                       text.scalePaddings, options);
+    const ErTableMetrics table = measureErTable(entity, text.entities.value(entity.id, uniformStyles(text.table)),
+                                                text.htmlLabels, text.scalePaddings, options);
     result.tables.insert(entity.id, table);
     result.entities.insert(entity.id, table.size);
     // Under the handDrawn look the rectangle is drawn by rough.js, and the
@@ -340,9 +342,10 @@ muffin::mermaid::er::layoutErDiagramDagre(const ErLayoutInput& input, const ErLa
   QHash<QString, qsizetype> order;
   for (qsizetype index = 0; index < input.relationships.size(); ++index)
     order.insert(input.relationships.at(index).id, index);
-  std::stable_sort(edges.begin(), edges.end(), [&](const flowchart::FlowLayoutEdge& a, const flowchart::FlowLayoutEdge& b) {
-    return order.value(a.id) < order.value(b.id);
-  });
+  std::stable_sort(edges.begin(), edges.end(),
+                   [&](const flowchart::FlowLayoutEdge& a, const flowchart::FlowLayoutEdge& b) {
+                     return order.value(a.id) < order.value(b.id);
+                   });
   for (const flowchart::FlowLayoutEdge& edge : edges) {
     // Mermaid leaves a 0.1 x 0.1 rectangle at each invisible point of a loop.
     for (const QPointF& mark : edge.loopMarks)

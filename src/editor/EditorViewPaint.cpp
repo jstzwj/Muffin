@@ -201,7 +201,8 @@ void EditorView::paintDocument(QPainter& painter, const QRegion& dirtyRegion) {
   cssPaintContext_.needsFrame = false;
   cssPaintContext_.focusedAncestors.clear();
   if (document_ && selection_.focus.isValid()) {
-    const auto focused = selection_.focus.text.nodeId.isValid() ? selection_.focus.text.nodeId : selection_.focus.blockId;
+    const auto focused =
+        selection_.focus.text.nodeId.isValid() ? selection_.focus.text.nodeId : selection_.focus.blockId;
     for (auto* node = document_->node(focused); node; node = node->parent())
       cssPaintContext_.focusedAncestors.insert(node->id());
   }

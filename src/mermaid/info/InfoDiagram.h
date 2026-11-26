@@ -12,8 +12,10 @@ enum class InfoErrorKind { Lexer, Parser };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(InfoErrorKind kind) {
   switch (kind) {
-  case InfoErrorKind::Lexer: return u"lexer";
-  case InfoErrorKind::Parser: return u"parse";
+  case InfoErrorKind::Lexer:
+    return u"lexer";
+  case InfoErrorKind::Parser:
+    return u"parse";
   }
   return u"parse";
 }

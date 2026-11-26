@@ -2774,9 +2774,9 @@ InlineLayout::TextLayoutPointHit InlineLayout::textLayoutHitForPoint(QPointF loc
     // A click to the left of the caret it resolved to sits after whatever collapsed at that
     // position; one to the right sits before it.
     hit.displayOffset = composition_.toDisplayOffset(caret);
-    hit.bias = caret == lineEnd ? lineEndBias
-             : x < caretX(caret) ? InlineProjectionBias::Forward
-                                : InlineProjectionBias::Backward;
+    hit.bias = caret == lineEnd    ? lineEndBias
+               : x < caretX(caret) ? InlineProjectionBias::Forward
+                                   : InlineProjectionBias::Backward;
     hit.cursorRect = QRectF(caretX(caret), line.y(), 1.0, line.height());
     return hit;
   }

@@ -53,10 +53,10 @@ QStringList entityRows(const QJsonArray& array) {
     for (const QJsonValue& attributeValue : record.value(QStringLiteral("attributes")).toArray()) {
       const QJsonObject attribute = attributeValue.toObject();
       attributes << QStringLiteral("%1 %2|%3|%4")
-                       .arg(attribute.value(QStringLiteral("type")).toString(),
-                            attribute.value(QStringLiteral("name")).toString(),
-                            joined(attribute.value(QStringLiteral("keys")).toArray()),
-                            attribute.value(QStringLiteral("comment")).toString());
+                        .arg(attribute.value(QStringLiteral("type")).toString(),
+                             attribute.value(QStringLiteral("name")).toString(),
+                             joined(attribute.value(QStringLiteral("keys")).toArray()),
+                             attribute.value(QStringLiteral("comment")).toString());
     }
     rows << QStringLiteral("%1|%2|%3|%4|%5|%6")
                 .arg(record.value(QStringLiteral("id")).toString(), record.value(QStringLiteral("name")).toString(),
@@ -73,8 +73,8 @@ QStringList entityRows(const QVector<er::ErEntity>& entities) {
     QStringList attributes;
     for (const er::ErAttribute& attribute : entity.attributes)
       attributes << QStringLiteral("%1 %2|%3|%4")
-                       .arg(attribute.attributeType, attribute.attributeName, attribute.keys.join(QLatin1Char(',')),
-                            attribute.comment);
+                        .arg(attribute.attributeType, attribute.attributeName, attribute.keys.join(QLatin1Char(',')),
+                             attribute.comment);
     // Mermaid writes every entity's class list as "default" plus its classes;
     // the port leaves it empty when there are none.
     const QString classes =
@@ -90,20 +90,18 @@ QStringList entityRows(const QVector<er::ErEntity>& entities) {
 // cardinality at each end, its type, and its label.
 QString relationshipRow(const QString& id, const QString& entityA, const QString& startCard, const QString& relType,
                         const QString& endCard, const QString& entityB, const QString& roleA) {
-  return QStringLiteral("%1|%2|%3|%4|%5|%6|%7")
-      .arg(id, entityA, startCard, relType, endCard, entityB, roleA);
+  return QStringLiteral("%1|%2|%3|%4|%5|%6|%7").arg(id, entityA, startCard, relType, endCard, entityB, roleA);
 }
 
 QStringList relationshipRows(const QJsonArray& array) {
   QStringList rows;
   for (const QJsonValue& value : array) {
     const QJsonObject record = value.toObject();
-    rows << relationshipRow(record.value(QStringLiteral("id")).toString(), record.value(QStringLiteral("entityA")).toString(),
-                            record.value(QStringLiteral("startCard")).toString(),
-                            record.value(QStringLiteral("relType")).toString(),
-                            record.value(QStringLiteral("endCard")).toString(),
-                            record.value(QStringLiteral("entityB")).toString(),
-                            record.value(QStringLiteral("roleA")).toString());
+    rows << relationshipRow(
+        record.value(QStringLiteral("id")).toString(), record.value(QStringLiteral("entityA")).toString(),
+        record.value(QStringLiteral("startCard")).toString(), record.value(QStringLiteral("relType")).toString(),
+        record.value(QStringLiteral("endCard")).toString(), record.value(QStringLiteral("entityB")).toString(),
+        record.value(QStringLiteral("roleA")).toString());
   }
   return rows;
 }
@@ -145,7 +143,7 @@ QStringList classRows(const QJsonArray& array) {
   for (const QJsonValue& value : array) {
     const QJsonObject record = value.toObject();
     rows << record.value(QStringLiteral("id")).toString() + QLatin1Char('|') +
-          joined(record.value(QStringLiteral("styles")).toArray());
+                joined(record.value(QStringLiteral("styles")).toArray());
   }
   rows.sort();
   return rows;
@@ -179,7 +177,8 @@ void compareData(const er::ErDiagramData& data, const QJsonObject& expected, con
   compareRows(entityRows(data.entities), entityRows(expected.value(QStringLiteral("entities")).toArray()),
               QStringLiteral("entities"), id);
   compareRows(relationshipRows(data.relationships, er::buildErLayoutInput(data).relationships),
-              relationshipRows(expected.value(QStringLiteral("relationships")).toArray()), QStringLiteral("relationships"), id);
+              relationshipRows(expected.value(QStringLiteral("relationships")).toArray()),
+              QStringLiteral("relationships"), id);
   compareRows(classRows(data.classDefs), classRows(expected.value(QStringLiteral("classes")).toArray()),
               QStringLiteral("classes"), id);
 }
@@ -208,8 +207,10 @@ int main(int argc, char** argv) {
     return 1;
   }
   const QJsonObject root = QJsonDocument::fromJson(bytes).object();
-  if (root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() != QLatin1String("11.16.0") ||
-      root.value(QStringLiteral("fixtureSha256")).toString() != QLatin1String("546a0f56a01597ffeaa0dc02e4f98eb86bdf4fe273aeadf7881a19e28c45c784")) {
+  if (root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() !=
+          QLatin1String("11.16.0") ||
+      root.value(QStringLiteral("fixtureSha256")).toString() !=
+          QLatin1String("546a0f56a01597ffeaa0dc02e4f98eb86bdf4fe273aeadf7881a19e28c45c784")) {
     std::fprintf(stderr, "ER grammar fixture provenance changed\n");
     return 1;
   }
@@ -250,11 +251,12 @@ int main(int argc, char** argv) {
         compareData(data, fixture.value(QStringLiteral("expectedDb")).toObject(), id);
     } catch (const er::ErParseError& error) {
       const er::ErDiagnostic diagnostic = error.diagnostic();
-      const QString nativeClass = diagnostic.stage == er::ErErrorStage::Lexer ? QStringLiteral("lexer")
-                                                                              : QStringLiteral("parser");
+      const QString nativeClass =
+          diagnostic.stage == er::ErErrorStage::Lexer ? QStringLiteral("lexer") : QStringLiteral("parser");
       if (upstreamAccepts) {
         check(false, QStringLiteral("%1: native rejected an upstream accept: %2 (line %3)")
-                         .arg(id, QString::fromUtf8(error.what())).arg(diagnostic.span.line));
+                         .arg(id, QString::fromUtf8(error.what()))
+                         .arg(diagnostic.span.line));
       } else {
         check(nativeClass == upstreamClass,
               QStringLiteral("%1/error-class: native %2, upstream %3").arg(id, nativeClass, upstreamClass));
@@ -262,7 +264,9 @@ int main(int argc, char** argv) {
         if (reject.contains(QStringLiteral("messageLine")))
           check(diagnostic.span.line == reject.value(QStringLiteral("messageLine")).toInt(),
                 QStringLiteral("%1/error-line: native %2, upstream %3")
-                    .arg(id).arg(diagnostic.span.line).arg(reject.value(QStringLiteral("messageLine")).toInt()));
+                    .arg(id)
+                    .arg(diagnostic.span.line)
+                    .arg(reject.value(QStringLiteral("messageLine")).toInt()));
       }
     }
 

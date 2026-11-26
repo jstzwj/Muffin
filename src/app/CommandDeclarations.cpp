@@ -1631,8 +1631,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
                    const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
                    const QString newImage = image_syntax::replaceSource(oldImage, link_syntax::localPathHref(relPath));
                    if (newImage != oldImage) {
-                     window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Copy Image To..."), srcStart,
-                                                                    srcEnd - srcStart, newImage);
+                     window.tab_->renderCommands.replaceSourceRange(muffin::MainWindow::tr("Copy Image To..."),
+                                                                    srcStart, srcEnd - srcStart, newImage);
                    }
                  }
                }

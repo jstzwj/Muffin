@@ -62,8 +62,7 @@ rough::Options portOptions(const QJsonObject& recorded) {
 
 QVector<qreal> numbers(const QString& text) {
   QVector<qreal> result;
-  static const QRegularExpression number(
-      QStringLiteral("[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?"));
+  static const QRegularExpression number(QStringLiteral("[-+]?(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][-+]?\\d+)?"));
   for (const auto& match : number.globalMatch(text))
     result.append(match.captured().toDouble());
   return result;
@@ -73,7 +72,7 @@ QVector<qreal> numbers(const QString& text) {
 void compareSet(const rough::OpSet& set, const QJsonObject& recorded, const QString& path) {
   if (rough::opSetTypeName(set.type) != recorded.value(QStringLiteral("type")).toString())
     failures << path + QStringLiteral("/type: native %1, upstream %2")
-                    .arg(rough::opSetTypeName(set.type), recorded.value(QStringLiteral("type")).toString());
+                           .arg(rough::opSetTypeName(set.type), recorded.value(QStringLiteral("type")).toString());
   const QVector<qreal> mine = numbers(er::roughPathData(set));
   const QVector<qreal> theirs = numbers(recorded.value(QStringLiteral("d")).toString());
   if (mine.size() != theirs.size()) {
@@ -83,9 +82,9 @@ void compareSet(const rough::OpSet& set, const QJsonObject& recorded, const QStr
   for (int index = 0; index < mine.size(); ++index) {
     if (!(std::abs(mine.at(index) - theirs.at(index)) <= kNumber)) {
       failures << path + QStringLiteral(": number %1 is %2, upstream %3")
-                      .arg(index)
-                      .arg(mine.at(index), 0, 'g', 17)
-                      .arg(theirs.at(index), 0, 'g', 17);
+                             .arg(index)
+                             .arg(mine.at(index), 0, 'g', 17)
+                             .arg(theirs.at(index), 0, 'g', 17);
       break;
     }
   }
@@ -112,7 +111,8 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() ==
               QLatin1String("11.16.0"),
           QStringLiteral("ER rough: mermaidVersion drifted"));
-  require(root.value(QStringLiteral("fixtureSha256")).toString() == QLatin1String("93f88f720fee50192b526ce45e40855af5d7da8a6b3d346ba2cf12a19cf72a39"),
+  require(root.value(QStringLiteral("fixtureSha256")).toString() ==
+              QLatin1String("93f88f720fee50192b526ce45e40855af5d7da8a6b3d346ba2cf12a19cf72a39"),
           QStringLiteral("ER rough fixture provenance changed"));
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   require(cases.size() == 8, QStringLiteral("ER rough case count drifted: %1").arg(cases.size()));
@@ -125,9 +125,9 @@ int main(int argc, char** argv) {
     for (qsizetype index = 0; index < recorded.size(); ++index) {
       const QJsonObject call = recorded.at(index).toObject();
       const QString path = id + QStringLiteral("/call %1 %2(%3)")
-                               .arg(index)
-                               .arg(call.value(QStringLiteral("method")).toString(),
-                                    call.value(QStringLiteral("owner")).toString());
+                                    .arg(index)
+                                    .arg(call.value(QStringLiteral("method")).toString(),
+                                         call.value(QStringLiteral("owner")).toString());
       const rough::Options options = portOptions(call.value(QStringLiteral("options")).toObject());
       const QJsonArray args = call.value(QStringLiteral("args")).toArray();
       const QString method = call.value(QStringLiteral("method")).toString();

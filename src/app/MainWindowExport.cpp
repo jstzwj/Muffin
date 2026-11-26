@@ -217,20 +217,23 @@ void muffin::MainWindow::runExport(ExportRecord record, bool chooseTarget) {
     if (!ok)
       error = input.errorString();
     else {
-      ok = AtomicWrite::write(record.target, [&input, &error](QSaveFile& output) {
-        while (!input.atEnd()) {
-          const auto bytes = input.read(64 * 1024);
-          if (bytes.isEmpty()) {
-            error = input.errorString();
-            return false;
-          }
-          if (output.write(bytes) != bytes.size()) {
-            error = output.errorString();
-            return false;
-          }
-        }
-        return true;
-      }, &error) == AtomicWrite::Result::Written;
+      ok = AtomicWrite::write(
+               record.target,
+               [&input, &error](QSaveFile& output) {
+                 while (!input.atEnd()) {
+                   const auto bytes = input.read(64 * 1024);
+                   if (bytes.isEmpty()) {
+                     error = input.errorString();
+                     return false;
+                   }
+                   if (output.write(bytes) != bytes.size()) {
+                     error = output.errorString();
+                     return false;
+                   }
+                 }
+                 return true;
+               },
+               &error) == AtomicWrite::Result::Written;
     }
   }
   if (!ok) {

@@ -303,8 +303,7 @@ void appendSubset(VennData& data, QSet<QString>& knownSets, QStringList sets, st
 } // namespace
 
 VennParseError::VennParseError(VennErrorKind kind, int line, int column, QString token, const QString& message)
-    : DiagramError(message.toUtf8().constData()), kind(kind), line(line), column(column),
-      token(std::move(token)) {
+    : DiagramError(message.toUtf8().constData()), kind(kind), line(line), column(column), token(std::move(token)) {
 }
 
 muffin::mermaid::DiagramErrorInfo VennParseError::info() const {

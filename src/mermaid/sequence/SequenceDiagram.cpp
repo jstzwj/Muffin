@@ -796,8 +796,7 @@ QString formatSequenceDiagnostic(const SequenceDiagnostic& diagnostic) {
 }
 
 SequenceParseError::SequenceParseError(SequenceDiagnostic diagnostic)
-    : DiagramError(formatSequenceDiagnostic(diagnostic).toUtf8().constData()),
-      diagnostic_(std::move(diagnostic)) {
+    : DiagramError(formatSequenceDiagnostic(diagnostic).toUtf8().constData()), diagnostic_(std::move(diagnostic)) {
 }
 
 muffin::mermaid::DiagramErrorInfo SequenceParseError::info() const {

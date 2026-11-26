@@ -59,7 +59,7 @@ struct ErAttribute {
 // An entity. `id` is the name relationships use. `alias` is what the table
 // shows in its place: `a[Customer]` gives id "a" and alias "Customer".
 struct ErEntity {
-  QString id;   // entity-<name>-<n>: what the relationships and the drawing call it
+  QString id; // entity-<name>-<n>: what the relationships and the drawing call it
   QString name;
   QString alias;
   QVector<ErAttribute> attributes;

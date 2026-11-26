@@ -16,9 +16,12 @@ enum class PacketErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(PacketErrorKind kind) {
   switch (kind) {
-  case PacketErrorKind::Lexer: return u"lexer";
-  case PacketErrorKind::Parser: return u"parse";
-  case PacketErrorKind::Runtime: return u"runtime";
+  case PacketErrorKind::Lexer:
+    return u"lexer";
+  case PacketErrorKind::Parser:
+    return u"parse";
+  case PacketErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

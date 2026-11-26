@@ -116,9 +116,12 @@ int main(int argc, char** argv) {
     // Canvas: upstream's viewBox is fractional and the browser screenshots it to
     // the nearest pixel; the port rounds its extent the same way, so the image is
     // the golden's size exactly.
-    require(widthDiff == 0 && heightDiff == 0,
-            QStringLiteral("%1: canvas %2x%3, browser %4x%5")
-                .arg(id).arg(native.width()).arg(native.height()).arg(browser.width()).arg(browser.height()));
+    require(widthDiff == 0 && heightDiff == 0, QStringLiteral("%1: canvas %2x%3, browser %4x%5")
+                                                   .arg(id)
+                                                   .arg(native.width())
+                                                   .arg(native.height())
+                                                   .arg(browser.width())
+                                                   .arg(browser.height()));
     const qreal iou = alphaIou(native, browser);
     const qreal rgba = foregroundRgbaSimilarity(native, browser);
     std::fprintf(stderr, "%s native=%dx%d iou=%.6f rgba=%.6f\n", qPrintable(id), native.width(), native.height(), iou,
@@ -129,8 +132,7 @@ int main(int argc, char** argv) {
     // exact upstream palette. Floors leave room for the rasterizers to differ:
     // the closest image measures 0.99 IoU and 0.98 RGBA.
     require(iou >= kMinIou, id + QStringLiteral(": alpha IoU %1 below %2").arg(iou, 0, 'f', 4).arg(kMinIou));
-    require(rgba >= kMinRgba,
-            id + QStringLiteral(": foreground RGBA %1 below %2").arg(rgba, 0, 'f', 4).arg(kMinRgba));
+    require(rgba >= kMinRgba, id + QStringLiteral(": foreground RGBA %1 below %2").arg(rgba, 0, 'f', 4).arg(kMinRgba));
     minimumIou = std::min(minimumIou, iou);
     minimumRgba = std::min(minimumRgba, rgba);
   }

@@ -364,9 +364,9 @@ void unsavedSourceClose() {
       if (auto* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
         // Another box is a failure elsewhere (a save error, a changed file):
         // name it, instead of reporting it as a prompt without Cancel.
-        require(box->button(QMessageBox::Cancel),
-                QStringLiteral("expected the unsaved-changes prompt, got \"%1\": %2")
-                    .arg(box->windowTitle(), box->text()));
+        require(
+            box->button(QMessageBox::Cancel),
+            QStringLiteral("expected the unsaved-changes prompt, got \"%1\": %2").arg(box->windowTitle(), box->text()));
         ++prompts;
         box->button(QMessageBox::Cancel)->click();
       }

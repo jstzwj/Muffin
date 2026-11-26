@@ -516,7 +516,8 @@ void nestedEdits() {
     layout.rebuild(session.document(), theme, 420);
     const auto* retained = layout.block(sibling);
     for (int i = 0; i < 3; ++i) {
-      require(session.applyTextEdit(2, 0, "a long prefix ", {{quote, 0, BlockType::BlockQuote}}) != muffin::TextEditResult::Rejected,
+      require(session.applyTextEdit(2, 0, "a long prefix ", {{quote, 0, BlockType::BlockQuote}}) !=
+                  muffin::TextEditResult::Rejected,
               "nested real edit with editor identity hint");
       const auto range = session.lastLocalTopLevelRangeChange();
       if (range.isValid())
@@ -630,7 +631,8 @@ void htmlStructuralEdits() {
     layout.rebuild(session.document(), theme, 600);
     const auto paragraph = session.document().root().children()[1]->id();
     const auto before = paint(layout, theme, 600);
-    require(session.applyTextEdit(0, 2, {}) != muffin::TextEditResult::Rejected, "edit HTML ancestor selector through real Markdown parse");
+    require(session.applyTextEdit(0, 2, {}) != muffin::TextEditResult::Rejected,
+            "edit HTML ancestor selector through real Markdown parse");
     const auto range = session.lastLocalTopLevelRangeChange();
     require(range.isValid() && layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,
             "structural edit refreshes formatting context containing inline HTML");
@@ -719,7 +721,8 @@ void realThemes() {
         layout.rebuild(session.document(), theme, width);
         const auto id = session.document().root().children()[1]->id();
         const auto start = session.document().root().children()[1]->sourceRange().byteStart;
-        require(session.applyTextEdit(start, 0, "Inserted text ", {{id, start, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
+        require(session.applyTextEdit(start, 0, "Inserted text ", {{id, start, BlockType::Paragraph}}) !=
+                    muffin::TextEditResult::Rejected,
                 "real theme text edit");
         const auto range = session.lastLocalTopLevelRangeChange();
         if (range.isValid())
@@ -817,7 +820,8 @@ void performance() {
     const auto id = session.document().root().children()[0]->id();
     QElapsedTimer timer;
     timer.start();
-    require(session.applyTextEdit(0, 0, "x", {{id, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected, "benchmark actual typing");
+    require(session.applyTextEdit(0, 0, "x", {{id, 0, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
+            "benchmark actual typing");
     const auto range = session.lastLocalTopLevelRangeChange();
     if (range.isValid())
       layout.rebuildTopLevelRange(range, session.document(), theme, {});

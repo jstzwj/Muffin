@@ -86,9 +86,11 @@ QString muffin::mermaid::er::roughPathData(const rough::OpSet& set) {
   QString result;
   for (const rough::Op& op : set.ops) {
     if (op.type == rough::OpType::Move && op.data.size() >= 2)
-      result += QStringLiteral("M") + number(op.data.at(0)) + QLatin1Char(' ') + number(op.data.at(1)) + QLatin1Char(' ');
+      result +=
+          QStringLiteral("M") + number(op.data.at(0)) + QLatin1Char(' ') + number(op.data.at(1)) + QLatin1Char(' ');
     else if (op.type == rough::OpType::LineTo && op.data.size() >= 2)
-      result += QStringLiteral("L") + number(op.data.at(0)) + QLatin1Char(' ') + number(op.data.at(1)) + QLatin1Char(' ');
+      result +=
+          QStringLiteral("L") + number(op.data.at(0)) + QLatin1Char(' ') + number(op.data.at(1)) + QLatin1Char(' ');
     else if (op.type == rough::OpType::BcurveTo && op.data.size() >= 6)
       result += QStringLiteral("C") + number(op.data.at(0)) + QLatin1Char(' ') + number(op.data.at(1)) +
                 QStringLiteral(", ") + number(op.data.at(2)) + QLatin1Char(' ') + number(op.data.at(3)) +
@@ -135,10 +137,9 @@ QVector<rough::PathCommand> muffin::mermaid::er::pathCommands(const QString& dat
       current = subpathStart;
       continue;
     }
-    const int count = command.toUpper() == QLatin1Char('C') ? 6 : (command.toUpper() == QLatin1Char('H') ||
-                                                                    command.toUpper() == QLatin1Char('V'))
-                                                                ? 1
-                                                                : 2;
+    const int count = command.toUpper() == QLatin1Char('C')                                              ? 6
+                      : (command.toUpper() == QLatin1Char('H') || command.toUpper() == QLatin1Char('V')) ? 1
+                                                                                                         : 2;
     const QVector<qreal> values = numbers(index, count);
     if (values.size() != count)
       break;

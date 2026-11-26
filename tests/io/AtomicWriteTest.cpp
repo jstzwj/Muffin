@@ -51,7 +51,8 @@ void writesAndReplaces() {
   require(AtomicWrite::write(path, QByteArray(), nullptr) == AtomicWrite::Result::Written && readBytes(path).isEmpty(),
           "an empty write empties the file");
   require(AtomicWrite::write(path, [](QSaveFile& file) { return file.write("a") == 1 && file.write("b") == 1; }) ==
-              AtomicWrite::Result::Written && readBytes(path) == "ab",
+                  AtomicWrite::Result::Written &&
+              readBytes(path) == "ab",
           "a writer fills the file in several writes");
   require(filesIn(directory) == QStringList{name}, "no temporary file is left behind");
 }
@@ -80,13 +81,15 @@ void failuresAreReportedAtOnce() {
             "a read-only file is reported at once");
   }
   require(AtomicWrite::write(directory.filePath(QStringLiteral("gone/note.md")), "x", &error, &budget) ==
-              AtomicWrite::Result::Failed && !error.isEmpty(),
+                  AtomicWrite::Result::Failed &&
+              !error.isEmpty(),
           "a folder that is not there is reported at once");
   require(AtomicWrite::write(path + QStringLiteral("/inside.md"), "x", &error, &budget) == AtomicWrite::Result::Failed,
           "a file is not a folder, and that is reported at once");
 #ifdef Q_OS_WIN
   require(AtomicWrite::write(directory.filePath(QStringLiteral("a<b.md")), "x", &error, &budget) ==
-              AtomicWrite::Result::Failed && !error.isEmpty(),
+                  AtomicWrite::Result::Failed &&
+              !error.isEmpty(),
           "a name the system does not take is reported at once");
 #endif
   require(QFile::setPermissions(path, writable) && readBytes(path) == "original", "nothing was written");
@@ -105,20 +108,26 @@ void turnedDownWrites() {
   QElapsedTimer elapsed;
   elapsed.start();
   int checks = 0;
-  require(AtomicWrite::write(path, "never installed", &error, &budget, [&] {
-            ++checks;
-            return false;
-          }) == AtomicWrite::Result::Declined && error.isEmpty() && checks == 1,
+  require(AtomicWrite::write(path, "never installed", &error, &budget,
+                             [&] {
+                               ++checks;
+                               return false;
+                             }) == AtomicWrite::Result::Declined &&
+              error.isEmpty() && checks == 1,
           "a file that is no longer current turns the write down, once");
-  require(AtomicWrite::write(path, [](QSaveFile& file) {
-            file.write("partial");
-            return false;
-          }) == AtomicWrite::Result::Declined && error.isEmpty(),
+  require(AtomicWrite::write(path,
+                             [](QSaveFile& file) {
+                               file.write("partial");
+                               return false;
+                             }) == AtomicWrite::Result::Declined &&
+              error.isEmpty(),
           "a writer that turns the write down is obeyed");
-  require(AtomicWrite::write(path, [&error](QSaveFile&) {
-            error = QStringLiteral("turned down on purpose");
-            return false;
-          }) == AtomicWrite::Result::Declined && error == QStringLiteral("turned down on purpose"),
+  require(AtomicWrite::write(path,
+                             [&error](QSaveFile&) {
+                               error = QStringLiteral("turned down on purpose");
+                               return false;
+                             }) == AtomicWrite::Result::Declined &&
+              error == QStringLiteral("turned down on purpose"),
           "and its reason is the one reported");
   require(readBytes(path) == "original" && elapsed.elapsed() < 500 &&
               filesIn(directory) == QStringList{QStringLiteral("note.md")},
@@ -168,7 +177,8 @@ void heldReplacements() {
   QTimer::singleShot(0, [&eventDispatched] { eventDispatched = true; });
   const auto committed = AtomicWrite::write(path, "replacement after release", &error);
   release.join();
-  require(committed == AtomicWrite::Result::Written && error.isEmpty() && readBytes(path) == "replacement after release",
+  require(committed == AtomicWrite::Result::Written && error.isEmpty() &&
+              readBytes(path) == "replacement after release",
           "a briefly held file is replaced once it is let go");
   require(messages.size() == 1 && messages.first().contains(QStringLiteral("waited out")) &&
               messages.first().contains(path),

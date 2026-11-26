@@ -92,13 +92,15 @@ void testOutlineIndexTracksLocalEdits() {
   const quint64 initialRevision = session.document().outlineRevision();
   const qsizetype oldBStart = session.document().outline().at(1).sourceRange.byteStart;
 
-  require(session.applyTextEdit(8, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected, QStringLiteral("Body edit should apply locally"));
+  require(session.applyTextEdit(8, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected,
+          QStringLiteral("Body edit should apply locally"));
   require(session.document().outlineRevision() == initialRevision,
           QStringLiteral("Non-heading edit should not invalidate heading index"));
   require(session.document().outline().at(1).sourceRange.byteStart == oldBStart + 1,
           QStringLiteral("Lazy heading source range did not shift"));
 
-  require(session.applyTextEdit(3, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected, QStringLiteral("Heading edit should apply locally"));
+  require(session.applyTextEdit(3, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected,
+          QStringLiteral("Heading edit should apply locally"));
   const QVector<OutlineEntry> outline = session.document().outline();
   require(session.document().outlineRevision() > initialRevision,
           QStringLiteral("Heading edit should advance outline revision"));

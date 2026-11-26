@@ -30,8 +30,7 @@ QPointF pathStartTangent(const QPainterPath& path) {
   // point; the path leaves its start towards the first one.
   const QPainterPath::Element start = path.elementAt(0);
   const QPainterPath::Element next = path.elementAt(1);
-  const QPainterPath::Element towards =
-      next.type == QPainterPath::CurveToElement ? path.elementAt(3) : next;
+  const QPainterPath::Element towards = next.type == QPainterPath::CurveToElement ? path.elementAt(3) : next;
   return QPointF(towards.x, towards.y) - QPointF(start.x, start.y);
 }
 

@@ -15,9 +15,12 @@ enum class VennErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(VennErrorKind kind) {
   switch (kind) {
-  case VennErrorKind::Lexer: return u"lexer";
-  case VennErrorKind::Parser: return u"parse";
-  case VennErrorKind::Runtime: return u"runtime";
+  case VennErrorKind::Lexer:
+    return u"lexer";
+  case VennErrorKind::Parser:
+    return u"parse";
+  case VennErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

@@ -57,10 +57,14 @@ void requireCaretsRoundTrip(const InlineLayout& layout, const QString& label) {
   const QVector<Caret> carets = visualCarets(layout, label);
   for (const Caret& caret : carets) {
     const qsizetype hit = hitAt(layout, caret.x, caret.y);
-    const bool sharesPosition =
-        std::any_of(carets.cbegin(), carets.cend(), [&](const Caret& other) { return other.offset == hit && qAbs(other.x - caret.x) < 0.5; });
+    const bool sharesPosition = std::any_of(carets.cbegin(), carets.cend(), [&](const Caret& other) {
+      return other.offset == hit && qAbs(other.x - caret.x) < 0.5;
+    });
     require(sharesPosition, QStringLiteral("%1: click at caret %2 (x=%3) hit offset %4")
-                                .arg(label).arg(caret.offset).arg(caret.x).arg(hit));
+                                .arg(label)
+                                .arg(caret.offset)
+                                .arg(caret.x)
+                                .arg(hit));
   }
 }
 
@@ -70,9 +74,8 @@ void requireCaretsRoundTrip(const InlineLayout& layout, const QString& label) {
 void requireNearestCaretWins(const InlineLayout& layout, const QString& label) {
   const QVector<Caret> carets = visualCarets(layout, label);
   const auto landsOn = [&](qsizetype hit, const Caret& caret) {
-    return std::any_of(carets.cbegin(), carets.cend(), [&](const Caret& other) {
-      return other.offset == hit && qAbs(other.x - caret.x) < 0.5;
-    });
+    return std::any_of(carets.cbegin(), carets.cend(),
+                       [&](const Caret& other) { return other.offset == hit && qAbs(other.x - caret.x) < 0.5; });
   };
   for (int i = 1; i < carets.size(); ++i) {
     const Caret& left = carets.at(i - 1);
@@ -82,14 +85,21 @@ void requireNearestCaretWins(const InlineLayout& layout, const QString& label) {
     const qreal width = right.x - left.x;
     require(landsOn(hitAt(layout, left.x + width * 0.25, left.y), left),
             QStringLiteral("%1: a click left of the midpoint between carets %2 and %3 should land on %2")
-                .arg(label).arg(left.offset).arg(right.offset));
+                .arg(label)
+                .arg(left.offset)
+                .arg(right.offset));
     require(landsOn(hitAt(layout, left.x + width * 0.75, left.y), right),
             QStringLiteral("%1: a click right of the midpoint between carets %2 and %3 should land on %3")
-                .arg(label).arg(left.offset).arg(right.offset));
+                .arg(label)
+                .arg(left.offset)
+                .arg(right.offset));
     const qsizetype middle = hitAt(layout, left.x + width * 0.5, left.y);
     require(landsOn(middle, left) || landsOn(middle, right),
             QStringLiteral("%1: the midpoint between carets %2 and %3 hit %4")
-                .arg(label).arg(left.offset).arg(right.offset).arg(middle));
+                .arg(label)
+                .arg(left.offset)
+                .arg(right.offset)
+                .arg(middle));
   }
 }
 
@@ -102,7 +112,10 @@ void requireHitCursorRectMatches(const InlineLayout& layout, const QString& labe
     const QRectF painted = layout.cursorRect(hit);
     require(qAbs(reported.left() - painted.left()) < 0.5,
             QStringLiteral("%1: the hit cursor rect (x=%2) should be the painted caret %3 (x=%4)")
-                .arg(label).arg(reported.left()).arg(hit).arg(painted.left()));
+                .arg(label)
+                .arg(reported.left())
+                .arg(hit)
+                .arg(painted.left()));
   }
 }
 

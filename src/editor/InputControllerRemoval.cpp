@@ -67,12 +67,11 @@ bool InputController::removeTopLevelBlock(MarkdownNode& node, int nodeIndex, qsi
          if (applied.cursor.isValid() && !affectedNodes.contains(applied.cursor.blockId)) {
            affectedNodes.push_back(applied.cursor.blockId);
          }
-         return EditTransaction(
-             kind, label,
-             RemoveNodeCommand{removedNodeId, removedNodeType, nodeIndex,
-                               TextDelta{deleteStart, applied.removedText, QString()}, blockStart,
-                               std::move(removedNode), applied.beforeSelection.focus, applied.cursor,
-                               std::move(affectedNodes)});
+         return EditTransaction(kind, label,
+                                RemoveNodeCommand{removedNodeId, removedNodeType, nodeIndex,
+                                                  TextDelta{deleteStart, applied.removedText, QString()}, blockStart,
+                                                  std::move(removedNode), applied.beforeSelection.focus, applied.cursor,
+                                                  std::move(affectedNodes)});
        }});
   return outcome.applied;
 }

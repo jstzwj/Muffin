@@ -165,7 +165,8 @@ void testBackgroundSnapshotsOwnTextCoalesceAndClean() {
                 writer.queueStats().runningCodeUnits == session.markdownText().size(),
             "running snapshot accounting must not copy or omit its text");
     require(!writer.request(session, key), "same in-flight revision must not enqueue twice");
-    require(session.applyTextEdit(0, 8, QStringLiteral("second")) != muffin::TextEditResult::Rejected, "edit while snapshot is running");
+    require(session.applyTextEdit(0, 8, QStringLiteral("second")) != muffin::TextEditResult::Rejected,
+            "edit while snapshot is running");
     require(writer.request(session, key), "new revision accepted");
     require(writer.queueStats().pending == 1 && writer.queueStats().pendingCodeUnits == session.markdownText().size(),
             "pending snapshot accounting must track the coalesced revision");

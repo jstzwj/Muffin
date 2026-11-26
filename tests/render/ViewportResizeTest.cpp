@@ -148,7 +148,8 @@ void testHtmlViewportUnitsAndEditsDuringResize() {
   require(layout.relayoutForViewportWidth(theme, 1200, changed), "HTML viewport change should be incremental");
   require(layout.block(html, theme)->height() > before + 40, "height-only resize must update HTML vh units");
   const auto first = session.document().root().children().front()->id();
-  require(session.applyTextEdit(5, 0, "\n\nnew paragraph\n\n", {{first, 5, BlockType::Paragraph}}) != muffin::TextEditResult::Rejected,
+  require(session.applyTextEdit(5, 0, "\n\nnew paragraph\n\n", {{first, 5, BlockType::Paragraph}}) !=
+              muffin::TextEditResult::Rejected,
           "edit during resize");
   const auto range = session.lastLocalTopLevelRangeChange();
   require(range.isValid() && layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,

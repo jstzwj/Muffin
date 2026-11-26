@@ -16,9 +16,12 @@ enum class MindmapErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(MindmapErrorKind kind) {
   switch (kind) {
-  case MindmapErrorKind::Lexer: return u"lexer";
-  case MindmapErrorKind::Parser: return u"parse";
-  case MindmapErrorKind::Runtime: return u"runtime";
+  case MindmapErrorKind::Lexer:
+    return u"lexer";
+  case MindmapErrorKind::Parser:
+    return u"parse";
+  case MindmapErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

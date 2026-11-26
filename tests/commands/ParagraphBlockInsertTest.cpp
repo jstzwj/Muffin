@@ -33,7 +33,7 @@ void testInsertCodeBlock() {
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "code block undo should use TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("Hello"), "code block undo text mismatch");
 }
 
@@ -56,7 +56,7 @@ void testInsertFormulaBlock() {
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "formula block undo should use TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("Hello"), "formula block undo text mismatch");
 }
 
@@ -199,7 +199,7 @@ void testInsertTableOfContents() {
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "table of contents undo should use TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("Hello"), "table of contents undo text mismatch");
 }
 
@@ -419,7 +419,7 @@ void testConvertToUnorderedList() {
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "list undo should use TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("Item text"), "list undo text mismatch");
 }
 
@@ -439,7 +439,7 @@ void testConvertToOrderedList() {
 
   const EditTransaction undo = undoStack.takeUndo();
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("First item"), "ordered list undo text mismatch");
 }
 
@@ -459,7 +459,7 @@ void testConvertToTaskList() {
 
   const EditTransaction undo = undoStack.takeUndo();
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   require(session.markdownText().toString() == QStringLiteral("Task item"), "task list undo text mismatch");
 }
 

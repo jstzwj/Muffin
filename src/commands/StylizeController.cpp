@@ -1025,18 +1025,17 @@ bool StylizeController::applyStyleDelta(EditTransaction::Kind kind, const QStrin
     const auto focus = resolver.sourceAnchoredCursor(selection.focus);
     backwards = anchor.text.sourceOffset > focus.text.sourceOffset;
   }
-  const EditOutcome outcome =
-      applyEdit(ctx_,
-                {.sourceStart = sourceStart,
-                 .removedLength = removedLength,
-                 .insertedText = std::move(insertedText),
-                 .nodeHints = std::move(nodeHints)},
-                {.kind = kind,
-                 .label = label,
-                 .fallbackSourceOffset = nextSelectionStart,
-                 .selectionStart = nextSelectionStart,
-                 .selectionEnd = nextSelectionEnd,
-                 .selectionBackwards = backwards});
+  const EditOutcome outcome = applyEdit(ctx_,
+                                        {.sourceStart = sourceStart,
+                                         .removedLength = removedLength,
+                                         .insertedText = std::move(insertedText),
+                                         .nodeHints = std::move(nodeHints)},
+                                        {.kind = kind,
+                                         .label = label,
+                                         .fallbackSourceOffset = nextSelectionStart,
+                                         .selectionStart = nextSelectionStart,
+                                         .selectionEnd = nextSelectionEnd,
+                                         .selectionBackwards = backwards});
   return outcome.applied;
 }
 

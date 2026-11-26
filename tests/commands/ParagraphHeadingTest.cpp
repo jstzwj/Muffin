@@ -94,13 +94,13 @@ void testHeadingUndoRedo() {
   const EditTransaction undo = undoStack.takeUndo();
   require(undo.isTextDeltaCommand(), "heading undo should use TextDeltaCommand");
   session.applyTextEdit(undo.textDeltaCommand().delta.start, undo.textDeltaCommand().delta.insertedText.size(),
-                         undo.textDeltaCommand().delta.removedText);
+                        undo.textDeltaCommand().delta.removedText);
   selection.setCursorPosition(undo.textDeltaCommand().beforeCursor);
   require(session.markdownText().toString() == QStringLiteral("Hello"), "heading undo text mismatch");
 
   const EditTransaction redo = undoStack.takeRedo();
   session.applyTextEdit(redo.textDeltaCommand().delta.start, redo.textDeltaCommand().delta.removedText.size(),
-                         redo.textDeltaCommand().delta.insertedText);
+                        redo.textDeltaCommand().delta.insertedText);
   selection.setCursorPosition(redo.textDeltaCommand().afterCursor);
   require(session.markdownText().toString() == QStringLiteral("## Hello"), "heading redo text mismatch");
 }

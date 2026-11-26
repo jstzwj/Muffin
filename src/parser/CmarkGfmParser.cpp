@@ -79,8 +79,7 @@ bool isBlankLine(QStringView line);
 // blank lines, while a display-math block stops short of its closing $$ line. Both the
 // byte-range annotation (for a thematic break) and the virtual-empty-paragraph gap math (for
 // any block) need the real content end, so it is recovered here once.
-template <typename IsEmptyLine>
-int lastContentLine(const SourceRange& range, int totalLines, IsEmptyLine isEmptyLine) {
+template <typename IsEmptyLine> int lastContentLine(const SourceRange& range, int totalLines, IsEmptyLine isEmptyLine) {
   if (range.lineStart <= 0 || range.lineEnd <= range.lineStart) {
     return range.lineEnd;
   }
@@ -106,8 +105,7 @@ int lastNonBlankLine(const LineStartOffsetCache& lineOffsets, QStringView markdo
 // container only says which of its lines count as empty and how the inserted paragraph is
 // placed in the source.
 
-template <typename IsEmptyLine, typename MakeEmptyParagraph>
-struct EmptyLineRule {
+template <typename IsEmptyLine, typename MakeEmptyParagraph> struct EmptyLineRule {
   IsEmptyLine isEmptyLine;
   // May return nullptr when the line has no source position to anchor the paragraph to.
   MakeEmptyParagraph makeEmptyParagraph;
@@ -116,8 +114,7 @@ struct EmptyLineRule {
 template <typename IsEmptyLine, typename MakeEmptyParagraph>
 EmptyLineRule(IsEmptyLine, MakeEmptyParagraph) -> EmptyLineRule<IsEmptyLine, MakeEmptyParagraph>;
 
-template <typename IsEmptyLine>
-int countEmptyLines(IsEmptyLine isEmptyLine, int firstLine, int lastLine) {
+template <typename IsEmptyLine> int countEmptyLines(IsEmptyLine isEmptyLine, int firstLine, int lastLine) {
   int count = 0;
   for (int line = firstLine; line <= lastLine; ++line) {
     if (isEmptyLine(line)) {
@@ -171,8 +168,8 @@ int insertVirtualEmptyParagraphsInGaps(const Rule& rule, int totalLines, bool co
     }
     // The first empty line after content stays spacing; every second one becomes a paragraph.
     insertEmptyParagraphs(rule, container, childIndex, previousEndLine + 2, emptyLines / 2);
-    previousEndLine = qMax(previousEndLine,
-                           lastContentLine(range, totalLines, [&](int line) { return rule.isEmptyLine(line); }));
+    previousEndLine =
+        qMax(previousEndLine, lastContentLine(range, totalLines, [&](int line) { return rule.isEmptyLine(line); }));
     ++childIndex;
   }
   return previousEndLine;
@@ -181,7 +178,8 @@ int insertVirtualEmptyParagraphsInGaps(const Rule& rule, int totalLines, bool co
 // Empty lines behind the last block, up to `endLine`, follow the same rule as the gaps.
 template <typename Rule>
 void appendTrailingVirtualEmptyParagraphs(const Rule& rule, MarkdownNode& container, int lastContent, int endLine) {
-  insertEmptyParagraphs(rule, container, -1, lastContent + 2, countEmptyLines(rule.isEmptyLine, lastContent + 1, endLine) / 2);
+  insertEmptyParagraphs(rule, container, -1, lastContent + 2,
+                        countEmptyLines(rule.isEmptyLine, lastContent + 1, endLine) / 2);
 }
 
 void annotateSourceOffsets(const LineStartOffsetCache& lineOffsets, QStringView markdown, MarkdownNode& node) {
@@ -1988,18 +1986,18 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
       return;
     }
 
-    const EmptyLineRule rule{
-        [&](int line) {
-          int column = 1;
-          qsizetype offset = -1;
-          return isEmptyQuoteLine(node, line, column, offset);
-        },
-        [&](int line) -> std::unique_ptr<MarkdownNode> {
-          int column = 1;
-          qsizetype offset = -1;
-          return isEmptyQuoteLine(node, line, column, offset) ? createVirtualEmptyParagraph(line, column, offset)
-                                                              : nullptr;
-        }};
+    const EmptyLineRule rule{[&](int line) {
+                               int column = 1;
+                               qsizetype offset = -1;
+                               return isEmptyQuoteLine(node, line, column, offset);
+                             },
+                             [&](int line) -> std::unique_ptr<MarkdownNode> {
+                               int column = 1;
+                               qsizetype offset = -1;
+                               return isEmptyQuoteLine(node, line, column, offset)
+                                          ? createVirtualEmptyParagraph(line, column, offset)
+                                          : nullptr;
+                             }};
     const SourceRange quote = node.sourceRange();
     // The quote's opening line counts as content: empty lines directly behind it get their
     // paragraphs like any gap between two children.
@@ -2027,9 +2025,9 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInLists(QStringView markdown, M
   // and the line/col alone would leave the VEP unresolved. Zero-width, so the caret maps to the
   // line start — typing there begins at column 0 and splits the list.
   const EmptyLineRule rule{isBlank, [&](int line) -> std::unique_ptr<MarkdownNode> {
-                           const qsizetype offset = lineOffsets.lineStartOffset(line);
-                           return offset < 0 ? nullptr : createVirtualEmptyParagraph(line, 1, offset);
-                         }};
+                             const qsizetype offset = lineOffsets.lineStartOffset(line);
+                             return offset < 0 ? nullptr : createVirtualEmptyParagraph(line, 1, offset);
+                           }};
 
   const auto visit = [&](const auto& self, MarkdownNode& node) -> void {
     for (const auto& child : node.children()) {

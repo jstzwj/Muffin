@@ -44,7 +44,7 @@ namespace {
 
 // Tolerances in px.
 constexpr qreal kHeight = 1.5; // state node height: fixed-radius circles + label rows
-constexpr qreal kWidth = 0.05;  // state node width: text measured in the same font
+constexpr qreal kWidth = 0.05; // state node width: text measured in the same font
 
 QStringList failures;
 
@@ -122,10 +122,8 @@ int main(int argc, char** argv) {
 
     // Counts (font-independent topology).
     if (actualNodes.size() != expectedNodes.size())
-      divergences << QStringLiteral("%1: %2 nodes, upstream %3")
-                         .arg(id)
-                         .arg(actualNodes.size())
-                         .arg(expectedNodes.size());
+      divergences
+          << QStringLiteral("%1: %2 nodes, upstream %3").arg(id).arg(actualNodes.size()).arg(expectedNodes.size());
     if (actualEdges.size() != expectedEdges.size())
       divergences << QStringLiteral("%1: %2 transitions, upstream %3")
                          .arg(id)

@@ -95,7 +95,7 @@ struct ErSceneStyle {
   ErTextStyle relationshipText;
   // `.node rect`: an entity without attributes. The table of an entity with
   // attributes starts from the same two.
-  QString nodeFill;   // mainBkg
+  QString nodeFill; // mainBkg
   QString nodeBorder;
   // The table's attribute rows. Empty: the theme defines no such color (neo
   // and the redux themes), and the rows stay unfilled.
@@ -135,8 +135,8 @@ struct ErSceneStyle {
 // go, and the font it is drawn in.
 struct ErSceneText {
   flowchart::FlowLabelDocument document;
-  QRectF rect;     // the box Mermaid's document gives the text
-  QRectF textBox;  // where its glyphs go: `rect`, unless an SVG label's box is larger
+  QRectF rect;    // the box Mermaid's document gives the text
+  QRectF textBox; // where its glyphs go: `rect`, unless an SVG label's box is larger
   ErTextStyle style;
   // An SVG <text>: its first baseline is a font size below the top of its
   // box, not an HTML line box.
@@ -201,7 +201,7 @@ struct ErSceneEntity {
 struct ErMarker {
   qreal refX = 0.0;
   qreal refY = 0.0;
-  qreal width = 0.0;  // the marker's viewport
+  qreal width = 0.0; // the marker's viewport
   qreal height = 0.0;
   QString path;
   bool hasRing = false;

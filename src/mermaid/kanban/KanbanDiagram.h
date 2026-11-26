@@ -16,10 +16,14 @@ enum class KanbanErrorKind { Lexer, Parser, Yaml, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(KanbanErrorKind kind) {
   switch (kind) {
-  case KanbanErrorKind::Lexer: return u"lexer";
-  case KanbanErrorKind::Parser: return u"parse";
-  case KanbanErrorKind::Yaml: return u"yaml";
-  case KanbanErrorKind::Runtime: return u"runtime";
+  case KanbanErrorKind::Lexer:
+    return u"lexer";
+  case KanbanErrorKind::Parser:
+    return u"parse";
+  case KanbanErrorKind::Yaml:
+    return u"yaml";
+  case KanbanErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

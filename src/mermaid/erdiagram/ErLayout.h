@@ -129,10 +129,10 @@ struct ErTableRowMetrics {
 // padding, and a column with no text in any row left out. An entity without
 // attributes has a name and a size only.
 struct ErTableMetrics {
-  QSizeF size;      // the outer rectangle
+  QSizeF size; // the outer rectangle
   ErTextMetrics name;
   qreal nameTop = 0.0;     // the name's origin, from the table's top edge
-  qreal nameHeight = 0.0; // the name band: the name and the padding under it
+  qreal nameHeight = 0.0;  // the name band: the name and the padding under it
   qreal padding = 0.0;     // added to each cell's width, and between the table's edge and the first cell's text
   qreal textPadding = 0.0; // added under the name and under each row's tallest text
   qreal typeWidth = 0.0, nameWidth = 0.0, keysWidth = 0.0, commentWidth = 0.0;
@@ -197,7 +197,8 @@ ErLayoutInput buildErLayoutInput(const ErDiagramData& data);
 
 // A text as createText lays it out for erBox: Markdown, and broken where
 // createFormattedText breaks an SVG text where `maximumLineWidth` is positive.
-ErTextMetrics measureErText(const QString& text, const ErTextStyle& style, bool htmlLabels, qreal maximumLineWidth = 0.0);
+ErTextMetrics measureErText(const QString& text, const ErTextStyle& style, bool htmlLabels,
+                            qreal maximumLineWidth = 0.0);
 
 // The box an SVG text is drawn in, from its origin: the box its layout gave
 // it, which is where its glyphs go.
@@ -239,7 +240,7 @@ ErLayoutMeasurements measureErLayoutInput(const ErLayoutInput& input, const ErTe
 // erDiagram's default spacing (its `nodeSpacing` is 140, where the other
 // diagrams share 50).
 ErPlacementResult layoutErDiagramDagre(const ErLayoutInput& input, const ErLayoutMeasurements& measurements,
-                                      qreal entitySpacing = 140.0, qreal rankSpacing = 80.0);
+                                       qreal entitySpacing = 140.0, qreal rankSpacing = 80.0);
 
 // The kind of a marker, as Mermaid names its definitions: onlyOne,
 // zeroOrOne... Empty for MdParent, which has no marker.

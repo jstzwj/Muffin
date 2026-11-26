@@ -542,9 +542,9 @@ bool EditorController::applyTransaction(const EditTransaction& transaction, bool
     const qsizetype replaceStart = command.delta.start;
     const qsizetype replaceEnd =
         command.delta.start + (undo ? command.delta.insertedText.size() : command.delta.removedText.size());
-    const TextEditResult applied = session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart,
-                                                               command.nodeSourceStart, replaceEnd - replaceStart,
-                                                               replacement);
+    const TextEditResult applied =
+        session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart, command.nodeSourceStart,
+                                    replaceEnd - replaceStart, replacement);
     if (applied == TextEditResult::Rejected) {
       warnUndoApplyFailed(undo, "insert node command", "inserted node text edit was rejected", replaceStart,
                           replaceEnd - replaceStart, session_->markdownText().size());

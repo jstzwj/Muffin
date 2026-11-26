@@ -31,13 +31,13 @@ CursorPosition cursorForBlock(NodeId blockId, qsizetype offset, const DocumentSe
 // `preferLaterEmptyAtOffset` resolves a boundary that blocks share to the empty paragraph
 // starting there, which keeps a caret that is typing into that paragraph inside it.
 CursorPosition cursorForSourceOffset(const BlockEditContextResolver& resolver, qsizetype sourceOffset,
-                                    bool preferLaterEmptyAtOffset = false);
+                                     bool preferLaterEmptyAtOffset = false);
 
 // The source offset mapped through the edit context of a block that is already known.
 CursorPosition cursorForSourceInNode(const BlockEditContextResolver& resolver, MarkdownNode& node,
-                                    qsizetype sourceOffset);
+                                     qsizetype sourceOffset);
 CursorPosition cursorForSourceInContext(const BlockEditContextResolver& resolver, const BlockEditContext& context,
-                                       qsizetype sourceOffset);
+                                        qsizetype sourceOffset);
 
 // A caret behind a top-level block that has no editable text of its own (a thematic break).
 CursorPosition blockAfterCursor(const MarkdownNode& host, qsizetype sourceOffset);
@@ -45,6 +45,6 @@ CursorPosition blockAfterCursor(const MarkdownNode& host, qsizetype sourceOffset
 // Where the caret goes after an edit: the preferred caret, resolved again through its source
 // offset so that it follows the text, or else the caret at `fallbackSourceOffset`.
 CursorPosition cursorAfterEdit(const BlockEditContextResolver& resolver, CursorPosition preferredCursor,
-                              qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false);
+                               qsizetype fallbackSourceOffset, bool preferLaterEmptyAtOffset = false);
 
 } // namespace muffin

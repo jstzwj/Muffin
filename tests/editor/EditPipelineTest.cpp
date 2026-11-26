@@ -145,8 +145,12 @@ void testSpellingReplacementIsOneUndoStep() {
 void testAnEditTheSliceParserRefusesStillApplies() {
   Editor editor;
   editor.open(QStringLiteral("a\n\n```\ncode\n```\n\nnext"));
-  EditorContext context{&editor.session, &editor.selection(), &editor.controller.undoStack(),
-                        &editor.controller.brushQueue(), &editor.view, {}};
+  EditorContext context{&editor.session,
+                        &editor.selection(),
+                        &editor.controller.undoStack(),
+                        &editor.controller.brushQueue(),
+                        &editor.view,
+                        {}};
   // The blank line after the code block and the first character of the paragraph behind it are
   // deleted together, as when a selection that spans the gap is removed. The slice to re-parse
   // would have to start inside the code block's trailing blank line, where no block starts, so

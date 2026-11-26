@@ -59,8 +59,7 @@ struct TopLevelSlice {
 // existed before the edit, moved to where the edit left them, and for an edit that stayed on one
 // line the edited line itself, which may only now look like a marker.
 QVector<qsizetype> demotedPendingMarkers(const QVector<qsizetype>& markersBefore, const QString& text,
-                                         qsizetype sourceStart, qsizetype removedLength,
-                                         const QString& insertedText) {
+                                         qsizetype sourceStart, qsizetype removedLength, const QString& insertedText) {
   QVector<qsizetype> offsets =
       muffin::shiftPendingMarkerOffsets(markersBefore, sourceStart, removedLength, insertedText.size());
   if (!insertedText.contains(QLatin1Char('\n'))) {
@@ -1130,8 +1129,8 @@ void muffin::DocumentSession::setOpenConfirmationPending(bool pending) {
 }
 
 muffin::TextEditResult muffin::DocumentSession::applyTextEdit(qsizetype sourceStart, qsizetype removedLength,
-                                                      QString insertedText,
-                                                      QVector<LocalEditNodeHint> nodeHints) {
+                                                              QString insertedText,
+                                                              QVector<LocalEditNodeHint> nodeHints) {
   // Reject edits before touching history or parseGeneration_. During an async open the current
   // document is still the old buffer; superseding the worker here would discard the opened file.
   if (!isEditingAllowed()) {
@@ -1173,7 +1172,7 @@ muffin::TextEditResult muffin::DocumentSession::applyTextEdit(qsizetype sourceSt
 }
 
 muffin::TextEditResult muffin::DocumentSession::applyTableSnapshot(NodeId tableId, int tableIndex,
-                                                           const MarkdownNode& tableSnapshot) {
+                                                                   const MarkdownNode& tableSnapshot) {
   if (!isEditingAllowed()) {
     return TextEditResult::Rejected; // 锁定编辑: table structure/content changes are user edits
   }
@@ -1199,7 +1198,7 @@ muffin::TextEditResult muffin::DocumentSession::applyTableSnapshot(NodeId tableI
 }
 
 muffin::TextEditResult muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId, BlockType nodeType, int nodeIndex,
-                                                          const MarkdownNode& nodeSnapshot) {
+                                                                  const MarkdownNode& nodeSnapshot) {
   if (!isEditingAllowed()) {
     return TextEditResult::Rejected; // 锁定编辑: block rewrites are user edits
   }
@@ -1224,9 +1223,9 @@ muffin::TextEditResult muffin::DocumentSession::applyNodeSnapshot(NodeId nodeId,
   return applyTextEdit(range.byteStart, range.byteEnd - range.byteStart, replacementText, std::move(nodeHints));
 }
 
-muffin::TextEditResult muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType, qsizetype sourceStart,
-                                                          qsizetype targetSourceOffset, qsizetype removedLength,
-                                                          QString insertedText) {
+muffin::TextEditResult muffin::DocumentSession::applyInsertedNode(NodeId nodeId, BlockType nodeType,
+                                                                  qsizetype sourceStart, qsizetype targetSourceOffset,
+                                                                  qsizetype removedLength, QString insertedText) {
   if (!isEditingAllowed()) {
     return TextEditResult::Rejected; // 锁定编辑: node insertion/removal are user edits
   }

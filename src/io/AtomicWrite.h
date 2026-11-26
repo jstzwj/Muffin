@@ -47,8 +47,8 @@ public:
 
   /// Replaces `path` with `bytes`. A write of them that fails is `Failed` and
   /// says why in `error`.
-  static Result write(const QString& path, const QByteArray& bytes, QString* error = nullptr,
-                      Budget* budget = nullptr, const std::function<bool()>& stillCurrent = nullptr);
+  static Result write(const QString& path, const QByteArray& bytes, QString* error = nullptr, Budget* budget = nullptr,
+                      const std::function<bool()>& stillCurrent = nullptr);
 
   /// The same, with `writer` filling the open temporary file. It returns false
   /// to turn the write down, saying why in `error` itself. `stillCurrent` runs

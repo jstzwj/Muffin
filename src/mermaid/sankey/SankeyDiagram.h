@@ -13,9 +13,12 @@ enum class SankeyErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(SankeyErrorKind kind) {
   switch (kind) {
-  case SankeyErrorKind::Lexer: return u"lexer";
-  case SankeyErrorKind::Parser: return u"parse";
-  case SankeyErrorKind::Runtime: return u"runtime";
+  case SankeyErrorKind::Lexer:
+    return u"lexer";
+  case SankeyErrorKind::Parser:
+    return u"parse";
+  case SankeyErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

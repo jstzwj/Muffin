@@ -40,7 +40,8 @@ void requireParseError(const MermaidRenderEntry& entry, const QString& diagramTy
                        const QString& source, int line, bool atLineStart = true) {
   const MermaidDiagnostic& diagnostic = entry.diagnostic;
   const QString what = QStringLiteral("%1 %2 on line %3").arg(diagramType, code).arg(line);
-  const QString actual = QStringLiteral(" (got '%1' '%2' '%3')").arg(diagnostic.diagramType, diagnostic.stage, diagnostic.code);
+  const QString actual =
+      QStringLiteral(" (got '%1' '%2' '%3')").arg(diagnostic.diagramType, diagnostic.stage, diagnostic.code);
   require(entry.status == MermaidRenderStatus::Error, what + ": the diagram should not render");
   require(diagnostic.diagramType == diagramType, what + ": the diagnostic should name the diagram" + actual);
   require(diagnostic.code == code, what + ": the code should be " + code + actual);
@@ -80,7 +81,7 @@ void testQuadrantParseFailureIsReported() {
 // around the front matter and directives the parser never sees.
 void testJourneyParseFailureKeepsItsDiagnostic() {
   const QString source = QStringLiteral("---\ntitle: t\n---\n%%{init: {\"theme\": \"default\"}}%%\n"
-                                         "journey\nsection S\ninvalid journey line");
+                                        "journey\nsection S\ninvalid journey line");
   requireParseError(render(source), QStringLiteral("journey"), QStringLiteral("journey-parse-error"), source, 7);
 }
 

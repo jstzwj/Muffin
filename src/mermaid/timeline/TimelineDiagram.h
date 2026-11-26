@@ -17,8 +17,10 @@ enum class TimelineErrorKind { Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(TimelineErrorKind kind) {
   switch (kind) {
-  case TimelineErrorKind::Parser: return u"parse";
-  case TimelineErrorKind::Runtime: return u"runtime";
+  case TimelineErrorKind::Parser:
+    return u"parse";
+  case TimelineErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

@@ -36,9 +36,9 @@ QStringList failures;
 // trips over the following content. The port names the directive's own line,
 // which points the user at the right place; the difference is recorded here
 // rather than reproduced.
-const QSet<QString> kLineReportedDifferently = {
-    QStringLiteral("reject-acc-title-empty"), QStringLiteral("reject-acc-title-spaces-only"),
-    QStringLiteral("reject-acc-descr-empty")};
+const QSet<QString> kLineReportedDifferently = {QStringLiteral("reject-acc-title-empty"),
+                                                QStringLiteral("reject-acc-title-spaces-only"),
+                                                QStringLiteral("reject-acc-descr-empty")};
 
 void check(bool condition, const QString& message) {
   if (!condition)
@@ -58,10 +58,10 @@ QStringList requirementRows(const QJsonArray& array) {
   for (const QJsonValue& value : array) {
     const QJsonObject record = value.toObject();
     rows << QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8")
-                .arg(record.value(QStringLiteral("name")).toString(),
-                     record.value(QStringLiteral("type")).toString(),
-                     record.value(QStringLiteral("requirementId")).toString(), record.value(QStringLiteral("text")).toString(),
-                     record.value(QStringLiteral("risk")).toString(), record.value(QStringLiteral("verifyMethod")).toString(),
+                .arg(record.value(QStringLiteral("name")).toString(), record.value(QStringLiteral("type")).toString(),
+                     record.value(QStringLiteral("requirementId")).toString(),
+                     record.value(QStringLiteral("text")).toString(), record.value(QStringLiteral("risk")).toString(),
+                     record.value(QStringLiteral("verifyMethod")).toString(),
                      joined(record.value(QStringLiteral("classes")).toArray()),
                      joined(record.value(QStringLiteral("cssStyles")).toArray()));
   }
@@ -83,7 +83,8 @@ QStringList elementRows(const QJsonArray& array) {
     const QJsonObject record = value.toObject();
     rows << QStringLiteral("%1|%2|%3|%4|%5")
                 .arg(record.value(QStringLiteral("name")).toString(), record.value(QStringLiteral("type")).toString(),
-                     record.value(QStringLiteral("docRef")).toString(), joined(record.value(QStringLiteral("classes")).toArray()),
+                     record.value(QStringLiteral("docRef")).toString(),
+                     joined(record.value(QStringLiteral("classes")).toArray()),
                      joined(record.value(QStringLiteral("cssStyles")).toArray()));
   }
   return rows;
@@ -123,7 +124,7 @@ QStringList classRows(const QJsonArray& array) {
   for (const QJsonValue& value : array) {
     const QJsonObject record = value.toObject();
     rows << record.value(QStringLiteral("id")).toString() + QLatin1Char('|') +
-          joined(record.value(QStringLiteral("styles")).toArray());
+                joined(record.value(QStringLiteral("styles")).toArray());
   }
   rows.sort();
   return rows;
@@ -158,12 +159,14 @@ void compareData(const requirement::RequirementDiagramData& data, const QJsonObj
   check(data.direction == expected.value(QStringLiteral("direction")).toString(),
         QStringLiteral("%1/direction: native '%2', upstream '%3'")
             .arg(id, data.direction, expected.value(QStringLiteral("direction")).toString()));
-  compareRows(requirementRows(data.requirements), requirementRows(expected.value(QStringLiteral("requirements")).toArray()),
-              QStringLiteral("requirements"), id);
+  compareRows(requirementRows(data.requirements),
+              requirementRows(expected.value(QStringLiteral("requirements")).toArray()), QStringLiteral("requirements"),
+              id);
   compareRows(elementRows(data.elements), elementRows(expected.value(QStringLiteral("elements")).toArray()),
               QStringLiteral("elements"), id);
   compareRows(relationshipRows(data.relations),
-              relationshipRows(expected.value(QStringLiteral("relationships")).toArray()), QStringLiteral("relationships"), id);
+              relationshipRows(expected.value(QStringLiteral("relationships")).toArray()),
+              QStringLiteral("relationships"), id);
   compareRows(classRows(data.classDefs), classRows(expected.value(QStringLiteral("classes")).toArray()),
               QStringLiteral("classes"), id);
 }
@@ -192,7 +195,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   const QJsonObject root = QJsonDocument::fromJson(bytes).object();
-  if (root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() != QLatin1String("11.16.0") ||
+  if (root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() !=
+          QLatin1String("11.16.0") ||
       root.value(QStringLiteral("fixtureSha256")).toString() !=
           QLatin1String("bfeef636b6a84166c5268c6cb22072ebb8cec0d25202bce9f4d50442e5a1b486")) {
     std::fprintf(stderr, "Requirement grammar fixture provenance changed\n");
@@ -217,7 +221,8 @@ int main(int argc, char** argv) {
       detected = false;
     }
     check(detected == (reject.value(QStringLiteral("class")).toString() != QLatin1String("no-diagram")),
-          QStringLiteral("%1/detector: native %2").arg(id, detected ? QStringLiteral("requirement") : QStringLiteral("none")));
+          QStringLiteral("%1/detector: native %2")
+              .arg(id, detected ? QStringLiteral("requirement") : QStringLiteral("none")));
     if (!detected)
       continue;
 
@@ -230,12 +235,14 @@ int main(int argc, char** argv) {
         compareData(data, fixture.value(QStringLiteral("expectedDb")).toObject(), id);
     } catch (const requirement::RequirementParseError& error) {
       check(!upstreamAccepts, QStringLiteral("%1: native rejected an upstream accept: %2 (line %3)")
-                                 .arg(id, QString::fromUtf8(error.what())).arg(error.line));
+                                  .arg(id, QString::fromUtf8(error.what()))
+                                  .arg(error.line));
       // The diagnostic names the line upstream shows the user.
       if (!upstreamAccepts && reject.contains(QStringLiteral("messageLine"))) {
         const int upstreamLine = reject.value(QStringLiteral("messageLine")).toInt();
         if (error.line != upstreamLine && kLineReportedDifferently.contains(id))
-          std::fprintf(stderr, "[known] %s: native line %d, upstream line %d\n", qPrintable(id), error.line, upstreamLine);
+          std::fprintf(stderr, "[known] %s: native line %d, upstream line %d\n", qPrintable(id), error.line,
+                       upstreamLine);
         else
           check(error.line == upstreamLine,
                 QStringLiteral("%1/error-line: native %2, upstream %3").arg(id).arg(error.line).arg(upstreamLine));
@@ -247,10 +254,11 @@ int main(int argc, char** argv) {
     const bool upstreamRenders = upstreamAccepts && fixture.value(QStringLiteral("renderAccept")).toBool();
     const editor::MermaidRenderEntry entry = cache.getSync(editor::MermaidRenderCache::makeKey(source), source);
     const bool nativeRenders = entry.status == editor::MermaidRenderStatus::Ready;
-    check(nativeRenders == upstreamRenders, QStringLiteral("%1/render: native %2, upstream %3%4")
-                                                .arg(id, nativeRenders ? QStringLiteral("Ready") : QStringLiteral("not Ready"),
-                                                     upstreamRenders ? QStringLiteral("Ready") : QStringLiteral("not Ready"),
-                                                     nativeRenders ? QString() : QStringLiteral(" (") + entry.errorMessage + QStringLiteral(")")));
+    check(nativeRenders == upstreamRenders,
+          QStringLiteral("%1/render: native %2, upstream %3%4")
+              .arg(id, nativeRenders ? QStringLiteral("Ready") : QStringLiteral("not Ready"),
+                   upstreamRenders ? QStringLiteral("Ready") : QStringLiteral("not Ready"),
+                   nativeRenders ? QString() : QStringLiteral(" (") + entry.errorMessage + QStringLiteral(")")));
   }
 
   for (const QString& failure : failures)

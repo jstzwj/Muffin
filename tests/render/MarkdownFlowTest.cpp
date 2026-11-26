@@ -195,7 +195,8 @@ void containerCssAndEdits() {
   require(result.rebuilt, "tag edit rebuilds borrowed relationships safely");
   const auto flow = theme.markdownFlow(session.document().root());
   require(!flow->empty(), "editing an attribute retains container structure");
-  require(session.applyTextEdit(session.markdownText().toString().indexOf("</div>"), 6, "</aside>") != muffin::TextEditResult::Rejected,
+  require(session.applyTextEdit(session.markdownText().toString().indexOf("</div>"), 6, "</aside>") !=
+              muffin::TextEditResult::Rejected,
           "closing tag can be edited");
   layout.rebuild(session.document(), theme, 900);
   require(theme.markdownFlow(session.document().root())->empty(), "broken pairing returns to explicit source fallback");
@@ -241,7 +242,8 @@ int main(int argc, char** argv) {
         auto theme = RenderTheme::github();
         DocumentLayout layout;
         layout.rebuild(session.document(), theme, 900, {}, {}, DocumentLayout::BuildPolicy::Lazy);
-        require(session.applyTextEdit(0, session.markdownText().size(), "Replacement\n") != muffin::TextEditResult::Rejected,
+        require(session.applyTextEdit(0, session.markdownText().size(), "Replacement\n") !=
+                    muffin::TextEditResult::Rejected,
                 "replace AST before its queued layout refresh");
         layout.ensureBuilt(0, layout.slotCount(), theme);
         layout.rebuild(session.document(), theme, 900, {}, {}, DocumentLayout::BuildPolicy::Lazy);
@@ -294,7 +296,8 @@ int main(int argc, char** argv) {
         for (bool add : {true, false}) {
           const qsizetype oldCount = session.document().root().children().size();
           const QString opener = "<div align=\"center\">\n\n";
-          require(session.applyTextEdit(0, add ? 0 : opener.size(), add ? opener : QString()) != muffin::TextEditResult::Rejected,
+          require(session.applyTextEdit(0, add ? 0 : opener.size(), add ? opener : QString()) !=
+                      muffin::TextEditResult::Rejected,
                   "insert/remove a container boundary through document editing");
           const TopLevelRangeChange change{0, oldCount, qsizetype(session.document().root().children().size()),
                                            session.document().revision()};

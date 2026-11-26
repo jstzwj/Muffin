@@ -577,8 +577,9 @@ constexpr char16_t kJsDot[] = u"[^\\n\\r\\x{2028}\\x{2029}]";
 // Rewrites `mapped` with `replace`, which gets each match with the source
 // offset of each of its characters and returns the text put in its place,
 // with in `origins` the source offset of each character of that text.
-void replaceMatches(MappedText& mapped, const QRegularExpression& expression,
-                    const std::function<QString(const QString&, const QVector<qsizetype>&, QVector<qsizetype>&)>& replace) {
+void replaceMatches(
+    MappedText& mapped, const QRegularExpression& expression,
+    const std::function<QString(const QString&, const QVector<qsizetype>&, QVector<qsizetype>&)>& replace) {
   QString text;
   QVector<qsizetype> offsets;
   qsizetype at = 0;
@@ -611,32 +612,34 @@ QString encodeMermaidEntities(const QString& code, QVector<qsizetype>* offsets) 
   // that ends Mermaid's match for it. Written for a closing semicolon, it also
   // swallows the one between two declarations of a classDef.
   for (const char16_t* keyword : {u"style", u"classDef"}) {
-    const QRegularExpression expression(QString::fromUtf16(keyword) + QString::fromUtf16(kJsDot) + QStringLiteral(".*:") +
-                                        QString::fromUtf16(kJsNotSpace) + QStringLiteral("*#") + QString::fromUtf16(kJsDot) +
-                                        QStringLiteral("*;"));
-    replaceMatches(mapped, expression, [](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
-      out = origins;
-      out.removeLast();
-      return matched.chopped(1);
-    });
+    const QRegularExpression expression(QString::fromUtf16(keyword) + QString::fromUtf16(kJsDot) +
+                                        QStringLiteral(".*:") + QString::fromUtf16(kJsNotSpace) + QStringLiteral("*#") +
+                                        QString::fromUtf16(kJsDot) + QStringLiteral("*;"));
+    replaceMatches(mapped, expression,
+                   [](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
+                     out = origins;
+                     out.removeLast();
+                     return matched.chopped(1);
+                   });
   }
   // `#name;` reads as an HTML entity to a browser; it is hidden behind letters
   // no diagram uses and put back when a label is drawn (decodeMermaidEntities).
   static const QRegularExpression entity(QStringLiteral("#\\w+;"));
   static const QRegularExpression integer(QStringLiteral("^\\+?\\d+$"));
   const QString degree(1, QChar(0x00B0));
-  replaceMatches(mapped, entity, [&](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
-    const QString inner = matched.mid(1, matched.size() - 2);
-    QString replacement = QChar(0xFB02) + degree;
-    if (integer.match(inner).hasMatch())
-      replacement += degree;
-    const qsizetype prefix = replacement.size();
-    replacement += inner + QChar(0x00B6) + QChar(0xDF);
-    out.fill(origins.first(), static_cast<qsizetype>(prefix));
-    out += origins.mid(1, inner.size());
-    out.append(origins.last());
-    return replacement;
-  });
+  replaceMatches(mapped, entity,
+                 [&](const QString& matched, const QVector<qsizetype>& origins, QVector<qsizetype>& out) {
+                   const QString inner = matched.mid(1, matched.size() - 2);
+                   QString replacement = QChar(0xFB02) + degree;
+                   if (integer.match(inner).hasMatch())
+                     replacement += degree;
+                   const qsizetype prefix = replacement.size();
+                   replacement += inner + QChar(0x00B6) + QChar(0xDF);
+                   out.fill(origins.first(), static_cast<qsizetype>(prefix));
+                   out += origins.mid(1, inner.size());
+                   out.append(origins.last());
+                   return replacement;
+                 });
 
   if (offsets)
     *offsets = mapped.sourceOffsets;

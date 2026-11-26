@@ -65,8 +65,7 @@ void defaultShortcutsBelongToOneCommand() {
       const QKeySequence::SequenceMatch match = bindings[i].key.matches(bindings[j].key);
       require(match == QKeySequence::NoMatch,
               QStringLiteral("commands %1 and %2 share the default shortcut %3")
-                  .arg(bindings[j].command, bindings[i].command,
-                       bindings[i].key.toString(QKeySequence::NativeText)));
+                  .arg(bindings[j].command, bindings[i].command, bindings[i].key.toString(QKeySequence::NativeText)));
     }
   }
 }
@@ -75,9 +74,9 @@ void defaultShortcutsBelongToOneCommand() {
 // up as a conflict for whichever command really owns the key.
 void shortcutRowsHaveAHandler() {
   for (const CommandDeclaration& command : muffin::commandDeclarations())
-    require(command.handler || command.defaultShortcuts().isEmpty(),
-            QStringLiteral("command %1 declares a shortcut but has no handler, so the key can never fire")
-                .arg(command.id));
+    require(
+        command.handler || command.defaultShortcuts().isEmpty(),
+        QStringLiteral("command %1 declares a shortcut but has no handler, so the key can never fire").arg(command.id));
 }
 
 } // namespace

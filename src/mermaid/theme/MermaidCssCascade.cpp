@@ -201,13 +201,23 @@ std::vector<CssDeclaration> inlineStyle(QString text) {
 }
 
 bool svgInheritedProperty(const QString& property) {
-  static const QSet<QString> inherited = {
-      QStringLiteral("color"),        QStringLiteral("fill"),         QStringLiteral("stroke"),
-      QStringLiteral("stroke-width"), QStringLiteral("fill-opacity"), QStringLiteral("stroke-opacity"),
-      QStringLiteral("font-family"),  QStringLiteral("font-size"),    QStringLiteral("font-weight"),
-      QStringLiteral("font-style"),   QStringLiteral("line-height"),  QStringLiteral("letter-spacing"),
-      QStringLiteral("word-spacing"), QStringLiteral("text-anchor"),  QStringLiteral("dominant-baseline"),
-      QStringLiteral("visibility"), QStringLiteral("stroke-dasharray")};
+  static const QSet<QString> inherited = {QStringLiteral("color"),
+                                          QStringLiteral("fill"),
+                                          QStringLiteral("stroke"),
+                                          QStringLiteral("stroke-width"),
+                                          QStringLiteral("fill-opacity"),
+                                          QStringLiteral("stroke-opacity"),
+                                          QStringLiteral("font-family"),
+                                          QStringLiteral("font-size"),
+                                          QStringLiteral("font-weight"),
+                                          QStringLiteral("font-style"),
+                                          QStringLiteral("line-height"),
+                                          QStringLiteral("letter-spacing"),
+                                          QStringLiteral("word-spacing"),
+                                          QStringLiteral("text-anchor"),
+                                          QStringLiteral("dominant-baseline"),
+                                          QStringLiteral("visibility"),
+                                          QStringLiteral("stroke-dasharray")};
   return inherited.contains(property);
 }
 
@@ -363,7 +373,8 @@ ElementStyle project(const CssComputedStyle& style, const ElementStyle& fallback
   usedFallback.fill = validFallbackValue(QStringLiteral("fill"), fallback.fill, parent);
   usedFallback.stroke = validFallbackValue(QStringLiteral("stroke"), fallback.stroke, parent);
   usedFallback.strokeWidth = validFallbackValue(QStringLiteral("stroke-width"), fallback.strokeWidth, parent);
-  usedFallback.strokeDasharray = validFallbackValue(QStringLiteral("stroke-dasharray"), fallback.strokeDasharray, parent);
+  usedFallback.strokeDasharray =
+      validFallbackValue(QStringLiteral("stroke-dasharray"), fallback.strokeDasharray, parent);
   usedFallback.color = validFallbackValue(QStringLiteral("color"), fallback.color, parent);
   usedFallback.fontSize = validFallbackValue(QStringLiteral("font-size"), fallback.fontSize, parent);
   usedFallback.fontWeight = validFallbackValue(QStringLiteral("font-weight"), fallback.fontWeight, parent);

@@ -249,8 +249,8 @@ MermaidDiagnostic parserDiagnostic(const QString& source, const MermaidPreproces
   }
   // A position that could not be resolved covers nothing.
   const qsizetype length = report.place == Place::Offset || offset >= 0 ? report.length : 0;
-  return parserDiagnostic(source, pre, std::move(diagramType), report.stage, report.code, report.message, offset, length,
-                          report.line, report.column, report.production, report.actual, report.expected);
+  return parserDiagnostic(source, pre, std::move(diagramType), report.stage, report.code, report.message, offset,
+                          length, report.line, report.column, report.production, report.actual, report.expected);
 }
 
 MermaidRenderEntry errorEntry(MermaidDiagnostic diagnostic, MermaidRenderStatus status = MermaidRenderStatus::Error) {

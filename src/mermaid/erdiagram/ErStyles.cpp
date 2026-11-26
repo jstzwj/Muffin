@@ -201,8 +201,7 @@ ErTextStyle textStyle(const css::ElementStyle& element, const ErTextStyle& base,
   result.fontWeight = muffin::mermaid::editor::cssFontWeightToQt(QJsonValue(element.fontWeight), base.fontWeight);
   result.italic = element.fontStyle.contains(QLatin1String("italic"), Qt::CaseInsensitive) ||
                   element.fontStyle.contains(QLatin1String("oblique"), Qt::CaseInsensitive);
-  if (!element.lineHeight.isEmpty() &&
-      element.lineHeight.compare(QLatin1String("inherit"), Qt::CaseInsensitive) != 0)
+  if (!element.lineHeight.isEmpty() && element.lineHeight.compare(QLatin1String("inherit"), Qt::CaseInsensitive) != 0)
     result.lineHeightFactor = lineHeightFactor(element.lineHeight, result.fontFamily, result.fontSize);
   const QString& color = htmlLabels ? element.color : element.fill;
   if (!isNone(color) && color.compare(QLatin1String("inherit"), Qt::CaseInsensitive) != 0)
@@ -222,25 +221,51 @@ void addLabel(QVector<css::ElementInput>& elements, const QString& key, const QS
     css::ElementStyle box = base;
     box.lineHeight = QStringLiteral("1.5");
     elements.append({key + QStringLiteral("-fo"), key, QStringLiteral("foreignObject"), {}, {}, {}, base, {}, {}});
-    elements.append({key + QStringLiteral("-div"), key + QStringLiteral("-fo"), QStringLiteral("div"), {},
-                     edgeLabel ? QStringList{QStringLiteral("labelBkg")} : QStringList{}, {}, box, inlineStyle,
+    elements.append({key + QStringLiteral("-div"),
+                     key + QStringLiteral("-fo"),
+                     QStringLiteral("div"),
+                     {},
+                     edgeLabel ? QStringList{QStringLiteral("labelBkg")} : QStringList{},
+                     {},
+                     box,
+                     inlineStyle,
                      QStringLiteral("display:table-cell;white-space:nowrap;line-height:1.5")});
-    elements.append({key + QStringLiteral("-span"), key + QStringLiteral("-div"), QStringLiteral("span"), {},
+    elements.append({key + QStringLiteral("-span"),
+                     key + QStringLiteral("-div"),
+                     QStringLiteral("span"),
+                     {},
                      edgeLabel ? QStringList{QStringLiteral("edgeLabel"), QStringLiteral("markdown-node-label")}
                      : markdownNodeLabel
                          ? QStringList{QStringLiteral("nodeLabel"), QStringLiteral("markdown-node-label")}
                          : QStringList{QStringLiteral("nodeLabel")},
-                     {}, box, inlineStyle, {}});
+                     {},
+                     box,
+                     inlineStyle,
+                     {}});
     // Mermaid writes the label style on the group, the box and the span, and
     // the text inherits it. The cascade inherits what the stylesheet's rules
     // give an ancestor, not its inline style, so the text takes it too.
     elements.append({text, key + QStringLiteral("-span"), QStringLiteral("p"), {}, {}, {}, box, inlineStyle, {}});
     return;
   }
-  elements.append({key + QStringLiteral("-rect"), key, QStringLiteral("rect"), {}, {QStringLiteral("background")}, {}, base,
-                   {}, QStringLiteral("fill:%1;stroke:none").arg(background)});
-  elements.append({text, key, QStringLiteral("text"), {}, {}, {}, base,
-                   QString(inlineStyle).replace(QStringLiteral("color:"), QStringLiteral("fill:")), {}});
+  elements.append({key + QStringLiteral("-rect"),
+                   key,
+                   QStringLiteral("rect"),
+                   {},
+                   {QStringLiteral("background")},
+                   {},
+                   base,
+                   {},
+                   QStringLiteral("fill:%1;stroke:none").arg(background)});
+  elements.append({text,
+                   key,
+                   QStringLiteral("text"),
+                   {},
+                   {},
+                   {},
+                   base,
+                   QString(inlineStyle).replace(QStringLiteral("color:"), QStringLiteral("fill:")),
+                   {}});
 }
 
 // The pair of paths rough.js draws a shape by: one that fills and one that
@@ -248,10 +273,25 @@ void addLabel(QVector<css::ElementInput>& elements, const QString& key, const QS
 void addPaths(QVector<css::ElementInput>& elements, const QString& group, const QString& fill, const QString& stroke,
               const QString& strokeWidth, const QString& inlineStyle) {
   if (!isNone(fill))
-    elements.append({group + QStringLiteral("-fill"), group, QStringLiteral("path"), {}, {}, {}, {}, inlineStyle,
+    elements.append({group + QStringLiteral("-fill"),
+                     group,
+                     QStringLiteral("path"),
+                     {},
+                     {},
+                     {},
+                     {},
+                     inlineStyle,
                      QStringLiteral("fill:%1;stroke:none;stroke-width:0").arg(fill)});
-  elements.append({group + QStringLiteral("-stroke"), group, QStringLiteral("path"), {}, {}, {}, {}, inlineStyle,
-                   QStringLiteral("fill:none;stroke:%1;stroke-width:%2;stroke-dasharray:0 0").arg(stroke, strokeWidth)});
+  elements.append(
+      {group + QStringLiteral("-stroke"),
+       group,
+       QStringLiteral("path"),
+       {},
+       {},
+       {},
+       {},
+       inlineStyle,
+       QStringLiteral("fill:none;stroke:%1;stroke-width:%2;stroke-dasharray:0 0").arg(stroke, strokeWidth)});
 }
 
 // A rough.js group's paint; the same path fills and strokes where there is
@@ -306,8 +346,7 @@ QHash<QString, qreal> fontSizes(const QVector<css::ElementInput>& elements,
 // The classes of an entity's group: rough.js draws it under the handDrawn
 // look, and its own classes follow either way.
 QStringList entityClasses(const ErLayoutEntityInput& entity, bool handDrawn) {
-  QStringList classes{handDrawn ? QStringLiteral("rough-node") : QStringLiteral("node"),
-                        QStringLiteral("default")};
+  QStringList classes{handDrawn ? QStringLiteral("rough-node") : QStringLiteral("node"), QStringLiteral("default")};
   for (const QString& name : entity.cssClasses.split(QLatin1Char(' '), Qt::SkipEmptyParts))
     classes.append(name);
   return classes;
@@ -335,10 +374,24 @@ ErRoughEntity roughEntity(const CompiledStyles& styles, const flowtheme::FlowThe
 // it: the sketch of the fill, then the outline.
 void addRoughPaths(QVector<css::ElementInput>& elements, const QString& group, const ErRoughOptions& options) {
   if (!options.fill.isEmpty())
-    elements.append({group + QStringLiteral("-sketch"), group, QStringLiteral("path"), {}, {}, {}, {}, {},
+    elements.append({group + QStringLiteral("-sketch"),
+                     group,
+                     QStringLiteral("path"),
+                     {},
+                     {},
+                     {},
+                     {},
+                     {},
                      QStringLiteral("fill:none;stroke:%1;stroke-width:4;stroke-dasharray:0 0").arg(options.fill)});
   if (!options.stroke.isEmpty())
-    elements.append({group + QStringLiteral("-outline"), group, QStringLiteral("path"), {}, {}, {}, {}, {},
+    elements.append({group + QStringLiteral("-outline"),
+                     group,
+                     QStringLiteral("path"),
+                     {},
+                     {},
+                     {},
+                     {},
+                     {},
                      QStringLiteral("fill:none;stroke:%1;stroke-width:%2;stroke-dasharray:%3")
                          .arg(options.stroke, QString::number(options.strokeWidth), options.strokeDasharray)});
 }
@@ -370,20 +423,34 @@ void addBackground(QVector<css::ElementInput>& elements, const QString& key, con
                    const ErStyleInput& input, const css::ElementStyle& root) {
   const flowtheme::FlowThemeVariables& theme = input.theme;
   const CompiledStyles copy =
-      compiledStyles(entity.cssClasses, input.classDefs, {QStringLiteral("stroke: none"), QStringLiteral("fill: ") + input.theme.background});
+      compiledStyles(entity.cssClasses, input.classDefs,
+                     {QStringLiteral("stroke: none"), QStringLiteral("fill: ") + input.theme.background});
   const auto shapePath = [&](const QString& group, const QString& fill, const QString& inlineStyle) {
     // A row the theme has no fill for is drawn by its outline alone.
     const bool filled = !isNone(fill);
-    elements.append({group + (filled ? QStringLiteral("-fill") : QStringLiteral("-stroke")), group,
-                     QStringLiteral("path"), {}, {}, {}, {}, inlineStyle,
+    elements.append({group + (filled ? QStringLiteral("-fill") : QStringLiteral("-stroke")),
+                     group,
+                     QStringLiteral("path"),
+                     {},
+                     {},
+                     {},
+                     {},
+                     inlineStyle,
                      filled ? QStringLiteral("fill:%1;stroke:none;stroke-width:0").arg(fill)
                             : QStringLiteral("fill:none;stroke:%1;stroke-width:%2")
                                   .arg(declaredOr(copy, "stroke", theme.nodeBorder), QString::number(kTableStroke))});
   };
-  elements.append({key, QStringLiteral("nodes"), QStringLiteral("g"), {}, entityClasses(entity, false), {}, root, {}, {}});
+  elements.append(
+      {key, QStringLiteral("nodes"), QStringLiteral("g"), {}, entityClasses(entity, false), {}, root, {}, {}});
   if (entity.attributes.isEmpty()) {
-    elements.append({key + QStringLiteral("-rect"), key, QStringLiteral("rect"), {},
-                     {QStringLiteral("basic"), QStringLiteral("label-container")}, {}, {}, copy.nodeStyles,
+    elements.append({key + QStringLiteral("-rect"),
+                     key,
+                     QStringLiteral("rect"),
+                     {},
+                     {QStringLiteral("basic"), QStringLiteral("label-container")},
+                     {},
+                     {},
+                     copy.nodeStyles,
                      QStringLiteral("fill:%1;stroke:%2;stroke-width:%3")
                          .arg(declaredOr(copy, "fill", theme.mainBkg), declaredOr(copy, "stroke", theme.nodeBorder),
                               QString::number(kTableStroke))});
@@ -391,23 +458,29 @@ void addBackground(QVector<css::ElementInput>& elements, const QString& key, con
              input.htmlLabels, true, theme.mainBkg);
     return;
   }
-  elements.append({key + QStringLiteral("-outer"), key, QStringLiteral("g"), {}, {QStringLiteral("outer-path")}, {},
-                   root, {}, {}});
+  elements.append(
+      {key + QStringLiteral("-outer"), key, QStringLiteral("g"), {}, {QStringLiteral("outer-path")}, {}, root, {}, {}});
   shapePath(key + QStringLiteral("-outer"), declaredOr(copy, "fill", theme.mainBkg), copy.strokeStyles);
   for (qsizetype row = 0; row < entity.attributes.size(); ++row) {
     const bool odd = row % 2 == 0;
     const QString group = key + QStringLiteral("-row") + QString::number(row);
-    elements.append({group, key, QStringLiteral("g"), {},
-                     {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))}, {}, root,
-                     {}, {}});
+    elements.append({group,
+                     key,
+                     QStringLiteral("g"),
+                     {},
+                     {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))},
+                     {},
+                     root,
+                     {},
+                     {}});
     // The even rows carry the whole node style, whose last fill is the
     // background; the odd rows the stroke styles alone, and keep their color.
     // Where the theme has no row color, an even row's outline is what takes
     // the background.
     shapePath(group, odd ? theme.rowOdd : theme.rowEven, odd ? copy.strokeStyles : copy.nodeStyles);
   }
-  elements.append({key + QStringLiteral("-divider"), key, QStringLiteral("g"), {}, {QStringLiteral("divider")}, {},
-                   root, {}, {}});
+  elements.append(
+      {key + QStringLiteral("-divider"), key, QStringLiteral("g"), {}, {QStringLiteral("divider")}, {}, root, {}, {}});
   shapePath(key + QStringLiteral("-divider"), declaredOr(copy, "fill", theme.mainBkg), copy.strokeStyles);
   static const char* const kinds[] = {"name", "attribute-type", "attribute-name", "attribute-keys",
                                       "attribute-comment"};
@@ -420,12 +493,26 @@ void addBackground(QVector<css::ElementInput>& elements, const QString& key, con
 // The root of the document and, under it, the groups Mermaid keeps its
 // nodes, its lines, their labels and its definitions in.
 void addDocument(QVector<css::ElementInput>& elements, const css::ElementStyle& root) {
-  elements.append({QStringLiteral("svg"), {}, QStringLiteral("svg"), QStringLiteral("diagram-root"),
-                   {QStringLiteral("erDiagram")}, {}, root, {}, {}});
+  elements.append({QStringLiteral("svg"),
+                   {},
+                   QStringLiteral("svg"),
+                   QStringLiteral("diagram-root"),
+                   {QStringLiteral("erDiagram")},
+                   {},
+                   root,
+                   {},
+                   {}});
   for (const char* group : {"root", "nodes", "edge-paths", "edge-labels", "defs"}) {
     const QString name = QString::fromLatin1(group);
-    elements.append({name, name == QLatin1String("root") ? QStringLiteral("svg") : QStringLiteral("root"),
-                     QStringLiteral("g"), {}, {name}, {}, root, {}, {}});
+    elements.append({name,
+                     name == QLatin1String("root") ? QStringLiteral("svg") : QStringLiteral("root"),
+                     QStringLiteral("g"),
+                     {},
+                     {name},
+                     {},
+                     root,
+                     {},
+                     {}});
   }
 }
 
@@ -464,8 +551,7 @@ QString throughFilterElement(const QString& paint) {
     const qreal s = value / 255.0;
     const qreal linear = s <= 0.04045 ? s / 12.92 : std::pow((s + 0.055) / 1.055, 2.4);
     const qreal quantized = std::round(linear * 255.0) / 255.0;
-    const qreal back = quantized <= 0.0031308 ? 12.92 * quantized
-                                              : 1.055 * std::pow(quantized, 1.0 / 2.4) - 0.055;
+    const qreal back = quantized <= 0.0031308 ? 12.92 * quantized : 1.055 * std::pow(quantized, 1.0 / 2.4) - 0.055;
     return qBound(0, qRound(255.0 * back), 255);
   };
   const QColor shifted(channel(color.red()), channel(color.green()), channel(color.blue()), color.alpha());
@@ -508,9 +594,9 @@ QString muffin::mermaid::er::erBaseCss(const ErStyleInput& input) {
   };
   // `.labelBkg`: the color themes name a background, the others fade their
   // tertiary color to half.
-  const QString labelBackgroundCss =
-      chrome(input.colorTheme && !theme.erEdgeLabelBackground.isEmpty() ? theme.erEdgeLabelBackground
-                                                                        : muffin::mermaid::color::rgba(theme.tertiaryColor, 0.5));
+  const QString labelBackgroundCss = chrome(input.colorTheme && !theme.erEdgeLabelBackground.isEmpty()
+                                                ? theme.erEdgeLabelBackground
+                                                : muffin::mermaid::color::rgba(theme.tertiaryColor, 0.5));
   const QString strokeWidth = QString::number(theme.strokeWidth) + QStringLiteral("px");
   QStringList rules{
       // The common sheet, ahead of the diagram's own rules.
@@ -542,9 +628,8 @@ QString muffin::mermaid::er::erBaseCss(const ErStyleInput& input) {
   // The color themes paint each entity from their palettes, by its order.
   const int limit = qMin(input.themeColorLimit, int(theme.borderColorArray.size()));
   for (int index = 0; index < limit; ++index) {
-    const QString fill = index < theme.bkgColorArray.size()
-                             ? QStringLiteral(";fill:%1").arg(theme.bkgColorArray.at(index))
-                             : QString();
+    const QString fill =
+        index < theme.bkgColorArray.size() ? QStringLiteral(";fill:%1").arg(theme.bkgColorArray.at(index)) : QString();
     const QString entity = QStringLiteral("[data-look=%1][data-color-id=color-%2].node").arg(input.look).arg(index);
     rules.append(QStringLiteral("%1 path{stroke:%2%3}").arg(entity, theme.borderColorArray.at(index), fill));
     rules.append(QStringLiteral("%1 rect{stroke:%2%3}").arg(entity, theme.borderColorArray.at(index), fill));
@@ -555,9 +640,10 @@ QString muffin::mermaid::er::erBaseCss(const ErStyleInput& input) {
   if (neo) {
     const QString stroke = input.useGradient ? QString::fromLatin1(kGradientReference) : theme.nodeBorder;
     const QString shadow = dropShadowFilter(theme.dropShadow, input.darkTheme);
-    rules.append(QStringLiteral(
-                     "[data-look=neo].node rect,[data-look=neo].cluster rect,[data-look=neo].node polygon{stroke:%1;filter:%2}")
-                     .arg(stroke, shadow));
+    rules.append(
+        QStringLiteral(
+            "[data-look=neo].node rect,[data-look=neo].cluster rect,[data-look=neo].node polygon{stroke:%1;filter:%2}")
+            .arg(stroke, shadow));
     rules.append(QStringLiteral("[data-look=neo].node path{stroke:%1;stroke-width:%2px}")
                      .arg(stroke, QString::number(theme.strokeWidth)));
     rules.append(QStringLiteral("[data-look=neo].node .outer-path{filter:%1}").arg(shadow));
@@ -565,8 +651,8 @@ QString muffin::mermaid::er::erBaseCss(const ErStyleInput& input) {
   return rules.join(QLatin1Char('\n'));
 }
 
-muffin::mermaid::er::ErDocumentStyle
-muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const ErStyleInput& input) {
+muffin::mermaid::er::ErDocumentStyle muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout,
+                                                                                 const ErStyleInput& input) {
   const flowtheme::FlowThemeVariables& theme = input.theme;
   const bool neo = input.look == QLatin1String("neo");
   const QString textColor = theme.nodeTextColor.isEmpty() ? theme.textColor : theme.nodeTextColor;
@@ -600,20 +686,40 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
   ringBase.fill = QStringLiteral("white");
   const QString markerStrokeWidth = QString::number(theme.strokeWidth);
   const QString ringFill = neo && !theme.mainBkg.isEmpty() ? theme.mainBkg : QStringLiteral("white");
-  for (const ErCardinality card : {ErCardinality::ExactlyOne, ErCardinality::ZeroOrOne, ErCardinality::OneOrMore,
-                                   ErCardinality::ZeroOrMore}) {
+  for (const ErCardinality card :
+       {ErCardinality::ExactlyOne, ErCardinality::ZeroOrOne, ErCardinality::OneOrMore, ErCardinality::ZeroOrMore}) {
     for (bool start : {true, false}) {
       const QString key = QStringLiteral("m-") + muffin::mermaid::er::erMarkerKey(card, start);
       QHash<QString, QString> attributes;
       if (neo)
         attributes.insert(QStringLiteral("markerUnits"), QStringLiteral("userSpaceOnUse"));
-      elements.append({key, QStringLiteral("defs"), QStringLiteral("marker"), {},
-                       {QStringLiteral("marker"), muffin::mermaid::er::erMarkerName(card), QStringLiteral("er")}, attributes,
-                       markerBase, {}, {}});
-      elements.append({key + QStringLiteral("-path"), key, QStringLiteral("path"), {}, {}, {}, markerBase, {},
+      elements.append({key,
+                       QStringLiteral("defs"),
+                       QStringLiteral("marker"),
+                       {},
+                       {QStringLiteral("marker"), muffin::mermaid::er::erMarkerName(card), QStringLiteral("er")},
+                       attributes,
+                       markerBase,
+                       {},
+                       {}});
+      elements.append({key + QStringLiteral("-path"),
+                       key,
+                       QStringLiteral("path"),
+                       {},
+                       {},
+                       {},
+                       markerBase,
+                       {},
                        neo ? QStringLiteral("stroke-width:") + markerStrokeWidth : QString()});
       if (muffin::mermaid::er::erMarker(card, start)->hasRing)
-        elements.append({key + QStringLiteral("-circle"), key, QStringLiteral("circle"), {}, {}, {}, ringBase, {},
+        elements.append({key + QStringLiteral("-circle"),
+                         key,
+                         QStringLiteral("circle"),
+                         {},
+                         {},
+                         {},
+                         ringBase,
+                         {},
                          neo ? QStringLiteral("fill:%1;stroke-width:%2").arg(ringFill, markerStrokeWidth)
                              : QStringLiteral("fill:white")});
     }
@@ -631,8 +737,15 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
     QHash<QString, QString> attributes{{QStringLiteral("data-look"), input.look}};
     if (input.colorTheme && index < input.themeColorLimit)
       attributes.insert(QStringLiteral("data-color-id"), QStringLiteral("color-%1").arg(index));
-    elements.append({key, QStringLiteral("nodes"), QStringLiteral("g"), {}, entityClasses(entity, handDrawn),
-                     attributes, root, {}, {}});
+    elements.append({key,
+                     QStringLiteral("nodes"),
+                     QStringLiteral("g"),
+                     {},
+                     entityClasses(entity, handDrawn),
+                     attributes,
+                     root,
+                     {},
+                     {}});
     if (handDrawn) {
       // rough.js draws the shapes from options the entity's classDef and
       // inline style reach. No style is written on them, so a classDef acts
@@ -641,11 +754,17 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
       document.rough.insert(entity.id, rough);
       const QString shape =
           entity.attributes.isEmpty() ? key + QStringLiteral("-shape") : key + QStringLiteral("-outer");
-      elements.append({shape, key, QStringLiteral("g"), {},
+      elements.append({shape,
+                       key,
+                       QStringLiteral("g"),
+                       {},
                        entity.attributes.isEmpty()
                            ? QStringList{QStringLiteral("basic"), QStringLiteral("label-container")}
                            : QStringList{QStringLiteral("outer-path")},
-                       {}, root, {}, {}});
+                       {},
+                       root,
+                       {},
+                       {}});
       addRoughPaths(elements, shape, rough.table);
       if (entity.attributes.isEmpty()) {
         // drawRect: the rough group stands in for the rectangle, and its
@@ -656,13 +775,26 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
         for (qsizetype row = 0; row < entity.attributes.size(); ++row) {
           const bool odd = row % 2 == 0;
           const QString group = key + QStringLiteral("-row") + QString::number(row);
-          elements.append({group, key, QStringLiteral("g"), {},
-                           {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))}, {},
-                           root, {}, {}});
+          elements.append({group,
+                           key,
+                           QStringLiteral("g"),
+                           {},
+                           {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))},
+                           {},
+                           root,
+                           {},
+                           {}});
           addRoughPaths(elements, group, odd ? rough.oddRows : rough.evenRows);
         }
-        elements.append({key + QStringLiteral("-divider"), key, QStringLiteral("g"), {}, {QStringLiteral("divider")}, {},
-                         root, {}, {}});
+        elements.append({key + QStringLiteral("-divider"),
+                         key,
+                         QStringLiteral("g"),
+                         {},
+                         {QStringLiteral("divider")},
+                         {},
+                         root,
+                         {},
+                         {}});
         addRoughPaths(elements, key + QStringLiteral("-divider"), rough.table);
         static const char* const kinds[] = {"name", "attribute-type", "attribute-name", "attribute-keys",
                                             "attribute-comment"};
@@ -679,26 +811,46 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
     const QString pathStyle = input.nodeStylesReachEveryPath ? styles.nodeStyles : styles.strokeStyles;
     if (entity.attributes.isEmpty()) {
       // drawRect: a rectangle with the whole node style, and its label.
-      elements.append({key + QStringLiteral("-rect"), key, QStringLiteral("rect"), {},
-                       {QStringLiteral("basic"), QStringLiteral("label-container")}, {}, {}, styles.nodeStyles,
-                       QStringLiteral("fill:%1;stroke:%2;stroke-width:%3")
-                           .arg(declaredOr(styles, "fill", theme.mainBkg), declaredOr(styles, "stroke", theme.nodeBorder),
-                                declaredOr(styles, "stroke-width", QString::number(kTableStroke)))});
+      elements.append(
+          {key + QStringLiteral("-rect"),
+           key,
+           QStringLiteral("rect"),
+           {},
+           {QStringLiteral("basic"), QStringLiteral("label-container")},
+           {},
+           {},
+           styles.nodeStyles,
+           QStringLiteral("fill:%1;stroke:%2;stroke-width:%3")
+               .arg(declaredOr(styles, "fill", theme.mainBkg), declaredOr(styles, "stroke", theme.nodeBorder),
+                    declaredOr(styles, "stroke-width", QString::number(kTableStroke)))});
       addLabel(elements, key + QStringLiteral("-label"), key, {QStringLiteral("label")}, root, styles.labelStyles,
                input.htmlLabels, true, theme.mainBkg);
       continue;
     }
-    elements.append({key + QStringLiteral("-outer"), key, QStringLiteral("g"), {}, {QStringLiteral("outer-path")}, {},
-                     root, {}, {}});
+    elements.append({key + QStringLiteral("-outer"),
+                     key,
+                     QStringLiteral("g"),
+                     {},
+                     {QStringLiteral("outer-path")},
+                     {},
+                     root,
+                     {},
+                     {}});
     const QString tableStroke = declaredOr(styles, "stroke", theme.nodeBorder);
     addPaths(elements, key + QStringLiteral("-outer"), declaredOr(styles, "fill", theme.mainBkg), tableStroke,
              declaredOr(styles, "stroke-width", QString::number(kTableStroke)), pathStyle);
     for (qsizetype row = 0; row < entity.attributes.size(); ++row) {
       const bool odd = row % 2 == 0;
       const QString group = key + QStringLiteral("-row") + QString::number(row);
-      elements.append({group, key, QStringLiteral("g"), {},
-                       {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))}, {}, root,
-                       {}, {}});
+      elements.append({group,
+                       key,
+                       QStringLiteral("g"),
+                       {},
+                       {QStringLiteral("row-rect-") + (odd ? QStringLiteral("odd") : QStringLiteral("even"))},
+                       {},
+                       root,
+                       {},
+                       {}});
       // The even rows carry the whole node style too, where the theme writes
       // the stroke styles elsewhere.
       // A row's fill and stroke are the theme's; the stroke's width is the entity's.
@@ -706,8 +858,15 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
                declaredOr(styles, "stroke-width", QString::number(kTableStroke)),
                !odd && !input.nodeStylesReachEveryPath ? styles.nodeStyles : pathStyle);
     }
-    elements.append({key + QStringLiteral("-divider"), key, QStringLiteral("g"), {}, {QStringLiteral("divider")}, {},
-                     root, {}, {}});
+    elements.append({key + QStringLiteral("-divider"),
+                     key,
+                     QStringLiteral("g"),
+                     {},
+                     {QStringLiteral("divider")},
+                     {},
+                     root,
+                     {},
+                     {}});
     addPaths(elements, key + QStringLiteral("-divider"), declaredOr(styles, "fill", theme.mainBkg), tableStroke,
              declaredOr(styles, "stroke-width", QString::number(kTableStroke)), pathStyle);
     // The entity's five kinds of text, by the class of their label.
@@ -715,8 +874,8 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
                                         "attribute-comment"};
     for (qsizetype kind = 0; kind < 5; ++kind)
       addLabel(elements, key + QStringLiteral("-l") + QString::number(kind), key,
-               {QStringLiteral("label"), QString::fromLatin1(kinds[kind])}, root, styles.labelStyles,
-               input.htmlLabels, false, theme.mainBkg);
+               {QStringLiteral("label"), QString::fromLatin1(kinds[kind])}, root, styles.labelStyles, input.htmlLabels,
+               false, theme.mainBkg);
   }
 
   css::ElementStyle line = root;
@@ -733,15 +892,28 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
     const QString key = QStringLiteral("e") + QString::number(index);
     if (!stands) {
       const auto& relationship = relationships.at(index);
-      elements.append({key, QStringLiteral("edge-paths"), QStringLiteral("path"), {},
-                       {QStringLiteral("edge-thickness-normal"),
-                        relationship.identifying ? QStringLiteral("edge-pattern-solid")
-                                                 : QStringLiteral("edge-pattern-dashed"),
-                        QStringLiteral("relationshipLine")},
-                       {}, line, {}, {}});
+      elements.append(
+          {key,
+           QStringLiteral("edge-paths"),
+           QStringLiteral("path"),
+           {},
+           {QStringLiteral("edge-thickness-normal"),
+            relationship.identifying ? QStringLiteral("edge-pattern-solid") : QStringLiteral("edge-pattern-dashed"),
+            QStringLiteral("relationshipLine")},
+           {},
+           line,
+           {},
+           {}});
     }
-    elements.append({key + QStringLiteral("-group"), QStringLiteral("edge-labels"), QStringLiteral("g"), {},
-                     {QStringLiteral("edgeLabel")}, {}, root, {}, {}});
+    elements.append({key + QStringLiteral("-group"),
+                     QStringLiteral("edge-labels"),
+                     QStringLiteral("g"),
+                     {},
+                     {QStringLiteral("edgeLabel")},
+                     {},
+                     root,
+                     {},
+                     {}});
     addLabel(elements, key + QStringLiteral("-label"), key + QStringLiteral("-group"), {QStringLiteral("label")},
              labelBox, {}, input.relationshipHtmlLabels, true, theme.edgeLabelBackground, true);
   }
@@ -768,8 +940,9 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
   document.text.table = base;
   document.text.htmlLabels = input.htmlLabels;
   document.text.relationshipHtmlLabels = input.relationshipHtmlLabels;
-  document.text.relationship = textOf(QStringLiteral("e") + QString::number(relationships.size()) + QStringLiteral("-label"),
-                                      baseRelationship, input.relationshipHtmlLabels);
+  document.text.relationship =
+      textOf(QStringLiteral("e") + QString::number(relationships.size()) + QStringLiteral("-label"), baseRelationship,
+             input.relationshipHtmlLabels);
   for (qsizetype index = 0; index < entities.size(); ++index) {
     const auto& entity = entities.at(index);
     const QString key = QStringLiteral("n") + QString::number(index);
@@ -788,13 +961,13 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
     const bool attributeless = entity.attributes.isEmpty();
     auto& paint = document.paint.entities[entity.id];
     if (handDrawn) {
-      paint.table = roughPaintOf(styles, attributeless ? key + QStringLiteral("-shape") : key + QStringLiteral("-outer"));
+      paint.table =
+          roughPaintOf(styles, attributeless ? key + QStringLiteral("-shape") : key + QStringLiteral("-outer"));
       paint.oddRows = paint.evenRows = paint.dividers = paint.table;
       if (!attributeless) {
         paint.oddRows = roughPaintOf(styles, key + QStringLiteral("-row0"));
-        paint.evenRows = entities.at(index).attributes.size() > 1
-                             ? roughPaintOf(styles, key + QStringLiteral("-row1"))
-                             : paint.oddRows;
+        paint.evenRows = entities.at(index).attributes.size() > 1 ? roughPaintOf(styles, key + QStringLiteral("-row1"))
+                                                                  : paint.oddRows;
         paint.dividers = roughPaintOf(styles, key + QStringLiteral("-divider"));
       }
       paint.filter = QStringLiteral("none");
@@ -808,15 +981,14 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
                           ? copy.oddRows
                           : groupPaintOf(styles, bg + QStringLiteral("-row1"), true);
       copy.dividers = attributeless ? copy.table : groupPaintOf(styles, bg + QStringLiteral("-divider"), true);
-      document.text.backgrounds.insert(entity.id,
-                                        attributeless
-                                            ? ErEntityTextStyle{textOf(bg + QStringLiteral("-label"), base, input.htmlLabels),
-                                                                base, base, base, base}
-                                            : ErEntityTextStyle{textOf(bg + QStringLiteral("-l0"), base, input.htmlLabels),
-                                                                textOf(bg + QStringLiteral("-l1"), base, input.htmlLabels),
-                                                                textOf(bg + QStringLiteral("-l2"), base, input.htmlLabels),
-                                                                textOf(bg + QStringLiteral("-l3"), base, input.htmlLabels),
-                                                                textOf(bg + QStringLiteral("-l4"), base, input.htmlLabels)});
+      document.text.backgrounds.insert(
+          entity.id, attributeless ? ErEntityTextStyle{textOf(bg + QStringLiteral("-label"), base, input.htmlLabels),
+                                                       base, base, base, base}
+                                   : ErEntityTextStyle{textOf(bg + QStringLiteral("-l0"), base, input.htmlLabels),
+                                                       textOf(bg + QStringLiteral("-l1"), base, input.htmlLabels),
+                                                       textOf(bg + QStringLiteral("-l2"), base, input.htmlLabels),
+                                                       textOf(bg + QStringLiteral("-l3"), base, input.htmlLabels),
+                                                       textOf(bg + QStringLiteral("-l4"), base, input.htmlLabels)});
       continue;
     }
     if (attributeless) {
@@ -848,13 +1020,14 @@ muffin::mermaid::er::resolveErDocumentStyle(const ErLayoutInput& layout, const E
         key + (input.relationshipHtmlLabels ? QStringLiteral("-label-div") : QStringLiteral("-label-rect")));
     paint.labelBackground = paintOf(input.relationshipHtmlLabels ? box.backgroundColor : box.fill);
   }
-  for (const ErCardinality card : {ErCardinality::ExactlyOne, ErCardinality::ZeroOrOne, ErCardinality::OneOrMore,
-                                   ErCardinality::ZeroOrMore}) {
+  for (const ErCardinality card :
+       {ErCardinality::ExactlyOne, ErCardinality::ZeroOrOne, ErCardinality::OneOrMore, ErCardinality::ZeroOrMore}) {
     for (bool start : {true, false}) {
       const QString key = QStringLiteral("m-") + muffin::mermaid::er::erMarkerKey(card, start);
       const css::ElementStyle& path = styles.value(key + QStringLiteral("-path"));
       const css::ElementStyle& ring = styles.value(key + QStringLiteral("-circle"));
-      document.paint.markers.insert(muffin::mermaid::er::erMarkerKey(card, start), {widthOf(path), path.stroke, ring.fill, ring.stroke});
+      document.paint.markers.insert(muffin::mermaid::er::erMarkerKey(card, start),
+                                    {widthOf(path), path.stroke, ring.fill, ring.stroke});
     }
   }
   return document;
@@ -901,12 +1074,18 @@ void muffin::mermaid::er::resolveErLineDashes(ErDocumentStyle& document, const E
       dash += pairs.join(QLatin1Char(' ')) + QStringLiteral(" 0");
     }
     const QString key = muffin::mermaid::er::erRelationshipKey(placed.id, placed.loopIndex);
-    elements.append({key, QStringLiteral("edge-paths"), QStringLiteral("path"), {},
-                     {QStringLiteral("edge-thickness-normal"),
-                      source->identifying ? QStringLiteral("edge-pattern-solid")
-                                          : QStringLiteral("edge-pattern-dashed"),
-                      QStringLiteral("relationshipLine")},
-                     {}, line, QStringLiteral("stroke-dasharray: %1; stroke-dashoffset: 0;").arg(dash), {}});
+    elements.append(
+        {key,
+         QStringLiteral("edge-paths"),
+         QStringLiteral("path"),
+         {},
+         {QStringLiteral("edge-thickness-normal"),
+          source->identifying ? QStringLiteral("edge-pattern-solid") : QStringLiteral("edge-pattern-dashed"),
+          QStringLiteral("relationshipLine")},
+         {},
+         line,
+         QStringLiteral("stroke-dasharray: %1; stroke-dashoffset: 0;").arg(dash),
+         {}});
     paths.append({key, placed.id});
   }
   const QHash<QString, css::ElementStyle> styles =

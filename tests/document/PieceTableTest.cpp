@@ -247,9 +247,11 @@ static void testDualWriteStaysInSyncWithMarkdownText() {
   checkSync("after insert");
   require(session.applyTextEdit(0, 1, QString(), {}) != muffin::TextEditResult::Rejected, "delete [0,1)");
   checkSync("after delete");
-  require(session.applyTextEdit(0, 0, QStringLiteral("你好"), {}) != muffin::TextEditResult::Rejected, "insert CJK at 0");
+  require(session.applyTextEdit(0, 0, QStringLiteral("你好"), {}) != muffin::TextEditResult::Rejected,
+          "insert CJK at 0");
   checkSync("after CJK insert");
-  require(session.applyTextEdit(0, 2, QStringLiteral("AB"), {}) != muffin::TextEditResult::Rejected, "replace [0,2) with AB");
+  require(session.applyTextEdit(0, 2, QStringLiteral("AB"), {}) != muffin::TextEditResult::Rejected,
+          "replace [0,2) with AB");
   checkSync("after replace");
 
   require(session.document().pieceText().size() == session.document().markdownText().toString().size(),
@@ -392,7 +394,8 @@ static void testPendingMarkerCacheTracksLocalEdits() {
             QStringLiteral("pending marker cache mismatch %1").arg(QString::fromUtf8(label)));
   };
   requireCache("after full parse");
-  require(session.applyTextEdit(0, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected, "pending marker prefix insert should apply locally");
+  require(session.applyTextEdit(0, 0, QStringLiteral("x")) != muffin::TextEditResult::Rejected,
+          "pending marker prefix insert should apply locally");
   requireCache("after suffix shift");
   const qsizetype marker = session.markdownText().toString().indexOf(QLatin1Char('*'));
   require(session.applyTextEdit(marker + 1, 0, QStringLiteral(" item")) != muffin::TextEditResult::Rejected,

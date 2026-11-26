@@ -120,8 +120,8 @@ bool DraftRecovery::snapshot(const QString& markdownText, const QString& sourceF
   if (metadata.size() > 65536)
     return false;
   if (AtomicWrite::write(snapshotPath(key), [&metadata, &bytes](QSaveFile& snapshot) {
-        return snapshot.write(snapshotMagic) == snapshotMagic.size() &&
-               snapshot.write(metadata) == metadata.size() && snapshot.write(bytes) == bytes.size();
+        return snapshot.write(snapshotMagic) == snapshotMagic.size() && snapshot.write(metadata) == metadata.size() &&
+               snapshot.write(bytes) == bytes.size();
       }) != AtomicWrite::Result::Written)
     return false;
   // Migrate only after the replacement is durable. A crash before commit

@@ -15,9 +15,12 @@ enum class ArchitectureErrorKind { Lexer, Parser, Runtime };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(ArchitectureErrorKind kind) {
   switch (kind) {
-  case ArchitectureErrorKind::Lexer: return u"lexer";
-  case ArchitectureErrorKind::Parser: return u"parse";
-  case ArchitectureErrorKind::Runtime: return u"runtime";
+  case ArchitectureErrorKind::Lexer:
+    return u"lexer";
+  case ArchitectureErrorKind::Parser:
+    return u"parse";
+  case ArchitectureErrorKind::Runtime:
+    return u"runtime";
   }
   return u"parse";
 }

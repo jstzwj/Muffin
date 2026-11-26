@@ -168,8 +168,10 @@ void testPreparedAsyncDocumentMatchesSyncAndRemainsEditable() {
     require(async.document().lineOffsets().lineForOffset(i) == sync.document().lineOffsets().lineForOffset(i),
             "prepared text index must retain line lookup");
   const auto offset = text.indexOf(QStringLiteral("Tail")) + 2;
-  require(async.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected, "prepared document must accept local edits");
-  require(sync.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected, "synchronous reference must accept local edits");
+  require(async.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected,
+          "prepared document must accept local edits");
+  require(sync.applyTextEdit(offset, 0, QStringLiteral("X")) != muffin::TextEditResult::Rejected,
+          "synchronous reference must accept local edits");
   require(async.markdownText().toString() == sync.markdownText().toString(),
           "prepared text must remain correct after editing");
   require(blockSnapshot(async.document().root()) == blockSnapshot(sync.document().root()),

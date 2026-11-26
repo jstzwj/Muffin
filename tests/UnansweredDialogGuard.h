@@ -44,11 +44,10 @@ inline void failOnUnansweredDialog(std::chrono::milliseconds grace = std::chrono
     if (std::chrono::milliseconds(seen->since.elapsed()) < grace)
       return;
     const auto* box = qobject_cast<const QMessageBox*>(modal);
-    const QString message =
-        QStringLiteral("A dialog no test step answered blocks the run after %1 s: %2 \"%3\": %4")
-            .arg(seen->since.elapsed() / 1000)
-            .arg(QString::fromLatin1(modal->metaObject()->className()), modal->windowTitle(),
-                 box ? box->text() : QStringLiteral("(not a message box)"));
+    const QString message = QStringLiteral("A dialog no test step answered blocks the run after %1 s: %2 \"%3\": %4")
+                                .arg(seen->since.elapsed() / 1000)
+                                .arg(QString::fromLatin1(modal->metaObject()->className()), modal->windowTitle(),
+                                     box ? box->text() : QStringLiteral("(not a message box)"));
     fprintf(stderr, "%s\n", message.toLocal8Bit().constData());
     std::exit(1);
   });

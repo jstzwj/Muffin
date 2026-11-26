@@ -13,9 +13,12 @@ enum class TreeViewErrorKind { Lexer, Parser, Preprocess };
 // The kind's name in the diagnostic code, "gantt-lexer-error" and the like (see kindErrorCode).
 inline QStringView kindName(TreeViewErrorKind kind) {
   switch (kind) {
-  case TreeViewErrorKind::Lexer: return u"lexer";
-  case TreeViewErrorKind::Parser: return u"parse";
-  case TreeViewErrorKind::Preprocess: return u"preprocess";
+  case TreeViewErrorKind::Lexer:
+    return u"lexer";
+  case TreeViewErrorKind::Parser:
+    return u"parse";
+  case TreeViewErrorKind::Preprocess:
+    return u"preprocess";
   }
   return u"parse";
 }

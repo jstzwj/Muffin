@@ -295,7 +295,8 @@ void editedCounters() {
     layout.rebuild(session.document(), theme, 600, {}, {},
                    lazy ? DocumentLayout::BuildPolicy::Lazy : DocumentLayout::BuildPolicy::Eager);
     layout.buildAll(theme);
-    require(session.applyTextEdit(0, 0, "Extra\n\n") != muffin::TextEditResult::Rejected, "insert preceding counter element");
+    require(session.applyTextEdit(0, 0, "Extra\n\n") != muffin::TextEditResult::Rejected,
+            "insert preceding counter element");
     const auto range = session.lastLocalTopLevelRangeChange();
     require(range.isValid(), "counter insertion is a local structural change");
     require(layout.rebuildTopLevelRange(range, session.document(), theme, {}).rebuilt,

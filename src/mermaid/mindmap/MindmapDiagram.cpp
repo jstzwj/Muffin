@@ -19,8 +19,7 @@
 namespace muffin::mermaid::mindmap {
 
 MindmapParseError::MindmapParseError(const QString& message, int line, int column, MindmapErrorKind kind, QString token)
-    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind),
-      token(std::move(token)) {
+    : DiagramError(message.toUtf8().constData()), line(line), column(column), kind(kind), token(std::move(token)) {
 }
 
 muffin::mermaid::DiagramErrorInfo MindmapParseError::info() const {

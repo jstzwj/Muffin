@@ -117,20 +117,19 @@ void InputController::applyLocalEdit(EditTransaction::Kind kind, const QString& 
                                      qsizetype fallbackSourceOffset, QVector<LocalEditNodeHint> nodeHints,
                                      bool preferLaterEmptyAtOffset, bool structureEdit) {
   PerfTimer perf("input.applyLocalEdit");
-  const EditOutcome outcome =
-      applyEdit(ctx_,
-                {.sourceStart = sourceStart,
-                 .removedLength = removedLength,
-                 .insertedText = std::move(insertedText),
-                 .nodeHints = std::move(nodeHints)},
-                {.kind = kind,
-                 .label = label,
-                 .cursor = std::move(preferredCursor),
-                 .fallbackSourceOffset = fallbackSourceOffset,
-                 .preferLaterEmptyAtOffset = preferLaterEmptyAtOffset,
-                 .structureEdit = structureEdit,
-                 .snapshotUndo = structureEdit,
-                 .layoutImmediately = true});
+  const EditOutcome outcome = applyEdit(ctx_,
+                                        {.sourceStart = sourceStart,
+                                         .removedLength = removedLength,
+                                         .insertedText = std::move(insertedText),
+                                         .nodeHints = std::move(nodeHints)},
+                                        {.kind = kind,
+                                         .label = label,
+                                         .cursor = std::move(preferredCursor),
+                                         .fallbackSourceOffset = fallbackSourceOffset,
+                                         .preferLaterEmptyAtOffset = preferLaterEmptyAtOffset,
+                                         .structureEdit = structureEdit,
+                                         .snapshotUndo = structureEdit,
+                                         .layoutImmediately = true});
   // A structure edit (e.g. committing "```"/"$$" with Enter) can leave the caret inside a newly
   // created literal block. Activate that block's inline editor so the caret paints as an editing
   // caret and subsequent keystrokes route into it rather than being rejected. syncLiteralEditMode

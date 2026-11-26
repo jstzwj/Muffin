@@ -3348,7 +3348,8 @@ void fileOpenConfirmationDefersReadingAndPreservesTabs() {
   }
   require(pending->fileController.save(pending->session, &f.window) == SaveOutcome::SkippedBusy,
           "save cannot create an empty file while awaiting consent");
-  require(pending->session.applyTextEdit(0, 0, "stray edit") == muffin::TextEditResult::Rejected, "model rejects editing while awaiting consent");
+  require(pending->session.applyTextEdit(0, 0, "stray edit") == muffin::TextEditResult::Rejected,
+          "model rejects editing while awaiting consent");
   ParseOptions options;
   options.enableAutolink = false;
   pending->session.setParseOptions(options);
