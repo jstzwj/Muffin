@@ -156,7 +156,10 @@ bool EditorView::blockHandleMove(QMouseEvent* event) {
         const qreal y = blockDragPosition_.y();
         const int direction = y < 24 ? -1 : y > viewport()->height() - 24 ? 1 : 0;
         if (direction) {
-          verticalScrollBar()->setValue(verticalScrollBar()->value() + direction * verticalScrollBar()->singleStep());
+          // The auto-scroll keeps its own speed, a twelfth of the viewport per tick: singleStep is one
+          // line of text, the unit of the wheel, and says nothing about how fast a drag follows.
+          const int step = qMax(16, viewport()->height() / 12);
+          verticalScrollBar()->setValue(verticalScrollBar()->value() + direction * step);
           updateBlockDrop(blockDragPosition_);
         }
       });

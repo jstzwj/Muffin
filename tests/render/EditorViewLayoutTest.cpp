@@ -1,6 +1,7 @@
 #include "EditorViewTestUtils.h"
 
 #include <QScrollBar>
+#include <QWheelEvent>
 
 using namespace muffin;
 
@@ -507,6 +508,66 @@ void testEditorViewRevealKeepsFocusBlockAnchored() {
               .arg(focusScreenAfter));
 }
 
+// Qt scrolls QApplication::wheelScrollLines() lines per wheel notch, so the scroll bar's single step
+// is one line of body text. As a twelfth of the viewport it made one notch a quarter of the window,
+// and the taller the window, the further it jumped.
+void testEditorViewWheelNotchScrollsLinesOfText() {
+  DocumentSession session;
+  EditorView view;
+  QString text;
+  for (int i = 0; i < 200; ++i) {
+    text += QStringLiteral("Paragraph %1.\n\n").arg(i);
+  }
+  session.setMarkdownText(text, false);
+  view.resize(600, 400);
+  view.show();
+  QApplication::processEvents();
+  view.setDocument(session.document());
+
+  QScrollBar* bar = view.verticalScrollBar();
+  const int lines = QApplication::wheelScrollLines();
+  const auto wheelDownOneNotch = [&view] {
+    const QPointF point = view.viewport()->rect().center();
+    QWheelEvent wheel(point, view.viewport()->mapToGlobal(point.toPoint()), {}, QPoint(0, -120), Qt::NoButton,
+                      Qt::NoModifier, Qt::NoScrollPhase, false);
+    QApplication::sendEvent(view.viewport(), &wheel);
+  };
+
+  require(lines > 0, "the platform must report a positive number of lines per wheel notch");
+  const int step = bar->singleStep();
+  wheelDownOneNotch();
+  require(bar->value() == lines * step,
+          QStringLiteral("one wheel notch must scroll %1 lines of text: value=%2 singleStep=%3")
+              .arg(lines)
+              .arg(bar->value())
+              .arg(step));
+
+  bar->setValue(0);
+  view.resize(600, 2400);
+  QApplication::processEvents();
+  wheelDownOneNotch();
+  require(bar->value() == lines * step,
+          QStringLiteral("a taller window must not scroll further per wheel notch: value=%1 expected=%2")
+              .arg(bar->value())
+              .arg(lines * step));
+
+  bar->setValue(0);
+  view.resize(600, 400);
+  QApplication::processEvents();
+  view.setFontSizePx(32);
+  // The relayout keeps the first block where it was on screen, so return to the document top.
+  bar->setValue(0);
+  const int largeStep = bar->singleStep();
+  require(largeStep > step, QStringLiteral("the step is a line of text, so larger text must scroll further: %1 then %2")
+                                .arg(step)
+                                .arg(largeStep));
+  wheelDownOneNotch();
+  require(bar->value() == lines * largeStep,
+          QStringLiteral("one wheel notch must follow the larger text: value=%1 expected=%2")
+              .arg(bar->value())
+              .arg(lines * largeStep));
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -528,6 +589,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewActiveHeadingRendersContentWithoutPrefix);
   RUN_TEST(testEditorViewActiveSetextHeadingRendersContentWithoutPrefix);
   RUN_TEST(testEditorViewRevealKeepsFocusBlockAnchored);
+  RUN_TEST(testEditorViewWheelNotchScrollsLinesOfText);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

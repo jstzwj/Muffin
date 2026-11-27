@@ -8,6 +8,7 @@
 #include "editor/TypewriterScroll.h"
 #include "render/BlockLayout.h"
 #include "render/DocumentLayout.h"
+#include "render/RenderMetrics.h"
 #include "theme/ChromeStyleSheet.h"
 
 #include <QEasingCurve>
@@ -19,6 +20,7 @@
 #include <QWheelEvent>
 
 #include <algorithm>
+#include <cmath>
 
 namespace muffin {
 
@@ -33,6 +35,16 @@ Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
 struct PerfTimer : diag::ScopedPerfProbe {
   explicit PerfTimer(const char* label) : diag::ScopedPerfProbe(label, viewPerf()) {}
 };
+
+// One line of body text, resolved like the estimate of a paragraph's line height
+// (BlockHeightEstimator).
+int bodyLineHeight(const RenderTheme& theme) {
+  const QFont font = theme.paragraphFont();
+  const qreal multiplier = theme.lineHeightMultiplierForElement(QStringLiteral("p"));
+  const qreal lineHeight = multiplier > 0.0 ? cssLineHeightPx(font.pointSizeF(), multiplier)
+                                            : std::ceil(TextFontMetrics(font).height() * kLineHeightFactor);
+  return qMax(1, qRound(lineHeight));
+}
 
 } // namespace
 
@@ -540,7 +552,9 @@ void EditorView::updateScrollBars() {
   const int vh = viewport()->height();
   const int normalMax = layout_ ? qMax(0, static_cast<int>(std::ceil(layout_->totalHeight() - vh))) : 0;
   verticalScrollBar()->setPageStep(pageStep);
-  verticalScrollBar()->setSingleStep(qMax(16, pageStep / 12));
+  // singleStep is one line of body text. Qt scrolls QApplication::wheelScrollLines() of them per
+  // wheel notch, so a notch covers as many lines as the OS is set to, however tall the window is.
+  verticalScrollBar()->setSingleStep(bodyLineHeight(theme_));
   if (typewriterMode_) {
     // Let the caret rest inside its typewriter band on the first and last line as well: the
     // document scrolls past both ends by exactly what the band needs there (half a viewport for
