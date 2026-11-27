@@ -464,6 +464,7 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
   // re-derives the scrollbar value at scope exit, so the dirty rects below are computed against the
   // final scroll offset (a no-op when nothing above the viewport moved).
   DocumentLayout::BlockRebuildResult result;
+  const std::optional<TypewriterCaretRow> caretRow = typewriterCaretRow();
   {
     ScopedViewportPin pin(*this);
     const auto it = blockBuiltAt_.constFind(blockId);
@@ -480,7 +481,7 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
     // same keystroke) — skip the O(block) rebuildBlock; the caret/fence/dirty work below still runs.
   }
 
-  updateCursorHitFromPosition();
+  updateCursorHitFromPosition(caretRow);
   // Typing in a wrap-OFF code fence grows the line at its natural width; once the caret crosses the
   // visible window's right edge it would otherwise scroll off-screen. setCursorHit/rebuildLayout
   // already follow, but the per-keystroke refresh path needs the same horizontal keep-visible.
@@ -523,6 +524,7 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
   // Rebuild every block inside one viewport pin (the suffix shift from each rebuild accumulates),
   // then compute dirty rects against the reconciled scroll offset.
   QVector<DocumentLayout::BlockRebuildResult> results;
+  const std::optional<TypewriterCaretRow> caretRow = typewriterCaretRow();
   {
     ScopedViewportPin pin(*this);
     const quint64 revision = document.revision();
@@ -550,7 +552,7 @@ bool EditorView::refreshBlocksInternal(const QVector<NodeId>& blockIds, const Ma
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
-  updateCursorHitFromPosition();
+  updateCursorHitFromPosition(caretRow);
   updateTableToolbar();
   if (reason != DocumentLayout::BlockUpdateReason::Representation)
     ensureCursorVisible();
@@ -574,6 +576,7 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
 
   // Rebuild the changed range inside a viewport pin, then dirty against the reconciled offset.
   DocumentLayout::RangeRebuildResult result;
+  const std::optional<TypewriterCaretRow> caretRow = typewriterCaretRow();
   {
     ScopedViewportPin pin(*this);
     result = layout_->rebuildTopLevelRange(range, document, theme_, selection_);
@@ -582,7 +585,7 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
     }
   }
 
-  updateCursorHitFromPosition();
+  updateCursorHitFromPosition(caretRow);
   updateCodeLanguageEditor();
   updateTableToolbar();
   if (!preserveViewport)
@@ -1557,6 +1560,7 @@ void EditorView::rebuildLayout(bool preserveViewport) {
     // promoted to full detail on demand. Fall back to Eager under the offscreen test platform
     // (no real paint/scroll cycle drives ensureVisibleBuilt), keeping render/view tests unchanged.
     const bool lazy = QApplication::platformName() != QLatin1String("offscreen");
+    const std::optional<TypewriterCaretRow> caretRow = typewriterCaretRow();
     {
       // Pin by node id: a full Lazy rebuild re-estimates every slot then re-promotes the visible
       // ones, churning totalHeight twice. The captured block's new slotTop re-derives a value that
@@ -1574,8 +1578,8 @@ void EditorView::rebuildLayout(bool preserveViewport) {
     }
     ensureVisibleBuilt(); // promote the visible window; self-pinned so the promotion snap is invisible
     if (selection_.focus.isValid()) {
-      cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, selection_.focus);
-      cursorVisible_ = cursorHit_.isValid();
+      // Like ensureCursorVisible below, the typewriter follow stays out of a preserved viewport.
+      updateCursorHitFromPosition(preserveViewport ? std::nullopt : caretRow);
       ensureCodeFenceCursorVisible();
     }
   } else {
@@ -1624,12 +1628,30 @@ void EditorView::updateTableToolbar() {
   tableToolbar_->update(cursorHit_, layout_.get(), scrollY(), viewport()->rect());
 }
 
-void EditorView::updateCursorHitFromPosition() {
+void EditorView::updateCursorHitFromPosition(std::optional<TypewriterCaretRow> caretBeforeLayout) {
   inputMethodState_.schedule();
   cursorHit_ = editor_geometry::hitForCursorPosition(*layout_, theme_, selection_.focus);
   cursorVisible_ = cursorHit_.isValid();
   updateCodeLanguageEditor();
   updateTableToolbar();
+  // A new paragraph, a line that wrapped or a relayout gives the caret its place only once the
+  // layout change calling here has run, and a paragraph that did not exist yet had none. When
+  // that moved the caret on screen or gave it a row, follow it again.
+  const std::optional<TypewriterCaretRow> caret = typewriterCaretRow();
+  if (caretBeforeLayout && caret && (!caretBeforeLayout->placed || qAbs(caretBeforeLayout->row - caret->row) > 1.0)) {
+    scrollToCursorCenteredAnimated();
+  }
+}
+
+std::optional<EditorView::TypewriterCaretRow> EditorView::typewriterCaretRow() const {
+  if (!typewriterMode_ || !selection_.focus.isValid()) {
+    return std::nullopt;
+  }
+  const QRectF cursor = effectiveCursorRect();
+  if (cursor.isEmpty()) {
+    return TypewriterCaretRow{}; // the layout has no place for the caret yet
+  }
+  return TypewriterCaretRow{true, cursor.center().y() - scrollY()};
 }
 
 void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previousSelection) {

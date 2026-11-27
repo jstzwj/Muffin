@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <functional>
+#include <optional>
 
 class QPropertyAnimation;
 class QTimer;
@@ -37,6 +38,7 @@ struct MemoryAccounting;
 
 class CodeFenceScrollController;
 class CodeLanguageEditor;
+struct TypewriterBand;
 class MarkdownDocument;
 class TableToolbar;
 
@@ -308,7 +310,16 @@ private:
   void applyScrollBarStyle();
   void updateCodeLanguageEditor();
   void updateTableToolbar();
-  void updateCursorHitFromPosition();
+  // Where the layout currently puts the caret, for the typewriter follow.
+  struct TypewriterCaretRow {
+    bool placed = false; // whether the layout gives the caret a row; a new paragraph gets one late
+    qreal row = 0.0;     // that row, in viewport pixels
+  };
+  // `caretBeforeLayout` is the caret as typewriterCaretRow saw it before the layout change this
+  // call accounts for. Typewriter mode follows the caret when it moves, but against the layout
+  // from before that change, so it follows again when the change moved the caret on screen or
+  // gave it a row.
+  void updateCursorHitFromPosition(std::optional<TypewriterCaretRow> caretBeforeLayout = std::nullopt);
   void refreshInlineProjectionForSelectionChange(SelectionRange previousSelection);
   void addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRange& selection) const;
   // Bounding document rect of everything paintSelection would draw for `selection`
@@ -371,9 +382,14 @@ private:
   void dragCodeFenceScrollBarTo(NodeId blockId, QPointF viewportPos);
   // Keep the caret inside the visible horizontal span of the code fence it lives in.
   void ensureCodeFenceCursorVisible();
-  // Scroll target that keeps the cursor on screen under the active typewriter policy, or -1 when
-  // the relaxed policy decides the cursor is already comfortable and no scroll is needed.
-  int typewriterScrollTarget(const QRectF& cursor) const;
+  // Scroll value that brings the caret back into the typewriter band (TypewriterBand), or nullopt
+  // when the relaxed policy finds the caret comfortable where it is. The value is negative for a
+  // caret near the document start.
+  std::optional<int> typewriterScrollTarget(const QRectF& cursor) const;
+  // The centered band while the cursor is kept in the middle, the comfort band otherwise.
+  TypewriterBand typewriterBand() const;
+  // nullopt outside typewriter mode or without a caret.
+  std::optional<TypewriterCaretRow> typewriterCaretRow() const;
 
   QPointer<const MarkdownDocument> document_;
   QPointer<QWidget> themeViewport_;

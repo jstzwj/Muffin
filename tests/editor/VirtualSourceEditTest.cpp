@@ -633,18 +633,30 @@ void testWritingModesUseTheVisualCaretRow() {
             "source typewriter mode centers the actual wrapped caret row, including document start");
   }
   edit.setTypewriterMode(true, false);
+  const auto inComfortBand = [&edit](const QRect& caret) {
+    const int height = edit.viewport()->height();
+    return caret.center().y() >= height / 3 - 2 && caret.center().y() <= height * 2 / 3 + 2;
+  };
   edit.setCursorPosition(line.size() * 2 + 700);
   const int relaxedScroll = edit.verticalScrollBar()->value();
   edit.ensureCursorVisible();
-  require(
-      edit.verticalScrollBar()->minimum() == 0 && edit.verticalScrollBar()->value() == relaxedScroll,
-      QStringLiteral(
-          "relaxed typewriter mode keeps a stable comfort band without boundary padding: min=%1 before=%2 after=%3 caret=%4 height=%5")
-          .arg(edit.verticalScrollBar()->minimum())
-          .arg(relaxedScroll)
-          .arg(edit.verticalScrollBar()->value())
-          .arg(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect().center().y())
-          .arg(edit.viewport()->height()));
+  require(edit.verticalScrollBar()->minimum() == -edit.viewport()->height() / 3 &&
+              edit.verticalScrollBar()->value() == relaxedScroll &&
+              inComfortBand(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect()),
+          QStringLiteral(
+              "relaxed typewriter mode keeps a stable comfort band: min=%1 before=%2 after=%3 caret=%4 height=%5")
+              .arg(edit.verticalScrollBar()->minimum())
+              .arg(relaxedScroll)
+              .arg(edit.verticalScrollBar()->value())
+              .arg(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect().center().y())
+              .arg(edit.viewport()->height()));
+  // The comfort band holds on the first and last row: the range overscrolls by a third.
+  for (const qsizetype offset : {qsizetype(0), line.size() * 5}) {
+    edit.setCursorPosition(offset);
+    QApplication::processEvents();
+    require(inComfortBand(edit.inputMethodQuery(Qt::ImCursorRectangle).toRect()),
+            "relaxed source typewriter mode keeps the first and last caret row in the comfort band");
+  }
   edit.setTypewriterMode(false, true);
   edit.setStandaloneText(QStringLiteral("identical plain text\n").repeated(5));
   edit.setCursorPosition(25);

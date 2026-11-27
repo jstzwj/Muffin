@@ -5,6 +5,7 @@
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "editor/EditorViewGeometry.h"
+#include "editor/TypewriterScroll.h"
 #include "render/BlockLayout.h"
 #include "render/DocumentLayout.h"
 #include "theme/ChromeStyleSheet.h"
@@ -197,26 +198,16 @@ QRectF EditorView::effectiveCursorRect() const {
   return cursor;
 }
 
-int EditorView::typewriterScrollTarget(const QRectF& cursor) const {
+TypewriterBand EditorView::typewriterBand() const {
+  const qreal height = viewport()->height();
+  return typewriterCursorMiddle_ ? TypewriterBand::centered(height) : TypewriterBand::comfort(height);
+}
+
+std::optional<int> EditorView::typewriterScrollTarget(const QRectF& cursor) const {
   QScrollBar* scrollBar = verticalScrollBar();
-  const qreal cursorCenterY = cursor.center().y();
-  const qreal viewportHeight = static_cast<qreal>(viewport()->height());
-  if (typewriterCursorMiddle_) {
-    // Keep the caret pinned to the vertical centre of the viewport.
-    return qBound(scrollBar->minimum(), qRound(cursorCenterY - viewportHeight / 2.0), scrollBar->maximum());
-  }
-  // Relaxed policy: scroll only when the caret leaves a comfort band (top/bottom third of the
-  // viewport). When it already sits inside the band, no scrolling is wanted.
-  const qreal cursorViewportY = cursorCenterY - scrollY();
-  const qreal topMargin = viewportHeight / 3.0;
-  const qreal bottomMargin = viewportHeight * 2.0 / 3.0;
-  if (cursorViewportY < topMargin) {
-    return qBound(scrollBar->minimum(), qRound(cursorCenterY - topMargin), scrollBar->maximum());
-  }
-  if (cursorViewportY > bottomMargin) {
-    return qBound(scrollBar->minimum(), qRound(cursorCenterY - bottomMargin), scrollBar->maximum());
-  }
-  return -1;
+  // The target is negative while the caret rests less than half a viewport below the document
+  // start. That is a scroll position like any other, not a request to leave the view alone.
+  return typewriterBand().scrollTarget(cursor.center().y(), scrollY(), scrollBar->minimum(), scrollBar->maximum());
 }
 
 void EditorView::ensureCursorVisible() {
@@ -257,11 +248,11 @@ void EditorView::scrollToCursorCentered() {
   if (cursor.isEmpty()) {
     return;
   }
-  const int target = typewriterScrollTarget(cursor);
-  if (target < 0) {
+  const std::optional<int> target = typewriterScrollTarget(cursor);
+  if (!target) {
     return;
   }
-  verticalScrollBar()->setValue(target);
+  verticalScrollBar()->setValue(*target);
 }
 
 void EditorView::setTypewriterMode(bool enabled) {
@@ -287,7 +278,7 @@ void EditorView::setTypewriterCursorMiddle(bool enabled) {
   if (typewriterMode_ && cursorHit_.isValid()) {
     scrollToCursorCentered();
   } else if (typewriterMode_) {
-    // Relaxed mode uses the normal range; re-clamp any overshoot from the previous centred mode.
+    // Both bands overscroll, by different amounts: re-clamp any overshoot of the previous band.
     QScrollBar* sb = verticalScrollBar();
     sb->setValue(qBound(sb->minimum(), sb->value(), sb->maximum()));
   }
@@ -316,25 +307,25 @@ void EditorView::scrollToCursorCenteredAnimated() {
   }
 
   QScrollBar* scrollBar = verticalScrollBar();
-  const int target = typewriterScrollTarget(cursor);
-  if (target < 0) {
+  const std::optional<int> target = typewriterScrollTarget(cursor);
+  if (!target) {
     return;
   }
 
   const int current = scrollBar->value();
-  if (current == target) {
+  if (current == *target) {
     return;
   }
 
   ensureScrollAnimation();
   stopScrollAnimation();
 
-  const int delta = qAbs(target - current);
+  const int delta = qAbs(*target - current);
   const int duration = qBound(100, delta / 2, 300);
 
   scrollAnimation_->setDuration(duration);
   scrollAnimation_->setStartValue(current);
-  scrollAnimation_->setEndValue(target);
+  scrollAnimation_->setEndValue(*target);
   scrollAnimation_->start();
 }
 
@@ -550,15 +541,12 @@ void EditorView::updateScrollBars() {
   const int normalMax = layout_ ? qMax(0, static_cast<int>(std::ceil(layout_->totalHeight() - vh))) : 0;
   verticalScrollBar()->setPageStep(pageStep);
   verticalScrollBar()->setSingleStep(qMax(16, pageStep / 12));
-  if (typewriterMode_ && typewriterCursorMiddle_) {
-    // Allow scrolling past document boundaries so the cursor can always be
-    // centered: negative scroll (empty space above) and extra range (empty
-    // space below).  Half a viewport on each side is enough to center the
-    // cursor at the very first or last line. The relaxed (non-centered)
-    // policy never forces the caret past the document edges, so it keeps the
-    // normal [0, normalMax] range.
-    const int halfVh = vh / 2;
-    verticalScrollBar()->setRange(-halfVh, normalMax + halfVh);
+  if (typewriterMode_) {
+    // Let the caret rest inside its typewriter band on the first and last line as well: the
+    // document scrolls past both ends by exactly what the band needs there (half a viewport for
+    // the centered band, a third for the comfort band).
+    const TypewriterBand band = typewriterBand();
+    verticalScrollBar()->setRange(-band.overscrollAbove(), normalMax + band.overscrollBelow(vh));
   } else {
     verticalScrollBar()->setRange(0, normalMax);
   }

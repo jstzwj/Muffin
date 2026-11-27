@@ -957,11 +957,106 @@ void writingModesBelongToTheEditingPane() {
   f.command("Focus Mode")->trigger();
   f.command("Typewriter Mode")->trigger();
 }
+
+void typewriterKeepsTheCaretInItsBandAtTheDocumentEdges() {
+  SettingsOverride focus{"appearance/focusMode", false};
+  QString text;
+  for (int i = 0; i < 120; ++i)
+    text += QStringLiteral("Paragraph %1 has enough words to wrap across multiple lines in the view.\n\n").arg(i);
+  for (const bool centered : {true, false}) {
+    SettingsOverride middle{"editor/typewriterCursorMiddle", centered};
+    SettingsOverride typewriter{"appearance/typewriterMode", false};
+    const auto caretRow = [](EditorView* view) {
+      const QRectF caret = view->effectiveCursorRect();
+      return (caret.center().y() - view->verticalScrollBar()->value()) / view->viewport()->height();
+    };
+    const auto requireCaretAt = [&](EditorView* view, const char* where) {
+      const qreal row = caretRow(view);
+      require(centered ? qAbs(row - 0.5) < 0.02 : (row > 1.0 / 3.0 - 0.02 && row < 2.0 / 3.0 + 0.02),
+              QStringLiteral("typewriter caret %1 rests at %2 of the viewport (band: %3)")
+                  .arg(QString::fromLatin1(where))
+                  .arg(row, 0, 'f', 3)
+                  .arg(centered ? QStringLiteral("centered") : QStringLiteral("comfort")));
+    };
+    // The caret follows in a scroll animation of at most 300 ms, once the deferred layout refresh
+    // of the last key has run.
+    const auto settle = [&](DocumentTab* tab) {
+      tab->editorController.brushQueue().flush();
+      waitFor([&] { return !tab->renderView->isLayoutPending(); }, "typewriter layout settles");
+      tab->editorController.brushQueue().flush();
+      QTest::qWait(350);
+    };
+    {
+      Fixture f;
+      auto* tab = f.open(text);
+      auto* view = tab->renderView;
+      waitFor([&] { return !view->isLayoutPending(); }, "typewriter document layout completes");
+      f.command("Typewriter Mode")->trigger();
+      // Centering a caret less than half a viewport below the document start needs a negative scroll
+      // value, which used to be read as "nothing to scroll".
+      tab->editorController.setCursorForSourceOffset(0);
+      settle(tab);
+      requireCaretAt(view, "at the document start");
+      tab->editorController.setCursorForSourceOffset(text.size());
+      settle(tab);
+      requireCaretAt(view, "at the document end");
+      tab->focusEditor();
+      // A new paragraph only has its place in the layout once the deferred range refresh has run;
+      // the caret used to rest a paragraph below the band until the next key moved it.
+      for (int i = 0; i < 3; ++i) {
+        QTest::keyClicks(view, QStringLiteral("Probe line %1 with some ordinary words").arg(i));
+        QTest::keyClick(view, Qt::Key_Return);
+        settle(tab);
+        requireCaretAt(view, "after Enter at the document end");
+      }
+      // A line that wraps while it is typed drops the caret one line in the same refresh.
+      QTest::keyClick(view, Qt::Key_Return);
+      settle(tab);
+      qreal caretTop = view->effectiveCursorRect().top();
+      bool wrapped = false;
+      for (int word = 0; word < 80 && !wrapped; ++word) {
+        QTest::keyClicks(view, QStringLiteral("word "));
+        tab->editorController.brushQueue().flush();
+        QApplication::processEvents();
+        wrapped = view->effectiveCursorRect().top() > caretTop + 8.0;
+        caretTop = view->effectiveCursorRect().top();
+      }
+      require(wrapped, "the typed paragraph wraps inside the viewport");
+      QTest::qWait(350);
+      requireCaretAt(view, "after the typed line wrapped");
+      // Back into the first half viewport of the document from far below.
+      QTest::keyClick(view, Qt::Key_Home, Qt::ControlModifier);
+      settle(tab);
+      requireCaretAt(view, "after Ctrl+Home");
+      f.command("Typewriter Mode")->trigger();
+    }
+    {
+      // A new document: the caret stays in the band while the document grows from its first line.
+      Fixture f;
+      auto* tab = f.open(QStringLiteral("# Title\n\n"));
+      auto* view = tab->renderView;
+      waitFor([&] { return !view->isLayoutPending(); }, "short document layout completes");
+      f.command("Typewriter Mode")->trigger();
+      tab->editorController.setCursorForSourceOffset(tab->session.markdownText().size());
+      settle(tab);
+      requireCaretAt(view, "on the last line of a short document");
+      tab->focusEditor();
+      for (int i = 0; i < 6; ++i) {
+        QTest::keyClicks(view, QStringLiteral("Probe line %1 with some ordinary words").arg(i));
+        QTest::keyClick(view, Qt::Key_Return);
+        settle(tab);
+        requireCaretAt(view, "while a short document grows");
+      }
+      f.command("Typewriter Mode")->trigger();
+    }
+  }
+}
 }
 
 void runSplitViewTests() {
   runTest("splitViewResizeAndArrangePanes", resizeAndArrangePanes);
   runTest("splitViewWritingModesBelongToTheEditingPane", writingModesBelongToTheEditingPane);
+  runTest("splitViewTypewriterBandAtDocumentEdges", typewriterKeepsTheCaretInItsBandAtTheDocumentEdges);
   runTest("splitViewIndependentPreviewHistory", independentPreviewHistory);
   runTest("splitViewLargeHtmlPreviewYieldsAndSupersedes", largeHtmlPreviewYieldsAndSupersedes);
   runTest("splitViewCloseDuringPreviewUpdates", closeDuringPreviewUpdates);

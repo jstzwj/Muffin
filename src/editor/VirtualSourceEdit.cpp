@@ -3,6 +3,7 @@
 #include "editor/EditorController.h"
 #include "editor/EditorKeyRouting.h"
 #include "editor/ShortcutSettings.h"
+#include "editor/TypewriterScroll.h"
 
 #include "document/DocumentSession.h"
 #include "document/PendingBlockMarker.h"
@@ -59,6 +60,11 @@ constexpr qreal kLineSpacingScale = 1.4;
 constexpr qsizetype kLongLineThreshold = 16 * 1024;
 constexpr int kMaxCachedLayouts = 256;
 constexpr QChar kZeroWidthSpace(0x200b);
+
+// The centered band while the caret is kept in the middle, the comfort band otherwise.
+TypewriterBand typewriterBand(bool cursorMiddle, int viewportHeight) {
+  return cursorMiddle ? TypewriterBand::centered(viewportHeight) : TypewriterBand::comfort(viewportHeight);
+}
 
 QTextCharFormat sourceFormat(QColor foreground, bool bold = false) {
   QTextCharFormat format;
@@ -933,9 +939,12 @@ void VirtualSourceEdit::invalidateLayoutCache() {
 void VirtualSourceEdit::updateScrollBars() {
   verticalScrollBar()->setSingleStep(baseLineHeight());
   verticalScrollBar()->setPageStep(qMax(baseLineHeight(), viewport()->height()));
-  const int padding = typewriterMode_ && typewriterCursorMiddle_ ? viewport()->height() / 2 : 0;
+  // Let the caret rest inside its typewriter band on the first and last row as well.
+  const TypewriterBand band = typewriterBand(typewriterCursorMiddle_, viewport()->height());
+  const int above = typewriterMode_ ? band.overscrollAbove() : 0;
+  const int below = typewriterMode_ ? band.overscrollBelow(viewport()->height()) : 0;
   verticalScrollBar()->setRange(
-      -padding, boundedScrollRange(qMax<qint64>(0, heights_.totalHeight() - viewport()->height()) + padding));
+      -above, boundedScrollRange(qMax<qint64>(0, heights_.totalHeight() - viewport()->height()) + below));
   if (wordWrap_) {
     horizontalScrollBar()->setRange(0, 0);
   } else {
@@ -1221,13 +1230,14 @@ void VirtualSourceEdit::ensureCursorVisible() {
   // translation-invariant row centre when the old caret is above the viewport.
   const int centerY = rect.top() + rect.height() / 2;
   int vertical = verticalScrollBar()->value();
-  if (typewriterMode_ && typewriterCursorMiddle_)
-    vertical += centerY - viewport()->height() / 2;
-  else if (typewriterMode_ && centerY < viewport()->height() / 3)
-    vertical += centerY - viewport()->height() / 3;
-  else if (typewriterMode_ && centerY > viewport()->height() * 2 / 3)
-    vertical += centerY - viewport()->height() * 2 / 3;
-  else if (rect.top() < 0)
+  if (typewriterMode_) {
+    // rect is in viewport coordinates; the band measures the caret row in the document.
+    const auto target =
+        typewriterBand(typewriterCursorMiddle_, viewport()->height())
+            .scrollTarget(centerY + vertical, vertical, verticalScrollBar()->minimum(), verticalScrollBar()->maximum());
+    if (target)
+      vertical = *target;
+  } else if (rect.top() < 0)
     vertical += rect.top() - baseLineHeight();
   else if (rect.bottom() >= viewport()->height())
     vertical += rect.bottom() - viewport()->height() + baseLineHeight();
