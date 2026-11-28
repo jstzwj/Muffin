@@ -204,6 +204,11 @@ private:
   qreal slotShift(qsizetype index) const;
   // Synchronize retained geometry and its absolute source coordinate frame.
   void ensureSlotDetailPosition(qsizetype index) const;
+  // True while every slot still renders the block that the document's render topology gives it.
+  bool slotsFollowTopology(const MarkdownDocument& document) const;
+  // Rebuild everything for an update the slots cannot take in place, and build again the blocks that
+  // were built.
+  void rebuildKeepingBuiltBlocks(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
 
   void configureBuilder(SelectionRange selection, bool reuseFormatting = false);
   void promoteSlot(qsizetype index, const RenderTheme& theme);

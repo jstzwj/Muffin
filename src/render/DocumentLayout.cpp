@@ -731,8 +731,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   if (!blockId.isValid() || document_ != &document || slots_.empty() || viewportWidth_ <= 0) {
     return result;
   }
-  // Selection does not change the borrowed render topology. Reuse the native
-  // subtree just as for a list, instead of relaying out the entire document.
+  // Selection changes do not edit the AST or alter structural selectors. An
+  // edit may arrive before its queued content refresh, so also check revision.
   const bool selectionOnly = reason == BlockUpdateReason::Selection && styleDocumentRevision_ == document.revision();
   // Source/preview switches must rebuild their representation even if the
   // selection is unchanged, while retaining the AST topology, styles and
@@ -740,21 +740,35 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   const bool representationOnly =
       reason == BlockUpdateReason::Representation && styleDocumentRevision_ == document.revision();
   const bool renderOnly = selectionOnly || representationOnly;
-  if (!renderOnly && flow_ && !flow_->empty()) {
-    result.blockId = blockId;
-    result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+  const bool contentUpdate = !renderOnly && !refreshingStyles_ && !resourceOnlyUpdate_;
+  // A document with matched HTML boundaries borrows its slot list from the theme's flow. An edit
+  // rebuilds the flow together with the styles, so both are prepared before anything reads the
+  // topology. The slots are then checked against it: typing inside a block moves nothing and is laid
+  // out in place like any other edit, while a boundary that disappears or changes partner moves the
+  // slots themselves. The block asked for can be gone too: an edit replaces its block, and only one
+  // the caller named keeps its id.
+  const bool borrowed = flow_ && !flow_->empty();
+  const bool editInBorrowed = contentUpdate && borrowed;
+  if (editInBorrowed && styleDocumentRevision_ != document.revision()) {
+    theme.invalidateDocumentStyles();
+    styleDocumentRevision_ = document.revision();
+    recomputeHeadingCounters(document, theme);
+    flow_ = theme.markdownFlow(document.root());
+  }
+  const auto rebuildAll = [&] {
     const qreal oldHeight = totalHeight_;
-    rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    rebuildKeepingBuiltBlocks(document, theme, selection);
+    result.blockId = blockId;
+    result.oldRect = QRectF(pageLeft_, 0, pageWidth_, oldHeight);
     result.newRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     result.heightDelta = totalHeight_ - oldHeight;
     result.rebuilt = true;
     return result;
-  }
-  // Selection changes do not edit the AST or alter structural selectors. An
-  // edit may arrive before its queued content refresh, so also check revision.
+  };
   const auto* node = topLevelBlockFor(blockId, document);
-  if (!node)
-    return result;
+  if (!node || (editInBorrowed && !slotsFollowTopology(document))) {
+    return editInBorrowed ? rebuildAll() : result;
+  }
   if (selectionOnly && preeditText_.isEmpty()) {
     diag::ScopedPerfProbe perf("layout.selectionCheck", layoutDetailPerf());
     const auto* detail = blockIfPromoted(node->id());
@@ -808,10 +822,15 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   // A caret update can precede the queued structural range rebuild. Reject a
   // stale single-block request before clearing styles or walking counters for
   // a layout that cannot accept it; the range update owns that invalidation.
-  if (!renderOnly && !refreshingStyles_ && !resourceOnlyUpdate_) {
+  if (contentUpdate && !borrowed) {
     theme.invalidateDocumentStyles({node->siblingIndex(), 1, 1, document.revision()}, &document);
     styleDocumentRevision_ = document.revision();
     recomputeHeadingCounters(document, theme);
+    // An edit can pair two boundaries into the document's first container: the paragraphs between
+    // them stop being slots of their own.
+    if (!theme.markdownFlow(document.root())->empty()) {
+      return rebuildAll();
+    }
   }
 
   configureBuilder(selection, true);
@@ -937,10 +956,9 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(TopLevel
   if (range.isValid() && document_ == &document && viewportWidth_ > 0) {
     const bool hadContainers = flow_ && !flow_->empty();
     if (hadContainers || !theme.markdownFlow(document.root())->empty()) {
-      result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
       const qreal oldHeight = totalHeight_;
-      const QScopedValueRollback<bool> preserveStyles(stylesPrepared_, true);
-      rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+      rebuildKeepingBuiltBlocks(document, theme, selection);
+      result.oldRect = QRectF(pageLeft_, 0, pageWidth_, oldHeight);
       result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
       result.heightDelta = totalHeight_ - oldHeight;
       result.rebuilt = true;
@@ -1714,6 +1732,41 @@ void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
   }
   slot.detailShift = shift;
   slot.detailLeft = pageLeft_;
+}
+
+bool DocumentLayout::slotsFollowTopology(const MarkdownDocument& document) const {
+  const auto children = flow_->children(document.root());
+  if (children.size() != slots_.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < children.size(); ++i) {
+    if (children[i]->id() != slots_[i].nodeId) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void DocumentLayout::rebuildKeepingBuiltBlocks(const MarkdownDocument& document, const RenderTheme& theme,
+                                               SelectionRange selection) {
+  QVector<NodeId> built;
+  for (const auto& slot : slots_) {
+    if (slot.detail) {
+      built.append(slot.nodeId);
+    }
+  }
+  // The caller has prepared this revision's styles.
+  const QScopedValueRollback<bool> preserveStyles(stylesPrepared_, true);
+  rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+  // The Lazy skeleton estimates every block again. A block that was built is measured once more
+  // before anything reads the layout: the reading window keeps its geometry, so the viewport and
+  // the caret that follow are resolved against measured blocks instead of estimates.
+  for (const NodeId id : built) {
+    const qsizetype index = topLevelIndexFor(id);
+    if (index >= 0) {
+      ensureBuilt(index, index, theme);
+    }
+  }
 }
 
 DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const RenderTheme& theme,

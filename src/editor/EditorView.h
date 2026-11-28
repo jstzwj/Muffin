@@ -251,6 +251,10 @@ private:
   // promoting blocks above the viewport doesn't shift what the user sees.
   void ensureVisibleBuilt();
   void prefetchViewport();
+  // Lazy promotion measures what the estimates guessed, and every block below one that came out
+  // taller or shorter moves. The caret follows its block wherever its rect is read; this brings
+  // the stored hit up to date, and tells whether the block moved.
+  bool resolveCaretAfterPromotion();
   // A stable on-screen reference used to keep the viewport from jumping when a layout change moves
   // block heights. Default anchors use a top-level node ID without promoting lazy
   // detail. Explicit anchors also retain the actual child's geometry, so a change
@@ -397,6 +401,8 @@ private:
   RenderTheme theme_ = RenderTheme::defaultTheme();
   std::unique_ptr<DocumentLayout> layout_;
   SelectionRange selection_;
+  // Where the caret was resolved. Its rectangles belong to the place its block had then; lazy
+  // layout moves the block afterwards without a new hit, and effectiveCursorRect() follows it.
   HitTestResult cursorHit_;
   bool cursorVisible_ = false;
   // Document-coordinate rect of the last painted caret; dirtied on the next

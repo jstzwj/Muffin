@@ -1051,12 +1051,101 @@ void typewriterKeepsTheCaretInItsBandAtTheDocumentEdges() {
     }
   }
 }
+
+// The editor lays a long document out lazily: a block is measured when it comes into view, and
+// measuring moves every block below it. The caret is resolved against the layout and then painted
+// from that stored rectangle, so it stayed where the estimates had put it, far away from its text,
+// whenever blocks above it were measured afterwards: after a jump into a part of the document
+// nothing had scrolled to yet, and on every key in a document that renders through an HTML
+// container, where each edit used to lay the whole document out again.
+// The paragraphs are runs of W. The estimate counts narrow characters per line and a W is almost
+// twice as wide, so a measured paragraph is several lines longer than its estimate.
+void caretStaysOnItsTextWhenLazyBlocksAreMeasured() {
+  SettingsOverride focus{"appearance/focusMode", false};
+  SettingsOverride middle{"editor/typewriterCursorMiddle", true};
+  const QString wide = QStringLiteral("WWWWWWWWWW ").repeated(24);
+  for (const bool typewriter : {false, true}) {
+    for (const bool container : {false, true}) {
+      QString text;
+      for (int i = 0; i < 120; ++i) {
+        if (container && i == 100)
+          text += QStringLiteral("<div style=\"text-align: left;\">\n\n");
+        text += QStringLiteral("Paragraph %1 ").arg(i) + wide + QStringLiteral("\n\n");
+      }
+      if (container)
+        text += QStringLiteral("</div>\n");
+      Fixture f;
+      auto* tab = f.open(text);
+      auto* view = tab->renderView;
+      waitFor([&] { return !view->isLayoutPending(); }, "lazy document layout completes");
+      if (typewriter)
+        f.command("Typewriter Mode")->trigger();
+      const auto settle = [&](const char* where) {
+        tab->editorController.brushQueue().flush();
+        waitFor([&] { return !view->isLayoutPending(); }, where);
+        tab->editorController.brushQueue().flush();
+        QTest::qWait(350); // the typewriter follow scrolls in an animation of at most 300 ms
+      };
+      const auto requireCaretOnItsText = [&](const char* where) {
+        const QRectF painted = view->effectiveCursorRect();
+        require(!painted.isEmpty(), QStringLiteral("the caret should have a place %1").arg(QString::fromLatin1(where)));
+        const QRectF laidOut = view->hitForCursorPosition(view->cursorPosition()).cursorRect;
+        require(qFuzzyCompare(painted, laidOut),
+                QStringLiteral("the painted caret should be where the layout puts it %1: painted y %2, laid out y %3")
+                    .arg(QString::fromLatin1(where))
+                    .arg(painted.top())
+                    .arg(laidOut.top()));
+        const QRectF block = view->nodeRect(view->cursorPosition().blockId);
+        require(block.contains(painted.center()),
+                QStringLiteral("the caret should be on its text %1: caret y %2, block y %3..%4")
+                    .arg(QString::fromLatin1(where))
+                    .arg(painted.center().y())
+                    .arg(block.top())
+                    .arg(block.bottom()));
+      };
+      const auto caretRow = [&] {
+        return (view->effectiveCursorRect().center().y() - view->verticalScrollBar()->value()) /
+               view->viewport()->height();
+      };
+      const auto requireCaretInItsBand = [&](const char* where) {
+        if (!typewriter)
+          return;
+        // The follow is aimed again as the blocks measured on the way keep moving the text, so it
+        // takes longer than one animation to come to rest in the band.
+        waitFor([&] { return qAbs(caretRow() - 0.5) < 0.02; }, where);
+        QTest::qWait(400);
+        require(qAbs(caretRow() - 0.5) < 0.02,
+                QStringLiteral("the typewriter caret should rest at the centre of the viewport %1: %2")
+                    .arg(QString::fromLatin1(where))
+                    .arg(caretRow(), 0, 'f', 3));
+      };
+      // A paragraph deep in the document, in a part nothing has measured yet. With a container it
+      // is inside the div.
+      const QString target = QStringLiteral("Paragraph 110 ");
+      tab->editorController.setCursorForSourceOffset(tab->session.markdownText().toString().indexOf(target));
+      settle("the jump settles");
+      require(view->verticalScrollBar()->value() > 2000, "the jump lands deep in the document");
+      requireCaretOnItsText("after the jump");
+      requireCaretInItsBand("the typewriter follow reaches the jumped caret");
+      tab->focusEditor();
+      QTest::keyClicks(view, QStringLiteral("Typed "));
+      settle("typing settles");
+      require(tab->session.markdownText().toString().contains(QStringLiteral("Typed Paragraph 110 ")),
+              "the text goes in where the caret was placed");
+      requireCaretOnItsText("after typing");
+      requireCaretInItsBand("the typewriter follow reaches the typed caret");
+      if (typewriter)
+        f.command("Typewriter Mode")->trigger();
+    }
+  }
+}
 }
 
 void runSplitViewTests() {
   runTest("splitViewResizeAndArrangePanes", resizeAndArrangePanes);
   runTest("splitViewWritingModesBelongToTheEditingPane", writingModesBelongToTheEditingPane);
   runTest("splitViewTypewriterBandAtDocumentEdges", typewriterKeepsTheCaretInItsBandAtTheDocumentEdges);
+  runTest("splitViewCaretStaysOnItsTextWhenLazyBlocksAreMeasured", caretStaysOnItsTextWhenLazyBlocksAreMeasured);
   runTest("splitViewIndependentPreviewHistory", independentPreviewHistory);
   runTest("splitViewLargeHtmlPreviewYieldsAndSupersedes", largeHtmlPreviewYieldsAndSupersedes);
   runTest("splitViewCloseDuringPreviewUpdates", closeDuringPreviewUpdates);

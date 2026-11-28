@@ -75,6 +75,7 @@ void EditorView::scrollToNode(NodeId id) {
   QScrollBar* scrollBar = verticalScrollBar();
   const int target = qBound(scrollBar->minimum(), qRound(targetTop - 24.0), scrollBar->maximum());
   scrollBar->setValue(target);
+  resolveCaretAfterPromotion();
 }
 
 ViewportPosition EditorView::viewportPosition() const {
@@ -165,6 +166,14 @@ QRectF EditorView::effectiveCursorRect() const {
     return QRectF();
   }
   QRectF cursor = cursorHit_.cursorRect;
+  // The hit was resolved where its block lay at the time. Lazy layout moves a built block without
+  // rebuilding it, when the block itself or one above it is measured, and the caret moves with it.
+  QPointF moved;
+  if (layout_) {
+    if (const auto* block = layout_->blockIfPromoted(cursorHit_.blockId))
+      moved = block->rect().topLeft() - cursorHit_.blockRect.topLeft();
+  }
+  cursor.translate(moved);
   if (!preedit_.isEmpty() && layout_ &&
       (cursorHit_.zone == HitTestResult::Zone::Code || cursorHit_.zone == HitTestResult::Zone::Math ||
        cursorHit_.zone == HitTestResult::Zone::Html || cursorHit_.zone == HitTestResult::Zone::FrontMatter)) {
@@ -196,7 +205,8 @@ QRectF EditorView::effectiveCursorRect() const {
     }
   }
   if (cursor.isEmpty()) {
-    cursor = QRectF(cursorHit_.blockRect.left(), cursorHit_.blockRect.top(), 1.0, cursorHit_.blockRect.height());
+    const QRectF blockRect = cursorHit_.blockRect.translated(moved);
+    cursor = QRectF(blockRect.left(), blockRect.top(), 1.0, blockRect.height());
   }
   // A scrollable code fence (wrap off + overflow) paints its content translated by -offset, so the
   // caret must shift by the same amount to stay aligned with the character under it.
@@ -427,12 +437,41 @@ void EditorView::ensureVisibleBuilt() {
   if (range.first < 0) {
     return;
   }
-  // Promoting estimated slots to measured ones changes totalHeight; pin the topmost visible block
-  // so the snap is absorbed entirely into the scrollbar range/value and never moves the content.
-  ScopedViewportPin pin(*this);
-  layout_->ensureBuilt(range.first, range.second, theme_);
+  // A typewriter follow that is still scrolling aims at where the estimates put the caret. Once the
+  // caret has been resolved against the measured blocks, it is aimed again.
+  const bool following =
+      typewriterMode_ && scrollAnimation_ && scrollAnimation_->state() == QAbstractAnimation::Running;
+  bool moved = false;
+  {
+    // Promoting estimated slots to measured ones changes totalHeight; pin the topmost visible block
+    // so the snap is absorbed entirely into the scrollbar range/value and never moves the content.
+    ScopedViewportPin pin(*this);
+    layout_->ensureBuilt(range.first, range.second, theme_);
+    moved = resolveCaretAfterPromotion();
+  }
+  if (following && moved) {
+    stopScrollAnimation();
+    scrollToCursorCenteredAnimated();
+  }
   if (isVisible() && viewportPrefetchTimer_ && !viewportPrefetchTimer_->isActive())
     viewportPrefetchTimer_->start(120);
+}
+
+bool EditorView::resolveCaretAfterPromotion() {
+  // A drag keeps its caret hidden and resolves it when the button is released.
+  if (!cursorHit_.isValid() || dragState_ == DragState::Dragging || !layout_) {
+    return false;
+  }
+  // A hit is as old as the place its block had when it was resolved.
+  const auto* block = layout_->blockIfPromoted(cursorHit_.blockId);
+  if (!block || block->rect() == cursorHit_.blockRect) {
+    return false;
+  }
+  QRect dirty = uniteDocumentRectDirty({}, effectiveCursorRect(), scrollY(), viewport()->size());
+  updateCursorHitFromPosition();
+  dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
+  diag::updateViewport(viewport(), dirty.isEmpty() ? viewport()->rect() : dirty);
+  return true;
 }
 
 void EditorView::prefetchViewport() {
@@ -462,6 +501,9 @@ void EditorView::prefetchViewport() {
           {selection_.focus.blockId, selection_.anchor.blockId, selection_.focus.blockId, editingHtmlBlockId_});
     }
   }
+  // A block above the viewport that measures taller moves everything below it in the document
+  // while the pin keeps it on screen: the text stays, the stored caret rectangle does not.
+  resolveCaretAfterPromotion();
   if (!complete)
     viewportPrefetchTimer_->start(16);
 }

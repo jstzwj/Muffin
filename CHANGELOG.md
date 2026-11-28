@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrap a long link-definition title or URL to the available width, and keep clicks, selections and typing on the wrapped rows tied to their source characters.
 - Read a requirement diagram the way Mermaid does: an empty `accTitle:` or `accDescr:`, a `classDef` or `style` line without declarations, and text after a closing brace are parse errors, an empty quoted id no longer names a class, and a relationship to an undeclared node is reported instead of drawing a diagram without it.
 - Size an exported Mermaid image to the nearest pixel of the diagram's canvas, as a browser does. ER, pie, quadrant, requirement, journey, kanban, packet, radar, sequence, timeline, XY chart and git-graph diagrams could come out a pixel too wide or too tall.
+- Keep the caret on its text in a document with HTML containers, and after a jump into a part of a long document that had not been laid out yet. Each key typed in such a document laid it out again from estimated heights, and a block that was measured afterwards moved the text under the caret without moving the caret: the further down the document, the further the caret drifted above the line being typed. A typewriter-mode jump into such a part left the caret outside the window. ([#34](https://github.com/jstzwj/Muffin/issues/34))
 
 ### Changed
 
