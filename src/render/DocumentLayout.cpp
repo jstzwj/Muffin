@@ -963,7 +963,13 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(TopLevel
   styleDocumentRevision_ = document.revision();
   if (range.isValid() && document_ == &document && viewportWidth_ > 0) {
     const bool hadContainers = flow_ && !flow_->empty();
-    if (hadContainers || !theme.markdownFlow(document.root())->empty()) {
+    const auto flow = theme.markdownFlow(document.root());
+    if (hadContainers || !flow->empty()) {
+      // The slots are the blocks of the borrowed topology as the theme derives it from the edited
+      // document. Only the slots the edit moved, or that hold it, are laid out again.
+      if (rebuildBorrowedRange(range, flow, document, theme, selection, result)) {
+        return result;
+      }
       const qreal oldHeight = totalHeight_;
       rebuildKeepingBuiltBlocks(document, theme, selection);
       result.oldRect = QRectF(pageLeft_, 0, pageWidth_, oldHeight);
@@ -1775,6 +1781,193 @@ void DocumentLayout::rebuildKeepingBuiltBlocks(const MarkdownDocument& document,
       ensureBuilt(index, index, theme);
     }
   }
+}
+
+bool DocumentLayout::rebuildBorrowedRange(TopLevelRangeChange range, std::shared_ptr<const MarkdownFlow> flow,
+                                          const MarkdownDocument& document, const RenderTheme& theme,
+                                          SelectionRange selection, RangeRebuildResult& result) {
+  // From here on the layout reads the topology of the edited document.
+  flow_ = std::move(flow);
+  // The range describes the edit only for the revision it was made in.
+  if (range.documentRevision != document.revision()) {
+    return false;
+  }
+  // The slots that hold the changed blocks, or that a changed block lies next to. A block that was
+  // just inserted is not indexed yet; its container shows up through its neighbours instead.
+  const auto& blocks = document.root().children();
+  QVector<NodeId> holding;
+  const auto take = [&](qsizetype index) {
+    if (index < 0 || index >= qsizetype(blocks.size()))
+      return;
+    const NodeId owner = nestedToTopLevel_.value(blocks[size_t(index)]->id());
+    if (owner.isValid() && !holding.contains(owner))
+      holding.append(owner);
+  };
+  take(range.first - 1);
+  take(range.first + range.newCount);
+  for (qsizetype i = range.first; i < range.first + range.newCount; ++i)
+    take(i);
+  // Slots laid out by the splice itself are left alone.
+  const auto layOutHolders = [&](qsizetype laidOutFirst, qsizetype laidOutCount) {
+    for (const NodeId owner : holding) {
+      // A holder is a top-level block: its position token is the direct way to its slot.
+      const auto token = topLevelIndex_.constFind(owner);
+      const qsizetype index = token == topLevelIndex_.cend() ? -1 : positionIndex_.rank(token.value());
+      if (index < 0 || (index >= laidOutFirst && index < laidOutFirst + laidOutCount))
+        continue; // gone with the edit, or just laid out as part of it
+      const BlockRebuildResult rebuilt = rebuildBlock(owner, document, theme, selection);
+      if (!rebuilt.rebuilt)
+        return false;
+      result.oldRect = result.oldRect.united(rebuilt.oldRect);
+      result.newRect = result.newRect.united(rebuilt.newRect);
+      result.shiftedRect = result.shiftedRect.united(rebuilt.shiftedRect);
+      result.heightDelta += rebuilt.heightDelta;
+    }
+    return true;
+  };
+
+  const auto children = flow_->children(document.root());
+  const qsizetype oldCount = static_cast<qsizetype>(slots_.size());
+  const qsizetype newCount = static_cast<qsizetype>(children.size());
+  // What the edit left in place: the slots that lead the changed ones and those that trail them.
+  qsizetype lead = 0;
+  while (lead < oldCount && lead < newCount && slots_[size_t(lead)].nodeId == children[size_t(lead)]->id())
+    ++lead;
+  qsizetype trail = 0;
+  while (trail < oldCount - lead && trail < newCount - lead &&
+         slots_[size_t(oldCount - 1 - trail)].nodeId == children[size_t(newCount - 1 - trail)]->id())
+    ++trail;
+  const qsizetype first = lead, removed = oldCount - lead - trail, inserted = newCount - lead - trail;
+  if (removed == 0 && inserted == 0) {
+    // Every slot is where it was, so the edit happened inside them.
+    // A structural edit can change the heading outline, and with it every later heading's ordinal.
+    recomputeHeadingCounters(document, theme);
+    result.rebuilt = layOutHolders(first, inserted);
+    return result.rebuilt;
+  }
+
+  // The slots in between are the edit. They go, and the blocks that now stand between the kept
+  // ones take their place, laid out one after another from where the kept ones end.
+  for (qsizetype i = first; i < first + removed; ++i) {
+    const QRectF rect(pageLeft_, slotTop(i), pageWidth_, slots_.at(size_t(i)).height);
+    result.oldRect = result.oldRect.isNull() ? rect : result.oldRect.united(rect);
+  }
+  // The entries of the slots being removed go before the replacements are indexed: an unchanged
+  // block at the edge of the edit keeps its id, and removing by id afterwards would take the new
+  // entry with the old one.
+  for (qsizetype i = first; i < first + removed; ++i) {
+    const BlockSlot& old = slots_.at(size_t(i));
+    if (old.detail) {
+      removeLayoutIndexFor(*old.detail);
+    }
+    removeNestedIndexForTopLevel(old.nodeId);
+    topLevelIndex_.remove(old.nodeId);
+  }
+  // A slot the edit keeps loses the index of what it used to group before the slots that took
+  // those blocks in are indexed: removing the old entries afterwards would take the new ones too.
+  // Its own entry stays, or the holder could not be found again below.
+  for (const NodeId owner : holding) {
+    const QVector<NodeId> grouped = nestedIdsByTopLevel_.take(owner);
+    for (const NodeId id : grouped)
+      nestedToTopLevel_.remove(id);
+  }
+  configureBuilder(selection, true);
+  for (qsizetype i = first; i < first + removed; ++i) {
+    ensureSlotDetailPosition(i);
+    builder_.retainLayouts(slots_[size_t(i)].detail);
+  }
+  // A structural edit can change the heading outline, and with it every later heading's ordinal.
+  recomputeHeadingCounters(document, theme);
+  qreal cursorY = theme.pageMargin().top() + theme.pagePadding().top();
+  const MarkdownNode* previous = nullptr;
+  if (first > 0) {
+    previous = children[size_t(first - 1)];
+    cursorY = slotTop(first - 1) + slots_.at(size_t(first - 1)).height;
+  }
+  std::vector<BlockSlot> replacements;
+  replacements.reserve(size_t(inserted));
+  std::unique_ptr<LayoutPositionToken> replacementPositions;
+  for (qsizetype i = 0; i < inserted; ++i) {
+    const MarkdownNode& node = *children[size_t(first + i)];
+    cursorY += previous ? spacingBetweenBlocks(*previous, node, theme, false, pageWidth_)
+                        : spacingBeforeBlock(node, theme, cursorY, false, pageWidth_);
+    auto block = builder_.build(node, theme, pageLeft_, cursorY, pageWidth_);
+    cursorY = block->rect().bottom();
+    const QRectF rect = block->rect();
+    result.newRect = result.newRect.isNull() ? rect : result.newRect.united(rect);
+    auto token = positionIndex_.makeToken();
+    BlockSlot slot;
+    slot.nodeId = node.id();
+    slot.type = node.type();
+    slot.top = rect.top();
+    slot.height = block->height();
+    slot.positionToken = token.get();
+    replacementPositions = LayoutPositionIndex::merge(std::move(replacementPositions), std::move(token));
+    slot.measured = true;
+    slot.detailLeft = pageLeft_;
+    slot.viewportGeneration = viewportGeneration_;
+    indexLayoutBlock(*block);
+    slot.detail = std::move(block);
+    previous = &node;
+    replacements.push_back(std::move(slot));
+  }
+  builder_.clearRetainedLayouts();
+
+  const qsizetype oldSuffixFirst = first + removed, newSuffixFirst = first + inserted;
+  qreal newNextTop = cursorY;
+  if (newSuffixFirst < newCount) {
+    newNextTop += previous
+                      ? spacingBetweenBlocks(*previous, *children[size_t(newSuffixFirst)], theme, false, pageWidth_)
+                      : spacingBeforeBlock(*children[size_t(newSuffixFirst)], theme, newNextTop, false, pageWidth_);
+  } else if (previous) {
+    newNextTop += spacingAfterBlock(*previous, theme, false, pageWidth_);
+  }
+  const qreal oldNextTop = oldSuffixFirst < oldCount ? slotTop(oldSuffixFirst) : totalHeight_;
+  const BlockLayout* newLastBlock = nullptr;
+  if (newSuffixFirst < newCount) {
+    newLastBlock = slots_.back().detail ? slots_.back().detail.get() : nullptr;
+  } else if (!replacements.empty()) {
+    newLastBlock = replacements.back().detail.get();
+  } else if (first > 0) {
+    newLastBlock = slots_.at(size_t(first - 1)).detail ? slots_.at(size_t(first - 1)).detail.get() : nullptr;
+  }
+  const qreal newTotalHeight = totalHeightAfterBlock(newNextTop, newLastBlock, theme);
+  result.heightDelta = oldSuffixFirst < oldCount ? newNextTop - oldNextTop : newTotalHeight - totalHeight_;
+  QRectF oldSuffixRect;
+  if (oldSuffixFirst < oldCount) {
+    const qreal oldTop = slotTop(oldSuffixFirst);
+    const BlockSlot& oldLast = slots_.back();
+    oldSuffixRect =
+        QRectF(pageLeft_, oldTop, pageWidth_, qMax<qreal>(0.0, slotTop(oldCount - 1) + oldLast.height - oldTop));
+  }
+  const bool estimatesPending = hasPendingViewportEstimates();
+  slots_.erase(slots_.begin() + first, slots_.begin() + first + removed);
+  slots_.insert(slots_.begin() + first, std::make_move_iterator(replacements.begin()),
+                std::make_move_iterator(replacements.end()));
+  viewportEstimateCursor_ = estimatesPending ? 0 : static_cast<qsizetype>(slots_.size());
+  positionIndex_.replace(first, removed, std::move(replacementPositions));
+  // Only the replacement subtrees are indexed: the position tokens of everything kept still rank
+  // their slots, with the adjustment the suffix shift adds below.
+  for (qsizetype i = 0; i < inserted; ++i) {
+    const MarkdownNode& node = *children[size_t(first + i)];
+    topLevelIndex_.insert(node.id(), slots_.at(size_t(first + i)).positionToken);
+    collectNestedToTopLevel(node, node.id());
+  }
+  if (newSuffixFirst < static_cast<qsizetype>(slots_.size())) {
+    shiftSuffixFrom(newSuffixFirst, result.heightDelta);
+  }
+  if (!oldSuffixRect.isEmpty() && newSuffixFirst < static_cast<qsizetype>(slots_.size())) {
+    result.shiftedRect = oldSuffixRect.united(oldSuffixRect.translated(0.0, result.heightDelta));
+  }
+  totalHeight_ = oldSuffixFirst < oldCount ? totalHeight_ + result.heightDelta : newTotalHeight;
+  // A slot the edit kept can still hold changed blocks, or have lost the blocks it grouped.
+  if (!layOutHolders(first, inserted))
+    return false;
+  result.rebuilt = true;
+  const qreal beforeRefresh = totalHeight_;
+  result.shiftedRect = result.shiftedRect.united(refreshDependentStyles(document, theme, selection));
+  result.heightDelta += totalHeight_ - beforeRefresh;
+  return true;
 }
 
 DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const RenderTheme& theme,

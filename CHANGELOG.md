@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Size an exported Mermaid image to the nearest pixel of the diagram's canvas, as a browser does. ER, pie, quadrant, requirement, journey, kanban, packet, radar, sequence, timeline, XY chart and git-graph diagrams could come out a pixel too wide or too tall.
 - Keep the caret on its text in a document with HTML containers, and after a jump into a part of a long document that had not been laid out yet. Each key typed in such a document laid it out again from estimated heights, and a block that was measured afterwards moved the text under the caret without moving the caret: the further down the document, the further the caret drifted above the line being typed. A typewriter-mode jump into such a part left the caret outside the window. ([#34](https://github.com/jstzwj/Muffin/issues/34))
 - Keep the styles and the borrowed topology of a document with HTML containers from one key to the next, and the formatting signatures of the paragraphs an edit did not touch. Each key typed inside a container cleared every style cache and derived the topology again, which took longer the longer the document was. ([#34](https://github.com/jstzwj/Muffin/issues/34))
+- Lay out only what a structural edit touches in a document with HTML containers. Enter, Backspace and paste used to lay the whole document out again and move the scrollbar. ([#34](https://github.com/jstzwj/Muffin/issues/34))
 
 ### Changed
 

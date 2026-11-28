@@ -252,6 +252,100 @@ void testAnEditInsideAContainerKeepsTheBuiltBlocks() {
   require(flow->container(*opener)->closing == document.node(closer), "the closer is where the document has it");
 }
 
+// A structural edit inside a container moves no slot: the container is laid out again where it
+// stands, and nothing else is. It used to lay the whole document out again.
+void testAStructuralEditInsideAContainerStaysLocal() {
+  ContainerReading reading;
+  const NodeId split = paragraphStartingWith(reading.session.document(), QStringLiteral("Paragraph 61 "));
+  const BlockLayout* afterLayout = reading.layout.block(reading.after);
+  const qsizetype at =
+      reading.offsetOf(QStringLiteral("Paragraph 61 ")) + QStringLiteral("Paragraph 61 is long").size();
+  require(reading.session.applyTextEdit(at, 0, QStringLiteral("\n\n"),
+                                        {LocalEditNodeHint{split, at, BlockType::Paragraph}}) !=
+              TextEditResult::Rejected,
+          "the structural edit inside the container should apply");
+  const TopLevelRangeChange range = reading.session.lastLocalTopLevelRangeChange();
+  require(range.isValid() && range.first <= 61 && range.newCount == range.oldCount + 1,
+          "splitting a paragraph should report a range that holds one block more than before");
+  const DocumentLayout::RangeRebuildResult result =
+      reading.layout.rebuildTopLevelRange(range, reading.session.document(), reading.theme, SelectionRange{});
+  require(result.rebuilt, "the changed range should be laid out");
+  require(std::abs(result.oldRect.top() - reading.containerTop) < 0.5,
+          "the range should be laid out in the container's own place, not with the whole document");
+  reading.requireTheWindowKeepsItsPlace("after a structural edit inside the container");
+  require(reading.layout.slotCount() == 81, "no slot should move");
+  const auto& document = reading.session.document();
+  const NodeId secondHalf = paragraphStartingWith(document, QStringLiteral("enough to wrap onto"));
+  require(secondHalf.isValid() && reading.layout.block(secondHalf) != nullptr &&
+              reading.layout.topLevelBlockIdFor(secondHalf) == reading.container,
+          "the new paragraph is laid out inside the container");
+  require(reading.layout.block(reading.after) == afterLayout, "the slot after the container keeps its layout");
+}
+
+// An edit that breaks a pairing releases the blocks it grouped. They become slots of their own
+// between the slots that stayed, which keep their layouts.
+void testABrokenPairingSplicesTheSlots() {
+  ContainerReading reading;
+  const qsizetype at = reading.offsetOf(QStringLiteral("</div>"));
+  require(reading.session.applyTextEdit(at, 6, QStringLiteral("</span>")) != TextEditResult::Rejected,
+          "the closing tag should be editable");
+  const TopLevelRangeChange range = reading.session.lastLocalTopLevelRangeChange();
+  require(range.isValid(), "editing the closing tag should report the range it changed");
+  const DocumentLayout::RangeRebuildResult result =
+      reading.layout.rebuildTopLevelRange(range, reading.session.document(), reading.theme, SelectionRange{});
+  require(result.rebuilt, "the changed range should be laid out");
+  const auto& document = reading.session.document();
+  require(reading.theme.markdownFlow(document.root())->empty(), "a broken pairing is no container");
+  // Forty paragraphs, the opener, forty paragraphs, the closer, forty paragraphs.
+  require(reading.layout.slotCount() == 122,
+          QStringLiteral("every block is a slot of its own: %1 slots").arg(reading.layout.slotCount()));
+  const NodeId former = paragraphStartingWith(document, QStringLiteral("Paragraph 50 "));
+  require(reading.layout.topLevelIndexFor(former) == 51, "a released paragraph takes a slot of its own");
+  const BlockLayout* opener = reading.layout.block(reading.container);
+  require(opener && opener->children().empty(), "the opener groups nothing any more");
+  for (qsizetype i = 1; i < reading.layout.slotCount(); ++i)
+    require(reading.layout.slotTop(i) >= reading.layout.slotTop(i - 1) + reading.layout.slotHeight(i - 1) - 0.01,
+            QStringLiteral("slot %1 should start where slot %2 ends").arg(i).arg(i - 1));
+  require(reading.layout.blockIfPromoted(reading.after) != nullptr,
+          "the slots after the edit are still built where they are now");
+}
+
+// A plain document that gains its first pairing: the blocks between the boundaries stop being
+// slots of their own.
+void testTheFirstContainerTakesItsBlocks() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("alpha\n\nbeta\n\ngamma\n\ndelta\n"), false);
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  require(layout.slotCount() == 4, "four paragraphs are four slots");
+  const NodeId alpha = paragraphStartingWith(session.document(), QStringLiteral("alpha"));
+  const NodeId delta = paragraphStartingWith(session.document(), QStringLiteral("delta"));
+  const BlockLayout* alphaLayout = layout.block(alpha);
+  const BlockLayout* deltaLayout = layout.block(delta);
+  const QString text = session.markdownText().toString();
+  const qsizetype beta = text.indexOf(QStringLiteral("beta"));
+  require(session.applyTextEdit(beta, text.indexOf(QStringLiteral("delta")) - beta,
+                                QStringLiteral("<div>\n\ngamma\n\n</div>\n\n")) != TextEditResult::Rejected,
+          "the paragraphs should be wrapped in one edit");
+  const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+  require(range.isValid() && range.first <= 1, "wrapping paragraphs should report the range it changed");
+  const DocumentLayout::RangeRebuildResult result =
+      layout.rebuildTopLevelRange(range, session.document(), theme, SelectionRange{});
+  require(result.rebuilt, "the changed range should be laid out");
+  require(layout.slotCount() == 3, "the first paragraph, the container and the last paragraph");
+  const auto& document = session.document();
+  const MarkdownNode* opener = document.root().children()[1].get();
+  require(theme.markdownFlow(document.root())->container(*opener) != nullptr, "the boundaries pair up");
+  const NodeId wrapped = paragraphStartingWith(document, QStringLiteral("gamma"));
+  require(layout.topLevelBlockIdFor(wrapped) == opener->id() && layout.block(wrapped) != nullptr,
+          "the paragraph between the boundaries is laid out inside the container");
+  require(layout.slotTop(2) >= layout.slotTop(1) + layout.slotHeight(1) - 0.01,
+          "the paragraph after the container starts where the container ends");
+  require(layout.block(alpha) == alphaLayout && layout.block(delta) == deltaLayout,
+          "the paragraphs outside the edit keep their layouts");
+}
+
 // The signatures a pass keeps are worth the next pass only while what they depend on stays: a new
 // text size lays every paragraph of the container out again.
 void testANewTextSizeLaysTheKeptParagraphsOutAgain() {
@@ -318,6 +412,9 @@ int main(int argc, char** argv) {
   RUN_TEST(testTocRowsFollowTheirBlock);
   RUN_TEST(testDefinitionRangesFollowTheirBlock);
   RUN_TEST(testAnEditInsideAContainerKeepsTheBuiltBlocks);
+  RUN_TEST(testAStructuralEditInsideAContainerStaysLocal);
+  RUN_TEST(testABrokenPairingSplicesTheSlots);
+  RUN_TEST(testTheFirstContainerTakesItsBlocks);
   RUN_TEST(testANewTextSizeLaysTheKeptParagraphsOutAgain);
   RUN_TEST(testTheTopologyFollowsReplacedBlocks);
 #undef RUN_TEST

@@ -210,6 +210,12 @@ private:
   // were built.
   void rebuildKeepingBuiltBlocks(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
 
+  // A changed range of a document that renders through containers, in the slots of the topology
+  // the theme derives from the edited document: the slots are compared with it, and only what
+  // differs, or holds the change, is laid out again. False asks for everything to be rebuilt.
+  bool rebuildBorrowedRange(TopLevelRangeChange range, std::shared_ptr<const MarkdownFlow> flow,
+                            const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection,
+                            RangeRebuildResult& result);
   void configureBuilder(SelectionRange selection, bool reuseFormatting = false);
   void promoteSlot(qsizetype index, const RenderTheme& theme);
   CooperativeTask promoteSlotSteps(qsizetype index, const RenderTheme& theme);
