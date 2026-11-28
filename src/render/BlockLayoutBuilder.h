@@ -98,6 +98,7 @@ public:
   void beginFormattingPass(bool incremental, QSet<NodeId> dirty);
   QPair<quint64, quint64> finishFormattingPass();
   QByteArray formattingSignature(const MarkdownNode& node, const RenderTheme& theme);
+  QByteArray reuseEpoch(const RenderTheme& theme);
   void retainLayouts(std::unique_ptr<BlockLayout>& layout);
   void clearRetainedLayouts() { retainedLayouts_.clear(); }
   void invalidateRenderState() { ++renderStateGeneration_; }
@@ -115,6 +116,8 @@ private:
                                           qreal width, int depth);
   void finishBuild(BlockLayout& layout, const MarkdownNode& node, const RenderTheme& theme);
   QByteArray renderSettingsSignature_;
+  // False until the first signature of a pass has told the cache what this pass depends on.
+  bool reuseChecked_ = true;
   quint64 fontGeneration_ = 0;
   quint64 renderStateGeneration_ = 0;
   QHash<const MarkdownNode*, QPair<QSizeF, qreal>> allocations_;

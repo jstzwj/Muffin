@@ -695,6 +695,7 @@ CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& nod
 void BlockLayoutBuilder::beginFormattingPass(bool incremental, QSet<NodeId> dirty) {
   formattingCache_.beginPass(incremental, std::move(dirty));
   retainedLayouts_.clear();
+  reuseChecked_ = false;
   reusedLayouts = builtLayouts = reusedContexts = solvedContexts = 0;
 }
 
@@ -703,20 +704,46 @@ QPair<quint64, quint64> BlockLayoutBuilder::finishFormattingPass() {
   return formattingCache_.finishPass();
 }
 
+QByteArray BlockLayoutBuilder::reuseEpoch(const RenderTheme& theme) {
+  QByteArray data;
+  QDataStream stream(&data, QIODevice::WriteOnly);
+  stream << formattingCache_.themeSignature(theme) << renderStateGeneration_ << theme.zoomPercent()
+         << theme.fontSizePx() << renderSettingsSignature_ << documentPath_ << theme.paragraphFont().key()
+         << theme.codeFont().key() << editingHtmlBlockId_.toString() << mermaidSyncMode_;
+  return data;
+}
+
 QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, const RenderTheme& theme) {
   diag::ScopedPerfProbe perf("block.formattingSignature", blockBuildDetailPerf());
   if (const auto cached = formattingCache_.signature(node.id()))
     return *cached;
+  if (!reuseChecked_) {
+    formattingCache_.beginKept(reuseEpoch(theme), theme.hasLocalStyleChange());
+    reuseChecked_ = true;
+  }
   // Generated outlines have a separate document-wide dependency.
   if (sourceTextForEditableNode(node).trimmed() == "[TOC]")
     return {};
+  const auto range = node.sourceRange();
+  const QString source = md().mid(range.byteStart, qMax<qsizetype>(0, range.byteEnd - range.byteStart));
+  // A paragraph away from the caret holds nothing an edit of another block can change and nothing
+  // of the caret: once the theme has kept its styles, the signature it had in an earlier pass is
+  // still its signature as long as its text is. Every other block is signed again.
+  const auto headingText = headingCounterText_ ? headingCounterText_->value(node.id()) : QPair<QString, QString>{};
+  const quint64 counters = theme.generatedCounterFingerprint(node.id());
+  const bool kept = node.type() == BlockType::Paragraph && node.children().empty() &&
+                    selection_.focus.blockId != node.id() && !formattingCache_.isDirty(node.id());
+  if (kept) {
+    if (const auto earlier = formattingCache_.keptSignature(node.id(), source, node.literal(), counters, headingText)) {
+      formattingCache_.rememberSignature(node.id(), *earlier);
+      return *earlier;
+    }
+  }
   QByteArray data;
   QDataStream stream(&data, QIODevice::WriteOnly);
   stream << formattingCache_.themeSignature(theme) << renderStateGeneration_;
-  const auto range = node.sourceRange();
-  stream << node.id().toString() << int(node.type())
-         << md().mid(range.byteStart, qMax<qsizetype>(0, range.byteEnd - range.byteStart)) << node.literal()
-         << theme.zoomPercent() << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
+  stream << node.id().toString() << int(node.type()) << source << node.literal() << theme.zoomPercent()
+         << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
   stream << theme.paragraphFont().key() << theme.codeFont().key();
   const auto key = cssTagForNode(node);
   for (const auto& state : {QString(), QString(":hover"), QString(":focus")}) {
@@ -740,8 +767,8 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
       stream << format.start << format.length << format.format;
   }
   if (headingCounterText_)
-    stream << headingCounterText_->value(node.id());
-  stream << theme.generatedCounterFingerprint(node.id());
+    stream << headingText;
+  stream << counters;
   if (node.type() == BlockType::ListItem) {
     const auto marker = listMarkerLayout(node, theme);
     stream << int(marker.marker.kind) << marker.marker.text << marker.contentIndent;
@@ -779,6 +806,8 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
   }
   const auto result = reusable ? QCryptographicHash::hash(data, QCryptographicHash::Sha256) : QByteArray();
   formattingCache_.rememberSignature(node.id(), result);
+  if (kept && !result.isEmpty())
+    formattingCache_.keepSignature(node.id(), source, node.literal(), counters, headingText, result);
   return result;
 }
 

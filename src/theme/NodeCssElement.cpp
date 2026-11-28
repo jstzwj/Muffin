@@ -733,10 +733,9 @@ QVector<quint64> NodeCssElementBuilder::releaseInlineViews(const QSet<NodeId>& t
 }
 
 bool NodeCssElementBuilder::rebindBlocks(const QHash<NodeId, const MarkdownNode*>& replacements) {
-  // A boundary can change siblings outside the edited block. Rebuild the
-  // borrowed topology before exposing replacement AST pointers.
-  if (flow_ && !flow_->empty())
-    return false;
+  // An equal semantic signature keeps every HTML boundary and the shape below each replaced
+  // block as it was. The borrowed topology follows the replacement nodes on its own (see
+  // MarkdownFlow::rebind); the views below are moved onto them here.
   QHash<const MarkdownNode*, const MarkdownNode*> changed;
   for (auto it = bindings_.cbegin(); it != bindings_.cend(); ++it) {
     const auto replacement = replacements.constFind(it->topLevel);
@@ -789,6 +788,14 @@ bool NodeCssElementBuilder::rebindBlocks(const QHash<NodeId, const MarkdownNode*
     if (const auto images = inlineImages_.find(node); images != inlineImages_.end())
       for (auto& image : images.value())
         image.sourceOffset = node->inlines().front().sourceStart();
+  }
+  if (flow_ && !flow_->empty() && !replacements.isEmpty() && !flow_->rebind(replacements)) {
+    // A block of the topology that was named anew: the links to it are by id, so the whole
+    // topology is derived again from the document.
+    const auto* root = replacements.cbegin().value();
+    while (root->parent())
+      root = root->parent();
+    flow_ = std::make_shared<MarkdownFlow>(*root);
   }
   return true;
 }

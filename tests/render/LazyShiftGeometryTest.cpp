@@ -8,6 +8,9 @@
 // A built block also has to stay built through an edit. Under the Lazy policy an unbuilt block
 // is only estimated, so wherever an edit laid the whole document out again, the viewport and the
 // caret were resolved against estimates and landed away from the text.
+//
+// Documents that render through HTML containers are the case to watch: their slots are borrowed
+// from the theme's topology, and an edit there has to stay as local as one anywhere else.
 
 #include "document/DefinitionBlock.h"
 #include "document/DocumentSession.h"
@@ -16,11 +19,13 @@
 #include "document/NodeId.h"
 #include "render/BlockLayout.h"
 #include "render/DocumentLayout.h"
+#include "theme/MarkdownFlow.h"
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
 #include <QVector>
 
+#include <algorithm>
 #include <cmath>
 
 #include "RenderTestUtils.h"
@@ -216,38 +221,90 @@ struct ContainerReading {
 // that followed were resolved against estimates, the more the deeper into the document.
 void testAnEditInsideAContainerKeepsTheBuiltBlocks() {
   ContainerReading reading;
-  const NodeId inside = paragraphStartingWith(reading.session.document(), QStringLiteral("Paragraph 60 "));
+  const auto& document = reading.session.document();
+  const NodeId inside = paragraphStartingWith(document, QStringLiteral("Paragraph 60 "));
+  const NodeId neighbour = paragraphStartingWith(document, QStringLiteral("Paragraph 50 "));
+  const BlockLayout* neighbourLayout = reading.layout.block(neighbour);
+  const NodeId closer = document.root().children()[81]->id();
   const qsizetype at = reading.offsetOf(QStringLiteral("Paragraph 60 "));
   require(reading.session.applyTextEdit(at, 0, QStringLiteral("Typed "),
-                                        {LocalEditNodeHint{inside, 0, BlockType::Paragraph}}) !=
+                                        {LocalEditNodeHint{inside, at, BlockType::Paragraph}}) !=
               TextEditResult::Rejected,
           "the edit inside the container should apply");
   const DocumentLayout::BlockRebuildResult result =
-      reading.layout.rebuildBlock(inside, reading.session.document(), reading.theme, SelectionRange{});
+      reading.layout.rebuildBlock(inside, document, reading.theme, SelectionRange{});
   require(result.rebuilt, "the edit should be laid out");
   reading.requireTheWindowKeepsItsPlace("after an edit inside the container");
   require(std::abs(result.oldRect.top() - reading.containerTop) < 0.5,
           "the edit should be laid out in the container's own place, not with the whole document");
+  // A paragraph the edit did not touch keeps its layout, and the borrowed topology addresses the
+  // paragraph that replaced the edited one.
+  require(reading.layout.block(neighbour) == neighbourLayout, "an untouched paragraph keeps its layout");
+  const auto flow = reading.theme.markdownFlow(document.root());
+  const MarkdownNode* opener = document.node(reading.container);
+  const MarkdownNode* edited = document.node(inside);
+  const MarkdownNode* next = document.node(paragraphStartingWith(document, QStringLiteral("Paragraph 61 ")));
+  const auto grouped = flow->children(*opener);
+  require(grouped.size() == 40 && std::find(grouped.cbegin(), grouped.cend(), edited) != grouped.cend(),
+          "the container holds the replacement paragraph");
+  require(flow->parent(*edited) == opener && flow->next(*edited) == next && flow->previous(*next) == edited,
+          "the links of the topology lead to and from the replacement paragraph");
+  require(flow->container(*opener)->closing == document.node(closer), "the closer is where the document has it");
 }
 
-// A structural edit still lays a container document out again, since a boundary may have moved.
-// The blocks that were built are measured again before anything reads the layout.
-void testAStructuralEditKeepsTheBuiltWindowOfAContainerDocument() {
+// The signatures a pass keeps are worth the next pass only while what they depend on stays: a new
+// text size lays every paragraph of the container out again.
+void testANewTextSizeLaysTheKeptParagraphsOutAgain() {
   ContainerReading reading;
-  const NodeId split = paragraphStartingWith(reading.session.document(), QStringLiteral("Paragraph 61 "));
-  const qsizetype at =
-      reading.offsetOf(QStringLiteral("Paragraph 61 ")) + QStringLiteral("Paragraph 61 is long").size();
-  require(reading.session.applyTextEdit(at, 0, QStringLiteral("\n\n"),
-                                        {LocalEditNodeHint{split, 0, BlockType::Paragraph}}) !=
+  const NodeId inside = paragraphStartingWith(reading.session.document(), QStringLiteral("Paragraph 60 "));
+  const NodeId neighbour = paragraphStartingWith(reading.session.document(), QStringLiteral("Paragraph 50 "));
+  const qsizetype at = reading.offsetOf(QStringLiteral("Paragraph 60 "));
+  require(reading.session.applyTextEdit(at, 0, QStringLiteral("Typed "),
+                                        {LocalEditNodeHint{inside, at, BlockType::Paragraph}}) !=
               TextEditResult::Rejected,
-          "the structural edit inside the container should apply");
-  const TopLevelRangeChange range = reading.session.lastLocalTopLevelRangeChange();
-  require(range.isValid() && range.first <= 61 && range.newCount == range.oldCount + 1,
-          "splitting a paragraph should report a range that holds one block more than before");
-  const DocumentLayout::RangeRebuildResult result =
-      reading.layout.rebuildTopLevelRange(range, reading.session.document(), reading.theme, SelectionRange{});
-  require(result.rebuilt, "the changed range should be laid out");
-  reading.requireTheWindowKeepsItsPlace("after a structural edit inside the container");
+          "the edit inside the container should apply");
+  require(reading.layout.rebuildBlock(inside, reading.session.document(), reading.theme, SelectionRange{}).rebuilt,
+          "the edit should be laid out");
+  const BlockLayout* typed = reading.layout.block(neighbour);
+  const qreal height = typed->height();
+  reading.theme.setFontSizePx(reading.theme.fontSizePx() + 6);
+  require(reading.layout.rebuildBlock(reading.container, reading.session.document(), reading.theme, SelectionRange{})
+              .rebuilt,
+          "the container should be laid out at the new text size");
+  const BlockLayout* relaid = reading.layout.block(neighbour);
+  require(relaid && relaid != typed && relaid->height() > height, "a paragraph is laid out again at the new text size");
+}
+
+// The topology names blocks by id, so a replacement that was named anew cannot take the place of
+// the block it replaces; one that keeps its id moves the topology with it, boundaries included.
+void testTheTopologyFollowsReplacedBlocks() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("<div class=\"hero\">\n\nInside the container.\n\n</div>\n\nOutside.\n"),
+                          false);
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  const auto& blocks = session.document().root().children();
+  const NodeId opener = blocks[0]->id(), inside = blocks[1]->id(), closer = blocks[2]->id();
+  const MarkdownNode* other = blocks[3].get();
+  MarkdownFlow copy = *theme.markdownFlow(session.document().root());
+  require(!copy.rebind({{opener, other}}), "a replacement with another id is refused");
+  require(copy.container(*blocks[0]) != nullptr && copy.children(*blocks[0]).size() == 1, "and nothing moved");
+
+  // The closing tag is written again as it was: the edit replaces its block in place and names it,
+  // as an edit of the tag in the editor does.
+  const qsizetype at = session.markdownText().toString().indexOf(QStringLiteral("</div>"));
+  require(session.applyTextEdit(at, 6, QStringLiteral("</div>"),
+                                {LocalEditNodeHint{closer, at, BlockType::HtmlBlock}}) != TextEditResult::Rejected,
+          "the closing tag should be editable");
+  const TopLevelRangeChange range = session.lastLocalTopLevelRangeChange();
+  require(range.isValid() && layout.rebuildTopLevelRange(range, session.document(), theme, SelectionRange{}).rebuilt,
+          "writing the closing tag again should be laid out");
+  const auto flow = theme.markdownFlow(session.document().root());
+  require(flow->container(*session.document().node(opener)) != nullptr, "the pairing survives");
+  require(flow->container(*session.document().node(opener))->closing == session.document().node(closer) &&
+              flow->children(*session.document().node(opener)).front() == session.document().node(inside),
+          "the container's closer and children are where the document has them now");
 }
 
 } // namespace
@@ -261,7 +318,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testTocRowsFollowTheirBlock);
   RUN_TEST(testDefinitionRangesFollowTheirBlock);
   RUN_TEST(testAnEditInsideAContainerKeepsTheBuiltBlocks);
-  RUN_TEST(testAStructuralEditKeepsTheBuiltWindowOfAContainerDocument);
+  RUN_TEST(testANewTextSizeLaysTheKeptParagraphsOutAgain);
+  RUN_TEST(testTheTopologyFollowsReplacedBlocks);
 #undef RUN_TEST
   return 0;
 }

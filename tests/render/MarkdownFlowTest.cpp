@@ -29,11 +29,12 @@ void mixedFlow() {
   require(!flow.empty(), "paired boundaries produce render containers");
   require(flow.children(document.root()).size() == 2, "only wrapper and outside paragraph are root children");
   const auto* container = flow.container(*nodes.front());
-  require(container && container->children.size() == 3, "wrapper borrows heading, prose and nested section");
-  const auto* heading = container->children[0];
+  const auto borrowed = flow.children(*nodes.front());
+  require(container && borrowed.size() == 3, "wrapper borrows heading, prose and nested section");
+  const auto* heading = borrowed[0];
   require(heading->parent() == &document.root(), "original AST ownership is unchanged");
   require(flow.parent(*heading) == nodes.front().get(), "render parent is HTML container");
-  require(flow.previous(*heading) == nullptr && flow.next(*heading) == container->children[1],
+  require(flow.previous(*heading) == nullptr && flow.next(*heading) == borrowed[1],
           "semantic sibling order excludes tags");
   RenderTheme theme = RenderTheme::github();
   DocumentLayout layout;

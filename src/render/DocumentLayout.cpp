@@ -742,18 +742,26 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
   const bool renderOnly = selectionOnly || representationOnly;
   const bool contentUpdate = !renderOnly && !refreshingStyles_ && !resourceOnlyUpdate_;
   // A document with matched HTML boundaries borrows its slot list from the theme's flow. An edit
-  // rebuilds the flow together with the styles, so both are prepared before anything reads the
-  // topology. The slots are then checked against it: typing inside a block moves nothing and is laid
-  // out in place like any other edit, while a boundary that disappears or changes partner moves the
-  // slots themselves. The block asked for can be gone too: an edit replaces its block, and only one
-  // the caller named keeps its id.
+  // prepares the styles of the edited block the way it does for any other document, and the flow
+  // follows the replaced block. That is a local edit: it keeps every boundary, so the slots still
+  // follow. Anything else derives the styles and the flow of the whole document again, and the
+  // slots are checked against it: a boundary that disappears or changes partner moves them.
+  // The block asked for can be gone too: an edit replaces its block, and only one the caller named
+  // keeps its id. Such an edit prepares the styles of the whole document.
   const bool borrowed = flow_ && !flow_->empty();
   const bool editInBorrowed = contentUpdate && borrowed;
+  bool rederived = false;
   if (editInBorrowed && styleDocumentRevision_ != document.revision()) {
-    theme.invalidateDocumentStyles();
+    const auto* edited = document.node(blockId);
+    if (const auto* block = edited ? edited->topLevelBlock() : nullptr) {
+      theme.invalidateDocumentStyles({block->siblingIndex(), 1, 1, document.revision()}, &document);
+    } else {
+      theme.invalidateDocumentStyles();
+    }
     styleDocumentRevision_ = document.revision();
     recomputeHeadingCounters(document, theme);
     flow_ = theme.markdownFlow(document.root());
+    rederived = !theme.hasLocalStyleChange();
   }
   const auto rebuildAll = [&] {
     const qreal oldHeight = totalHeight_;
@@ -766,7 +774,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(NodeId blockId, 
     return result;
   };
   const auto* node = topLevelBlockFor(blockId, document);
-  if (!node || (editInBorrowed && !slotsFollowTopology(document))) {
+  if (!node || (rederived && !slotsFollowTopology(document))) {
     return editInBorrowed ? rebuildAll() : result;
   }
   if (selectionOnly && preeditText_.isEmpty()) {

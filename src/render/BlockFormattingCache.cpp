@@ -20,9 +20,34 @@ void BlockFormattingCache::beginPass(bool incremental, QSet<NodeId> dirty) {
   if (!incremental) {
     measurements_.clear();
     solutions_.clear();
+    kept_.clear();
   }
   for (auto& entry : measurements_)
     entry->measurements->hits = entry->measurements->misses = 0;
+}
+
+void BlockFormattingCache::beginKept(const QByteArray& epoch, bool stylesKept) {
+  // The bound only ever matters in a document that is edited for a long time without being laid
+  // out again: blocks that disappeared leave an entry behind.
+  if (!stylesKept || kept_.size() > 16384 || epoch != keptEpoch_) {
+    kept_.clear();
+    keptEpoch_ = epoch;
+  }
+}
+
+std::optional<QByteArray> BlockFormattingCache::keptSignature(NodeId id, const QString& source, const QString& literal,
+                                                              quint64 counters,
+                                                              const QPair<QString, QString>& headingText) {
+  const auto it = kept_.constFind(id);
+  if (it == kept_.cend() || it->source != source || it->literal != literal || it->counters != counters ||
+      it->headingText != headingText)
+    return std::nullopt;
+  return it->signature;
+}
+
+void BlockFormattingCache::keepSignature(NodeId id, const QString& source, const QString& literal, quint64 counters,
+                                         const QPair<QString, QString>& headingText, const QByteArray& signature) {
+  kept_.insert(id, Kept{signature, source, literal, counters, headingText});
 }
 
 std::optional<QByteArray> BlockFormattingCache::signature(NodeId id) const {

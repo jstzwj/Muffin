@@ -29,6 +29,13 @@ public:
   };
 
   void beginPass(bool incremental, QSet<NodeId> dirty);
+  // What every signature depends on besides the text of the block itself. Signatures kept from an
+  // earlier pass hold for this one while that is unchanged and the theme kept its styles.
+  void beginKept(const QByteArray& epoch, bool stylesKept);
+  std::optional<QByteArray> keptSignature(NodeId id, const QString& source, const QString& literal, quint64 counters,
+                                          const QPair<QString, QString>& headingText);
+  void keepSignature(NodeId id, const QString& source, const QString& literal, quint64 counters,
+                     const QPair<QString, QString>& headingText, const QByteArray& signature);
   QPair<quint64, quint64> finishPass();
   std::optional<QByteArray> signature(NodeId id) const;
   void rememberSignature(NodeId id, QByteArray value);
@@ -50,6 +57,14 @@ private:
   QHash<NodeId, std::vector<std::shared_ptr<Solution>>> solutions_;
 
   QHash<NodeId, QByteArray> signatures_;
+  struct Kept {
+    QByteArray signature;
+    QString source, literal;
+    quint64 counters = 0;
+    QPair<QString, QString> headingText;
+  };
+  QHash<NodeId, Kept> kept_;
+  QByteArray keptEpoch_;
   QSet<NodeId> dirty_;
   quint64 pass_ = 0;
   QByteArray themeSignature_;

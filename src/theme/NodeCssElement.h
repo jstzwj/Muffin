@@ -97,7 +97,7 @@ private:
   mutable QHash<const CssElement*, QHash<QString, bool>> descendantQueries_;
   mutable bool inlineViewportUnits_ = false;
   bool maintainTypeIndex_ = true;
-  mutable std::shared_ptr<const MarkdownFlow> flow_;
+  mutable std::shared_ptr<MarkdownFlow> flow_;
   DocumentStyleHost host_;
 };
 
